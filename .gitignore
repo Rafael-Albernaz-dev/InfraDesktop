@@ -1,0 +1,23 @@
+# Dependencies, generated outputs and local toolchains
+node_modules/
+frontend/dist/
+build/
+dist/
+coverage/
+.tools/
+*.log
+*.sock
+*.pid
+*.deb
+__pycache__/
+*.pyc
+
+# Secrets and local runtime state
+.env
+.env.*
+!.env.example
+.runtime/
+.local/
+
+# Local preparation workspace; not the future official product docs
+/docs/
