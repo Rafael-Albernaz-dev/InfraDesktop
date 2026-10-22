@@ -21,3 +21,7 @@ __pycache__/
 
 # Local preparation workspace; not the future official product docs
 /docs/
+
+# Local agent governance; excluded from future commits
+/AGENTS.md
+/.agents/
