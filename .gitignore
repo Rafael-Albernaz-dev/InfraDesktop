@@ -25,3 +25,6 @@ __pycache__/
 # Local agent governance; excluded from future commits
 /AGENTS.md
 /.agents/
+
+# Real Wails generated bindings/runtime (regenerate with make bindings)
+frontend/wailsjs/

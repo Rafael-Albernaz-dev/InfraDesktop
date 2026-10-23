@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=InfraDesktop
+Comment=Ambiente local para operação de provedores
+Exec=/usr/bin/infradesktop
+Icon=infradesktop
+Terminal=false
+Categories=Network;Utility;
+StartupWMClass=infradesktop

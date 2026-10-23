@@ -1,0 +1,29 @@
+[Unit]
+Description=InfraDesktop local service for %i
+After=local-fs.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=%i
+ExecStart=/usr/lib/infradesktop/infradesktopd --runtime /run/infradesktop-%i --state /var/lib/infradesktop-%i
+RuntimeDirectory=infradesktop-%i
+RuntimeDirectoryMode=0700
+StateDirectory=infradesktop-%i
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=
+LockPersonality=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

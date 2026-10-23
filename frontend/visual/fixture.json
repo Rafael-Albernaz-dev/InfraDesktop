@@ -1,0 +1,265 @@
+{
+  "devices": [
+    {
+      "id": "edge",
+      "name": "Borda POP",
+      "ip": "10.48.0.1",
+      "type": "Borda",
+      "os": "RouterOS 7.16",
+      "access": "API TLS",
+      "state": "Atualizado",
+      "style": "good",
+      "time": "14:32:18",
+      "detail": "Identidade TLS verificada",
+      "position": [361, 80],
+      "relations": [
+        ["BNG Centro", "LLDP"],
+        ["BNG Norte", "LLDP"]
+      ]
+    },
+    {
+      "id": "center",
+      "name": "BNG Centro",
+      "ip": "10.48.0.10",
+      "type": "Concentrador",
+      "os": "RouterOS 6.49",
+      "access": "SSH",
+      "state": "Atualizado",
+      "style": "good",
+      "time": "14:32:18",
+      "detail": "Chave SSH verificada",
+      "position": [156, 290],
+      "relations": [
+        ["Borda POP", "LLDP"],
+        ["AP Serra", "Cadastrada"],
+        ["AP Vale", "Cadastrada"]
+      ],
+      "sessions": 186,
+      "uptime": "18 dias, 7 horas"
+    },
+    {
+      "id": "north",
+      "name": "BNG Norte",
+      "ip": "10.48.0.11",
+      "type": "Concentrador",
+      "os": "RouterOS 7.16",
+      "access": "API TLS",
+      "state": "Atualizado",
+      "style": "good",
+      "time": "14:32:17",
+      "detail": "Identidade TLS verificada",
+      "position": [568, 290],
+      "relations": [
+        ["Borda POP", "LLDP"],
+        ["Enlace legado", "Cadastrada"]
+      ],
+      "sessions": 226
+    },
+    {
+      "id": "serra",
+      "name": "AP Serra",
+      "ip": "10.48.2.20",
+      "type": "Rádio / AP",
+      "os": "RouterOS 6.49",
+      "access": "SSH",
+      "state": "Leitura parcial",
+      "style": "warn",
+      "time": "14:32:05",
+      "detail": "CCQ indisponível",
+      "position": [48, 535],
+      "relations": [["BNG Centro", "Cadastrada"]]
+    },
+    {
+      "id": "vale",
+      "name": "AP Vale",
+      "ip": "10.48.2.21",
+      "type": "Rádio / AP",
+      "os": "RouterOS 6.49",
+      "access": "SSH",
+      "state": "Sem leitura recente",
+      "style": "warn",
+      "time": "14:24:10",
+      "detail": "Última tentativa sem resposta",
+      "position": [280, 535],
+      "relations": [["BNG Centro", "Cadastrada"]]
+    },
+    {
+      "id": "legacy",
+      "name": "Enlace legado",
+      "ip": "10.48.3.30",
+      "type": "Rádio / enlace",
+      "os": "Versão a verificar",
+      "access": "Telnet",
+      "state": "Acesso recusado",
+      "style": "bad",
+      "time": "14:10:00",
+      "detail": "Credencial recusada às 14:31:44",
+      "position": [568, 535],
+      "relations": [["BNG Norte", "Cadastrada"]]
+    }
+  ],
+  "sessions": [
+    {
+      "user": "assinante_001",
+      "ip": "100.64.10.21",
+      "uptime": "02h 14m",
+      "signal": "−76",
+      "warning": true,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:21",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_002",
+      "ip": "100.64.10.22",
+      "uptime": "08h 42m",
+      "signal": "−59",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:22",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_003",
+      "ip": "100.64.10.23",
+      "uptime": "01h 08m",
+      "signal": null,
+      "radio": null,
+      "mac": null
+    },
+    {
+      "user": "assinante_004",
+      "ip": "100.64.10.24",
+      "uptime": "05h 31m",
+      "signal": "−62",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:24",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_005",
+      "ip": "100.64.10.25",
+      "uptime": "11h 07m",
+      "signal": "−63",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:25",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_006",
+      "ip": "100.64.10.26",
+      "uptime": "00h 46m",
+      "signal": "−64",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:26",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_007",
+      "ip": "100.64.10.27",
+      "uptime": "16h 12m",
+      "signal": "−58",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:27",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_008",
+      "ip": "100.64.10.28",
+      "uptime": "03h 29m",
+      "signal": "−59",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:28",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_009",
+      "ip": "100.64.10.29",
+      "uptime": "07h 54m",
+      "signal": "−60",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:29",
+      "radioAt": "14:32:05"
+    },
+    {
+      "user": "assinante_010",
+      "ip": "100.64.10.30",
+      "uptime": "12h 03m",
+      "signal": "−61",
+      "warning": false,
+      "radio": "AP Serra",
+      "mac": "02:48:10:00:00:30",
+      "radioAt": "14:32:05"
+    }
+  ],
+  "target": "center",
+  "total": 412,
+  "complete": "3 de 6",
+  "network": "VPN · Escritório",
+  "lastQuery": "14:32:18",
+  "traffic": {
+    "value": "658 Mbps",
+    "source": "Borda POP · ether1 · Entrada em Mbps",
+    "path": "M0 116L22 109L44 118L66 100L88 103L110 90L132 98L154 80L176 90L198 77L220 81L242 65L264 75L286 62L308 71L330 53L352 58L374 44L396 58L418 41L440 49L462 40L484 47L506 37L528 50L550 43L572 52L594 43L616 40L638 31L650 33",
+    "times": ["13:32", "13:47", "14:02", "14:17", "14:32"]
+  },
+  "alerts": [
+    {
+      "name": "AP Vale",
+      "description": "Sem leitura recente",
+      "kind": "warn",
+      "at": "14:24:10",
+      "timeKind": "Leitura",
+      "target": "vale"
+    },
+    {
+      "name": "assinante_001",
+      "description": "RX −76 dBm · AP Serra",
+      "kind": "warn",
+      "at": "14:32:05",
+      "timeKind": "Leitura",
+      "target": "session"
+    },
+    {
+      "name": "Enlace legado",
+      "description": "Acesso Telnet recusado",
+      "kind": "bad",
+      "at": "14:31:44",
+      "timeKind": "Tentativa",
+      "target": "legacy"
+    }
+  ],
+  "activity": [
+    {
+      "name": "BNG Centro",
+      "description": "186 sessões PPPoE",
+      "at": "14:32:18"
+    },
+    {
+      "name": "BNG Norte",
+      "description": "226 sessões PPPoE",
+      "at": "14:32:17"
+    },
+    {
+      "name": "AP Serra",
+      "description": "Leitura parcial · CCQ ausente",
+      "at": "14:32:05"
+    }
+  ],
+  "links": [
+    {
+      "kind": "observed",
+      "path": "M458 184V237H253V290M458 237H665V290"
+    },
+    {
+      "kind": "manual",
+      "path": "M253 394V464H145V535M253 464H377V535M665 394V535"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Roboto woff2 (400/500/700) and Heroicons geometry: supplied approved InfraDesktop mockups-v1/assets and HTML, copied 2026-10-22. Roboto Apache-2.0 and Heroicons MIT licenses accompany fonts/. Layout/tokens and mark from project-owned approved mockup; no code/license inherited from Atlas. No runtime dependency on private docs.
