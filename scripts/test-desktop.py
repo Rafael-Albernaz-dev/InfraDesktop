@@ -359,7 +359,7 @@ def main():
                 with sqlite3.connect(state/'infradesktop.db') as db:return db.execute('select theme from account').fetchone()[0]==next
             wait_for('persisted theme '+next,saved_theme)
             if back==2:click(app,'Selecionar empresa');wait_text('Empresas')
-            elif back==3:click(app,'Dashboard');wait_text('Nenhum equipamento')
+            elif back==3:click(app,'Dashboard');wait_text('Inventário disponível nesta empresa')
         def save(name):report.append(capture(ui,out/name))
         def access_theme(next, name):
             from PIL import Image
@@ -465,10 +465,10 @@ def main():
             alpha=wait_for('Native Alpha selectable row',lambda:next((n for n in nodes(app) if n.get_name()=='Selecionar Native Alpha'),None))
             type_label_x11(ui,alpha,'',activate=True)
             wait_for('selected Native Alpha detail',lambda:find(app,'heading','Native Alpha'))
-            click(app,'Abrir empresa');wait_text('Nenhum equipamento');click(app,'Adicionar equipamento');wait_text('Esta capacidade ainda não está disponível. Nenhuma consulta de equipamento foi realizada.');click(app,'Fechar painel');save('M03-dark.png')
+            click(app,'Abrir empresa');wait_text('Inventário disponível nesta empresa');click(app,'Adicionar equipamento');wait_for('real equipment form',lambda:find(app,'entry','IP de gerenciamento'));click(app,'Fechar painel');save('M03-dark.png')
             theme('light',3);save('M03-light.png')
             for name,num in [('Equipamentos',4),('Topologia',6),('Abrir configurações',7)]:
-                click(app,name);wait_text('Aparência' if num==7 else 'Nenhum equipamento');save('M0'+str(num)+'-light.png')
+                click(app,name);wait_text('Aparência' if num==7 else 'Inventário disponível nesta empresa');save('M0'+str(num)+'-light.png')
             # Draft cannot change saved company or claim a successful save.
             type_field(ui,app,'Nome visual','Unpersisted Draft');wait_text('Unpersisted Draft');click(app,'Cancelar')
             save('BF04-after-cancel.png')
@@ -482,7 +482,7 @@ def main():
                 with sqlite3.connect(state/'companies'/(profile+'.db')) as db:return db.execute('SELECT name,accent FROM branding').fetchone()==('Visual Alpha','rose')
             wait_for('brand saved in exact company unit',saved_brand);wait_text('Visual Alpha')
             report.append({'step':'native appearance save persists visual name/accent in Alpha unit, catalog unchanged','PASS':True})
-            click(app,'Escuro');save('M07-dark.png');click(app,'Claro');click(app,'Dashboard');wait_text('Nenhum equipamento')
+            click(app,'Escuro');save('M07-dark.png');click(app,'Claro');click(app,'Dashboard');wait_text('Inventário disponível nesta empresa')
             # BF03 new Security surface: capture only with blank password/no code.
             click(app,'Conta: desktop-technical');click(app,'Segurança');wait_text('O código de recuperação pertence')
             def security_theme(next):
@@ -564,7 +564,7 @@ def main():
                 started=time.monotonic();click(app,'Selecionar empresa');wait_text('Empresas')
                 row=wait_for('company row',lambda:next((n for n in nodes(app) if n.get_name()=='Selecionar '+target),None))
                 type_label_x11(ui,row,'',activate=True)
-                wait_for('company detail',lambda:find(app,'heading',target));click(app,'Abrir empresa');wait_text('Nenhum equipamento')
+                wait_for('company detail',lambda:find(app,'heading',target));click(app,'Abrir empresa');wait_text('Inventário disponível nesta empresa')
                 with sqlite3.connect(state/'infradesktop.db') as db:
                     assert db.execute('select c.name from account a join companies c on c.id=a.profile').fetchone()[0]==target
                 wait_for('exact visible company brand '+target,lambda:find(app,'push button','Selecionar empresa').get_description()==('Visual Alpha' if target=='Native Alpha' else 'Native Beta'))
@@ -577,14 +577,14 @@ def main():
             measurements['memory'].append(resources.snapshot(ui.pid,daemon.pid))
             for _ in range(5):
                 before=resources.snapshot(ui.pid,daemon.pid);time.sleep(1);after=resources.snapshot(ui.pid,daemon.pid);measurements['idle'].append(resources.delta(before,after))
-            for name,expected in [('Equipamentos','Nenhum equipamento'),('Topologia','Nenhum equipamento'),('Abrir configurações','Aparência'),('Dashboard','Nenhum equipamento')]:
+            for name,expected in [('Equipamentos','Inventário disponível nesta empresa'),('Topologia','Inventário disponível nesta empresa'),('Abrir configurações','Aparência'),('Dashboard','Inventário disponível nesta empresa')]:
                 before=resources.snapshot(ui.pid,daemon.pid);started=time.monotonic();click(app,name);wait_text(expected);after=resources.snapshot(ui.pid,daemon.pid)
                 measurements['navigation'].append({'action':name,'response_seconds':time.monotonic()-started,**resources.delta(before,after)})
             measurements['memory'].append(resources.snapshot(ui.pid,daemon.pid));configure_window(ui,1366,768);save('M03-light-1366.png');configure_window(ui)
             close_window(ui,app);assert daemon.poll() is None
-            ui,app=open_ui(runtime,client,'Nenhum equipamento');wait_for('remembered exact company brand',lambda:find(app,'push button','Selecionar empresa').get_description()=='Visual Alpha');assert saved_brand();assert find(app,'push button','Conta: desktop-technical');report.append({'step':'remembered reopen exact Native Alpha/account with daemon alive','PASS':True})
+            ui,app=open_ui(runtime,client,'Inventário disponível nesta empresa');wait_for('remembered exact company brand',lambda:find(app,'push button','Selecionar empresa').get_description()=='Visual Alpha');assert saved_brand();assert find(app,'push button','Conta: desktop-technical');report.append({'step':'remembered reopen exact Native Alpha/account with daemon alive','PASS':True})
             lifecycle.stop(daemon);wait_text('Reconectando ao serviço');daemon=lifecycle.start(runtime,state)
-            wait_for('resume after actual owned daemon restart',lambda:'Serviço ativo' in contents(app) and 'Nenhum equipamento' in contents(app),budget=20)
+            wait_for('resume after actual owned daemon restart',lambda:'Serviço ativo' in contents(app) and 'Inventário disponível nesta empresa' in contents(app),budget=20)
             wait_for('remembered exact company brand',lambda:find(app,'push button','Selecionar empresa').get_description()=='Visual Alpha');assert saved_brand();assert find(app,'push button','Conta: desktop-technical')
             report.append({'step':'owned daemon restart and resume exact Native Alpha/account','PASS':True})
             click(app,'Selecionar empresa');wait_text('Empresas')
@@ -592,13 +592,13 @@ def main():
             # A focusable table row is activated by its native accessible action.
             type_label_x11(ui,beta,'',activate=True)
             wait_for('selected Native Beta detail',lambda:find(app,'heading','Native Beta'))
-            click(app,'Abrir empresa');wait_text('Nenhum equipamento')
+            click(app,'Abrir empresa');wait_text('Inventário disponível nesta empresa')
             with sqlite3.connect(state/'infradesktop.db') as db:assert db.execute('select c.name from account a join companies c on c.id=a.profile').fetchone()[0]=='Native Beta'
             theme('dark',3);click(app,'Conta: desktop-technical');click(app,'Sair');click(app,'Sair');wait_for('revoked login',lambda:find(app,'push button','Entrar'));assert not (client/'remembered').exists();save('M01-dark.png')
             close_window(ui,app);ui,app=open_ui(runtime,client,'Entrar');report.append({'step':'company switch/logout/reopen revoked','PASS':True})
             type_field(ui,app,'Usuário','desktop-technical');type_field(ui,app,'Senha',password)
             box=wait_for('remember checkbox',lambda:find(app,'check box','Manter acesso nesta máquina'));assert box.get_action_iface().do_action(0)
-            click(app,'Entrar');wait_text('Nenhum equipamento');assert not (client/'remembered').exists()
+            click(app,'Entrar');wait_text('Inventário disponível nesta empresa');assert not (client/'remembered').exists()
             close_window(ui,app);ui,app=open_ui(runtime,client,'Entrar');report.append({'step':'without remember does not resume','PASS':True})
             click(app,'Recuperar acesso');type_field(ui,app,'Usuário','desktop-technical');type_field(ui,app,'Código de recuperação',recovery);type_field(ui,app,'Nova senha',new_password);one_time_mutation('Redefinir senha')
             rotated=wait_for('rotated one-time recovery',recovery_code);assert rotated!=recovery
@@ -609,8 +609,8 @@ def main():
             report.append({'step':'pending reset/native close/navigation/rotated code survives themes until ack','PASS':True})
             recovery_actions('reset',rotated)
             click(app,'Guardei meu código');wait_for('reset login',lambda:find(app,'push button','Entrar'))
-            type_field(ui,app,'Senha',new_password);click(app,'Entrar');wait_text('Nenhum equipamento');report.append({'step':'recovery/new password/rotation','PASS':True})
-            close_window(ui,app);lifecycle.stop(daemon);daemon=lifecycle.start(runtime,state);ui,app=open_ui(runtime,client,'Nenhum equipamento')
+            type_field(ui,app,'Senha',new_password);click(app,'Entrar');wait_text('Inventário disponível nesta empresa');report.append({'step':'recovery/new password/rotation','PASS':True})
+            close_window(ui,app);lifecycle.stop(daemon);daemon=lifecycle.start(runtime,state);ui,app=open_ui(runtime,client,'Inventário disponível nesta empresa')
             with sqlite3.connect(state/'infradesktop.db') as db:
                 assert db.execute('select count(*) from account').fetchone()[0]==1
                 assert db.execute('select count(*) from companies').fetchone()[0]==2

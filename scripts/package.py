@@ -20,6 +20,8 @@ for source, target, mode in [
     ('infradesktopd@.service', 'usr/lib/systemd/system/infradesktopd@.service', 0o644),
     ('infradesktop.desktop', 'usr/share/applications/infradesktop.desktop', 0o644),
     ('provision-technician', 'usr/lib/infradesktop/provision-technician', 0o755),
+    ('provision-vault', 'usr/lib/infradesktop/provision-vault', 0o755),
+    ('infradesktop-vault.conf', 'usr/share/infradesktop/infradesktop-vault.conf', 0o644),
 ]:
     dest = stage / target
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -48,7 +50,7 @@ if not deps.startswith('shlibs:Depends='):
     raise RuntimeError('Could not determine runtime dependencies')
 deps = deps.split('=', 1)[1]
 (stage / 'DEBIAN').mkdir()
-(stage / 'DEBIAN/control').write_text(f'Package: infradesktop\nVersion: 0.4.0\nSection: net\nPriority: optional\nArchitecture: amd64\nMaintainer: InfraDesktop <noreply@localhost>\nDepends: {deps}, systemd\nDescription: Local ISP workspace with local account and persistence\n Local account, companies and SQLite service; device queries are not included.\n')
+(stage / 'DEBIAN/control').write_text(f'Package: infradesktop\nVersion: 0.6.0\nSection: net\nPriority: optional\nArchitecture: amd64\nMaintainer: InfraDesktop <noreply@localhost>\nDepends: {deps}, systemd\nDescription: Local ISP workspace with local account and persistence\n Local account, company inventory, encrypted credentials and on-demand SSH reads.\n')
 # Verify a named non-root instantiated unit against the actual staged binary.
 unit = (root / 'packaging/linux/infradesktopd@.service').read_text().replace('/usr/lib/infradesktop/infradesktopd', str(root / 'build/bin/infradesktopd'))
 verify = work / 'infradesktopd@.service'
@@ -57,7 +59,7 @@ verify_env = dict(os.environ, SYSTEMD_UNIT_PATH=str(work) + ':/usr/lib/systemd/s
 subprocess.run(['systemd-analyze', 'verify', str(verify)], check=True, env=verify_env)
 for directory in [stage, *[p for p in stage.rglob('*') if p.is_dir()]]:
     directory.chmod(0o755)
-output = root / 'build/infradesktop_0.4.0_amd64.deb'
+output = root / 'build/infradesktop_0.6.0_amd64.deb'
 subprocess.run(['dpkg-deb', '--root-owner-group', '--build', str(stage), str(output)], check=True)
 for flag in ['--info', '--contents']:
     subprocess.run(['dpkg-deb', flag, str(output)], check=True)

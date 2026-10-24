@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from native_visual_metadata import native_metadata
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location('native', Path(__file__).with_name('test-desktop.py'))
@@ -137,7 +138,7 @@ def main():
                 native.wait_for('two consecutive painted frames after resize/actions',stable_frame)
                 geometry=measured[0]
                 assert geometry['size']==row['viewport'], 'native viewport differs from named state'
-                rows.append({**row, 'capture': str(target), 'capture_sha256': sha(target),
+                rows.append({**native_metadata(row), 'capture': str(target), 'capture_sha256': sha(target),
                              'native_geometry':geometry,'display':os.environ.get('DISPLAY'),'DPR':1,'scale':1,'decoration':'Xvfb client without WM frame','runtime': 'Wails WebKitGTK, isolated presentation fixture'})
                 if row.get('variant')=='navigation' and row['viewport'][0]<1000:
                     native.click(app,'Fechar navegação')

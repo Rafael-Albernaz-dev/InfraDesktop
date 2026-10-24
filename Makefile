@@ -5,6 +5,7 @@ export GOPROXY := off
 export GOSUMDB := off
 export GOFLAGS := -mod=readonly
 
+.PHONY: part1-harness test-part1-desktop test-part1-visual test-vault-helper test-part1-production
 .PHONY: tools-check bindings assets gofmt-check architecture-check check test-integration build package test-desktop run test-visual test-scroll icon-check test-dev
 
 tools-check:
@@ -51,6 +52,7 @@ run: build
 test-visual-integrity:
 	node --test scripts/visual-checks.test.mjs scripts/visual-actions.test.mjs
 	python3 scripts/test-visual-integrity.py
+	python3 scripts/test-native-visual-metadata.py
 
 test-visual: assets test-visual-integrity
 	node scripts/test-visual.mjs
@@ -64,3 +66,22 @@ icon-check:
 
 test-dev:
 	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/test-dev.py
+
+# Separate uninstalled daemon: explicit test key provider cannot be a fallback in
+# the production daemon produced by `build` and packaged by `package`.
+part1-harness:
+	mkdir -p build/bin
+	go build -trimpath -tags webkit2_41 -ldflags '-X infradesktop/internal/composition.devVaultEnabled=true' -o build/bin/infradesktopd-part1-test ./cmd/infradesktopd
+	go build -trimpath -o build/bin/part1-ssh-fixture ./scripts/part1-fixture
+
+test-part1-desktop: part1-harness
+	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/test-part1-desktop.py
+
+test-part1-visual:
+	node scripts/test-part1-visual.mjs
+
+test-vault-helper:
+	python3 scripts/test-vault-provision.py
+
+test-part1-production:
+	python3 scripts/test-part1-production.py

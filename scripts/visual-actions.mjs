@@ -17,6 +17,7 @@ export function inspectActions(expected) {
   for(const el of new Set([...all.filter(el=>!el.matches(':disabled')),...required])) {
     if(!el.getClientRects().length||el.closest('[hidden]'))continue;
     if(Number(getComputedStyle(el).opacity)===0)failures.push('transparent '+name(el));
+    const own=getComputedStyle(el);if((own.zoom&&Number(own.zoom)!==1)||own.transform!=='none')failures.push('scaled control '+name(el));
     const ancestors=[];for(let p=el.parentElement;p;p=p.parentElement)ancestors.push([p,p.scrollLeft,p.scrollTop]);
     el.scrollIntoView({block:'nearest',inline:'nearest'});
     for(const [p,x,y] of ancestors){const css=getComputedStyle(p);if((css.overflowX==='hidden'&&p.scrollLeft!==x)||(css.overflowY==='hidden'&&p.scrollTop!==y))failures.push('programmatic-only scroll '+name(el));}

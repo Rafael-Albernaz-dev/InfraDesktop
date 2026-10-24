@@ -17,7 +17,7 @@ type pkg struct {
 }
 type graph map[string][]string
 
-var neutral = map[string]bool{"context": true, "sync": true, "sync/atomic": true, "time": true, "unicode": true, "unicode/utf8": true, "strings": true, "errors": true, "fmt": true, "math": true, "sort": true, "strconv": true, "testing": true, "reflect": true}
+var neutral = map[string]bool{"context": true, "net/netip": true, "sync": true, "sync/atomic": true, "time": true, "unicode": true, "unicode/utf8": true, "strings": true, "errors": true, "fmt": true, "math": true, "sort": true, "strconv": true, "testing": true, "reflect": true}
 
 func violation(g graph, start string) string {
 	var walk func(string, []string, map[string]bool) string

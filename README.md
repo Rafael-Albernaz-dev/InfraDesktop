@@ -1,6 +1,6 @@
 # InfraDesktop
 
-Local desktop workspace for ISP technicians, independent from Atlas. Ubuntu 24.04 amd64, Go/Wails and React/TypeScript. Version 0.4.0 provides a real local account, offline recovery with copy/text export, remembered/revocable access, isolated company databases, per-company branding and themes through an independent daemon. Device queries, remote credentials/vault and AI are not implemented; operational panels show unavailable readings rather than demo data.
+Local desktop workspace for ISP technicians, independent from Atlas. Ubuntu 24.04 amd64, Go/Wails and React/TypeScript. Version 0.6.0 provides a real local account, offline recovery with copy/text export, remembered/revocable access, isolated company databases, per-company branding and themes through an independent daemon. It adds explicit company inventory, reusable encrypted read credentials, explicit first host-key acceptance, integrated equipment summaries and finite on-demand SSH reads of identity, resources and interfaces. Controlled v6/v7 fixtures exercise the adapter; real firmware compatibility and operational provisioning require separate evidence. Other operational panels remain unavailable without observations.
 
 ## Build and checks
 
@@ -28,12 +28,14 @@ Create the single account on first use. Passwords accept15–128 Unicode charact
 
 `make test-integration` uses private temporary state and owned daemon processes. `make test-desktop` drives the optimized real Wails/GTK/WebKit binary on its own X11/Xvfb display, with real SQLite and an isolated technical account; it verifies registration, companies, themes, reopen/restart, logout and recovery. The separate presentation fixture entry (`make test-visual`) exercises the shared React components without replacing production access bindings or seeding product state. It captures 20 states at 1440×860, 1366×768 and compact 1088×768, and generates whole-client comparisons when the explicit private reference is available (`INFRADESKTOP_VISUAL_REFERENCES`). Missing references report fidelity NOT RUN; capture PASS is separate from visual review. Source/bundle/reference/capture hashes invalidate stale comparisons and reviews. Neither test constitutes human acceptance, physical equipment support or proof of Linux boot/logout.
 
+The isolated L04/L05 journey uses `make build test-part1-desktop`: the normal UI binary, a separate uninstalled daemon with an explicit test key, and an owned loopback SSH peer. The harness retains its private test state/key together for reproduction and closes only its children. `make test-part1-production` proves the normal daemon ignores the DEV key; `make test-vault-helper` checks provisioning logic without host operations. `make test-part1-visual` is a separate component fixture requiring the approved private references for fidelity review. None of these tests connects to an ISP or provisions the installed service.
+
 ## Package and installation
 
-`make package` creates and inspects `build/infradesktop_0.4.0_amd64.deb`: two binaries, launcher, icons/licenses and a system service template. Dependencies are derived from the binaries; the unit is checked using systemd-analyze. No maintainer script enables a service. Installation requires administrator authorization in the local terminal:
+`make package` creates and inspects `build/infradesktop_0.6.0_amd64.deb`: two binaries, launcher, icons/licenses and a system service template. Dependencies are derived from the binaries; the unit is checked using systemd-analyze. No maintainer script enables a service. Installation requires administrator authorization in the local terminal:
 
 ```bash
-sudo dpkg -i ./build/infradesktop_0.4.0_amd64.deb
+sudo dpkg -i ./build/infradesktop_0.6.0_amd64.deb
 sudo /usr/lib/infradesktop/provision-technician "$(id -un)"
 gtk-launch infradesktop
 ```
@@ -51,6 +53,6 @@ sudo dpkg --remove infradesktop
 
 IPC uses an owner-only Unix endpoint, peer UID validation in both directions, strict versioned framing and a separate channel capability. Account authorization stays in the daemon. Argon2id uses a random16-byte salt,32-byte hash and persisted/validated m19456KiB/t2/p1 parameters; attempts are throttled durably and KDF concurrency is bounded. Passwords, grants and capabilities are never logged or stored by browser/localStorage. Only the legitimate password/recovery input and one-time code display transiently enter JS.
 
-A remembered grant is random, distinct from an interactive session; SQLite stores only its digest. Filesystem/UID controls do not defend against root or malicious same-UID processes and are not an encrypted vault. Existing unsafe/stale endpoints fail closed. After an unclean DEV crash, inspect exact ownership before removing any stale resource; do not delete a human database to recover.
+A remembered grant is random, distinct from an interactive session; SQLite stores only its digest. Remote passwords use AES-256-GCM envelopes and company data keys wrapped under an independent installation master. The production provider reads only a systemd runtime credential; absence/corruption leaves inventory usable and the vault unavailable. Explicit administrative provisioning uses `provision-vault` with a host-only encrypted credential and prepares a drop-in; it never reloads or restarts the service. Account recovery preserves the vault but cannot replace a lost host master. Filesystem/envelope controls do not defend against root or malicious same-UID processes. Existing unsafe/stale endpoints fail closed. After an unclean DEV crash, inspect exact ownership before removing any stale resource; do not delete a human database to recover.
 
 Remote CI, clean Ubuntu, Linux boot/logout, native Wayland and4GB hardware acceptance require their own evidence. No product license has been selected; bundled third-party notices are under `packaging/linux/licenses` and `frontend/public/fonts`.
