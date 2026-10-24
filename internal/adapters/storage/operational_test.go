@@ -1,0 +1,259 @@
+package storage
+
+import (
+	"context"
+	"github.com/google/uuid"
+	"infradesktop/internal/modules/access"
+	"infradesktop/internal/modules/equipment"
+	"infradesktop/internal/testsupport/sshfixture"
+	"reflect"
+	"sync/atomic"
+	"testing"
+)
+
+func TestOperationalExplicitFirstAcceptanceWithoutOrigin(t *testing.T) {
+	j := newJourney(t)
+	j.create(companyX, "X", access.OK)
+	j.selectCompany(companyX, access.OK)
+	s := newEquipment(t, j)
+	peer, e := sshfixture.Start(sshfixture.Config{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer peer.Close()
+	_, d := setupEquipment(t, j, s, peer.Port())
+	q := equipmentScope(j)
+	q.Op = "trust.inspect"
+	q.ID = d.ID
+	q.Revision = 1
+	q.Operation = uuid.NewString()
+	v := equipmentCall(t, s, q, equipment.OK)
+	job := awaitJob(t, s, q, v.Job.ID)
+	if peer.Auth.Load() != 0 {
+		t.Fatal("inspection sent password")
+	}
+	q.Op = "trust.confirm"
+	q.Operation = uuid.NewString()
+	q.JobID = job.ID
+	q.Fingerprint = job.Fingerprint
+	before, code := j.st.ReadEquipment(context.Background(), companyX)
+	if code != equipment.OK {
+		t.Fatal(code)
+	}
+	if _, e := j.st.unit.Exec("CREATE TRIGGER deny_acceptance BEFORE UPDATE OF trust_acceptance ON devices WHEN NEW.trust_acceptance IS NOT OLD.trust_acceptance BEGIN SELECT RAISE(ABORT,'isolated failure'); END"); e != nil {
+		t.Fatal(e)
+	}
+	equipmentCall(t, s, q, equipment.Unavailable)
+	rolled, code := j.st.ReadEquipment(context.Background(), companyX)
+	if code != equipment.OK || rolled.Devices[0].Fingerprint != "" || rolled.Devices[0].TrustAcceptance != nil || len(rolled.Operations) != len(before.Operations) {
+		t.Fatal("failed acceptance left partial pin/context/receipt")
+	}
+	if _, e := j.st.unit.Exec("DROP TRIGGER deny_acceptance"); e != nil {
+		t.Fatal(e)
+	}
+	v = equipmentCall(t, s, q, equipment.OK)
+	if v.Device.TrustAcceptance == nil || v.Device.TrustAcceptance.Mode != "explicit-first-acceptance" || v.Device.TrustAcceptance.UID != 1000 || v.Device.TrustAcceptance.Company != companyX || v.Device.TrustAcceptance.Revision != 1 || v.Device.TrustAcceptance.Address != "127.0.0.1" || v.Device.TrustAcceptance.At == "" {
+		t.Fatal("missing daemon acceptance context")
+	}
+	equipmentCall(t, s, q, equipment.OK) // exact replay, no new event
+	if peer.Auth.Load() != 0 {
+		t.Fatal("acceptance itself authenticated")
+	}
+	if v.Device == nil || v.Device.Fingerprint != peer.Fingerprint() || v.Device.TrustOrigin != "" {
+		t.Fatal("missing pin or invented external verification")
+	}
+}
+
+func TestOperationalPartsFailureAttemptAndExplicitRecovery(t *testing.T) {
+	j := newJourney(t)
+	j.create(companyX, "X", access.OK)
+	j.selectCompany(companyX, access.OK)
+	s := newEquipment(t, j)
+	var mode atomic.Value
+	mode.Store("")
+	peer, e := sshfixture.Start(sshfixture.Config{InterfaceMode: func() string { return mode.Load().(string) }})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer peer.Close()
+	_, d := setupEquipment(t, j, s, peer.Port())
+	q := trustEquipment(t, s, equipmentScope(j), d)
+	run := func() equipment.Job {
+		q.Operation = uuid.NewString()
+		v := equipmentCall(t, s, q, equipment.OK)
+		return awaitJob(t, s, q, v.Job.ID)
+	}
+	first := run()
+	if first.Code != equipment.OK {
+		t.Fatal(first.Code)
+	}
+	mode.Store("interfaces-permission")
+	second := run()
+	if second.Code != equipment.OK || second.Result == nil || second.Result.InterfacePart.Status != "stale" || second.Result.InterfacePart.Code != "REMOTE_PERMISSION_DENIED" || second.Result.InterfacePart.At != first.Result.InterfacePart.At || !reflect.DeepEqual(second.Result.Interfaces, first.Result.Interfaces) || second.Result.At == first.Result.At {
+		t.Fatal("did not preserve separately dated interface snapshot")
+	}
+	get := equipmentScope(j)
+	get.Op = "inventory.get"
+	get.ID = d.ID
+	saved := equipmentCall(t, s, get, equipment.OK).Device
+	if saved.LastAttempt == nil || saved.LastAttempt.State != "SUCCEEDED" || saved.Result.Quality != "partial" {
+		t.Fatal("missing partial attempt")
+	}
+	peer.Close()
+	failed := run()
+	if failed.Code != "CONNECT_FAILED" {
+		t.Fatal(failed.Code)
+	}
+	saved = equipmentCall(t, s, get, equipment.OK).Device
+	if saved.LastAttempt.State != "FAILED" || saved.LastAttempt.Code != "CONNECT_FAILED" || !reflect.DeepEqual(saved.Result, second.Result) {
+		t.Fatal("failed retry lost last valid result or recent attempt")
+	}
+	reset := equipmentScope(j)
+	reset.Op = "trust.reset"
+	reset.ID = d.ID
+	reset.Revision = saved.Revision
+	reset.Operation = uuid.NewString()
+	resetView := equipmentCall(t, s, reset, equipment.OK)
+	equipmentCall(t, s, reset, equipment.OK)
+	if resetView.Device.Fingerprint != "" || resetView.Device.TrustAcceptance != nil || !reflect.DeepEqual(resetView.Device.Result, saved.Result) {
+		t.Fatal("explicit recovery erased reading or kept pin")
+	}
+	q.Revision = resetView.Device.Revision
+	q.Operation = uuid.NewString()
+	equipmentCall(t, s, q, equipment.TrustRequired)
+	state, c := j.st.ReadEquipment(context.Background(), companyX)
+	if c != equipment.OK || len(state.Devices) != 1 {
+		t.Fatal("recovery storage")
+	}
+}
+
+func TestOperationalAcceptanceRejectsWrongCandidateAndScope(t *testing.T) {
+	j := newJourney(t)
+	j.create(companyX, "X", access.OK)
+	j.create(companyY, "Y", access.OK)
+	j.selectCompany(companyX, access.OK)
+	s := newEquipment(t, j)
+	peer, e := sshfixture.Start(sshfixture.Config{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer peer.Close()
+	_, d := setupEquipment(t, j, s, peer.Port())
+	_, other := setupEquipment(t, j, s, peer.Port())
+	inspect := equipmentScope(j)
+	inspect.Op = "trust.inspect"
+	inspect.ID = d.ID
+	inspect.Revision = 1
+	inspect.Operation = uuid.NewString()
+	v := equipmentCall(t, s, inspect, equipment.OK)
+	job := awaitJob(t, s, inspect, v.Job.ID)
+	accept := inspect
+	accept.Op = "trust.confirm"
+	accept.JobID = job.ID
+	accept.Fingerprint = job.Fingerprint
+	accept.Operation = uuid.NewString()
+	for _, change := range []string{"device", "revision", "key", "job"} {
+		bad := accept
+		bad.Operation = uuid.NewString()
+		switch change {
+		case "device":
+			bad.ID = other.ID
+		case "revision":
+			bad.Revision++
+		case "key":
+			bad.Fingerprint = "SHA256:other"
+		case "job":
+			bad.JobID = uuid.NewString()
+		}
+		equipmentCall(t, s, bad, equipment.TrustRequired)
+	}
+	// Completed inspection cancellation is a UI dismissal; it cannot accept another device.
+	j.selectCompany(companyY, access.OK)
+	equipmentCall(t, s, accept, equipment.Changed)
+	if peer.Auth.Load() != 0 {
+		t.Fatal("negative acceptance sent password")
+	}
+}
+
+func TestOperationalAdditiveV3MigrationPreservesLegacy(t *testing.T) {
+	for _, conflict := range []bool{false, true} {
+		t.Run(map[bool]string{false: "upgrade", true: "rollback"}[conflict], func(t *testing.T) {
+			j := newJourney(t)
+			j.create(companyX, "X", access.OK)
+			j.selectCompany(companyX, access.OK)
+			s := newEquipment(t, j)
+			_, d := setupEquipment(t, j, s, 22)
+			legacy := `{"identity":"Previous router","version":"6.49","interfaces":[],"observed_at":"2026-10-23T10:00:00Z"}`
+			if _, e := j.st.unit.Exec("UPDATE devices SET fingerprint=?,trust_origin=?,observation=? WHERE id=?", "SHA256:legacy", "Historical independent source", legacy, d.ID); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := j.st.unit.Exec("ALTER TABLE devices DROP COLUMN trust_acceptance;DELETE FROM schema_migrations WHERE version=4"); e != nil {
+				t.Fatal(e)
+			}
+			if !conflict {
+				if _, e := j.st.unit.Exec("ALTER TABLE devices DROP COLUMN last_attempt"); e != nil {
+					t.Fatal(e)
+				}
+			}
+			e := j.st.validateUnit(j.st.unit, companyX)
+			if conflict {
+				if e == nil {
+					t.Fatal("conflict accepted")
+				}
+				var columns int
+				j.st.unit.QueryRow("SELECT count(*) FROM pragma_table_info('devices') WHERE name='trust_acceptance'").Scan(&columns)
+				if columns != 0 {
+					t.Fatal("failed V4 migration left first column")
+				}
+				return
+			}
+			if e != nil {
+				t.Fatal(e)
+			}
+			state, code := j.st.ReadEquipment(context.Background(), companyX)
+			if code != equipment.OK || state.Devices[0].TrustAcceptance != nil || state.Devices[0].TrustOrigin != "Historical independent source" || state.Devices[0].Fingerprint != "SHA256:legacy" || state.Devices[0].Result.Identity != "Previous router" || len(state.Credentials) != 1 || len(state.WrappedKey) == 0 {
+				t.Fatal("upgrade reclassified or lost legacy data")
+			}
+			var h string
+			j.st.unit.QueryRow("SELECT checksum FROM schema_migrations WHERE version=3").Scan(&h)
+			if h != checksum([]byte(companyEquipmentSchema)) {
+				t.Fatal("changed historical checksum")
+			}
+		})
+	}
+}
+
+func TestOperationalPersistenceFailureKeepsPreviousReading(t *testing.T) {
+	j := newJourney(t)
+	j.create(companyX, "X", access.OK)
+	j.selectCompany(companyX, access.OK)
+	s := newEquipment(t, j)
+	peer, e := sshfixture.Start(sshfixture.Config{})
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer peer.Close()
+	_, d := setupEquipment(t, j, s, peer.Port())
+	q := trustEquipment(t, s, equipmentScope(j), d)
+	first := equipmentCall(t, s, q, equipment.OK)
+	job := awaitJob(t, s, q, first.Job.ID)
+	if job.Result == nil {
+		t.Fatal("missing initial reading")
+	}
+	if _, e := j.st.unit.Exec("CREATE TRIGGER deny_observation BEFORE UPDATE OF observation ON devices WHEN NEW.observation IS NOT OLD.observation BEGIN SELECT RAISE(ABORT,'isolated failure'); END"); e != nil {
+		t.Fatal(e)
+	}
+	q.Operation = uuid.NewString()
+	second := equipmentCall(t, s, q, equipment.OK)
+	failed := awaitJob(t, s, q, second.Job.ID)
+	if failed.Code != "PERSISTENCE_FAILED" || failed.Result != nil {
+		t.Fatal("failed storage reported remote success", failed.Code)
+	}
+	get := equipmentScope(j)
+	get.Op = "inventory.get"
+	get.ID = d.ID
+	saved := equipmentCall(t, s, get, equipment.OK).Device
+	if !reflect.DeepEqual(saved.Result, job.Result) || saved.LastAttempt.State != "STARTED" || peer.Auth.Load() != 2 {
+		t.Fatal("failed storage lost prior data or automatically retried")
+	}
+}

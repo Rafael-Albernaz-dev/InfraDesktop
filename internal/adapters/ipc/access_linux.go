@@ -24,6 +24,9 @@ func ListenAccess(dir string, uid uint32, svc *access.Service, identity foundati
 }
 func (s *Server) dispatchAccess(ctx context.Context, uid uint32, q Request, owner string) Response {
 	r := Response{Version: 1, RequestID: q.RequestID, Code: foundation.Invalid}
+	if isEquipment(q.Op) {
+		return s.dispatchEquipment(ctx, uid, q, owner)
+	}
 	if !strings.HasPrefix(q.Op, "access.") && !strings.HasPrefix(q.Op, "company.") && q.Op != "preferences.theme" {
 		return r
 	}
@@ -41,7 +44,10 @@ func (s *Server) dispatchAccess(ctx context.Context, uid uint32, q Request, owne
 	if c != access.OK {
 		return r
 	}
-	d := &Data{ContractRevision: ProductRevision, ProductVersion: "0.4.0", Setup: v.Setup, Authenticated: v.Authenticated, Name: v.Name, Theme: v.Theme, Profile: v.Profile, Activation: v.Activation, Session: v.Session, Grant: v.Grant, Recovery: v.Recovery, Instance: s.identity.Instance, Heartbeat: int64(time.Since(s.started) / time.Second)}
+	d := &Data{ContractRevision: ProductRevision, ProductVersion: ProductVersion, Setup: v.Setup, Authenticated: v.Authenticated, Name: v.Name, Theme: v.Theme, Profile: v.Profile, Activation: v.Activation, Session: v.Session, Grant: v.Grant, Recovery: v.Recovery, Instance: s.identity.Instance, Heartbeat: int64(time.Since(s.started) / time.Second)}
+	if s.equipment != nil {
+		d.VaultAvailable = s.equipment.VaultAvailable()
+	}
 	if v.Brand != nil {
 		d.Brand = &Branding{Name: v.Brand.Name, Logo: v.Brand.Logo, Accent: v.Brand.Accent}
 	}

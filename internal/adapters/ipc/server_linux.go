@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"infradesktop/internal/modules/access"
+	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"net"
 	"os"
@@ -20,6 +21,7 @@ type Server struct {
 	uid                   uint32
 	service               *foundation.Service
 	account               *access.Service
+	equipment             *equipment.Service
 	closeState            func() error
 	listener              *net.UnixListener
 	lock                  *os.File
@@ -147,6 +149,9 @@ func (s *Server) Close() {
 		removeOwned(filepath.Join(s.dir, "service.sock"), s.socketInfo)
 		removeOwned(filepath.Join(s.dir, "capability"), s.tokenInfo)
 		s.lock.Close()
+		if s.equipment != nil {
+			s.equipment.Close()
+		}
 		if s.closeState != nil {
 			s.closeState()
 		}

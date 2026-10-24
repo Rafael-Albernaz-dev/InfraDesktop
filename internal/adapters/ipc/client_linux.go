@@ -138,7 +138,7 @@ func (c *Client) exchange(parent context.Context, q Request) Response {
 		if r.Data == nil {
 			return failure()
 		}
-	case foundation.Invalid, foundation.Version, foundation.Unauthenticated, foundation.Denied, foundation.ProfileChanged, foundation.Deadline, foundation.Busy, foundation.Unavailable, "ACCOUNT_EXISTS", "TRY_LATER", "BRAND_NAME_INVALID", "BRAND_LOGO_INVALID", "BRAND_ACCENT_INVALID":
+	case foundation.Invalid, foundation.Version, foundation.Unauthenticated, foundation.Denied, foundation.ProfileChanged, foundation.Deadline, foundation.Busy, foundation.Unavailable, "ACCOUNT_EXISTS", "TRY_LATER", "BRAND_NAME_INVALID", "BRAND_LOGO_INVALID", "BRAND_ACCENT_INVALID", "REVISION_CONFLICT", "VAULT_UNAVAILABLE", "CREDENTIAL_NOT_FOUND", "DEVICE_INACTIVE", "TRUST_REQUIRED", "TRUST_CHANGED", "LIMIT_EXCEEDED", "CANCELLED", "PARTIAL", "JOB_INTERRUPTED", "REMOTE_AUTH_FAILED", "REMOTE_PERMISSION_DENIED", "UNSUPPORTED", "CONNECT_FAILED", "SSH_NEGOTIATION_FAILED", "SSH_CONNECTION_LOST", "PERSISTENCE_FAILED", "DEVICE_NAME_INVALID", "DEVICE_ADDRESS_INVALID", "DEVICE_PORT_INVALID", "CREDENTIAL_ALIAS_INVALID", "CREDENTIAL_USER_INVALID", "CREDENTIAL_SECRET_INVALID":
 		r.Data = nil
 	default:
 		return failure()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"infradesktop/internal/adapters/ipc"
 	"infradesktop/internal/composition"
 	"os"
 	"os/signal"
@@ -16,7 +17,7 @@ func main() {
 	version := flag.Bool("version", false, "print product version")
 	flag.Parse()
 	if *version {
-		fmt.Println("InfraDesktop 0.4.0")
+		fmt.Println("InfraDesktop " + ipc.ProductVersion)
 		return
 	}
 	os.Setenv("INFRADESKTOP_STATE", *state)

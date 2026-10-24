@@ -86,17 +86,18 @@ type session struct {
 	Expires time.Time
 }
 type Service struct {
-	store           Store
-	brands          BrandStore
-	issued          map[string][]byte
-	crypto          Crypto
-	now             func() time.Time
-	uid             uint32
-	kdf             chan struct{}
-	mu              sync.Mutex
-	sessions        map[string]session
-	activation      string
-	pendingRecovery map[string]bool
+	store                Store
+	brands               BrandStore
+	issued               map[string][]byte
+	crypto               Crypto
+	now                  func() time.Time
+	uid                  uint32
+	kdf                  chan struct{}
+	mu                   sync.Mutex
+	sessions             map[string]session
+	activation           string
+	authorizationVersion uint64
+	pendingRecovery      map[string]bool
 }
 
 func New(store Store, crypto Crypto, now func() time.Time, uid uint32, activation string, brands ...BrandStore) *Service {
@@ -104,7 +105,7 @@ func New(store Store, crypto Crypto, now func() time.Time, uid uint32, activatio
 	if len(brands) > 0 {
 		brandStore = brands[0]
 	}
-	return &Service{store: store, brands: brandStore, issued: map[string][]byte{}, crypto: crypto, now: now, uid: uid, kdf: make(chan struct{}, 1), sessions: map[string]session{}, pendingRecovery: map[string]bool{}, activation: activation}
+	return &Service{store: store, brands: brandStore, issued: map[string][]byte{}, crypto: crypto, now: now, uid: uid, kdf: make(chan struct{}, 1), sessions: map[string]session{}, pendingRecovery: map[string]bool{}, activation: activation, authorizationVersion: 1}
 }
 func ValidPassword(p string) bool {
 	n := utf8.RuneCountInString(p)
@@ -587,6 +588,7 @@ func (s *Service) renewRecovery(ctx context.Context, uid uint32, q Command) (Vie
 	if c != OK {
 		return View{}, c
 	}
+	s.authorizationVersion++
 	s.pendingRecovery[q.Session] = true
 	v := s.view(st)
 	v.Authenticated = true

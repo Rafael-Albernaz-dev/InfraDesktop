@@ -7,13 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"infradesktop/internal/modules/access"
+	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"io"
 	"time"
 	"unicode/utf8"
 )
 
-const ProductRevision = 3
+const ProductRevision = 7
+const ProductVersion = "0.6.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104
 const Budget = 3 * time.Second
@@ -21,26 +23,27 @@ const Budget = 3 * time.Second
 var errProtocol = errors.New("invalid frame")
 
 type Request struct {
-	ContractRevision   int       `json:"contract_revision,omitempty"`
-	Version            int       `json:"version"`
-	RequestID          string    `json:"request_id"`
-	Op                 string    `json:"op"`
-	Capability         string    `json:"capability,omitempty"`
-	Session            string    `json:"session,omitempty"`
-	Profile            string    `json:"profile_id,omitempty"`
-	Activation         string    `json:"activation_id,omitempty"`
-	Label              string    `json:"label,omitempty"`
-	Name               string    `json:"name,omitempty"`
-	Password           string    `json:"password,omitempty"`
-	Recovery           string    `json:"recovery,omitempty"`
-	Grant              string    `json:"grant,omitempty"`
-	Theme              string    `json:"theme,omitempty"`
-	Operation          string    `json:"operation_id,omitempty"`
-	Replace            bool      `json:"replace_pending,omitempty"`
-	Remember           bool      `json:"remember,omitempty"`
-	ExpectedProfile    string    `json:"expected_profile,omitempty"`
-	ExpectedActivation string    `json:"expected_activation,omitempty"`
-	Brand              *Branding `json:"brand,omitempty"`
+	Equipment          *EquipmentInput `json:"equipment,omitempty"`
+	ContractRevision   int             `json:"contract_revision,omitempty"`
+	Version            int             `json:"version"`
+	RequestID          string          `json:"request_id"`
+	Op                 string          `json:"op"`
+	Capability         string          `json:"capability,omitempty"`
+	Session            string          `json:"session,omitempty"`
+	Profile            string          `json:"profile_id,omitempty"`
+	Activation         string          `json:"activation_id,omitempty"`
+	Label              string          `json:"label,omitempty"`
+	Name               string          `json:"name,omitempty"`
+	Password           string          `json:"password,omitempty"`
+	Recovery           string          `json:"recovery,omitempty"`
+	Grant              string          `json:"grant,omitempty"`
+	Theme              string          `json:"theme,omitempty"`
+	Operation          string          `json:"operation_id,omitempty"`
+	Replace            bool            `json:"replace_pending,omitempty"`
+	Remember           bool            `json:"remember,omitempty"`
+	ExpectedProfile    string          `json:"expected_profile,omitempty"`
+	ExpectedActivation string          `json:"expected_activation,omitempty"`
+	Brand              *Branding       `json:"brand,omitempty"`
 }
 type Branding struct {
 	Name   string `json:"name"`
@@ -52,28 +55,30 @@ type Company struct {
 	Name string `json:"name"`
 }
 type Data struct {
-	ContractRevision int       `json:"contract_revision,omitempty"`
-	ProductVersion   string    `json:"product_version,omitempty"`
-	Brand            *Branding `json:"brand,omitempty"`
-	Setup            bool      `json:"setup"`
-	Authenticated    bool      `json:"authenticated"`
-	Name             string    `json:"name,omitempty"`
-	Theme            string    `json:"theme,omitempty"`
-	Recovery         string    `json:"recovery,omitempty"`
-	Grant            string    `json:"grant,omitempty"`
-	Companies        []Company `json:"companies,omitempty"`
-	Session          string    `json:"session,omitempty"`
-	Expires          string    `json:"expires_at,omitempty"`
-	Instance         string    `json:"instance_id"`
-	Activation       string    `json:"activation_id"`
-	Profile          string    `json:"profile_id"`
-	Heartbeat        int64     `json:"heartbeat"`
-	Observations     uint64    `json:"observations"`
-	Label            string    `json:"label,omitempty"`
-	Value            *int      `json:"value,omitempty"`
-	At               string    `json:"observed_at,omitempty"`
-	Source           string    `json:"source,omitempty"`
-	Quality          string    `json:"quality,omitempty"`
+	VaultAvailable   bool            `json:"vault_available"`
+	Equipment        *equipment.View `json:"equipment,omitempty"`
+	ContractRevision int             `json:"contract_revision,omitempty"`
+	ProductVersion   string          `json:"product_version,omitempty"`
+	Brand            *Branding       `json:"brand,omitempty"`
+	Setup            bool            `json:"setup"`
+	Authenticated    bool            `json:"authenticated"`
+	Name             string          `json:"name,omitempty"`
+	Theme            string          `json:"theme,omitempty"`
+	Recovery         string          `json:"recovery,omitempty"`
+	Grant            string          `json:"grant,omitempty"`
+	Companies        []Company       `json:"companies,omitempty"`
+	Session          string          `json:"session,omitempty"`
+	Expires          string          `json:"expires_at,omitempty"`
+	Instance         string          `json:"instance_id"`
+	Activation       string          `json:"activation_id"`
+	Profile          string          `json:"profile_id"`
+	Heartbeat        int64           `json:"heartbeat"`
+	Observations     uint64          `json:"observations"`
+	Label            string          `json:"label,omitempty"`
+	Value            *int            `json:"value,omitempty"`
+	At               string          `json:"observed_at,omitempty"`
+	Source           string          `json:"source,omitempty"`
+	Quality          string          `json:"quality,omitempty"`
 }
 type Response struct {
 	Version   int             `json:"version"`
@@ -265,6 +270,9 @@ func validate(b []byte) (Request, foundation.Code) {
 			}
 		}
 	default:
+		if isEquipment(q.Op) {
+			return validateEquipment(b, q, fields)
+		}
 		return q, foundation.Invalid
 	}
 	for k := range fields {
