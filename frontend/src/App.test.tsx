@@ -1,8 +1,9 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { vi, describe, it, expect, afterEach, beforeEach } from 'vitest';
 import App from './App';
-import { access, type Result } from './presentation';
+import { access, equipmentAPI, type Result } from './presentation';
 vi.mock('./presentation', () => ({
+  equipmentAPI: { list: vi.fn() },
   access: {
     status: vi.fn(),
     register: vi.fn(),
@@ -38,6 +39,18 @@ const snapshot = (authenticated = false): Result => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(equipmentAPI.list).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'company-one',
+    activation_id: 'a',
+    data: {
+      devices: [],
+      credentials: [],
+      next_cursor: 0,
+      total_devices: 0,
+      vault_available: true,
+    },
+  });
   vi.mocked(access.getBrand).mockResolvedValue({
     ...snapshot(true),
     brand: { name: '', logo: '', accent: 'teal' },
@@ -92,7 +105,9 @@ describe('BF01 real-use presentation', () => {
   it('enters a real company and shows unavailable readings instead of invented traffic', async () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     render(<App />);
-    await screen.findByRole('heading', { name: 'Nenhum equipamento' });
+    await screen.findByRole('heading', {
+      name: 'Nenhum equipamento cadastrado',
+    });
     expect(
       screen.getByRole('button', { name: 'Adicionar equipamento' }),
     ).toBeVisible();
@@ -158,7 +173,9 @@ describe('BF01 real-use presentation', () => {
     });
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent('serviço local');
     expect(
-      screen.getByRole('heading', { name: 'Nenhum equipamento' }),
+      screen.getByRole('heading', {
+        name: 'Nenhum equipamento cadastrado',
+      }),
     ).toBeVisible();
     expect(
       screen.queryByRole('heading', { name: 'Entrar' }),
@@ -183,7 +200,9 @@ describe('BF01 real-use presentation', () => {
     await act(async () => complete(snapshot(true)));
     expect(screen.getByRole('heading', { name: 'Entrar' })).toBeVisible();
     expect(
-      screen.queryByRole('heading', { name: 'Nenhum equipamento' }),
+      screen.queryByRole('heading', {
+        name: 'Nenhum equipamento cadastrado',
+      }),
     ).not.toBeInTheDocument();
   });
   it('shows loading, prevents double submission and persists theme through daemon binding', async () => {
@@ -195,7 +214,9 @@ describe('BF01 real-use presentation', () => {
       }),
     );
     render(<App />);
-    await screen.findByRole('heading', { name: 'Nenhum equipamento' });
+    await screen.findByRole('heading', {
+      name: 'Nenhum equipamento cadastrado',
+    });
     fireEvent.click(
       screen.getByRole('button', { name: 'Abrir configurações' }),
     );
@@ -231,7 +252,9 @@ describe('BF01 real-use presentation', () => {
   it('keeps branding draft local until confirmed save, cancel restores saved values', async () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     render(<App />);
-    await screen.findByRole('heading', { name: 'Nenhum equipamento' });
+    await screen.findByRole('heading', {
+      name: 'Nenhum equipamento cadastrado',
+    });
     fireEvent.click(
       screen.getByRole('button', { name: 'Abrir configurações' }),
     );

@@ -2,7 +2,8 @@ import { Button, Logo } from './desktop-controls';
 import { Appearance } from './appearance';
 export { Button, Logo } from './desktop-controls';
 export { Appearance } from './appearance';
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties, ReactNode } from 'react';
 import { Brand, Icon } from './icons';
 import { emptyOperations } from './desktop-model';
@@ -71,14 +72,14 @@ export function Statusbar({
         {connected ? 'Serviço ativo' : 'Reconectando ao serviço'}
       </span>
       <span>
-        {access ? 'Conta local · 0.4.0' : network || 'Rede não consultada'}
+        {access ? 'Conta local · 0.6.0' : network || 'Inventário por empresa'}
       </span>
       <span>
         {lastQuery
           ? 'Última consulta ' + lastQuery
           : access
             ? ''
-            : 'Sem coletas'}
+            : 'Consultas sob demanda · Equipamentos'}
         {toggleTheme && (
           <button
             className="status-theme"
@@ -92,15 +93,23 @@ export function Statusbar({
     </footer>
   );
 }
+const DialogHost = createContext<HTMLElement | null>(null);
 export function Dialog({
   title,
   children,
   close,
+  portal = false,
+  dismissOnBackdrop = true,
+  inactive = false,
 }: {
   title: string;
   children: ReactNode;
   close: () => void;
+  portal?: boolean;
+  dismissOnBackdrop?: boolean;
+  inactive?: boolean;
 }) {
+  const host = useContext(DialogHost);
   const ref = useRef<HTMLElement>(null);
   const focusables = () =>
     Array.from(
@@ -116,14 +125,17 @@ export function Dialog({
       if (before?.isConnected) before.focus();
     };
   }, []);
-  return (
+  const content = (
     <div
       className="modal-backdrop"
       onClick={(e) => {
-        if (e.target === e.currentTarget) close();
+        if (dismissOnBackdrop && !inactive && e.target === e.currentTarget)
+          close();
       }}
       onKeyDown={(e) => {
+        if (inactive) return;
         if (e.key === 'Escape') {
+          e.preventDefault();
           e.stopPropagation();
           close();
         }
@@ -156,19 +168,26 @@ export function Dialog({
         ref={ref}
         className="dialog"
         role="dialog"
+        inert={inactive}
+        aria-hidden={inactive || undefined}
         aria-modal="true"
         aria-label={title}
       >
         <div className="row between">
           <h2>{title}</h2>
-          <Button kind="flat" onClick={close} label="Fechar painel">
-            Fechar
+          <Button
+            kind="flat dialog-close"
+            onClick={close}
+            label="Fechar painel"
+          >
+            <Icon name="XMark" />
           </Button>
         </div>
         {children}
       </section>
     </div>
   );
+  return portal && host ? createPortal(content, host) : content;
 }
 export type DesktopProps = {
   page: Page;
@@ -187,6 +206,11 @@ export type DesktopProps = {
   security?: () => void;
   unavailable: (title: string) => void;
   operations?: Operations;
+  openEquipment?: (id: string) => void;
+  inventory?: ReactNode;
+  addEquipment?: () => void;
+  inventoryHasDevices?: boolean;
+  inventoryDetailOpen?: boolean;
   error?: string;
   saveBrand?: (brand: Branding) => void | boolean | Promise<boolean>;
   savedBrand?: Branding;
@@ -219,7 +243,11 @@ function ToolbarActions({
         Equipamentos
       </Button>
     );
-  if (p.page === 4 && ops.devices.length)
+  if (
+    p.page === 4 &&
+    !p.inventoryDetailOpen &&
+    (p.inventory ? p.inventoryHasDevices : ops.devices.length)
+  )
     return (
       <Button kind="primary" onClick={add}>
         Adicionar
@@ -244,10 +272,25 @@ function ToolbarActions({
   return null;
 }
 export function Desktop(p: DesktopProps) {
+  const [dialogHost, setDialogHost] = useState<HTMLDivElement | null>(null);
   const ops = p.operations || emptyOperations;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const navTrigger = useRef<HTMLButtonElement>(null);
+  const navigation = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (navOpen)
+      navigation.current
+        ?.querySelector<HTMLButtonElement>('.company-picker')
+        ?.focus();
+  }, [navOpen]);
+  const navigate = (page: Page) => {
+    p.navigate(page);
+    if (navOpen) {
+      setNavOpen(false);
+      navTrigger.current?.focus();
+    }
+  };
   const closeNavigation = () => {
     setNavOpen(false);
     navTrigger.current?.focus();
@@ -292,317 +335,348 @@ export function Desktop(p: DesktopProps) {
         7: 'Aparência',
       }[p.page]
     );
-  const add = () => p.unavailable('Adicionar equipamento');
+  const add = p.addEquipment || (() => p.unavailable('Adicionar equipamento'));
   return (
-    <div
-      className="app"
-      data-page={p.page}
-      data-theme={p.theme}
-      data-accent={p.brand.accent}
-    >
-      <div className="client">
-        <div className={'desktop-layout ' + (navOpen ? 'navigation-open' : '')}>
-          <aside
-            className="sidebar"
-            id="main-navigation"
+    <DialogHost value={dialogHost}>
+      <div
+        ref={setDialogHost}
+        className="app"
+        data-page={p.page}
+        data-theme={p.theme}
+        data-accent={p.brand.accent}
+      >
+        <div className="client">
+          <div
+            className={'desktop-layout ' + (navOpen ? 'navigation-open' : '')}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') {
+              if (navOpen && e.key === 'Escape') {
+                e.stopPropagation();
                 closeNavigation();
               }
             }}
           >
-            <div className="product-brand">
-              <Brand />
-            </div>
-            <button
-              className="btn flat nav-close"
-              aria-label="Fechar navegação"
-              onClick={closeNavigation}
+            <aside
+              className="sidebar"
+              ref={navigation}
+              id="main-navigation"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  closeNavigation();
+                }
+              }}
             >
-              ×
-            </button>
-            <button
-              className="company-picker"
-              onClick={() => p.navigate(2)}
-              aria-label="Selecionar empresa"
-              aria-describedby="active-company-name"
-            >
-              <Logo brand={p.brand} />
-              <span id="active-company-name" className="company-label">
-                {p.brand.name || 'Selecionar empresa'}
-              </span>
-              <span className="caret">⌄</span>
-            </button>
-            <nav className="side-nav" aria-label="Navegação principal">
-              {(
-                [
-                  ['Squares2X2', 'Dashboard', 3],
-                  ['ServerStack', 'Equipamentos', 4],
-                  ['Share', 'Topologia', 6],
-                  ['Bell', 'Alertas', 0],
-                ] as const
-              ).map(([icon, name, page]) => (
-                <button
-                  key={name}
-                  className={
-                    'nav-item ' +
-                    (page === p.page || (page === 4 && p.page === 5)
-                      ? 'active'
-                      : '')
-                  }
-                  aria-current={page === p.page ? 'page' : undefined}
-                  onClick={() => {
-                    if (page) {
-                      p.navigate(page);
-                      setNavOpen(false);
-                    } else p.unavailable('Alertas');
-                  }}
-                >
-                  <Icon name={icon} />
-                  <span>{name}</span>
-                  {page === 0 && ops.alerts.length > 0 && (
-                    <span className="count">{ops.alerts.length}</span>
-                  )}
-                </button>
-              ))}
-              <div className="nav-secondary">
-                {[
-                  ['Clock', 'Histórico'],
-                  ['Sparkles', 'Assistência'],
-                ].map(([icon, name]) => (
+              <div className="product-brand">
+                <Brand />
+              </div>
+              <button
+                className="btn flat nav-close"
+                aria-label="Fechar navegação"
+                onClick={closeNavigation}
+              >
+                ×
+              </button>
+              <button
+                className="company-picker"
+                onClick={() => navigate(2)}
+                aria-label="Selecionar empresa"
+                aria-describedby="active-company-name"
+              >
+                <Logo brand={p.brand} />
+                <span id="active-company-name" className="company-label">
+                  {p.brand.name || 'Selecionar empresa'}
+                </span>
+                <span className="caret">⌄</span>
+              </button>
+              <nav className="side-nav" aria-label="Navegação principal">
+                {(
+                  [
+                    ['Squares2X2', 'Dashboard', 3],
+                    ['ServerStack', 'Equipamentos', 4],
+                    ['Share', 'Topologia', 6],
+                    ['Bell', 'Alertas', 0],
+                  ] as const
+                ).map(([icon, name, page]) => (
                   <button
                     key={name}
-                    className="nav-item"
-                    onClick={() => p.unavailable(name)}
-                  >
-                    <Icon name={icon} />
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </nav>
-            <div className="side-bottom">
-              <button
-                className={'nav-item ' + (p.page === 7 ? 'active' : '')}
-                aria-label="Configurações"
-                aria-expanded={settingsOpen}
-                aria-controls="settings-navigation"
-                onClick={() => setSettingsOpen(!settingsOpen)}
-              >
-                <Icon name="Cog6Tooth" />
-                Configurações
-                <span className="caret" aria-hidden="true">
-                  {settingsOpen ? '⌃' : '⌄'}
-                </span>
-              </button>
-              <div
-                id="settings-navigation"
-                hidden={!settingsOpen}
-                className="settings-navigation"
-              >
-                <button
-                  className={'nav-item ' + (p.page === 7 ? 'active' : '')}
-                  aria-current={p.page === 7 ? 'page' : undefined}
-                  onClick={() => {
-                    p.navigate(7);
-                    setNavOpen(false);
-                  }}
-                >
-                  Aparência
-                </button>
-                <button
-                  className="nav-item"
-                  onClick={() => {
-                    p.security?.();
-                  }}
-                >
-                  Segurança
-                </button>
-              </div>
-            </div>
-          </aside>
-          <main className="main">
-            <header className="topbar">
-              <button
-                className="btn flat nav-toggle"
-                ref={navTrigger}
-                aria-label="Navegação"
-                aria-expanded={navOpen}
-                aria-controls="main-navigation"
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') setNavOpen(false);
-                }}
-                onClick={() => setNavOpen(!navOpen)}
-              >
-                ☰
-              </button>
-              <div className="topbar-title">{title}</div>
-              <div className="toolbar-group page-actions">
-                <ToolbarActions p={p} ops={ops} add={add} />
-              </div>
-              <div
-                className="global-actions"
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    e.stopPropagation();
-                    closeAccount();
-                  }
-                }}
-              >
-                <Button
-                  kind="flat"
-                  label="Abrir configurações"
-                  onClick={() => {
-                    setSettingsOpen(true);
-                    p.navigate(7);
-                  }}
-                >
-                  <Icon name="Cog6Tooth" />
-                </Button>
-                <Button kind="flat" label="Notificações indisponíveis" disabled>
-                  <Icon name="Bell" />
-                </Button>
-                <button
-                  ref={accountTrigger}
-                  className="account-trigger"
-                  aria-label={'Conta: ' + p.account}
-                  aria-expanded={accountOpen}
-                  aria-controls="account-actions"
-                  onClick={() => setAccountOpen(!accountOpen)}
-                >
-                  <span className="account-initials" aria-hidden="true">
-                    {p.account.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="account-name">{p.account}</span>
-                  <span aria-hidden="true">⌄</span>
-                </button>
-                {accountOpen && (
-                  <div
-                    id="account-actions"
-                    className="account-dropdown"
-                    ref={accountPanel}
-                    onBlur={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget))
-                        setAccountOpen(false);
+                    className={
+                      'nav-item ' +
+                      (page === p.page || (page === 4 && p.page === 5)
+                        ? 'active'
+                        : '')
+                    }
+                    aria-current={page === p.page ? 'page' : undefined}
+                    onClick={() => {
+                      if (page) {
+                        navigate(page);
+                      } else p.unavailable('Alertas');
                     }}
                   >
-                    <span className="dropdown-label">Tema</span>
-                    <div className="theme-menu">
-                      {(['light', 'dark'] as const).map((id) => (
-                        <button
-                          key={id}
-                          type="button"
-                          aria-pressed={p.theme === id}
-                          disabled={p.busy}
-                          onClick={() => p.setTheme(id)}
-                        >
-                          {id === 'light' ? 'Claro' : 'Escuro'}
-                        </button>
-                      ))}
-                    </div>
+                    <Icon name={icon} />
+                    <span>{name}</span>
+                    {page === 0 && ops.alerts.length > 0 && (
+                      <span className="count">{ops.alerts.length}</span>
+                    )}
+                  </button>
+                ))}
+                <div className="nav-secondary">
+                  {[
+                    ['Clock', 'Histórico'],
+                    ['Sparkles', 'Assistência'],
+                  ].map(([icon, name]) => (
                     <button
-                      onClick={() => {
-                        closeAccount();
-                        p.security?.();
-                      }}
+                      key={name}
+                      className="nav-item"
+                      onClick={() => p.unavailable(name)}
                     >
-                      Segurança
+                      <Icon name={icon} />
+                      {name}
                     </button>
-                    <button
-                      onClick={() => {
-                        closeAccount();
-                        p.logout();
-                      }}
-                    >
-                      Sair
-                    </button>
-                    <span
-                      className="app-version"
-                      aria-label="InfraDesktop versão 0.4.0"
-                    >
-                      InfraDesktop 0.4.0
+                  ))}
+                </div>
+              </nav>
+              <div className="side-bottom">
+                <button
+                  className={'nav-item ' + (p.page === 7 ? 'active' : '')}
+                  aria-label="Configurações"
+                  aria-expanded={settingsOpen}
+                  aria-controls="settings-navigation"
+                  onClick={() => setSettingsOpen(!settingsOpen)}
+                >
+                  <Icon name="Cog6Tooth" />
+                  Configurações
+                  <span className="caret" aria-hidden="true">
+                    {settingsOpen ? '⌃' : '⌄'}
+                  </span>
+                </button>
+                <div
+                  id="settings-navigation"
+                  hidden={!settingsOpen}
+                  className="settings-navigation"
+                >
+                  <button
+                    className={'nav-item ' + (p.page === 7 ? 'active' : '')}
+                    aria-current={p.page === 7 ? 'page' : undefined}
+                    onClick={() => {
+                      navigate(7);
+                    }}
+                  >
+                    Aparência
+                  </button>
+                  <button
+                    className="nav-item"
+                    onClick={() => {
+                      p.security?.();
+                    }}
+                  >
+                    Segurança
+                  </button>
+                </div>
+              </div>
+            </aside>
+            <main className="main">
+              <header className="topbar">
+                <button
+                  className="btn flat nav-toggle"
+                  ref={navTrigger}
+                  aria-label="Navegação"
+                  aria-expanded={navOpen}
+                  aria-controls="main-navigation"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') closeNavigation();
+                  }}
+                  onClick={() => setNavOpen(!navOpen)}
+                >
+                  ☰
+                </button>
+                <div className="topbar-title">{title}</div>
+                <div className="toolbar-group page-actions">
+                  <ToolbarActions p={p} ops={ops} add={add} />
+                </div>
+                <div
+                  className="global-actions"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      closeAccount();
+                    }
+                  }}
+                >
+                  <Button
+                    kind="flat"
+                    label="Abrir configurações"
+                    onClick={() => {
+                      setSettingsOpen(true);
+                      p.navigate(7);
+                    }}
+                  >
+                    <Icon name="Cog6Tooth" />
+                  </Button>
+                  <Button
+                    kind="flat"
+                    label="Notificações indisponíveis"
+                    disabled
+                  >
+                    <Icon name="Bell" />
+                  </Button>
+                  <button
+                    ref={accountTrigger}
+                    className="account-trigger"
+                    aria-label={'Conta: ' + p.account}
+                    aria-expanded={accountOpen}
+                    aria-controls="account-actions"
+                    onClick={() => setAccountOpen(!accountOpen)}
+                  >
+                    <span className="account-initials" aria-hidden="true">
+                      {p.account.slice(0, 2).toUpperCase()}
                     </span>
+                    <span className="account-name">{p.account}</span>
+                    <span aria-hidden="true">⌄</span>
+                  </button>
+                  {accountOpen && (
+                    <div
+                      id="account-actions"
+                      className="account-dropdown"
+                      ref={accountPanel}
+                      onBlur={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget))
+                          setAccountOpen(false);
+                      }}
+                    >
+                      <span className="dropdown-label">Tema</span>
+                      <div className="theme-menu">
+                        {(['light', 'dark'] as const).map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            aria-pressed={p.theme === id}
+                            disabled={p.busy}
+                            onClick={() => p.setTheme(id)}
+                          >
+                            {id === 'light' ? 'Claro' : 'Escuro'}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => {
+                          closeAccount();
+                          p.security?.();
+                        }}
+                      >
+                        Segurança
+                      </button>
+                      <button
+                        onClick={() => {
+                          closeAccount();
+                          p.logout();
+                        }}
+                      >
+                        Sair
+                      </button>
+                      <span
+                        className="app-version"
+                        aria-label="InfraDesktop versão 0.6.0"
+                      >
+                        InfraDesktop 0.6.0
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </header>
+              <div className="page-body">
+                {p.brandError && p.page === 7 && (
+                  <div>
+                    <p role="alert" className="inline-error">
+                      {p.brandError}
+                    </p>
+                    <Button onClick={p.retryBrand} disabled={p.busy}>
+                      Tentar novamente
+                    </Button>
                   </div>
                 )}
-              </div>
-            </header>
-            <div className="page-body">
-              {p.brandError && p.page === 7 && (
-                <div>
-                  <p role="alert" className="inline-error">
-                    {p.brandError}
+                {p.error && (
+                  <p className="inline-error operation-error" role="alert">
+                    {p.error}
                   </p>
-                  <Button onClick={p.retryBrand} disabled={p.busy}>
-                    Tentar novamente
-                  </Button>
-                </div>
-              )}
-              {p.error && (
-                <p className="inline-error operation-error" role="alert">
-                  {p.error}
-                </p>
-              )}
-              {p.page === 2 ? (
-                <Companies {...p} />
-              ) : p.page === 3 ? (
-                <Dashboard
-                  ops={ops}
-                  brand={p.brand}
-                  navigate={p.navigate}
-                  add={add}
-                />
-              ) : p.page === 4 ? (
-                <Inventory
-                  ops={ops}
-                  navigate={p.navigate}
-                  unavailable={p.unavailable}
-                  add={add}
-                />
-              ) : p.page === 5 ? (
-                <Concentrator
-                  ops={ops}
-                  navigate={p.navigate}
-                  unavailable={p.unavailable}
-                />
-              ) : p.page === 6 ? (
-                <Topology
-                  ops={ops}
-                  navigate={p.navigate}
-                  unavailable={p.unavailable}
-                  add={add}
-                />
-              ) : (
-                <Appearance
-                  key={[
-                    p.activeProfile,
-                    p.savedBrand?.name,
-                    p.savedBrand?.logo,
-                    p.savedBrand?.accent,
-                  ].join('|')}
-                  brand={p.savedBrand || p.brand}
-                  companySelected={Boolean(p.activeProfile)}
-                  ready={Boolean(p.saveBrand)}
-                  catalogName={
-                    p.companies.find((c) => c.id === p.activeProfile)?.name
-                  }
-                  theme={p.theme}
-                  setTheme={p.setTheme}
-                  busy={p.busy || !p.connected}
-                  total={ops.total}
-                  saveBrand={p.saveBrand}
-                />
-              )}
-            </div>
-          </main>
+                )}
+                {p.page === 2 ? (
+                  <Companies {...p} />
+                ) : p.page === 3 ? (
+                  <Dashboard
+                    ops={ops}
+                    openEquipment={p.openEquipment}
+                    brand={p.brand}
+                    inventoryAvailable={Boolean(p.inventory)}
+                    navigate={p.navigate}
+                    add={add}
+                  />
+                ) : p.page === 4 ? (
+                  p.inventory || (
+                    <Inventory
+                      ops={ops}
+                      navigate={p.navigate}
+                      unavailable={p.unavailable}
+                      add={add}
+                    />
+                  )
+                ) : p.page === 5 ? (
+                  <Concentrator
+                    ops={ops}
+                    navigate={p.navigate}
+                    unavailable={p.unavailable}
+                  />
+                ) : p.page === 6 ? (
+                  ops.inventoryState ? (
+                    <div className="empty-state">
+                      <h2>Topologia ainda indisponível</h2>
+                      <p>
+                        Os equipamentos cadastrados estão no inventário da
+                        empresa.
+                      </p>
+                      <Button onClick={() => p.navigate(4)}>
+                        Ver equipamentos
+                      </Button>
+                    </div>
+                  ) : (
+                    <Topology
+                      ops={ops}
+                      navigate={p.navigate}
+                      unavailable={p.unavailable}
+                      add={add}
+                    />
+                  )
+                ) : (
+                  <Appearance
+                    key={[
+                      p.activeProfile,
+                      p.savedBrand?.name,
+                      p.savedBrand?.logo,
+                      p.savedBrand?.accent,
+                    ].join('|')}
+                    brand={p.savedBrand || p.brand}
+                    companySelected={Boolean(p.activeProfile)}
+                    ready={Boolean(p.saveBrand)}
+                    catalogName={
+                      p.companies.find((c) => c.id === p.activeProfile)?.name
+                    }
+                    theme={p.theme}
+                    setTheme={p.setTheme}
+                    busy={p.busy || !p.connected}
+                    total={ops.total}
+                    saveBrand={p.saveBrand}
+                  />
+                )}
+              </div>
+            </main>
+          </div>
+          <Statusbar
+            connected={p.connected}
+            network={ops.network}
+            lastQuery={ops.lastQuery}
+          />
         </div>
-        <Statusbar
-          connected={p.connected}
-          network={ops.network}
-          lastQuery={ops.lastQuery}
-        />
+        {p.children}
       </div>
-      {p.children}
-    </div>
+    </DialogHost>
   );
 }
 function Empty({
@@ -698,10 +772,10 @@ function Companies(p: DesktopProps) {
           <h2>{selected?.name || 'Seu primeiro perfil'}</h2>
           <KV label="Rede">{selected?.network || 'Não consultada'}</KV>
           <KV label="Inventário">
-            {selected?.inventory || 'Nenhum equipamento'}
+            {selected?.inventory || 'Inventário ainda não consultado'}
           </KV>
           <KV label="Acessos de equipamentos">
-            {selected?.access || 'Nenhum acesso cadastrado'}
+            {selected?.access || 'Acessos ainda não consultados'}
           </KV>
           <Button
             kind="primary"
@@ -720,15 +794,90 @@ function Dashboard({
   brand,
   navigate,
   add,
+  inventoryAvailable,
+  openEquipment,
 }: {
+  openEquipment?: (id: string) => void;
+  inventoryAvailable?: boolean;
   ops: Operations;
   brand: Branding;
   navigate: (p: Page) => void;
   add: () => void;
 }) {
+  if (ops.inventoryState)
+    return (
+      <section className="equipment-dashboard">
+        <h1>Operação da rede</h1>
+        {ops.inventoryState === 'loading' ? (
+          <p role="status">Carregando equipamentos…</p>
+        ) : ops.inventoryState === 'error' ? (
+          <>
+            <p role="alert">{ops.inventoryError}</p>
+            <Button onClick={ops.retry}>Tentar novamente</Button>
+          </>
+        ) : (
+          <>
+            <p className="summary">
+              {brand.name} · {ops.devices.length} equipamentos cadastrados ·
+              consultas sob demanda
+            </p>
+            {!ops.devices.length ? (
+              <div className="empty-state">
+                <h2>Nenhum equipamento cadastrado</h2>
+                <Button kind="primary" onClick={add}>
+                  Adicionar equipamento
+                </Button>
+              </div>
+            ) : (
+              <div
+                className="table-scroll"
+                tabIndex={0}
+                aria-label="Equipamentos da empresa"
+              >
+                <table className="app-table">
+                  <thead>
+                    <tr>
+                      <th>Equipamento</th>
+                      <th>Sistema</th>
+                      <th>Estado da leitura</th>
+                      <th>Última leitura válida</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ops.devices.map((d) => (
+                      <tr key={d.id}>
+                        <td>
+                          <Button
+                            kind="flat device-link"
+                            onClick={() => openEquipment?.(d.id)}
+                          >
+                            {d.name} · {d.ip}
+                          </Button>
+                        </td>
+                        <td>{d.os}</td>
+                        <td>{d.state}</td>
+                        <td>{d.time}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="muted">
+              Topologia, tráfego, sessões, alertas e histórico ainda não estão
+              disponíveis. O serviço ativo indica apenas o serviço local.
+            </p>
+          </>
+        )}
+      </section>
+    );
   if (!ops.devices.length)
     return (
-      <Empty>
+      <Empty
+        title={
+          inventoryAvailable ? 'Inventário disponível nesta empresa' : undefined
+        }
+      >
         <Button kind="primary" onClick={add}>
           Adicionar equipamento
         </Button>

@@ -39,6 +39,9 @@ export type Company = {
   disabled?: boolean;
 };
 export type Operations = {
+  retry?: () => void;
+  inventoryState?: 'loading' | 'ready' | 'error';
+  inventoryError?: string;
   devices: Device[];
   sessions: Session[];
   alerts: {

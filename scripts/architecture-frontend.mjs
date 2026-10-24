@@ -25,6 +25,7 @@ const genericAPIs = new Set([
 const externalModules = new Set([
   "react",
   "react-dom/client",
+  "react-dom",
   "vitest",
   "@testing-library/react",
   "@testing-library/jest-dom/vitest",
@@ -116,6 +117,20 @@ function inspect(name, code) {
           "SaveRecovery",
           "GetBrand",
           "SaveBrand",
+          "CancelQuery",
+          "ConfirmTrust",
+          "ResetTrust",
+          "GetEquipment",
+          "EnrollmentStatus",
+          "InspectTrust",
+          "ListCredentials",
+          "ListEquipment",
+          "PutCredential",
+          "QueryStatus",
+          "SaveEquipment",
+          "SetEquipmentActive",
+          "StartQuery",
+
         ]);
         const clause = n.importClause;
         if (

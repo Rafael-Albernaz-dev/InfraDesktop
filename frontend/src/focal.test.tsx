@@ -522,6 +522,8 @@ it('a valid company selection still opens its workspace after the service change
   render(<App />);
   await screen.findByRole('heading', { name: 'Empresas' });
   fireEvent.click(screen.getByRole('button', { name: 'Abrir empresa' }));
-  await screen.findByRole('heading', { name: 'Nenhum equipamento' });
+  await screen.findByRole('heading', {
+    name: 'Inventário disponível nesta empresa',
+  });
   expect(access.selectCompany).toHaveBeenCalledExactlyOnceWith('one');
 });

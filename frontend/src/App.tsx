@@ -9,6 +9,8 @@ import { message } from './microcopy';
 import type { Intent } from './microcopy';
 import type { Branding } from './desktop-model';
 import { Security } from './security';
+import { Equipment } from './equipment';
+import { useEquipmentOperations } from './equipment-operations';
 const initial: Result = {
   code: 'SERVICE_UNAVAILABLE',
   request_id: '',
@@ -27,6 +29,18 @@ export default function App() {
   const [view, setView] = useState(initial),
     [theme, setTheme] = useState('light'),
     [page, setPage] = useState<Page>(2);
+  const [inventoryAction, addInventory] = useState(0);
+  const [inventoryTarget, setInventoryTarget] = useState<{
+    key: string;
+    id: string;
+  }>({ key: '', id: '' });
+  const [inventoryDetail, setInventoryDetail] = useState(false);
+  const [inventoryState, setInventoryState] = useState({ key: '', total: 0 });
+  const reportInventory = useCallback((key: string, total: number) => {
+    setInventoryState((old) =>
+      old.key === key && old.total === total ? old : { key, total },
+    );
+  }, []);
   const [connected, setConnected] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -39,6 +53,20 @@ export default function App() {
   const brandRead = useRef(0);
   const [brandRetry, retryBrand] = useState(0);
   const [brandError, setBrandError] = useState('');
+  const operations = useEquipmentOperations(
+    view.profile_id,
+    view.activation_id,
+    connected && view.authenticated,
+    page === 3,
+  );
+  const selectInventory = useCallback(
+    (id: string) =>
+      setInventoryTarget({
+        key: [view.profile_id, view.activation_id].join('|'),
+        id,
+      }),
+    [view.profile_id, view.activation_id],
+  );
   const [recoveryUncertain, setRecoveryUncertain] = useState(false);
   const securityLocked = useRef(false);
   const epoch = useRef(0),
@@ -360,10 +388,45 @@ export default function App() {
     );
   return (
     <Desktop
+      operations={operations}
+      inventoryDetailOpen={inventoryDetail}
+      openEquipment={(id) => {
+        selectInventory(id);
+        setPage(4);
+      }}
+      inventoryHasDevices={
+        inventoryState.key ===
+          [view.profile_id, view.activation_id].join('|') &&
+        inventoryState.total > 0
+      }
+      inventory={
+        <Equipment
+          key={brandKey}
+          profile={view.profile_id}
+          activation={view.activation_id}
+          connected={connected}
+          createRequest={inventoryAction}
+          primaryInHeader
+          targetID={
+            inventoryTarget.key ===
+            [view.profile_id, view.activation_id].join('|')
+              ? inventoryTarget.id
+              : undefined
+          }
+          onSelect={selectInventory}
+          onDetailChange={setInventoryDetail}
+          onTotal={reportInventory}
+        />
+      }
+      addEquipment={() => {
+        setPage(4);
+        addInventory((n) => n + 1);
+      }}
       page={page}
       navigate={(next) => {
         if (securityLocked.current) return;
         invalidate();
+        addInventory(0);
         setPage(next);
         close();
       }}

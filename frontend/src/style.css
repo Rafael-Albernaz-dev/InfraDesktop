@@ -2167,3 +2167,167 @@ textarea:focus-visible {
     font-size: 22px;
   }
 }
+
+/* L04/L05 keeps the approved list/inspector and dialog vocabulary. */
+.inventory-notice {
+  padding: 12px 22px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.equipment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fingerprint {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.equipment-result {
+  margin-top: 24px;
+  overflow-wrap: anywhere;
+}
+.equipment-result p {
+  margin: 10px 0;
+}
+.equipment-capability {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.equipment-capability > .pane-layout {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+.equipment-capability .inventory-tools {
+  flex-wrap: wrap;
+}
+.equipment-capability .inventory-tools input {
+  flex: 1;
+  min-width: 180px;
+}
+.equipment-capability > .inventory-notice {
+  flex-shrink: 0;
+}
+
+.interface-readings {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.inventory-without-detail {
+  grid-template-columns: minmax(0, 1fr);
+}
+.inventory-without-detail > .pane-main {
+  border-right: 0;
+}
+.device-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.equipment-help {
+  margin-top: 16px;
+  color: var(--muted);
+}
+.dialog-close {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 6px;
+}
+.equipment-capability .inventory-without-detail > .pane-main {
+  display: flex;
+  flex-direction: column;
+}
+.equipment-capability .pane-main > .empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+}
+.equipment-capability .empty-state h2 {
+  font-size: 26px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 400;
+}
+.field [aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+/* L04/L05 operational detail: approved controls/tokens, full available width. */
+.equipment-detail-layout {
+  display: block;
+}
+.equipment-detail {
+  padding: 24px;
+  min-width: 0;
+}
+.equipment-detail .equipment-result {
+  margin-top: 24px;
+}
+.equipment-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+}
+.equipment-detail .equipment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.equipment-detail h2 {
+  margin: 20px 0 12px;
+}
+.equipment-detail .table-scroll {
+  max-height: 440px;
+  overflow: auto;
+}
+.equipment-dashboard {
+  padding: 24px;
+}
+.equipment-dashboard .device-link {
+  text-align: left;
+  white-space: normal;
+}
+@media (max-width: 920px) {
+  .equipment-summary {
+    grid-template-columns: 1fr;
+  }
+  .equipment-detail,
+  .equipment-dashboard {
+    padding: 16px;
+  }
+}
+
+.equipment-access {
+  margin-top: 24px;
+  color: var(--muted);
+}
+.equipment-access[open] {
+  color: var(--text);
+}
+.equipment-access > .kv {
+  margin: 16px 0;
+}
+.equipment-detail > .subtitle {
+  margin: 6px 0 16px;
+  color: var(--muted);
+}
+.equipment-detail {
+  height: 100%;
+  overflow: auto;
+}
