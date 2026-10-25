@@ -24,7 +24,7 @@ jobs:
           GOTOOLCHAIN: local
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libwebp-dev dpkg-dev
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev libwebp-dev dpkg-dev python3-pil
           mkdir -p .tools/bin
           npm install --prefix .tools/npm npm@11.17.0
           echo "$PWD/.tools/npm/node_modules/.bin" >> "$GITHUB_PATH"
@@ -33,5 +33,5 @@ jobs:
           go mod download
       - run: test -x /usr/bin/google-chrome # explicit existing runner browser, no hidden downloads
       - run: npm --prefix frontend ci
-      - run: make tools-check check test-integration package test-visual
+      - run: make tools-check check test-integration package test-vault-helper test-part1-production test-vault-read-race test-visual test-equipment-smoke
       # Native desktop journey and operational boot/logout remain separate acceptance gates.
