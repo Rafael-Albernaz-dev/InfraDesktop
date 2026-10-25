@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "product_operations": {
+    "access.bootstrap": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision"
+    ],
+    "access.register": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "name",
+      "password",
+      "contract_revision"
+    ],
+    "access.login": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "name",
+      "password",
+      "remember",
+      "contract_revision"
+    ],
+    "access.recover": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "name",
+      "password",
+      "recovery",
+      "contract_revision"
+    ],
+    "access.resume": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "grant",
+      "contract_revision"
+    ],
+    "access.snapshot": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "contract_revision"
+    ],
+    "access.logout": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "contract_revision"
+    ],
+    "company.create": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "name",
+      "operation_id",
+      "contract_revision"
+    ],
+    "company.select": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "name",
+      "contract_revision"
+    ],
+    "preferences.theme": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "theme",
+      "contract_revision"
+    ],
+    "access.renew-recovery": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "password",
+      "replace_pending",
+      "contract_revision"
+    ],
+    "access.ack-recovery": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "contract_revision"
+    ],
+    "access.check-issued": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision",
+      "recovery"
+    ],
+    "access.ack-issued": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision",
+      "recovery"
+    ],
+    "company.brand-get": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "contract_revision",
+      "expected_profile",
+      "expected_activation"
+    ],
+    "company.brand-set": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "contract_revision",
+      "expected_profile",
+      "expected_activation",
+      "brand"
+    ]
+  },
+  "test_harness_only": [
+    "handshake",
+    "foundation.status",
+    "foundation.observe"
+  ],
+  "frame_bytes": [
+    1,
+    65536
+  ],
+  "budget_ms": 3000,
+  "product_revision": 7,
+  "bf04": {
+    "product_revision": 3,
+    "branding_frame_limit": 2863104,
+    "framing": "High bit of uint32 length denotes extended branding frame. Unflagged remains 65536. Extended requests only company.brand-set; replies only brand-get/set.",
+    "brand": {
+      "name": "0-48 Unicode scalars, no control or surrounding whitespace",
+      "logo": "PNG/JPEG/WebP data URI, at most 2MiB decoded and 4096 per dimension",
+      "accent": [
+        "teal",
+        "violet",
+        "copper",
+        "blue",
+        "green",
+        "rose",
+        "indigo",
+        "slate"
+      ]
+    },
+    "errors": [
+      "BRAND_NAME_INVALID",
+      "BRAND_LOGO_INVALID",
+      "BRAND_ACCENT_INVALID"
+    ]
+  },
+  "equipment_operations": {
+    "inventory.list": [
+      "search",
+      "cursor",
+      "inactive"
+    ],
+    "inventory.get": [
+      "id"
+    ],
+    "inventory.create": [
+      "operation_id",
+      "id",
+      "name",
+      "address",
+      "port",
+      "transport",
+      "credential_id"
+    ],
+    "inventory.update": [
+      "operation_id",
+      "id",
+      "revision",
+      "name",
+      "address",
+      "port",
+      "transport",
+      "credential_id"
+    ],
+    "inventory.set-active": [
+      "operation_id",
+      "id",
+      "revision",
+      "active"
+    ],
+    "credential.list": [
+      "cursor"
+    ],
+    "credential.put": [
+      "operation_id",
+      "id",
+      "revision",
+      "alias",
+      "user",
+      "secret",
+      "affected_links"
+    ],
+    "trust.inspect": [
+      "operation_id",
+      "id",
+      "revision"
+    ],
+    "trust.confirm": [
+      "operation_id",
+      "job_id",
+      "id",
+      "revision",
+      "fingerprint"
+    ],
+    "device.query-start": [
+      "operation_id",
+      "id",
+      "revision"
+    ],
+    "device.query-status": [
+      "job_id"
+    ],
+    "device.query-cancel": [
+      "job_id"
+    ],
+    "inventory.enroll": [
+      "operation_id",
+      "id",
+      "name",
+      "address",
+      "port",
+      "transport",
+      "user",
+      "secret"
+    ],
+    "inventory.enroll-status": [
+      "operation_id",
+      "id"
+    ],
+    "trust.reset": [
+      "operation_id",
+      "id",
+      "revision"
+    ]
+  },
+  "equipment": {
+    "outer_fields": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision",
+      "session",
+      "profile_id",
+      "activation_id",
+      "expected_profile",
+      "expected_activation",
+      "equipment"
+    ],
+    "page_size": 16,
+    "page_bytes": 49152,
+    "query_ms": 20000,
+    "dial_ms": 5000,
+    "concurrency": 2,
+    "queued": 0,
+    "job_retention_ms": 120000,
+    "job_limit": 32,
+    "stdout_stderr_bytes": 524288,
+    "devices": 256,
+    "credentials": 128,
+    "operations_per_company": 2048,
+    "interfaces": "At most 128 static interfaces, complete/limited with eligible and dynamic counts; dynamic rows excluded; parts have separate timestamps, failures preserve prior snapshot as stale",
+    "restart": "JOB_INTERRUPTED; stable operation IDs never repeat authentication",
+    "error_codes": [
+      "VAULT_UNAVAILABLE",
+      "CREDENTIAL_NOT_FOUND",
+      "DEVICE_INACTIVE",
+      "REVISION_CONFLICT",
+      "TRUST_REQUIRED",
+      "TRUST_CHANGED",
+      "CONNECT_FAILED",
+      "REMOTE_AUTH_FAILED",
+      "REMOTE_PERMISSION_DENIED",
+      "UNSUPPORTED",
+      "PARTIAL",
+      "CANCELLED",
+      "LIMIT_EXCEEDED",
+      "JOB_INTERRUPTED",
+      "DEVICE_NAME_INVALID",
+      "DEVICE_ADDRESS_INVALID",
+      "DEVICE_PORT_INVALID",
+      "CREDENTIAL_ALIAS_INVALID",
+      "CREDENTIAL_USER_INVALID",
+      "CREDENTIAL_SECRET_INVALID",
+      "SSH_NEGOTIATION_FAILED",
+      "SSH_CONNECTION_LOST",
+      "PERSISTENCE_FAILED"
+    ],
+    "view_fields": {
+      "total_devices": "company total independent of filter, activity and page",
+      "operation_state": "COMMITTED or NOT_FOUND for creation reconciliation; NOT_FOUND is not cancellation",
+      "vault_available": "provider and existing company envelope ready"
+    },
+    "trust": "Explicit first acceptance, bound to company/device/address/port/revision/key; local UID/time recorded by daemon; historical origin preserved without reclassification"
+  },
+  "provider_capability": {
+    "access_response_field": "vault_available",
+    "meaning": "configured provider available; does not prove company ciphertext readiness",
+    "secret_export": false
+  }
+}

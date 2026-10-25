@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""Explicit administrative provisioning; never called by startup or packaging."""
+import os
+from pathlib import Path
+import pwd
+import re
+import secrets
+import stat
+import subprocess
+import sys
+import tempfile
+NAME = 'infradesktop-vault-master'
+
+def private_dir(path):
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    info = path.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o022:
+        raise RuntimeError('unsafe provisioning directory')
+
+def regular(path):
+    info = path.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_nlink != 1 or info.st_mode & 0o077:
+        raise RuntimeError('unsafe encrypted credential')
+
+def publish(path, data):
+    private_dir(path.parent)
+    with tempfile.NamedTemporaryFile(dir=path.parent, prefix='.vault-', delete=False) as handle:
+        stage = Path(handle.name)
+        try:
+            handle.write(data); handle.flush(); os.fsync(handle.fileno())
+            os.link(stage, path)  # Atomic no-replace publication, including races.
+        finally:
+            stage.unlink()
+    fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try: os.fsync(fd)
+    finally: os.close(fd)
+
+def provision(root, technician, run=subprocess.run):
+    # root/run are injection seams for isolated tests, never CLI options.
+    if not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', technician):
+        raise RuntimeError('invalid account')
+    target = root / f'etc/credstore.encrypted/infradesktop-vault-{technician}.cred'
+    config = root / f'etc/systemd/system/infradesktopd@{technician}.service.d/vault.conf'
+    content = ('[Service]\nLoadCredentialEncrypted=' + NAME + f':/etc/credstore.encrypted/infradesktop-vault-{technician}.cred\n').encode()
+    private_dir(target.parent)
+    if target.exists() or target.is_symlink():
+        regular(target)
+        result = run(['systemd-creds', 'decrypt', '--name='+NAME, str(target), '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
+        if len(result.stdout) != 32:
+            raise RuntimeError('existing credential is invalid; preserve it for recovery')
+    else:
+        if config.exists() or config.is_symlink():
+            raise RuntimeError('configuration exists without credential; preserve state for recovery')
+        result = run(['systemd-creds', 'encrypt', '--with-key=host', '--name='+NAME, '-', '-'], input=secrets.token_bytes(32), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
+        if not result.stdout:
+            raise RuntimeError('encryption failed')
+        publish(target, result.stdout)
+    if config.exists() or config.is_symlink():
+        regular(config)
+        if config.read_bytes() != content:
+            raise RuntimeError('existing drop-in differs; no replacement performed')
+    else:
+        publish(config, content)
+    return target
+
+def main():
+    if len(sys.argv) != 2 or not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', sys.argv[1]):
+        raise SystemExit('Usage: provision-vault <existing-non-root-unix-user>')
+    technician = sys.argv[1]
+    if os.geteuid() != 0 or pwd.getpwnam(technician).pw_uid == 0:
+        raise SystemExit('Explicit administrative authority for a non-root technician is required.')
+    try: provision(Path('/'), technician)
+    except (OSError, RuntimeError, subprocess.SubprocessError):
+        raise SystemExit('Provisioning failed; existing credential and configuration were preserved.')
+    print('Encrypted credential prepared. No service reload or restart was executed.')
+if __name__ == '__main__': main()
