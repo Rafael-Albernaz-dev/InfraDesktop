@@ -104,6 +104,13 @@ function inspect(name, code) {
       ) {
         const approved = new Set([
           "StartPPPoECollection",
+          "StartPPPoECatalog",
+          "StartPPPoERadius",
+          "StartPPPoEPing",
+          "PPPoEDiagnosticStatus",
+          "CancelPPPoEDiagnostic",
+          "GetPPPoEDiagnostic",
+          "ListPPPoEDiagnostic",
           "PPPoECollectionStatus",
           "CancelPPPoECollection",
           "GetPPPoECurrent",
@@ -178,9 +185,15 @@ function inspect(name, code) {
     if (ts.isMetaProperty(n) || n.kind === ts.SyntaxKind.ThisKeyword)
       problems.push("uninspected global or module loader access");
     if (ts.isIdentifier(n)) {
-      // Fail closed on the bridge root itself: aliasing/destructuring cannot hide it.
+      // A member/type/object key names data, not a global variable reference.
+      // Keep expression roots, shorthand and destructuring bindings fail-closed;
+      // window.parent still visits/rejects the window expression independently.
+      const memberName =
+        (ts.isPropertyAccessExpression(n.parent) && n.parent.name === n) ||
+        (ts.isPropertySignature(n.parent) && n.parent.name === n) ||
+        (ts.isPropertyAssignment(n.parent) && n.parent.name === n);
       // This is an architectural subset, not a sandbox for arbitrary hostile JS.
-      if (bridgeRoots.has(n.text))
+      if (bridgeRoots.has(n.text) && !memberName)
         problems.push("direct or aliased runtime root");
       if (genericAPIs.has(n.text))
         problems.push("generic execution/network API");

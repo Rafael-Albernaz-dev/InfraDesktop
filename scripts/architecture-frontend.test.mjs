@@ -185,3 +185,19 @@ test('accepts nominal equipment bindings and rejects a secret getter', () => {
   assert.equal(good.status,0,good.output);
   const bad=runGuard({'presentation.ts':"import {GetSecret} from '../wailsjs/go/presentation/App';"});assert.notEqual(bad.status,0);
 });
+
+test('accepts data properties named parent while rejecting global-root access and aliases', () => {
+  const control = runGuard({'data.ts':'type Row = {parent?: string}; const row: Row = {parent: "VLAN"}; export const label = row.parent;'});
+  assert.equal(control.status,0,control.output);
+  for (const code of [
+    'const alias = parent; alias.postMessage("x", "*");',
+    'const alias = window.parent; alias.postMessage("x", "*");',
+    'const alias = globalThis; alias.parent.postMessage("x", "*");',
+    'const {parent: alias} = window; alias.postMessage("x", "*");',
+    'const row = {parent};',
+  ]) {
+    const result = runGuard({'data.ts':code});
+    assert.equal(result.status,1,result.output);
+    assert.match(result.output,/direct or aliased runtime root/);
+  }
+});
