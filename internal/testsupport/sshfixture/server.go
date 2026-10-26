@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const Password = "local-fixture-only"
@@ -20,20 +21,24 @@ type Config struct {
 	Identity, InterfaceName string
 	InterfaceMode           func() string
 	PPPoE                   func() string
+	Command                 func(string) (string, bool)
 	PPRows                  int
+	RealTime                bool
 	Hold                    <-chan struct{}
 }
 type Server struct {
-	listener net.Listener
-	config   Config
-	signer   ssh.Signer
-	mu       sync.Mutex
-	conns    map[net.Conn]bool
-	closed   chan struct{}
-	wg       sync.WaitGroup
-	Auth     atomic.Int32
-	Commands atomic.Int32
-	PPCalls  atomic.Int32
+	listener  net.Listener
+	config    Config
+	signer    ssh.Signer
+	mu        sync.Mutex
+	conns     map[net.Conn]bool
+	closed    chan struct{}
+	wg        sync.WaitGroup
+	Auth      atomic.Int32
+	Commands  atomic.Int32
+	PPCalls   atomic.Int32
+	PingCalls atomic.Int32
+	started   time.Time
 }
 
 func Start(config Config) (*Server, error) {
@@ -49,7 +54,7 @@ func Start(config Config) (*Server, error) {
 	if e != nil {
 		return nil, e
 	}
-	s := &Server{listener: l, config: config, signer: signer, conns: map[net.Conn]bool{}, closed: make(chan struct{})}
+	s := &Server{listener: l, config: config, signer: signer, conns: map[net.Conn]bool{}, closed: make(chan struct{}), started: time.Now()}
 	s.wg.Add(1)
 	go s.serve()
 	return s, nil
@@ -147,6 +152,11 @@ func (s *Server) handle(conn net.Conn) {
 	}
 }
 func (s *Server) output(command string) (string, bool) {
+	if s.config.Command != nil {
+		if output, ok := s.config.Command(command); ok {
+			return output, true
+		}
+	}
 	if s.config.Mode == "permission" {
 		return "failure: not enough permissions\r\n", true
 	}
@@ -155,6 +165,9 @@ func (s *Server) output(command string) (string, bool) {
 	}
 	if s.config.Mode == "malformed" {
 		return "unexpected\n", true
+	}
+	if result, ok := s.diagnosticOutput(command); ok {
+		return result, true
 	}
 	switch command {
 	case routerssh.PPPoECommand:

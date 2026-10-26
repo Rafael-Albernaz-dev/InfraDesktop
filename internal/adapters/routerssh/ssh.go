@@ -25,7 +25,12 @@ const ResourceCommand = `:put ("version=" . [/system resource get version]); :pu
 
 // Dynamic interfaces (including PPP tunnels) are counted, not enumerated as sessions.
 // Static identifiers are captured once; payload and displayed sample are bounded.
-const InterfacesCommand = `:local ids [/interface find where dynamic=no]; :put ("eligible=" . [:len $ids]); :put ("dynamic=" . [/interface print count-only where dynamic=yes]); :local n 0; :foreach i in=$ids do={:if ($n < 128) do={:put ("name=" . [/interface get $i name]); :put ("type=" . [/interface get $i type]); :put ("running=" . [/interface get $i running]); :put ("disabled=" . [/interface get $i disabled]); :put "end"; :set n ($n + 1)}}; :put "done"`
+const InterfacesCommand = routerFlagScript + `:local ids [/interface find where dynamic!=yes]; :put ("eligible=" . [:len $ids]); :put ("dynamic=" . [/interface print count-only where dynamic=yes]); :local n 0; :foreach i in=$ids do={:if ($n < 128) do={:put ("name=" . [/interface get $i name]); :put ("type=" . [/interface get $i type]); :put ("running=" . [$ppflag [/interface get $i running]]); :put ("disabled=" . [/interface get $i disabled]); :put "end"; :set n ($n + 1)}}; :put "done"`
+
+// In fixed RouterOS flag slots an unmarked flag is nil, not an explicit false.
+// This is only for documented flags (running/dynamic/invalid), never optional
+// configuration. Unexpected values fail the read instead of becoming false.
+const routerFlagScript = `:local ppflag do={:local flagValue $1; :if ([:typeof $flagValue]="nil") do={:return "false"}; :local flagText [:tostr $flagValue]; :if (($flagText="true")||($flagText="yes")) do={:return "true"}; :if (($flagText="false")||($flagText="no")) do={:return "false"}; :error "flag-type"}; `
 
 const MaxOutput = 512 * 1024
 
@@ -36,6 +41,7 @@ type Adapter struct{}
 type outputBudget struct {
 	mu       sync.Mutex
 	n        int
+	limit    int
 	overflow bool
 	conn     net.Conn
 }
@@ -47,7 +53,11 @@ type limitedOutput struct {
 func (w *limitedOutput) Write(b []byte) (int, error) {
 	w.budget.mu.Lock()
 	defer w.budget.mu.Unlock()
-	if w.budget.n+len(b) > MaxOutput {
+	limit := MaxOutput
+	if w.budget.limit > 0 && w.budget.limit < limit {
+		limit = w.budget.limit
+	}
+	if w.budget.n+len(b) > limit {
 		w.budget.overflow = true
 		w.budget.conn.Close()
 		return 0, errLimit
@@ -318,6 +328,14 @@ func parseSummary(identity, resource string) (*equipment.Observation, equipment.
 }
 func parseInterfaces(o *equipment.Observation, interfaces string) equipment.Code {
 	ls := lines(interfaces)
+	if len(ls) >= 4 && ppDecimal(ls[1]) {
+		// The embedded dynamic count can be echoed before its labeled value.
+		// It must match exactly; this is not a general skip-unknown-lines rule.
+		if ls[2] != "dynamic="+ls[1] {
+			return equipment.Partial
+		}
+		ls = append([]string{ls[0]}, ls[2:]...)
+	}
 	if len(ls) < 3 {
 		return equipment.Partial
 	}

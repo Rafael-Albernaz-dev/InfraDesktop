@@ -7,6 +7,7 @@ import (
 	"errors"
 	"golang.org/x/crypto/ssh"
 	"infradesktop/internal/modules/equipment"
+	"log"
 	"math"
 	"net"
 	"net/netip"
@@ -16,9 +17,17 @@ import (
 	"unicode/utf8"
 )
 
-const PPPoECommand = `:local esc do={:local v [:tostr $1]; :local out ""; :if ([:len $v]=0) do={:return ""}; :if ([:len $v] > 512) do={:error "field-limit"}; :for n from=0 to=([:len $v]-1) do={:local c [:pick $v $n ($n+1)]; :if ($c="\\") do={:set c "\\\\"} else={:if ($c="\t") do={:set c "\\t"} else={:if ($c="\r") do={:set c "\\r"} else={:if ($c="\n") do={:set c "\\n"}}}}; :set out ($out.$c)}; :return $out}; :local count [/ppp active print count-only where service=pppoe]; :local up [/system resource get uptime]; :put ("H\t1\t".$count."\t".[/system resource get version]."\t".$up); :if ($count>2048) do={:put "Z\t0\trows"} else={:local ids [/ppp active find where service=pppoe]; :local n 0; :local bytes 0; :local reason "complete"; :foreach i in=$ids do={:if (($n<2048)&&($reason="complete")) do={:local sid ""; :do {:set sid [/ppp active get $i session-id]} on-error={}; :local u [/ppp active get $i uptime]; :local line ("R\t".[$esc $i]."\t".[$esc $sid]."\t".[$esc [/ppp active get $i name]]."\t".[$esc [/ppp active get $i address]]."\t".[$esc [/ppp active get $i caller-id]]."\t".$u); :local after ""; :do {:set after [/ppp active get $i session-id]} on-error={}; :if (($sid!=$after)||([/ppp active get $i uptime]<$u)) do={:set reason "churn"}; :if (($bytes+[:len $line]+2)>458752) do={:set reason "wire_bytes"}; :if ($reason="complete") do={:put $line; :set bytes ($bytes+[:len $line]+2); :set n ($n+1)}}}; :if (([:tostr $ids]!=[:tostr [/ppp active find where service=pppoe]])||([/system resource get uptime]<$up)) do={:set reason "churn"}; :put ("Z\t".$n."\t".$reason."\t".[/system resource get uptime])}`
+const ppEscapeScript = `:local esc do={:local v [:tostr $1]; :local out ""; :if ([:len $v]=0) do={:return ""}; :if ([:len $v] > 512) do={:error "field-limit"}; :for n from=0 to=([:len $v]-1) do={:local c [:pick $v $n ($n+1)]; :if ($c="\\") do={:set c "\\\\"} else={:if ($c="\t") do={:set c "\\t"} else={:if ($c="\r") do={:set c "\\r"} else={:if ($c="\n") do={:set c "\\n"}}}}; :set out ($out.$c)}; :return $out}`
 
-func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code) (*equipment.PPObservation, equipment.Code) {
+const PPPoECommand = ppEscapeScript + `; :local count [/ppp active print count-only where service=pppoe]; :local up [/system resource get uptime]; :put ("H\t1\t".$count."\t".[/system resource get version]."\t".$up); :if ($count>2048) do={:put "Z\t0\trows"} else={:local ids [/ppp active find where service=pppoe]; :local n 0; :local bytes 0; :local reason "complete"; :foreach i in=$ids do={:if (($n<2048)&&($reason="complete")) do={:local sid ""; :do {:set sid [/ppp active get $i session-id]} on-error={}; :local u [/ppp active get $i uptime]; :local line ("R\t".[$esc $i]."\t".[$esc $sid]."\t".[$esc [/ppp active get $i name]]."\t".[$esc [/ppp active get $i address]]."\t".[$esc [/ppp active get $i caller-id]]."\t".$u); :local after ""; :do {:set after [/ppp active get $i session-id]} on-error={}; :if (($sid!=$after)||([/ppp active get $i uptime]<$u)) do={:set reason "churn"}; :if (($bytes+[:len $line]+2)>458752) do={:set reason "wire_bytes"}; :if ($reason="complete") do={:put $line; :set bytes ($bytes+[:len $line]+2); :set n ($n+1)}}}; :if (([:tostr $ids]!=[:tostr [/ppp active find where service=pppoe]])||([/system resource get uptime]<$up)) do={:set reason "churn"}; :put ("Z\t".$n."\t".$reason."\t".[/system resource get uptime])}`
+
+type ppConnection struct {
+	run     func(string) (string, equipment.Code)
+	close   func()
+	tighten func(int)
+}
+
+func openPPConnection(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code) (*ppConnection, equipment.Code) {
 	if c := check(); c != equipment.OK {
 		return nil, c
 	}
@@ -26,7 +35,6 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 	if c != equipment.OK {
 		return nil, c
 	}
-	defer done()
 	cfg := config(user)
 	mismatch := false
 	hostSeen := false
@@ -51,6 +59,7 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 	cc, channels, requests, e := ssh.NewClientConn(conn, net.JoinHostPort(d.Address, strconv.Itoa(d.Port)), cfg)
 	secret = ""
 	if e != nil {
+		done()
 		if mismatch {
 			return nil, equipment.TrustChanged
 		}
@@ -68,7 +77,6 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 		return nil, "SSH_CONNECTION_LOST"
 	}
 	client := ssh.NewClient(cc, channels, requests)
-	defer client.Close()
 	budget := &outputBudget{conn: conn}
 	run := func(command string) (string, equipment.Code) {
 		if c := check(); c != equipment.OK {
@@ -87,6 +95,18 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 		session.Stdout = out
 		session.Stderr = stderr
 		e = session.Run(command)
+		if strings.Contains(command, "/tool ping address=") {
+			exit := -1
+			var status *ssh.ExitError
+			if e == nil {
+				exit = 0
+			} else if errors.As(e, &status) {
+				exit = status.ExitStatus()
+			}
+			// Structural diagnostics only; no command, target, reply, credential
+			// or remote error text is written to the log.
+			log.Printf("routerssh ping execution: exit=%d stdout=%d stderr=%d esc=%d", exit, out.buf.Len(), stderr.buf.Len(), strings.Count(out.buf.String(), "\x1b"))
+		}
 		budget.mu.Lock()
 		overflow := budget.overflow
 		budget.mu.Unlock()
@@ -105,18 +125,32 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 		}
 		return text, equipment.OK
 	}
+	return &ppConnection{run: run, close: func() { _ = client.Close(); done() }, tighten: func(bytes int) {
+		budget.mu.Lock()
+		defer budget.mu.Unlock()
+		next := budget.n + bytes
+		if budget.limit == 0 || next < budget.limit {
+			budget.limit = next
+		}
+	}}, equipment.OK
+}
+
+func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code) (*equipment.PPObservation, equipment.Code) {
+	connection, c := openPPConnection(ctx, d, user, secret, check)
+	if c != equipment.OK {
+		return nil, c
+	}
+	defer connection.close()
 	commandStarted := time.Now()
-	text, c := run(PPPoECommand)
+	text, c := connection.run(PPPoECommand)
 	if c != equipment.OK {
 		return nil, c
 	}
 	o, c := ParsePPPoE(text)
 	if c == equipment.OK && o != nil && o.Quality.Status == "complete" {
-		start, end := o.Provenance.RouterUptime, o.Provenance.RouterFinalUptime
-		elapsed := time.Since(commandStarted).Nanoseconds()
 		// Reboot cannot be excluded if the initial uptime fits inside this command's
 		// entire elapsed window, even when final uptime is greater than initial.
-		if !start.Known || !end.Known || start.Min <= elapsed || end.Max < start.Min || end.Min-start.Max > elapsed {
+		if !ppCollectionStable(o.Provenance, time.Since(commandStarted)) {
 			o.Rows = nil
 			o.Quality.Status = "partial"
 			o.Quality.Code = equipment.Partial
@@ -125,6 +159,11 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 		}
 	}
 	return o, c
+}
+
+func ppCollectionStable(provenance equipment.PPProvenance, elapsed time.Duration) bool {
+	a, b := provenance.RouterUptime, provenance.RouterFinalUptime
+	return a.Known && b.Known && a.Min > elapsed.Nanoseconds() && b.Max >= a.Min && b.Min-a.Max <= elapsed.Nanoseconds()
 }
 
 // PPPoEEscape is shared only with the synthetic peer's serializer; the parser is independent.
@@ -165,7 +204,7 @@ func ppUnescape(s string) (string, bool) {
 
 // ParsePPDuration preserves quantization and rejects overflow/unknown formats.
 func ParsePPDuration(s string) equipment.PPInterval {
-	if s == "" {
+	if s == "" || len(s) > 128 {
 		return equipment.PPInterval{}
 	}
 	if strings.Contains(s, ":") {
@@ -174,6 +213,7 @@ func ParsePPDuration(s string) equipment.PPInterval {
 	normalized := s
 	total := int64(0)
 	quantum := int64(0)
+	previousFactor := int64(math.MaxInt64)
 	digits := ""
 	for _, c := range normalized {
 		if c >= '0' && c <= '9' {
@@ -198,6 +238,10 @@ func ParsePPDuration(s string) equipment.PPInterval {
 		default:
 			return equipment.PPInterval{}
 		}
+		if factor >= previousFactor {
+			return equipment.PPInterval{}
+		}
+		previousFactor = factor
 		v, e := strconv.ParseInt(digits, 10, 64)
 		if e != nil || v < 0 || v > (math.MaxInt64-total-factor)/factor {
 			return equipment.PPInterval{}
@@ -221,6 +265,10 @@ func ParsePPPoE(text string) (*equipment.PPObservation, equipment.Code) {
 		o.Quality.Reason = reason
 		return o, equipment.OK
 	}
+	text, counts, ok := ppCountPrelude(text, 1)
+	if !ok {
+		return fail("codec")
+	}
 	scanner := bufio.NewScanner(strings.NewReader(text))
 	scanner.Buffer(make([]byte, 4096), 8192)
 	line := 0
@@ -239,7 +287,7 @@ func ParsePPPoE(text string) (*equipment.PPObservation, equipment.Code) {
 				return fail("codec")
 			}
 			n, e := strconv.Atoi(f[2])
-			if e != nil || n < 0 || n > 1000000 {
+			if e != nil || n < 0 || n > 1000000 || len(counts) != 0 && counts[0] != uint64(n) {
 				return fail("codec")
 			}
 			o.Quality.CountsKnown = true
@@ -343,6 +391,29 @@ func ParsePPPoE(text string) (*equipment.PPObservation, equipment.Code) {
 	return o, equipment.OK
 }
 
+// RouterOS count-only may print its result even inside command substitution.
+// Accept only the exact number of leading count lines emitted by our fixed
+// script. Callers must check them against their header/guards; arbitrary banners,
+// extra lines and truncated count groups remain invalid. Some transports omit
+// the duplicate output, so the original header-first form remains valid.
+func ppCountPrelude(text string, count int) (string, []uint64, bool) {
+	first, _, _ := strings.Cut(text, "\n")
+	if !ppDecimal(strings.TrimSuffix(first, "\r")) {
+		return text, nil, true
+	}
+	values := make([]uint64, 0, count)
+	for range count {
+		line, rest, found := strings.Cut(text, "\n")
+		value, ok := pdNumber(strings.TrimSuffix(line, "\r"), 1000000)
+		if !found || !ok {
+			return "", nil, false
+		}
+		values = append(values, value)
+		text = rest
+	}
+	return text, values, true
+}
+
 func ppClockDuration(s string) equipment.PPInterval {
 	total := int64(0)
 	for _, unit := range []struct {
@@ -350,6 +421,9 @@ func ppClockDuration(s string) equipment.PPInterval {
 		factor int64
 	}{{"w", int64(7 * 24 * time.Hour)}, {"d", int64(24 * time.Hour)}} {
 		if at := strings.Index(s, unit.suffix); at >= 0 {
+			if !ppDecimal(s[:at]) {
+				return equipment.PPInterval{}
+			}
 			v, e := strconv.ParseInt(s[:at], 10, 64)
 			if e != nil || v < 0 || v > (math.MaxInt64-total)/unit.factor {
 				return equipment.PPInterval{}
@@ -360,6 +434,9 @@ func ppClockDuration(s string) equipment.PPInterval {
 	}
 	parts := strings.Split(s, ":")
 	if len(parts) != 3 {
+		return equipment.PPInterval{}
+	}
+	if !ppDecimal(parts[0]) || !ppDecimal(parts[1]) {
 		return equipment.PPInterval{}
 	}
 	h, e := strconv.ParseInt(parts[0], 10, 64)
@@ -375,6 +452,9 @@ func ppClockDuration(s string) equipment.PPInterval {
 	if len(seconds) > 2 {
 		return equipment.PPInterval{}
 	}
+	if !ppDecimal(seconds[0]) {
+		return equipment.PPInterval{}
+	}
 	sec, e := strconv.ParseInt(seconds[0], 10, 64)
 	if e != nil || sec < 0 || sec > 59 {
 		return equipment.PPInterval{}
@@ -383,7 +463,7 @@ func ppClockDuration(s string) equipment.PPInterval {
 	quantum := int64(time.Second)
 	if len(seconds) == 2 {
 		f := seconds[1]
-		if len(f) == 0 || len(f) > 9 {
+		if len(f) > 9 || !ppDecimal(f) {
 			return equipment.PPInterval{}
 		}
 		v, e := strconv.ParseInt(f, 10, 64)
@@ -409,4 +489,16 @@ func ppClockDuration(s string) equipment.PPInterval {
 	}
 	total += rest
 	return equipment.PPInterval{Min: total, Max: total + quantum - 1, Known: true}
+}
+
+func ppDecimal(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }

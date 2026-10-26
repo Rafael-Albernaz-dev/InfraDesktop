@@ -8,6 +8,7 @@ import (
 	"infradesktop/internal/testsupport/sshfixture"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPPPoEAdapterCodecAndFailures(t *testing.T) {
@@ -52,6 +53,49 @@ func TestPPPoEAdapterCodecAndFailures(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func TestPPPoEAH04DurationGrammar(t *testing.T) {
+	for _, bad := range []string{"1h1h", "1s1h", "1d1w", "1m2m", "+1w01:02:03", "1w+2d01:02:03", "+01:02:03", "01:+02:03", "01:02:+03", "01:02:03.+1", "01:02:03.-0", "1w1w01:02:03", "1d1w01:02:03", "01:02:03.1234567890", "9223372036854775807w"} {
+		t.Run(bad, func(t *testing.T) {
+			if got := routerssh.ParsePPDuration(bad); got.Known {
+				t.Fatalf("malformed uptime accepted: %q => %+v", bad, got)
+			}
+		})
+	}
+	for _, good := range []string{"0s", "1w2d3h4m5s", "2h", "01:02:03", "1w2d01:02:03.1", "00:00:00.000000001", "00:00:00.123456789"} {
+		t.Run(good, func(t *testing.T) {
+			if got := routerssh.ParsePPDuration(good); !got.Known || got.Min < 0 || got.Max < got.Min {
+				t.Fatalf("valid uptime rejected: %q => %+v", good, got)
+			}
+		})
+	}
+}
+
+func TestPPPoEAH04ParsedUnknownDurationCannotSupportContinuity(t *testing.T) {
+	parse := func(id, rowUptime, routerUptime string, at time.Time, sample int64) *equipment.PPObservation {
+		body := "H\t1\t1\t7.26\t" + routerUptime + "\nR\t*1\tsession\treader\t198.51.100.1\tcaller\t" + rowUptime + "\nZ\t1\tcomplete\t" + routerUptime + "\n"
+		o, c := routerssh.ParsePPPoE(body)
+		if c != equipment.OK || o.Quality.Status != "complete" || len(o.Rows) != 1 {
+			t.Fatal("codec fixture not complete", o, c)
+		}
+		o.ID, o.DeviceID = id, "same-device"
+		p := &o.Provenance
+		p.Installation, p.Company, p.Connection, p.Epoch = "installation", "company", "connection", "same-worker"
+		p.Started, p.Ended = equipment.PPTime(at), equipment.PPTime(at)
+		p.Sample = equipment.PPInterval{Min: sample, Max: sample, Known: true}
+		o.Rows[0].ID, o.Rows[0].Sample = id+"-row", p.Sample
+		return o
+	}
+	at := time.Date(2026, 10, 25, 0, 0, 0, 0, time.UTC)
+	for _, tc := range []struct{ uptime, category string }{{"2h", "unchanged"}, {"1h1h", "ambiguous"}} {
+		a := parse("base", tc.uptime, "2d1h1s", at, int64(time.Second))
+		b := parse("target", "2h1m", "2d1h1m1s", at.Add(time.Minute), int64(61*time.Second))
+		deltas, c := equipment.ComparePP(a, b)
+		if c != equipment.OK || len(deltas) != 1 || deltas[0].Category != tc.category {
+			t.Fatalf("parser -> continuity for %q: %+v (%s), expected %s", tc.uptime, deltas, c, tc.category)
+		}
 	}
 }
 func TestPPPoEParserBoundaries(t *testing.T) {

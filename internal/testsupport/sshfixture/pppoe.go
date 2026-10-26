@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"infradesktop/internal/adapters/routerssh"
 	"strings"
+	"time"
 )
 
 // Deterministic synthetic data only. This does not interpret the RouterOS script.
@@ -13,6 +14,9 @@ func (s *Server) ppOutput() string {
 		n = 32
 	}
 	tick := s.PPCalls.Add(1)
+	if s.config.RealTime {
+		tick = int32(time.Since(s.started)/time.Second) + 1
+	}
 	version := "7.26"
 	if s.config.Family == "v6" {
 		version = "6.49.19"
