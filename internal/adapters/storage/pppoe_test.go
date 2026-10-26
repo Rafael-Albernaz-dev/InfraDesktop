@@ -14,6 +14,7 @@ import (
 // Only synthetic migration fixtures use this to reconstruct a pre-v5 schema.
 func dropPPPoEFixtureSchema(t *testing.T, j *journey) {
 	t.Helper()
+	dropPPDiagnosticFixtureSchema(t, j)
 	for _, table := range []string{"pppoe_attempts", "pppoe_references", "pppoe_current", "pppoe_rows", "pppoe_observations"} {
 		if _, e := j.st.unit.Exec("DROP TABLE " + table); e != nil {
 			t.Fatal(e)
@@ -120,14 +121,7 @@ func TestPPPoEMigrationRollbackAndLegacyPreservation(t *testing.T) {
 	if c != equipment.OK {
 		t.Fatal(c)
 	}
-	for _, table := range []string{"pppoe_attempts", "pppoe_references", "pppoe_current", "pppoe_rows", "pppoe_observations"} {
-		if _, e := j.st.unit.Exec("DROP TABLE " + table); e != nil {
-			t.Fatal(e)
-		}
-	}
-	if _, e := j.st.unit.Exec("DELETE FROM schema_migrations WHERE version=5"); e != nil {
-		t.Fatal(e)
-	}
+	dropPPPoEFixtureSchema(t, j)
 	var checksums string
 	if j.st.unit.QueryRow("SELECT group_concat(checksum,'|') FROM schema_migrations ORDER BY version").Scan(&checksums) != nil {
 		t.Fatal("checksums")
@@ -277,4 +271,60 @@ func TestPPPoECompanyReferenceBoundary(t *testing.T) {
 		}
 	}
 	t.Fatal("boundary not exercised")
+}
+
+func TestPPPoEAH03CanonicalReferenceAcrossCreateReuseReplayAndReopen(t *testing.T) {
+	j, target := ppStoreSetup(t)
+	ctx := context.Background()
+	o := ppSynthetic(t, j, target, 3)
+	in := equipment.PPInput{DeviceID: target.Device.ID, ObservationID: o.ID, ReferenceID: uuid.NewString(), Operation: uuid.NewString(), SavedAt: "2026-10-25T00:00:00Z"}
+	first, c := j.st.SavePPReference(ctx, companyX, in, "ppref:canonical-first")
+	if c != equipment.OK || first.Reference == nil || first.Reference.Count != 3 {
+		t.Fatal(first, c)
+	}
+	want := *first.Reference
+	// Both retries and a distinct save of the same observation project persisted values.
+	in.SavedAt = "2026-10-26T01:00:00Z"
+	replay, c := j.st.SavePPReference(ctx, companyX, in, "ppref:canonical-first")
+	if c != equipment.OK || replay.Reference == nil || *replay.Reference != want {
+		t.Fatalf("replay lost persisted DTO: %#v, want %#v (%s)", replay.Reference, want, c)
+	}
+	in.Operation, in.ReferenceID = uuid.NewString(), uuid.NewString()
+	reused, c := j.st.SavePPReference(ctx, companyX, in, "ppref:canonical-second")
+	if c != equipment.OK || reused.Reference == nil || *reused.Reference != want {
+		t.Fatalf("reuse changed persisted DTO: %#v, want %#v (%s)", reused.Reference, want, c)
+	}
+	j.create(companyY, "Y", access.OK)
+	j.selectCompany(companyY, access.OK)
+	j.selectCompany(companyX, access.OK)
+	listed, c := j.st.PPReferences(ctx, companyX, equipment.PPInput{DeviceID: target.Device.ID})
+	if c != equipment.OK || len(listed.References) != 1 || listed.References[0] != want {
+		t.Fatal("reopen list differs", listed, c)
+	}
+	deleted := equipment.PPInput{DeviceID: target.Device.ID, ReferenceID: want.ID, Operation: uuid.NewString()}
+	if _, c = j.st.DeletePPReference(ctx, companyX, deleted, "ppref:canonical-delete"); c != equipment.OK {
+		t.Fatal(c)
+	}
+	removed, c := j.st.SavePPReference(ctx, companyX, in, "ppref:canonical-second")
+	if c != equipment.OK || removed.Effect != "removed" || removed.Reference != nil {
+		t.Fatal("deleted receipt recreated reference", removed, c)
+	}
+}
+
+func TestPPPoEAH03ReplayDatabaseFailureIsNotRemovedReference(t *testing.T) {
+	j, target := ppStoreSetup(t)
+	ctx := context.Background()
+	o := ppSynthetic(t, j, target, 2)
+	in := equipment.PPInput{DeviceID: target.Device.ID, ObservationID: o.ID, ReferenceID: uuid.NewString(), Operation: uuid.NewString(), SavedAt: "2026-10-25T00:00:00Z"}
+	if _, c := j.st.SavePPReference(ctx, companyX, in, "ppref:database-failure"); c != equipment.OK {
+		t.Fatal(c)
+	}
+	// An actual SQL failure after receipt lookup must not become a successful removal.
+	if _, e := j.st.unit.Exec("ALTER TABLE pppoe_references RENAME TO synthetic_references_unavailable"); e != nil {
+		t.Fatal(e)
+	}
+	v, c := j.st.SavePPReference(ctx, companyX, in, "ppref:database-failure")
+	if c != equipment.Unavailable || v.Effect == "removed" {
+		t.Fatal("database failure was reported as removal", v, c)
+	}
 }

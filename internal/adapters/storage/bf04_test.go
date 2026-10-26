@@ -132,7 +132,7 @@ func TestBF04EnterpriseV1MigrationAtomicAndChecksum(t *testing.T) {
 				if e = j.st.validateUnit(j.st.unit, companyX); e != nil {
 					t.Fatal(e)
 				}
-			} else if err != nil || count != 5 {
+			} else if err != nil || count != 6 {
 				t.Fatal("migration failed", err)
 			}
 			var old string

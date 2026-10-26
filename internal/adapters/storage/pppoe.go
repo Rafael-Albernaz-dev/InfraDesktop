@@ -172,8 +172,8 @@ func (s *Store) FinishPPCollection(ctx context.Context, company string, target e
 			if ppGC(ctx, tx) != nil {
 				return equipment.Unavailable
 			}
-			var bytes int64
-			if tx.QueryRowContext(ctx, "SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_observations").Scan(&bytes) != nil {
+			bytes, err := ppTotalBytes(ctx, tx)
+			if err != nil {
 				return equipment.Unavailable
 			}
 			if bytes > equipment.PPCompanyBytes {
@@ -343,6 +343,15 @@ func (s *Store) PPSession(ctx context.Context, company string, in equipment.PPIn
 	v.Rows = []equipment.PPRow{r}
 	return v, equipment.OK
 }
+
+const ppReferenceProjection = "SELECT r.id,r.observation_id,r.created_at,o.row_count FROM pppoe_references r JOIN pppoe_observations o ON o.id=r.observation_id "
+
+func scanPPReference(row interface{ Scan(...any) error }) (equipment.PPReference, error) {
+	var ref equipment.PPReference
+	err := row.Scan(&ref.ID, &ref.ObservationID, &ref.Created, &ref.Count)
+	return ref, err
+}
+
 func (s *Store) SavePPReference(ctx context.Context, company string, in equipment.PPInput, stamp string) (equipment.PPView, equipment.Code) {
 	v := equipment.PPView{}
 	c := s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
@@ -353,11 +362,14 @@ func (s *Store) SavePPReference(ctx context.Context, company string, in equipmen
 		}
 		if known {
 			v.Entity = entity
-			v.Effect = "removed"
-			var ref equipment.PPReference
-			if tx.QueryRowContext(ctx, "SELECT id,observation_id,created_at FROM pppoe_references WHERE id=?", entity).Scan(&ref.ID, &ref.ObservationID, &ref.Created) == nil {
+			ref, err := scanPPReference(tx.QueryRowContext(ctx, ppReferenceProjection+"WHERE r.id=? AND r.device_id=?", entity, in.DeviceID))
+			if err == nil {
 				v.Reference = &ref
 				v.Effect = "committed"
+			} else if err == sql.ErrNoRows {
+				v.Effect = "removed"
+			} else {
+				return equipment.Unavailable
 			}
 			return equipment.OK
 		}
@@ -372,12 +384,8 @@ func (s *Store) SavePPReference(ctx context.Context, company string, in equipmen
 		if n > 0 {
 			return equipment.Revision
 		}
-		ref := equipment.PPReference{ID: in.ReferenceID, ObservationID: o.ID, Created: in.SavedAt, Count: o.Count}
-		var existing string
-		e := tx.QueryRowContext(ctx, "SELECT id FROM pppoe_references WHERE device_id=? AND scope=? AND observation_id=?", in.DeviceID, equipment.PPScope, o.ID).Scan(&existing)
-		if e == nil {
-			ref.ID = existing
-		} else if e == sql.ErrNoRows {
+		ref, e := scanPPReference(tx.QueryRowContext(ctx, ppReferenceProjection+"WHERE r.device_id=? AND r.scope=? AND r.observation_id=?", in.DeviceID, equipment.PPScope, o.ID))
+		if e == sql.ErrNoRows {
 			if tx.QueryRowContext(ctx, "SELECT count(*) FROM pppoe_references WHERE device_id=?", in.DeviceID).Scan(&n) != nil {
 				return equipment.Unavailable
 			}
@@ -392,10 +400,14 @@ func (s *Store) SavePPReference(ctx context.Context, company string, in equipmen
 				v.Reason = "references_company"
 				return equipment.Limit
 			}
-			if _, e = tx.ExecContext(ctx, "INSERT INTO pppoe_references VALUES(?,?,?,?,?)", ref.ID, in.DeviceID, equipment.PPScope, o.ID, ref.Created); e != nil {
+			if _, e = tx.ExecContext(ctx, "INSERT INTO pppoe_references VALUES(?,?,?,?,?)", in.ReferenceID, in.DeviceID, equipment.PPScope, o.ID, in.SavedAt); e != nil {
 				return equipment.Unavailable
 			}
-		} else {
+			ref, e = scanPPReference(tx.QueryRowContext(ctx, ppReferenceProjection+"WHERE r.id=? AND r.device_id=?", in.ReferenceID, in.DeviceID))
+			if e != nil {
+				return equipment.Unavailable
+			}
+		} else if e != nil {
 			return equipment.Unavailable
 		}
 		if _, e = tx.ExecContext(ctx, "INSERT INTO equipment_operations VALUES(?,?,?)", in.Operation, stamp, ref.ID); e != nil {
@@ -417,14 +429,14 @@ func (s *Store) PPReferences(ctx context.Context, company string, in equipment.P
 	if s.checkActive() != nil {
 		return v, equipment.Unavailable
 	}
-	rows, e := s.unit.QueryContext(ctx, "SELECT r.id,r.observation_id,r.created_at,o.row_count FROM pppoe_references r JOIN pppoe_observations o ON o.id=r.observation_id WHERE r.device_id=? ORDER BY r.created_at,r.id LIMIT ? OFFSET ?", in.DeviceID, equipment.PageSize, in.Offset)
+	rows, e := s.unit.QueryContext(ctx, ppReferenceProjection+"WHERE r.device_id=? ORDER BY r.created_at,r.id LIMIT ? OFFSET ?", in.DeviceID, equipment.PageSize, in.Offset)
 	if e != nil {
 		return v, equipment.Unavailable
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var r equipment.PPReference
-		if rows.Scan(&r.ID, &r.ObservationID, &r.Created, &r.Count) != nil {
+		r, err := scanPPReference(rows)
+		if err != nil {
 			return v, equipment.Unavailable
 		}
 		v.References = append(v.References, r)
