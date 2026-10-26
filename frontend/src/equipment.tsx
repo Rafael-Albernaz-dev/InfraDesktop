@@ -1,3 +1,4 @@
+import { PPPoE } from './pppoe';
 import {
   createContext,
   useContext,
@@ -26,12 +27,11 @@ import type {
   EquipmentResult,
   Job,
 } from './equipment-api';
-// Operation receipts contain IDs only; survive page unmounts within this window.
-const pendingStarts = new Map<string, string>();
-const pendingEnrollments = new Map<
-  string,
-  { id: string; operation_id: string }
->();
+import {
+  pendingStarts,
+  pendingEnrollments,
+  acceptEquipmentAuthority,
+} from './equipment-receipts';
 const id = () => crypto.randomUUID();
 const stamp = (d: Device) =>
   d.result?.observed_at
@@ -170,8 +170,21 @@ export function Equipment({
   onSelect?: (id: string) => void;
   onDetailChange?: (open: boolean) => void;
 }) {
-  const [devices, setDevices] = useState<Device[]>([]),
-    [credentials, setCredentials] = useState<Credential[]>([]);
+  useLayoutEffect(() => {
+    acceptEquipmentAuthority(profile, activation);
+  }, [profile, activation]);
+  const [credentialRefresh, reloadCredentials] = useState(0);
+  const [credentialError, setCredentialError] = useState('');
+  const [ppOpen, setPPOpen] = useState(false);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [credentialCatalog, setCredentialCatalog] = useState<{
+    key: string;
+    value: Credential[];
+  }>({ key: '', value: [] });
+  const credentials =
+    credentialCatalog.key === [profile, activation].join('|')
+      ? credentialCatalog.value
+      : [];
   const [selected, setSelected] = useState<Device>(),
     [search, setSearch] = useState(''),
     [inactive, setInactive] = useState(false);
@@ -183,6 +196,7 @@ export function Equipment({
     [vault, setVault] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [listError, setListError] = useState('');
   const [form, setForm] = useState<Device | 'new'>(),
     [credentialForm, setCredentialForm] = useState<Credential | 'new'>();
   const [job, setJob] = useState<Job>();
@@ -222,9 +236,10 @@ export function Equipment({
         const r = await api.list(profile, activation, search, cursor, inactive);
         if (stopped || read !== generation.current) return;
         if (r.code !== 'OK' || !r.data) {
-          setError(equipmentMessage(r.code));
+          setListError(equipmentMessage(r.code));
           return;
         }
+        setListError('');
         setDevices(r.data.devices || []);
         setTotal(r.data.total_devices ?? r.data.devices.length);
         onTotal?.(
@@ -249,22 +264,9 @@ export function Equipment({
             ? old
             : current;
         });
-        const all: Credential[] = [];
-        let page = 0;
-        do {
-          const c = await api.credentials(profile, activation, page);
-          if (stopped || read !== generation.current) return;
-          if (c.code !== 'OK' || !c.data) {
-            setError(equipmentMessage(c.code));
-            return;
-          }
-          all.push(...(c.data.credentials || []));
-          page = c.data.next_cursor;
-        } while (page);
-        setCredentials(all);
       } catch {
         if (!stopped && read === generation.current)
-          setError(equipmentMessage('SERVICE_UNAVAILABLE'));
+          setListError(equipmentMessage('SERVICE_UNAVAILABLE'));
       }
     })();
     return () => {
@@ -281,6 +283,31 @@ export function Equipment({
     detailOpen,
     onTotal,
   ]);
+  useEffect(() => {
+    if (!profile || !connected) return;
+    let stopped = false;
+    void (async () => {
+      const all: Credential[] = [];
+      let page = 0;
+      do {
+        const r = await api.credentials(profile, activation, page);
+        if (stopped) return;
+        if (r.code !== 'OK' || !r.data) throw new Error(r.code);
+        all.push(...(r.data.credentials || []));
+        page = r.data.next_cursor;
+      } while (page);
+      setCredentialCatalog({
+        key: [profile, activation].join('|'),
+        value: all,
+      });
+      setCredentialError('');
+    })().catch(() => {
+      if (!stopped) setCredentialError(equipmentMessage('SERVICE_UNAVAILABLE'));
+    });
+    return () => {
+      stopped = true;
+    };
+  }, [profile, activation, connected, credentialRefresh]);
   useEffect(() => {
     if (!job || job.state !== 'RUNNING') return;
     let stopped = false;
@@ -375,6 +402,22 @@ export function Equipment({
     const key = [profile, activation, kind, device.id, device.revision].join(
       '|',
     );
+    // Only a strictly newer verified revision retires the former payload.
+    // A stale lower-revision surface cannot invalidate a newer uncertain ID.
+    for (const operationKind of ['query', 'inspect']) {
+      const prefix =
+        [profile, activation, operationKind, device.id].join('|') + '|';
+      for (const old of pendingStarts.keys()) {
+        const oldRevision = Number(old.slice(prefix.length));
+        if (
+          old.startsWith(prefix) &&
+          Number.isSafeInteger(oldRevision) &&
+          Number.isSafeInteger(device.revision) &&
+          oldRevision < device.revision
+        )
+          pendingStarts.delete(old);
+      }
+    }
     if (!pendingStarts.has(key) && pendingStarts.size >= 128) {
       setError(equipmentMessage('LIMIT_EXCEEDED'));
       return;
@@ -407,10 +450,16 @@ export function Equipment({
     if (!targetID || !connected) return;
     let cancelled = false;
     const read = ++detailRead.current;
+    const intent = surface.current;
     void api
       .get(profile, activation, targetID)
       .then((r) => {
-        if (cancelled || read !== detailRead.current) return;
+        if (
+          cancelled ||
+          read !== detailRead.current ||
+          intent !== surface.current
+        )
+          return;
         if (r.code === 'OK' && r.data?.device?.id === targetID) {
           setSelected(r.data.device);
           setDetailOpen(true);
@@ -420,7 +469,12 @@ export function Equipment({
           );
       })
       .catch(() => {
-        if (!cancelled) setError(equipmentMessage('SERVICE_UNAVAILABLE'));
+        if (
+          !cancelled &&
+          read === detailRead.current &&
+          intent === surface.current
+        )
+          setError(equipmentMessage('SERVICE_UNAVAILABLE'));
       });
     return () => {
       cancelled = true;
@@ -430,11 +484,17 @@ export function Equipment({
     if (!detailOpen || !selected?.id || !connected) return;
     let cancelled = false;
     const read = ++detailRead.current;
+    const intent = surface.current;
     const requested = selected.id;
     void api
       .get(profile, activation, requested)
       .then((r) => {
-        if (cancelled || read !== detailRead.current) return;
+        if (
+          cancelled ||
+          read !== detailRead.current ||
+          intent !== surface.current
+        )
+          return;
         if (r.code === 'OK' && r.data?.device?.id === requested)
           setSelected(r.data.device);
         else
@@ -443,7 +503,12 @@ export function Equipment({
           );
       })
       .catch(() => {
-        if (!cancelled) setError(equipmentMessage('SERVICE_UNAVAILABLE'));
+        if (
+          !cancelled &&
+          read === detailRead.current &&
+          intent === surface.current
+        )
+          setError(equipmentMessage('SERVICE_UNAVAILABLE'));
       });
     return () => {
       cancelled = true;
@@ -487,7 +552,8 @@ export function Equipment({
         } else setError(equipmentMessage(r.code));
       })
       .catch(() => {
-        if (!cancelled) setError(equipmentMessage('SERVICE_UNAVAILABLE'));
+        if (!cancelled && intent === surface.current)
+          setError(equipmentMessage('SERVICE_UNAVAILABLE'));
       });
     return () => {
       cancelled = true;
@@ -508,14 +574,17 @@ export function Equipment({
       false,
     );
   };
-  const continueEnrollment = (r: EquipmentResult) => {
+  const showSavedDevice = (r: EquipmentResult) => {
     closeForm();
     if (r.data?.device) {
       setSelected(r.data.device);
       setDetailOpen(true);
       onSelect?.(r.data.device.id);
-      setConnectRequest(r.data.device);
     }
+  };
+  const continueEnrollment = (r: EquipmentResult) => {
+    showSavedDevice(r);
+    if (r.data?.device) setConnectRequest(r.data.device);
   };
   useEffect(() => {
     onDetailChange?.(detailOpen);
@@ -588,16 +657,51 @@ export function Equipment({
   );
   const vaultNotice =
     'Cofre indisponível. Confira a credencial do serviço nesta instalação.';
+  if (ppOpen && selected)
+    return (
+      <PPPoE
+        key={[profile, activation, selected.id].join('|')}
+        profile={profile}
+        activation={activation}
+        device={selected}
+        back={() => {
+          setPPOpen(false);
+        }}
+      />
+    );
   return (
     <div className="equipment-capability">
+      {credentialError && (
+        <p role="alert">
+          {credentialError}{' '}
+          <button onClick={() => reloadCredentials((n) => n + 1)}>
+            Recarregar credenciais
+          </button>
+        </p>
+      )}
       {error && !shownForm && !credentialForm && !trustOpen && !resetTrust && (
         <p className="inline-error operation-error" role="alert">
           {error}
         </p>
       )}
+      {listError &&
+        !shownForm &&
+        !credentialForm &&
+        !trustOpen &&
+        !resetTrust && (
+          <div className="inventory-notice">
+            <p className="inline-error" role="alert">
+              {listError}
+            </p>
+            <Button disabled={locked} onClick={() => reload((n) => n + 1)}>
+              Tentar novamente
+            </Button>
+          </div>
+        )}
       {!vault &&
         ready &&
         !error &&
+        !listError &&
         !shownForm &&
         !credentialForm &&
         !trustOpen && <p className="inventory-notice">{vaultNotice}</p>}
@@ -717,7 +821,7 @@ export function Equipment({
               </table>
             </div>
           )}
-          {!devices.length && ready && (
+          {!devices.length && ready && !listError && (
             <div className="empty-state">
               <h2>
                 {search
@@ -795,6 +899,15 @@ export function Equipment({
                 </p>
                 {!detailOpen && accessDetails}
                 <div className="bottom-actions equipment-actions">
+                  <Button
+                    disabled={!connected || !selected.fingerprint}
+                    onClick={() => {
+                      setDetailOpen(true);
+                      setPPOpen(true);
+                    }}
+                  >
+                    Abrir sessões PPPoE
+                  </Button>
                   <Button
                     kind={detailOpen ? 'primary' : undefined}
                     disabled={
@@ -1046,8 +1159,12 @@ export function Equipment({
             contextKey={[profile, activation].join('|')}
             save={(d) =>
               perform(
-                () => api.save(profile, activation, d),
-                continueEnrollment,
+                async () => {
+                  const r = await api.save(profile, activation, d);
+                  if (r.code === 'OK') reloadCredentials((n) => n + 1);
+                  return r;
+                },
+                shownForm === 'new' ? continueEnrollment : showSavedDevice,
                 true,
                 true,
               )
@@ -1057,8 +1174,10 @@ export function Equipment({
                 () =>
                   api.enrollmentStatus(profile, activation, device, operation),
                 (r) => {
-                  if (r.data?.operation_state === 'COMMITTED')
+                  if (r.data?.operation_state === 'COMMITTED') {
+                    reloadCredentials((n) => n + 1);
                     continueEnrollment(r);
+                  }
                 },
               )
             }
@@ -1097,7 +1216,10 @@ export function Equipment({
             save={(d) =>
               perform(
                 () => api.putCredential(profile, activation, d),
-                () => setCredentialForm(undefined),
+                () => {
+                  setCredentialForm(undefined);
+                  reloadCredentials((n) => n + 1);
+                },
                 true,
                 true,
               )

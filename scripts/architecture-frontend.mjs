@@ -103,6 +103,18 @@ function inspect(name, code) {
         n.moduleSpecifier.text === "../wailsjs/go/presentation/App"
       ) {
         const approved = new Set([
+          "StartPPPoECollection",
+          "PPPoECollectionStatus",
+          "CancelPPPoECollection",
+          "GetPPPoECurrent",
+          "GetPPPoEObservation",
+          "ListPPPoESessions",
+          "GetPPPoESession",
+          "SavePPPoEReference",
+          "ListPPPoEReferences",
+          "DeletePPPoEReference",
+          "ComparePPPoE",
+          "ExportPPPoE",
           "Status",
           "Register",
           "Login",

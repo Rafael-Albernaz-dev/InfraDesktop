@@ -1,0 +1,74 @@
+.pppoe-workspace {
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pppoe-workspace button,
+.pppoe-workspace select,
+.pppoe-workspace input {
+  font: inherit;
+  color: inherit;
+  background: var(--surface, transparent);
+  border: 1px solid var(--border, #8a8a8a);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 36px;
+}
+.pppoe-workspace button {
+  cursor: pointer;
+}
+.pppoe-workspace button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.pppoe-workspace button:focus-visible,
+.pppoe-workspace input:focus-visible,
+.pppoe-workspace select:focus-visible {
+  outline: 2px solid var(--accent, #5482e8);
+  outline-offset: 2px;
+}
+.pppoe-head,
+.pppoe-actions,
+.pppoe-filters,
+.pppoe-reference {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.pppoe-head h1,
+.pppoe-workspace h2,
+.pppoe-workspace p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pppoe-filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pppoe-workspace [role='alert'] {
+  color: var(--danger, #c13c4a);
+}
+.pppoe-workspace .primary {
+  background: var(--accent, #466bd2);
+  color: white;
+}
+.pppoe-workspace aside {
+  padding: 12px;
+  border: 1px solid var(--border, #888);
+}
+
+.pppoe-workspace > * {
+  flex-shrink: 0;
+}

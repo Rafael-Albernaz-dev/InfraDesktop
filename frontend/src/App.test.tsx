@@ -318,3 +318,34 @@ describe('BF01 real-use presentation', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it('C01b confirmed unauthentication clears expired receipts; transport failure retains them before same-context login', async () => {
+  const { pendingStarts } = await import('./equipment-receipts');
+  vi.useFakeTimers();
+  vi.mocked(access.status).mockResolvedValue(snapshot(true));
+  render(<App />);
+  await act(async () => {});
+  for (let i = 0; i < 128; i++)
+    pendingStarts.set('expired-' + i, 'operation-' + i);
+  vi.mocked(access.status).mockResolvedValue({
+    ...snapshot(),
+    code: 'SERVICE_UNAVAILABLE',
+  });
+  await act(async () => vi.advanceTimersByTimeAsync(1000));
+  expect(pendingStarts.size).toBe(128);
+  vi.mocked(access.status).mockResolvedValue({
+    ...snapshot(),
+    code: 'UNAUTHENTICATED',
+    setup: false,
+  });
+  await act(async () => vi.advanceTimersByTimeAsync(2000));
+  expect(pendingStarts.size).toBe(0);
+  vi.mocked(access.status).mockResolvedValue({ ...snapshot(), setup: false });
+  await act(async () => vi.advanceTimersByTimeAsync(4000));
+  vi.mocked(access.login).mockResolvedValue(snapshot(true));
+  await enterCredentials();
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+  await act(async () => {});
+  expect(access.login).toHaveBeenCalledOnce();
+  expect(pendingStarts.size).toBe(0);
+});

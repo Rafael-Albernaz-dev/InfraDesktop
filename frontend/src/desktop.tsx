@@ -619,11 +619,24 @@ export function Desktop(p: DesktopProps) {
                     />
                   )
                 ) : p.page === 5 ? (
-                  <Concentrator
-                    ops={ops}
-                    navigate={p.navigate}
-                    unavailable={p.unavailable}
-                  />
+                  ops.inventoryState ? (
+                    <div className="empty-state">
+                      <h2>Sessões PPPoE</h2>
+                      <p>
+                        Escolha um concentrador salvo e abra suas sessões no
+                        equipamento.
+                      </p>
+                      <Button onClick={() => p.navigate(4)}>
+                        Ver equipamentos
+                      </Button>
+                    </div>
+                  ) : (
+                    <Concentrator
+                      ops={ops}
+                      navigate={p.navigate}
+                      unavailable={p.unavailable}
+                    />
+                  )
                 ) : p.page === 6 ? (
                   ops.inventoryState ? (
                     <div className="empty-state">

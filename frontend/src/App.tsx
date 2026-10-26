@@ -1,3 +1,4 @@
+import { acceptEquipmentAuthority } from './equipment-receipts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { access } from './presentation';
 import type { Result } from './presentation';
@@ -76,6 +77,12 @@ export default function App() {
     surface = useRef(0),
     previousView = useRef(initial);
   const accept = useCallback((r: Result) => {
+    if (r.code === 'UNAUTHENTICATED') acceptEquipmentAuthority('', '');
+    else if (r.code === 'OK')
+      acceptEquipmentAuthority(
+        r.authenticated ? r.profile_id : '',
+        r.authenticated ? r.activation_id : '',
+      );
     const key = [
       r.instance_id,
       r.authenticated,

@@ -71,6 +71,187 @@ beforeEach(() => {
     },
   } as EquipmentResult);
 });
+for (const active of [true, false]) {
+  for (const fingerprint of ['', 'SHA256:accepted']) {
+    it(`saves an edited active=${active} pinned=${Boolean(fingerprint)} device without remote work`, async () => {
+      const current = { ...device, active, fingerprint };
+      vi.mocked(api.list).mockResolvedValue(data([current]));
+      vi.mocked(api.save).mockResolvedValue({
+        ...data(),
+        data: {
+          ...data().data!,
+          device: { ...current, name: 'Edited name', revision: 2 },
+        },
+      });
+      render(
+        <Equipment profile="X" activation="a" connected createRequest={0} />,
+      );
+      await screen.findByRole('heading', { name: 'Router X' });
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Editar equipamento' }),
+      );
+      fireEvent.change(screen.getByLabelText('Nome'), {
+        target: { value: 'Edited name' },
+      });
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Salvar equipamento' }),
+      );
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+      );
+      expect(api.save).toHaveBeenCalledExactlyOnceWith(
+        'X',
+        'a',
+        expect.objectContaining({
+          id: device.id,
+          revision: 1,
+          name: 'Edited name',
+          credential_id: 'credential',
+          address: '127.0.0.1',
+        }),
+      );
+      await act(async () => {});
+      expect(api.inspect).not.toHaveBeenCalled();
+      expect(api.start).not.toHaveBeenCalled();
+      expect(api.active).not.toHaveBeenCalled();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  }
+}
+for (const failure of ['SERVICE_UNAVAILABLE', 'reject']) {
+  it(`retries an initial inventory ${failure} locally without claiming empty`, async () => {
+    if (failure === 'reject')
+      vi.mocked(api.list).mockRejectedValueOnce(new Error('transport'));
+    else
+      vi.mocked(api.list).mockResolvedValueOnce({ ...data(), code: failure });
+    render(
+      <Equipment profile="X" activation="a" connected createRequest={0} />,
+    );
+    await screen.findByRole('alert');
+    expect(
+      screen.queryByRole('heading', { name: 'Nenhum equipamento cadastrado' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Router X' }),
+    ).toBeVisible();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(api.list).toHaveBeenCalledTimes(2);
+    expect(api.start).not.toHaveBeenCalled();
+    expect(api.inspect).not.toHaveBeenCalled();
+  });
+}
+for (const changeSurface of [true, false]) {
+  it(`keeps a late post-query failure on its original surface: changed=${changeSurface}`, async () => {
+    let reject!: (reason: Error) => void;
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        new Promise((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    const current = { ...device, fingerprint: 'SHA256:accepted' };
+    vi.mocked(api.list).mockResolvedValue(data([current]));
+    vi.mocked(api.start).mockResolvedValue({
+      ...data(),
+      data: {
+        ...data().data!,
+        job: {
+          id: 'late-query',
+          device_id: device.id,
+          kind: 'device.query-start',
+          state: 'SUCCEEDED',
+          code: 'OK',
+        },
+      },
+    });
+    render(
+      <Equipment profile="late" activation="a" connected createRequest={0} />,
+    );
+    await screen.findByRole('heading', { name: 'Router X' });
+    fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+    await waitFor(() => expect(api.get).toHaveBeenCalled());
+    if (changeSurface) {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Editar equipamento' }),
+      );
+      fireEvent.change(screen.getByLabelText('Nome'), {
+        target: { value: 'New draft' },
+      });
+    }
+    await act(async () => reject(new Error('late transport failure')));
+    if (changeSurface) {
+      expect(screen.getByLabelText('Nome')).toHaveValue('New draft');
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: 'Editar equipamento' }),
+      ).toBeVisible();
+    } else
+      expect(await screen.findByRole('alert')).toHaveTextContent('serviço');
+  });
+}
+for (const path of ['target', 'detail']) {
+  for (const outcome of ['success', 'reject']) {
+    for (const changed of [true, false]) {
+      it(`scopes ${path} read ${outcome} to its surface changed=${changed}`, async () => {
+        let complete!: (r: EquipmentResult) => void;
+        let reject!: (e: Error) => void;
+        const updated = {
+          ...data(),
+          data: {
+            ...data().data!,
+            device: { ...device, name: 'Remote changed' },
+          },
+        };
+        vi.mocked(api.get)
+          .mockResolvedValue(updated)
+          .mockImplementationOnce(
+            () =>
+              new Promise((resolve, fail) => {
+                complete = resolve;
+                reject = fail;
+              }),
+          );
+        const props = {
+          profile: 'X',
+          activation: 'a',
+          connected: true,
+          createRequest: 0,
+          targetID: path === 'target' ? device.id : undefined,
+        };
+        const view = render(<Equipment {...props} />);
+        if (path === 'detail')
+          fireEvent.click(await screen.findByRole('row', { name: /Router X/ }));
+        await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
+        if (changed) {
+          view.rerender(<Equipment {...props} createRequest={1} />);
+          fireEvent.change(screen.getByLabelText('Nome'), {
+            target: { value: 'Preserved draft' },
+          });
+        }
+        await act(async () => {
+          if (outcome === 'reject') reject(new Error('late read'));
+          else complete(updated);
+        });
+        if (changed) {
+          expect(screen.getByLabelText('Nome')).toHaveValue('Preserved draft');
+          expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+          expect(
+            screen.queryByRole('heading', {
+              name: 'Remote changed',
+              hidden: true,
+            }),
+          ).not.toBeInTheDocument();
+        } else if (outcome === 'reject')
+          expect(await screen.findByRole('alert')).toHaveTextContent('serviço');
+        else
+          expect(
+            await screen.findByRole('heading', { name: 'Remote changed' }),
+          ).toBeVisible();
+      });
+    }
+  }
+}
 it('persists a real form request with stable operation ID and explicit company context', async () => {
   vi.mocked(api.save)
     .mockResolvedValueOnce({
@@ -162,8 +343,31 @@ it('inactive filtering stays explicit; no remote work happens while listing or e
   fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
   expect(api.start).not.toHaveBeenCalled();
 });
-it('late X list and write responses cannot populate the remounted Y surface', async () => {
+it('Q03 late X inventory and credential responses cannot populate the remounted Y surface', async () => {
   let resolve!: (r: EquipmentResult) => void;
+  let credentialResolve!: (r: EquipmentResult) => void;
+  vi.mocked(api.credentials)
+    .mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          credentialResolve = r;
+        }),
+    )
+    .mockResolvedValue({
+      ...data(),
+      data: {
+        ...data().data!,
+        credentials: [
+          {
+            id: 'fresh-y',
+            alias: 'Fresh Y',
+            user: 'reader-y',
+            revision: 1,
+            links: 0,
+          },
+        ],
+      },
+    });
   vi.mocked(api.list)
     .mockImplementationOnce(() => new Promise((r) => (resolve = r)))
     .mockResolvedValue(data([]));
@@ -186,10 +390,38 @@ it('late X list and write responses cannot populate the remounted Y surface', as
     />,
   );
   await screen.findByText('Nenhum equipamento cadastrado');
-  await act(async () => resolve(data()));
+  await act(async () => {
+    resolve(data());
+    credentialResolve({
+      ...data(),
+      data: {
+        ...data().data!,
+        credentials: [
+          {
+            id: 'old-x',
+            alias: 'Late X',
+            user: 'reader-x',
+            revision: 1,
+            links: 0,
+          },
+        ],
+      },
+    });
+  });
   expect(screen.queryByText('Router X')).not.toBeInTheDocument();
-  expect(api.credentials).toHaveBeenCalledTimes(1);
+  expect(api.credentials).toHaveBeenCalledTimes(2);
+  expect(api.credentials).toHaveBeenCalledWith('X', 'a', 0);
   expect(api.credentials).toHaveBeenCalledWith('Y', 'b', 0);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Adicionar equipamento' }),
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Usar credencial existente' }),
+  );
+  expect(
+    screen.getByRole('option', { name: 'Fresh Y · reader-y' }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/Late X/)).not.toBeInTheDocument();
 });
 it('first acceptance is deliberate without an invented origin and failed acceptance cannot authenticate', async () => {
   vi.mocked(api.inspect).mockResolvedValue({
@@ -923,6 +1155,7 @@ it('lost direct response clears the password, blocks blind resend and reconciles
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
   );
   expect(api.save).toHaveBeenCalledTimes(1);
+  expect(api.credentials).toHaveBeenCalledTimes(2);
   expect(JSON.stringify(localStorage)).not.toContain(
     'transient fixture secret',
   );
@@ -1343,4 +1576,103 @@ it('completed inspection polling on its original surface still offers deliberate
   ).toBeEnabled();
   expect(api.start).not.toHaveBeenCalled();
   expect(api.confirm).not.toHaveBeenCalled();
+});
+
+it('Q01 retires abandoned activations, preserves same-activation uncertain IDs and ignores late starts', async () => {
+  const current = { ...device, fingerprint: 'SHA256:accepted' };
+  vi.mocked(api.list).mockResolvedValue(data([current]));
+  vi.mocked(api.start).mockResolvedValue({
+    ...data(),
+    code: 'SERVICE_UNAVAILABLE',
+  });
+  const props = {
+    profile: 'Q01',
+    activation: 'a0',
+    connected: true,
+    createRequest: 0,
+  };
+  const view = render(<Equipment {...props} />);
+  for (let i = 0; i < 130; i++) {
+    view.rerender(<Equipment {...props} activation={'a' + i} />);
+    const connect = await screen.findByRole('button', { name: 'Conectar' });
+    await act(async () => {
+      fireEvent.click(connect);
+    });
+    expect(api.start).toHaveBeenCalledTimes(i + 1);
+    expect(connect).toBeEnabled();
+  }
+  const operation = vi.mocked(api.start).mock.calls.at(-1)![3];
+  view.unmount();
+  render(<Equipment {...props} activation="a129" />);
+  await screen.findByRole('heading', { name: 'Router X' });
+  fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+  await waitFor(() => expect(api.start).toHaveBeenCalledTimes(131));
+  expect(vi.mocked(api.start).mock.calls.at(-1)![3]).toBe(operation);
+  expect(api.inspect).not.toHaveBeenCalled();
+});
+
+it('Q03 inventory filters and refresh do not reload an independent credential catalog', async () => {
+  render(
+    <Equipment profile="Q03" activation="q03" connected createRequest={0} />,
+  );
+  await screen.findByRole('heading', { name: 'Router X' });
+  await waitFor(() => expect(api.credentials).toHaveBeenCalledTimes(1));
+  const search = screen.getByPlaceholderText(/Buscar/);
+  fireEvent.change(search, { target: { value: 'Router' } });
+  await waitFor(() => expect(api.list).toHaveBeenCalledTimes(2));
+  expect(api.credentials).toHaveBeenCalledTimes(1);
+});
+
+it('Q03 updates the credential catalog after successful replacement and recovers catalog failure locally', async () => {
+  vi.mocked(api.putCredential).mockResolvedValue(data());
+  render(
+    <Equipment
+      profile="Q03-edit"
+      activation="catalog"
+      connected
+      createRequest={0}
+    />,
+  );
+  await screen.findByRole('heading', { name: 'Router X' });
+  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  fireEvent.change(screen.getByLabelText('Credencial para editar'), {
+    target: { value: 'credential' },
+  });
+  fireEvent.change(screen.getByLabelText('Alias'), {
+    target: { value: 'Updated catalog' },
+  });
+  fireEvent.change(screen.getByLabelText('Senha remota'), {
+    target: { value: 'synthetic replacement secret' },
+  });
+  fireEvent.click(screen.getByRole('checkbox', { name: /2 equipamentos/ }));
+  vi.mocked(api.credentials)
+    .mockResolvedValueOnce({ ...data(), code: 'SERVICE_UNAVAILABLE' })
+    .mockResolvedValue({
+      ...data(),
+      data: {
+        ...data().data!,
+        credentials: [
+          {
+            id: 'credential',
+            alias: 'Updated catalog',
+            user: 'reader',
+            revision: 2,
+            links: 2,
+          },
+        ],
+      },
+    });
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar credencial' }));
+  await screen.findByRole('button', { name: 'Recarregar credenciais' });
+  const inventoryCalls = vi.mocked(api.list).mock.calls.length;
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Recarregar credenciais' }),
+  );
+  await waitFor(() => expect(api.credentials).toHaveBeenCalledTimes(3));
+  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  expect(
+    await screen.findByRole('option', { name: 'Updated catalog · 2 vínculos' }),
+  ).toBeInTheDocument();
+  expect(api.list).toHaveBeenCalledTimes(inventoryCalls);
+  expect(api.start).not.toHaveBeenCalled();
 });

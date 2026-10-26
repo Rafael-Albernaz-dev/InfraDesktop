@@ -1,4 +1,16 @@
 import {
+  StartPPPoECollection,
+  PPPoECollectionStatus,
+  CancelPPPoECollection,
+  GetPPPoECurrent,
+  GetPPPoEObservation,
+  ListPPPoESessions,
+  GetPPPoESession,
+  SavePPPoEReference,
+  ListPPPoEReferences,
+  DeletePPPoEReference,
+  ComparePPPoE,
+  ExportPPPoE,
   Status,
   Register,
   Login,
@@ -126,3 +138,112 @@ export const equipmentAPI: {
     ...args: Parameters<(typeof equipmentBindings)[K]>
   ) => Promise<EquipmentResult>;
 } = equipmentBindings;
+
+export type PPQuery = {
+  search: string;
+  duplicates_only: boolean;
+  sort: string;
+  desc: boolean;
+  category: string;
+};
+export type PPInterval = { min: number; max: number; known: boolean };
+export type PPRow = {
+  row_id: string;
+  remote_id: string;
+  session_id: string;
+  login: string;
+  address: string;
+  caller_id: string;
+  uptime: PPInterval;
+  duplicates: number;
+};
+export type PPObservation = {
+  observation_id: string;
+  count: number;
+  provenance: { ended_at: string };
+  quality: { status: string };
+};
+export type PPReference = {
+  reference_id: string;
+  observation_id: string;
+  created_at: string;
+  count: number;
+};
+export type PPDelta = {
+  base_row?: string;
+  target_row?: string;
+  category: string;
+  reason: string;
+  address_changed: boolean;
+  caller_changed: boolean;
+};
+export type PPResult = {
+  code: string;
+  profile_id: string;
+  activation_id: string;
+  error?: { reason?: string; entity_id?: string };
+  data?: {
+    effect_state?: string;
+    current?: PPObservation;
+    rows?: PPRow[];
+    references?: PPReference[];
+    deltas?: PPDelta[];
+    total: number;
+    next_cursor?: string;
+    job?: { id: string; state: string; code: string };
+    attempt?: {
+      state: string;
+      code: string;
+      quality: { status: string; counts_known: boolean; eligible: number };
+    };
+  };
+};
+const ppBindings = {
+  start: StartPPPoECollection,
+  status: PPPoECollectionStatus,
+  cancel: CancelPPPoECollection,
+  current: GetPPPoECurrent,
+  observation: GetPPPoEObservation,
+  list: (p: string, a: string, d: string, o: string, q: PPQuery, c: string) =>
+    ListPPPoESessions(
+      p,
+      a,
+      d,
+      o,
+      { ...q, category: '' } as equipment.PPQuery,
+      c,
+    ),
+  detail: GetPPPoESession,
+  save: SavePPPoEReference,
+  references: ListPPPoEReferences,
+  remove: DeletePPPoEReference,
+  compare: (
+    p: string,
+    a: string,
+    d: string,
+    b: string,
+    t: string,
+    q: PPQuery,
+    c: string,
+  ) =>
+    ComparePPPoE(
+      p,
+      a,
+      d,
+      b,
+      t,
+      {
+        ...q,
+        search: '',
+        sort: '',
+        desc: false,
+        duplicates_only: false,
+      } as equipment.PPQuery,
+      c,
+    ),
+};
+export const pppoeAPI: {
+  [K in keyof typeof ppBindings]: (
+    ...args: Parameters<(typeof ppBindings)[K]>
+  ) => Promise<PPResult>;
+} & { export: typeof ExportPPPoE } = { ...ppBindings, export: ExportPPPoE };

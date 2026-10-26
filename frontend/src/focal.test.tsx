@@ -8,8 +8,9 @@ import {
 import { vi, it, expect, beforeEach, afterEach } from 'vitest';
 import App from './App';
 import { Appearance } from './desktop';
-import { access, type Result } from './presentation';
+import { access, equipmentAPI, type Result } from './presentation';
 vi.mock('./presentation', () => ({
+  equipmentAPI: { list: vi.fn() },
   access: {
     status: vi.fn(),
     register: vi.fn(),
@@ -43,6 +44,20 @@ const snapshot = (authenticated = false): Result => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(equipmentAPI.list).mockImplementation(
+    async (profile, activation) => ({
+      code: 'OK',
+      profile_id: profile,
+      activation_id: activation,
+      data: {
+        devices: [],
+        credentials: [],
+        next_cursor: 0,
+        total_devices: 0,
+        vault_available: true,
+      },
+    }),
+  );
   vi.mocked(access.getBrand).mockResolvedValue({
     ...snapshot(true),
     brand: { name: '', logo: '', accent: 'teal' },
@@ -514,16 +529,56 @@ it('can cancel a logo read before any other draft edit', async () => {
   expect(container.querySelector('img')).toBeNull();
 });
 it('a valid company selection still opens its workspace after the service changes profile context', async () => {
-  vi.mocked(access.status).mockResolvedValue({
+  vi.useFakeTimers();
+  let current = {
     ...snapshot(true),
     profile_id: '',
+  };
+  vi.mocked(access.status).mockImplementation(async () => current);
+  vi.mocked(access.selectCompany).mockImplementation(async (profile) => {
+    expect(profile).toBe('one');
+    current = { ...snapshot(true), activation_id: 'selected-company' };
+    return current;
   });
-  vi.mocked(access.selectCompany).mockResolvedValue(snapshot(true));
-  render(<App />);
-  await screen.findByRole('heading', { name: 'Empresas' });
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir empresa' }));
-  await screen.findByRole('heading', {
-    name: 'Inventário disponível nesta empresa',
-  });
-  expect(access.selectCompany).toHaveBeenCalledExactlyOnceWith('one');
+  try {
+    const { container } = render(<App />);
+    await act(async () => {});
+    expect(screen.getByRole('heading', { name: 'Empresas' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir empresa' }));
+    await act(async () => {});
+    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Selecionar empresa' }),
+    ).toHaveTextContent('Audit Company');
+    expect(container.querySelector('.app')).toHaveAttribute('data-page', '3');
+    expect(
+      screen.getByRole('heading', { name: 'Operação da rede' }),
+    ).toBeVisible();
+    expect(equipmentAPI.list).toHaveBeenCalledWith(
+      'one',
+      'selected-company',
+      '',
+      0,
+      false,
+    );
+    const polls = vi.mocked(access.status).mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(vi.mocked(access.status).mock.calls.length).toBeGreaterThan(polls);
+    expect(current.profile_id).toBe('one');
+    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Selecionar empresa' }),
+    ).toHaveTextContent('Audit Company');
+    expect(access.selectCompany).toHaveBeenCalledExactlyOnceWith('one');
+  } finally {
+    vi.useRealTimers();
+  }
 });
