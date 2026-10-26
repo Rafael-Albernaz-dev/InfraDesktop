@@ -80,13 +80,17 @@ type PPObservation struct {
 	Rows       []PPRow      `json:"-"`
 }
 type PPAttempt struct {
-	Epoch         string    `json:"epoch"`
-	JobID         string    `json:"job_id"`
-	State         string    `json:"state"`
-	Code          Code      `json:"code"`
-	At            string    `json:"at"`
-	Quality       PPQuality `json:"quality"`
-	ObservationID string    `json:"observation_id,omitempty"`
+	Operation         string    `json:"operation_id,omitempty"`
+	Scope             string    `json:"scope,omitempty"`
+	SourceObservation string    `json:"source_observation,omitempty"`
+	SourceRow         string    `json:"source_row,omitempty"`
+	Epoch             string    `json:"epoch"`
+	JobID             string    `json:"job_id"`
+	State             string    `json:"state"`
+	Code              Code      `json:"code"`
+	At                string    `json:"at"`
+	Quality           PPQuality `json:"quality"`
+	ObservationID     string    `json:"observation_id,omitempty"`
 }
 type PPReference struct {
 	ID            string `json:"reference_id"`
@@ -102,6 +106,8 @@ type PPQuery struct {
 	Category   string `json:"category,omitempty"`
 }
 type PPInput struct {
+	Scope         string   `json:"scope,omitempty"`
+	DiagnosticID  string   `json:"diagnostic_id,omitempty"`
 	WorkerEpoch   string   `json:"-"`
 	SavedAt       string   `json:"-"`
 	ExportPart    string   `json:"export_part,omitempty"`
@@ -136,23 +142,26 @@ type PPExportDelta struct {
 	CallerChanged  bool   `json:"caller_changed"`
 }
 type PPView struct {
-	ExportDeltas []PPExportDelta `json:"export_deltas,omitempty"`
-	Current      *PPObservation  `json:"current,omitempty"`
-	Attempt      *PPAttempt      `json:"attempt,omitempty"`
-	Job          *Job            `json:"job,omitempty"`
-	Rows         []PPRow         `json:"rows,omitempty"`
-	References   []PPReference   `json:"references,omitempty"`
-	Reference    *PPReference    `json:"reference,omitempty"`
-	Deltas       []PPDelta       `json:"deltas,omitempty"`
-	Counts       map[string]int  `json:"counts,omitempty"`
-	Total        int             `json:"total"`
-	Next         string          `json:"next_cursor,omitempty"`
-	More         bool            `json:"-"`
-	NextOffset   int             `json:"-"`
-	Reason       string          `json:"-"`
-	Entity       string          `json:"-"`
-	Effect       string          `json:"effect_state,omitempty"`
-	ExportRows   []PPExportRow   `json:"export_rows,omitempty"`
+	Diagnostic        *PDDiagnostic   `json:"diagnostic,omitempty"`
+	DiagnosticRows    []PDRow         `json:"diagnostic_rows,omitempty"`
+	ExportDiagnostics []PDRow         `json:"export_diagnostics,omitempty"`
+	ExportDeltas      []PPExportDelta `json:"export_deltas,omitempty"`
+	Current           *PPObservation  `json:"current,omitempty"`
+	Attempt           *PPAttempt      `json:"attempt,omitempty"`
+	Job               *Job            `json:"job,omitempty"`
+	Rows              []PPRow         `json:"rows,omitempty"`
+	References        []PPReference   `json:"references,omitempty"`
+	Reference         *PPReference    `json:"reference,omitempty"`
+	Deltas            []PPDelta       `json:"deltas,omitempty"`
+	Counts            map[string]int  `json:"counts,omitempty"`
+	Total             int             `json:"total"`
+	Next              string          `json:"next_cursor,omitempty"`
+	More              bool            `json:"-"`
+	NextOffset        int             `json:"-"`
+	Reason            string          `json:"-"`
+	Entity            string          `json:"-"`
+	Effect            string          `json:"effect_state,omitempty"`
+	ExportRows        []PPExportRow   `json:"export_rows,omitempty"`
 }
 type PPExportRow struct {
 	Observation string `json:"observation"`
