@@ -58,6 +58,7 @@ const result = (extra = {}) =>
       ...extra,
     },
   }) as EquipmentResult;
+let listAttempts = 0;
 const app = {
   ListEquipment: async (
     _p: string,
@@ -65,8 +66,10 @@ const app = {
     search: string,
     _cursor: number,
     inactive: boolean,
-  ) =>
-    result({
+  ) => {
+    if (mode === 'error' && ++listAttempts === 1)
+      throw new Error('isolated list failure');
+    return result({
       devices:
         mode === 'empty'
           ? []
@@ -77,7 +80,8 @@ const app = {
                   .toLowerCase()
                   .includes(search.toLowerCase()),
               ),
-    }),
+    });
+  },
   ListCredentials: async () => result({ credentials: [metadata] }),
   GetEquipment: async () => result({ device: devices[0] }),
   InspectTrust: async () =>
@@ -89,6 +93,16 @@ const app = {
         state: 'SUCCEEDED',
         code: 'OK',
         fingerprint: 'SHA256:TEST-FIXTURE-ONLY',
+      },
+    }),
+  CancelQuery: async () =>
+    result({
+      job: {
+        id: 'job',
+        device_id: devices[0].id,
+        kind: 'trust.inspect',
+        state: 'CANCELLED',
+        code: 'CANCELLED',
       },
     }),
 };

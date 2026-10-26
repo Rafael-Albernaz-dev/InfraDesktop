@@ -10,6 +10,9 @@ const root = process.cwd(),
   manifest = JSON.parse(
     fs.readFileSync(path.join(out, "capture-manifest.json"), "utf8"),
   );
+const referenceRoot = manifest.reference_root;
+if (!referenceRoot || !fs.existsSync(path.join(referenceRoot, 'INFRADESKTOP-MOCKUPS-DESKTOP-V2.html')))
+  throw Error('Fidelity NOT RUN: reference origin absent from capture manifest');
 const server = await preview({
     root: path.join(root, "frontend"),
     configFile: false,
@@ -31,7 +34,7 @@ try {
     await ref.goto(
       pathToFileURL(
         path.resolve(
-          "docs/reference/infradesktop-ui-0.2.1/INFRADESKTOP-MOCKUPS-DESKTOP-V2.html",
+          referenceRoot, "INFRADESKTOP-MOCKUPS-DESKTOP-V2.html",
         ),
       ).href +
         `#tela=${row.scene}&tema=${row.theme === "dark" ? "escuro" : "claro"}&cenario=${row.empty ? "vazio" : "piloto"}`,

@@ -11,9 +11,15 @@ import crypto from "node:crypto";
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 import { inspectActions } from "./visual-actions.mjs";
-const out = path.resolve("docs/evidence/l04-l05-cofre-ux/visual");
+const smoke = process.argv.includes('--smoke');
+const out = path.resolve(process.env.INFRADESKTOP_EVIDENCE_DIR || path.join('build/equipment-visual', new Date().toISOString().replaceAll(':', '-')));
 fs.mkdirSync(out, { recursive: true });
-const bundle = path.resolve("build/cofre-ux-visual-bundle");
+const referenceRoot = path.resolve(process.env.INFRADESKTOP_VISUAL_REFERENCES || 'docs/reference/infradesktop-ui-0.2.1');
+const referenceHTML = path.join(referenceRoot, 'INFRADESKTOP-MOCKUPS-DESKTOP-V2.html');
+if (!smoke && !fs.existsSync(referenceHTML)) throw Error('Fidelity NOT RUN: private references absent; use --smoke for public component checks');
+if (!smoke) assert.equal(sha(referenceHTML), '975e8c4a9c4e00e70735dd21e62736af78ea40c52e731100df0d4e8599e120d5');
+const inputs = [...files('frontend/src'), ...files('frontend/visual'), ...files('frontend/public/fonts'), 'frontend/package-lock.json', 'frontend/wailsjs/go/presentation/App.js', 'frontend/wailsjs/go/models.ts', 'scripts/test-part1-visual.mjs', 'scripts/test-cofre-ux-visual.mjs', 'scripts/visual-actions.mjs', ...(!smoke ? [referenceHTML] : [])].map(p => ({path:p,sha256:sha(p)}));
+const bundle = path.join(out, 'fixture-bundle');
 await build({
   root: path.resolve("frontend"),
   configFile: false,
@@ -36,23 +42,14 @@ const browser = await chromium.launch({
   headless: true,
 });
 const rows = [];
-const files = (dir) =>
-  fs
+function files(dir) { return fs
     .readdirSync(dir, { withFileTypes: true })
     .flatMap((e) =>
       e.isDirectory()
         ? files(path.join(dir, e.name))
         : [path.join(dir, e.name)],
-    );
-const sha = (p) =>
-  crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex");
-const referenceHTML = path.resolve(
-  "docs/reference/infradesktop-ui-0.2.1/INFRADESKTOP-MOCKUPS-DESKTOP-V2.html",
-);
-assert.equal(
-  sha(referenceHTML),
-  "975e8c4a9c4e00e70735dd21e62736af78ea40c52e731100df0d4e8599e120d5",
-);
+    ); }
+function sha(p) { return crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex"); }
 try {
   for (const [width, height] of [
     [1440, 860],
@@ -70,8 +67,11 @@ try {
         "existing-form",
         "credential-form",
         "trust",
+        "error",
+        "result",
       ]) {
         const key = `${state}-${theme}-${width}x${height}`;
+        console.log(key);
         const page = await browser.newPage({
           viewport: { width, height },
           deviceScaleFactor: 1,
@@ -81,19 +81,18 @@ try {
         const fixture =
           state === "vault-form"
             ? "vault"
-            : ["empty", "vault", "inactive-only"].includes(state)
+            : ["empty", "vault", "inactive-only", "error", "result"].includes(state)
               ? state
               : "list";
         await page.goto(
           `http://127.0.0.1:${port}/visual/equipment.html?theme=${theme}&state=${fixture}`,
         );
         await page.evaluate(() => document.fonts.ready);
-        await page
-          .getByRole("button", { name: /^Adicionar(?: equipamento)?$/ })
-          .waitFor();
+        if (state === 'error') await page.getByRole('alert').waitFor();
+        else await page.getByRole("button", { name: /^Adicionar(?: equipamento)?$/ }).waitFor();
         assert.equal(
           await page.getByRole("button", { name: /^Adicionar/ }).count(),
-          1,
+          state === 'error' ? 0 : 1,
           "one Add CTA across full shell and content",
         );
         if (state === "empty") {
@@ -173,6 +172,16 @@ try {
           );
         }
         let expected = [];
+        if (state === 'error') {
+          await page.getByRole('alert').waitFor();
+          assert.equal(await page.getByRole('heading', {name: 'Nenhum equipamento cadastrado'}).count(), 0);
+          expected = [{name:'Tentar novamente'}];
+        }
+        if (state === 'result') {
+          await page.getByRole('button', {name:'Abrir equipamento', exact:true}).click();
+          await page.getByRole('heading', {name:'Resumo', exact:true}).waitFor();
+          await page.getByText('ether1', {exact:true}).waitFor();
+        }
         if (state === "vault-form") {
           await page
             .getByRole("button", { name: "Adicionar", exact: true })
@@ -199,7 +208,7 @@ try {
           );
           assert.equal(
             await dialog
-              .getByRole("button", { name: "Salvar equipamento" })
+              .getByRole("button", { name: "Salvar e conectar" })
               .isDisabled(),
             true,
           );
@@ -252,7 +261,7 @@ try {
           }
           expected = [
             { name: "Fechar painel" },
-            { name: "Salvar equipamento" },
+            { name: "Salvar e conectar" },
             {
               selector:
                 state === "device-form" ? 'input[type="password"]' : "select",
@@ -276,9 +285,9 @@ try {
             .click();
           await page.getByRole("dialog").waitFor();
           expected = [
-            { name: "Confirmar chave conferida", disabled: true },
+            { name: "Confiar neste equipamento e conectar" },
             { name: "Fechar painel" },
-            { selector: "form input" },
+            { name: "Cancelar" },
           ];
         }
         // Scroll each control into view and hit-test it. This is Chromium evidence only.
@@ -320,6 +329,11 @@ try {
           });
         const capture = path.join(out, key + ".png");
         await page.screenshot({ path: capture });
+        if (state === 'error') {
+          await page.getByRole('button', {name:'Tentar novamente'}).click();
+          await page.getByRole('table').waitFor();
+          assert.equal(await page.getByRole('alert').count(), 0);
+        }
         // Keep captured state intact until after screenshot; then exercise actual keyboard.
         if (await page.getByRole("dialog").count()) {
           const dialog = page.getByRole("dialog");
@@ -339,7 +353,9 @@ try {
             "Fechar painel",
           );
           await page.keyboard.press("Escape");
-          assert.equal(await dialog.count(), 0);
+          const discard = page.getByRole('dialog', {name:'Descartar alterações?'});
+          if (await discard.isVisible()) await discard.getByRole('button', {name:'Descartar alterações',exact:true}).click();
+          await dialog.waitFor({state:'hidden'});
           const opener = [
             "device-form",
             "existing-form",
@@ -355,6 +371,8 @@ try {
             "focus returned to the exact opener",
           );
         }
+        let reference = null;
+        if (!smoke) {
         const ref = await browser.newPage({
           viewport: { width, height },
           deviceScaleFactor: 1,
@@ -381,8 +399,10 @@ try {
           },
           { width, height },
         );
-        const reference = path.join(out, key + "-reference.png");
+        reference = path.join(out, key + "-reference.png");
         await ref.screenshot({ path: reference });
+        await ref.close();
+        }
         rows.push({
           key,
           state,
@@ -390,38 +410,34 @@ try {
           viewport: [width, height],
           capture,
           reference,
+          crop: null,
           capture_sha256: sha(capture),
-          reference_sha256: sha(reference),
+          reference_sha256: reference ? sha(reference) : null,
           geometry,
           actionChecks,
           runtime: "Chromium isolated component fixture",
           reference_relation:
             "M04/DS-001 shell, tokens and controls; C02/C03 authorized content/CTA/dialog deltas. Original reference has no direct-enrollment modal.",
         });
-        await ref.close();
         await page.close();
       }
+  for (const input of inputs) assert.equal(sha(input.path), input.sha256, 'STALE input: '+input.path);
   fs.writeFileSync(
     path.join(out, "capture-manifest.json"),
     JSON.stringify(
       {
+        reference_root: smoke ? null : referenceRoot,
+        fidelity: smoke ? 'NOT RUN: public smoke' : 'REQUIRES_REVIEW',
         fixture: true,
         rows,
-        inputs: [
-          ...files("frontend/src"),
-          ...files("frontend/visual"),
-          ...files("frontend/public/fonts"),
-          ...files(bundle),
-          "frontend/wailsjs/go/presentation/App.js",
-          "frontend/wailsjs/go/models.ts",
-          "scripts/test-cofre-ux-visual.mjs",
-          referenceHTML,
-        ].map((p) => ({ path: p, sha256: sha(p) })),
+        inputs: [...inputs, ...files(bundle).map(p=>({path:p,sha256:sha(p)}))],
       },
       null,
       2,
     ) + "\n",
   );
+  fs.mkdirSync('build/equipment-visual', {recursive:true});
+  fs.writeFileSync('build/equipment-visual/latest.txt', out+'\n');
   console.log(
     `${rows.length} focal states; comparison review remains separate.`,
   );

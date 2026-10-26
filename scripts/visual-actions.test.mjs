@@ -2,6 +2,17 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {chromium} from '../frontend/node_modules/@playwright/test/index.mjs';
 import {inspectActions} from './visual-actions.mjs';
+test('closed disclosure exposes its summary; required hidden controls still fail', async () => {
+ const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true});
+ try {
+  const page=await browser.newPage({viewport:{width:720,height:600}});
+  await page.setContent('<div class="app"><details><summary>Porta SSH</summary><input aria-label="Porta" value="22"></details></div>');
+  assert.deepEqual((await page.evaluate(inspectActions,[])).failures,[]);
+  assert.ok((await page.evaluate(inspectActions,[{selector:'input'}])).failures.some(x=>x.includes('hidden')));
+  await page.locator('summary').click();
+  assert.deepEqual((await page.evaluate(inspectActions,[{selector:'input'}])).failures,[]);
+ } finally {await browser.close();}
+});
 test('real DOM rejects removed, hidden, disabled, ancestor clipping and occlusion; scroll remains reachable',async()=>{
  const browser=await chromium.launch({executablePath:'/usr/bin/google-chrome',headless:true});
  try{

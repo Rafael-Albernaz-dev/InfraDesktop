@@ -2,7 +2,16 @@
 // hidden or incorrectly disabled actions; geometry catches ancestor clipping.
 export function inspectActions(expected) {
   const container=document.querySelector('[role="dialog"]')||document.querySelector('.account-dropdown')||document.querySelector('.navigation-open .sidebar')||document.querySelector('.app');
-  const all=[...container.querySelectorAll('button,input:not([type="hidden"]),textarea,select,[tabindex="0"]')];
+  const all=[...container.querySelectorAll('button,input:not([type="hidden"]),textarea,select,summary,[tabindex="0"]')];
+  const collapsed=el=>{
+    for(let parent=el.parentElement;parent;parent=parent.parentElement){
+      if(parent.tagName==='DETAILS'&&!parent.open){
+        const summary=[...parent.children].find(child=>child.tagName==='SUMMARY');
+        if(!summary?.contains(el))return true;
+      }
+    }
+    return false;
+  };
   const name=el=>el.getAttribute('aria-label')||el.textContent.trim().replace(/\s+/g,' ');
   const failures=[];const required=[];
   for(const item of expected) {
@@ -10,12 +19,12 @@ export function inspectActions(expected) {
     if(!found){failures.push('missing '+(item.name||item.selector));continue;}
     required.push(found);
     if(found.matches(':disabled')!==Boolean(item.disabled))failures.push('disabled state '+(item.name||item.selector));
-    if(!found.getClientRects().length||getComputedStyle(found).visibility!=='visible'||found.closest('[hidden]'))failures.push('hidden '+(item.name||item.selector));
+    if(collapsed(found)||!found.getClientRects().length||getComputedStyle(found).visibility!=='visible'||found.closest('[hidden]'))failures.push('hidden '+(item.name||item.selector));
   }
   const scrollers=[...document.querySelectorAll('*')].filter(e=>e.scrollHeight>e.clientHeight||e.scrollWidth>e.clientWidth).map(e=>[e,e.scrollLeft,e.scrollTop]);
   let checked=0;
   for(const el of new Set([...all.filter(el=>!el.matches(':disabled')),...required])) {
-    if(!el.getClientRects().length||el.closest('[hidden]'))continue;
+    if(collapsed(el)||!el.getClientRects().length||el.closest('[hidden]'))continue;
     if(Number(getComputedStyle(el).opacity)===0)failures.push('transparent '+name(el));
     const own=getComputedStyle(el);if((own.zoom&&Number(own.zoom)!==1)||own.transform!=='none')failures.push('scaled control '+name(el));
     const ancestors=[];for(let p=el.parentElement;p;p=p.parentElement)ancestors.push([p,p.scrollLeft,p.scrollTop]);

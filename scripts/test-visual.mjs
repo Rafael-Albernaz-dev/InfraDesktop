@@ -381,6 +381,7 @@ try {
     if (sha(input.path) !== input.sha256)
       throw Error("STALE input changed during capture: " + input.path);
   const manifest = {
+    reference_root: hasRef ? ref : null,
     version: "0.4.0",
     matrix: {selected, full:matrix, complete:selected.length===matrix.length},
     fixture: true,
