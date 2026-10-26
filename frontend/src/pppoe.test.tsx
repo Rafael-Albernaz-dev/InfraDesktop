@@ -7,10 +7,22 @@ import {
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoE } from './pppoe';
-import { pppoeAPI as api } from './presentation';
+import {
+  pppoeAPI as api,
+  pppoeDiagnosticAPI as diagnosticAPI,
+} from './presentation';
 import type { PPResult, PPRow } from './presentation';
 import type { Device } from './equipment-api';
 vi.mock('./presentation', () => ({
+  pppoeDiagnosticAPI: {
+    current: vi.fn(),
+    list: vi.fn(),
+    catalog: vi.fn(),
+    radius: vi.fn(),
+    ping: vi.fn(),
+    status: vi.fn(),
+    cancel: vi.fn(),
+  },
   pppoeAPI: {
     current: vi.fn(),
     references: vi.fn(),
@@ -56,11 +68,297 @@ const result = (data: PPResult['data'] = { total: 0 }): PPResult => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(diagnosticAPI.current).mockResolvedValue(result());
+  vi.mocked(diagnosticAPI.list).mockResolvedValue(result());
   vi.mocked(api.current).mockResolvedValue(result({ current: obs, total: 2 }));
   vi.mocked(api.references).mockResolvedValue(
     result({ references: [], total: 0 }),
   );
   vi.mocked(api.list).mockResolvedValue(result({ rows, total: 2 }));
+});
+function deferredPP() {
+  let resolve!: (r: PPResult) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<PPResult>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+function showPP() {
+  return render(
+    <PPPoE
+      profile="company"
+      activation="active"
+      device={device}
+      back={vi.fn()}
+    />,
+  );
+}
+it.each(['success', 'error', 'reject'] as const)(
+  'A-H01: late detail %s cannot restore a filtered intent or steal focus',
+  async (kind) => {
+    const old = deferredPP();
+    vi.mocked(api.detail).mockReturnValueOnce(old.promise);
+    showPP();
+    const trigger = await screen.findByRole('button', {
+      name: 'Detalhar duplicado row-1',
+    });
+    trigger.focus();
+    fireEvent.click(trigger);
+    const search = screen.getByLabelText('Buscar sessões');
+    search.focus();
+    fireEvent.change(search, { target: { value: 'nova intenção' } });
+    await waitFor(() =>
+      expect(vi.mocked(api.list).mock.calls.at(-1)?.[4]?.search).toBe(
+        'nova intenção',
+      ),
+    );
+    await act(async () => {
+      if (kind === 'reject') old.reject(new Error('old transport'));
+      else
+        old.resolve(
+          kind === 'success'
+            ? result({ rows: [rows[0]], total: 1 })
+            : { ...result(), code: 'OBSERVATION_UNAVAILABLE' },
+        );
+    });
+    expect(
+      screen.queryByRole('complementary', { name: 'Detalhes da sessão' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(search).toHaveFocus();
+  },
+);
+it('A-H01: closing an existing detail invalidates its pending replacement, while a fresh detail still works', async () => {
+  const old = deferredPP();
+  vi.mocked(api.detail)
+    .mockResolvedValueOnce(result({ rows: [rows[0]], total: 1 }))
+    .mockReturnValueOnce(old.promise)
+    .mockResolvedValue(result({ rows: [rows[1]], total: 1 }));
+  showPP();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  await screen.findByRole('complementary', { name: 'Detalhes da sessão' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhe' }));
+  await act(async () => old.resolve(result({ rows: [rows[1]], total: 1 })));
+  expect(
+    screen.queryByRole('complementary', { name: 'Detalhes da sessão' }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
+  );
+  expect(
+    await screen.findByRole('complementary', { name: 'Detalhes da sessão' }),
+  ).toHaveTextContent('row-2');
+});
+it('A-H01: changing comparison reference rejects a late pair before requesting its second leg', async () => {
+  const old = deferredPP();
+  vi.mocked(api.references).mockResolvedValue(
+    result({
+      references: [
+        {
+          reference_id: 'ref-a',
+          observation_id: 'base-a',
+          created_at: '2026-10-24T00:00:00Z',
+          count: 2,
+        },
+        {
+          reference_id: 'ref-b',
+          observation_id: 'base-b',
+          created_at: '2026-10-24T01:00:00Z',
+          count: 2,
+        },
+      ],
+      total: 2,
+    }),
+  );
+  vi.mocked(api.compare).mockResolvedValue(
+    result({
+      deltas: [
+        {
+          base_row: 'left',
+          target_row: 'right',
+          category: 'changed',
+          reason: 'continuity_supported',
+          address_changed: false,
+          caller_changed: false,
+        },
+      ],
+      total: 1,
+    }),
+  );
+  vi.mocked(api.detail)
+    .mockReturnValueOnce(old.promise)
+    .mockResolvedValue(result({ rows: [rows[1]], total: 1 }));
+  showPP();
+  await screen.findAllByText('duplicado');
+  fireEvent.click(screen.getByRole('tab', { name: 'Comparação' }));
+  fireEvent.change(screen.getByLabelText('Referência para comparar'), {
+    target: { value: 'base-a' },
+  });
+  fireEvent.click(await screen.findByRole('button', { name: 'Detalhar par' }));
+  fireEvent.change(screen.getByLabelText('Referência para comparar'), {
+    target: { value: 'base-b' },
+  });
+  await act(async () => old.resolve(result({ rows: [rows[0]], total: 1 })));
+  expect(api.detail).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByRole('complementary', { name: 'Detalhes da comparação' }),
+  ).not.toBeInTheDocument();
+});
+it.each(['none', 'loading', 'reject'] as const)(
+  'A-H02: %s comparison/page cannot retain a sessions count or actionable cursor',
+  async (phase) => {
+    vi.mocked(api.list).mockResolvedValueOnce(
+      result({ rows, total: 17, next_cursor: 'old-cursor' }),
+    );
+    showPP();
+    await screen.findByRole('button', { name: 'Próxima página' });
+    if (phase === 'none') {
+      fireEvent.click(screen.getByRole('tab', { name: 'Comparação' }));
+    } else {
+      const page = deferredPP();
+      vi.mocked(api.list).mockReturnValueOnce(page.promise);
+      fireEvent.change(screen.getByLabelText('Buscar sessões'), {
+        target: { value: 'next' },
+      });
+      await screen.findByText('Carregando página armazenada…');
+      if (phase === 'reject')
+        await act(async () => page.reject(new Error('transport')));
+    }
+    expect(
+      screen.queryByRole('button', { name: 'Próxima página' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('status', { name: '17 resultados' }),
+    ).not.toBeInTheDocument();
+    expect(api.compare).not.toHaveBeenCalled();
+  },
+);
+it('A-H01: closing an already open detail by clearing filters keeps focus on search', async () => {
+  vi.mocked(api.detail).mockResolvedValue(
+    result({ rows: [rows[0]], total: 1 }),
+  );
+  showPP();
+  const search = await screen.findByLabelText('Buscar sessões');
+  fireEvent.change(search, { target: { value: 'duplicado' } });
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  await screen.findByRole('complementary', { name: 'Detalhes da sessão' });
+  await act(async () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' })),
+  );
+  expect(
+    screen.queryByRole('complementary', { name: 'Detalhes da sessão' }),
+  ).not.toBeInTheDocument();
+  expect(search).toHaveFocus();
+});
+it('A-H01: newer detail wins when two queries resolve in reverse order', async () => {
+  const first = deferredPP(),
+    second = deferredPP();
+  vi.mocked(api.detail)
+    .mockReturnValueOnce(first.promise)
+    .mockReturnValueOnce(second.promise);
+  showPP();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
+  );
+  await act(async () => second.resolve(result({ rows: [rows[1]], total: 1 })));
+  expect(
+    screen.getByRole('complementary', { name: 'Detalhes da sessão' }),
+  ).toHaveTextContent('row-2');
+  await act(async () => first.resolve(result({ rows: [rows[0]], total: 1 })));
+  expect(
+    screen.getByRole('complementary', { name: 'Detalhes da sessão' }),
+  ).toHaveTextContent('row-2');
+});
+it('A-H01: filter change keeps a durable pending save and its successful reconciliation', async () => {
+  const saved = deferredPP();
+  vi.mocked(api.save).mockReturnValueOnce(saved.promise);
+  showPP();
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Salvar referência desta leitura',
+    }),
+  );
+  fireEvent.change(screen.getByLabelText('Buscar sessões'), {
+    target: { value: 'new query' },
+  });
+  await act(async () =>
+    saved.resolve(result({ effect_state: 'committed', total: 0 })),
+  );
+  expect(
+    await screen.findByText('Referência salva da leitura exibida.'),
+  ).toBeInTheDocument();
+  expect(api.save).toHaveBeenCalledTimes(1);
+});
+it('A-H01/H02: open pair/reference and pending deletion respect the latest selection and its focus', async () => {
+  const deleted = deferredPP();
+  vi.mocked(api.references).mockResolvedValue(
+    result({
+      references: [
+        {
+          reference_id: 'ref-a',
+          observation_id: 'base-a',
+          created_at: '2026-10-24T00:00:00Z',
+          count: 2,
+        },
+        {
+          reference_id: 'ref-b',
+          observation_id: 'base-b',
+          created_at: '2026-10-24T01:00:00Z',
+          count: 2,
+        },
+      ],
+      total: 2,
+    }),
+  );
+  vi.mocked(api.compare).mockResolvedValue(
+    result({
+      deltas: [
+        {
+          base_row: 'left',
+          target_row: 'right',
+          category: 'changed',
+          reason: 'continuity_supported',
+          address_changed: false,
+          caller_changed: false,
+        },
+      ],
+      total: 1,
+    }),
+  );
+  vi.mocked(api.detail).mockResolvedValue(
+    result({ rows: [rows[0]], total: 1 }),
+  );
+  vi.mocked(api.remove).mockReturnValueOnce(deleted.promise);
+  showPP();
+  await screen.findAllByText('duplicado');
+  fireEvent.click(screen.getByRole('tab', { name: 'Comparação' }));
+  const selection = screen.getByLabelText('Referência para comparar');
+  fireEvent.change(selection, { target: { value: 'base-a' } });
+  fireEvent.click(await screen.findByRole('button', { name: 'Detalhar par' }));
+  await screen.findByRole('complementary', { name: 'Detalhes da comparação' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Excluir referência ref-a' }),
+  );
+  selection.focus();
+  fireEvent.change(selection, { target: { value: 'base-b' } });
+  expect(selection).toHaveFocus();
+  expect(
+    screen.queryByRole('complementary', { name: 'Detalhes da comparação' }),
+  ).not.toBeInTheDocument();
+  await act(async () => deleted.resolve(result()));
+  expect(selection).toHaveValue('base-b');
 });
 it('opens stored reading without collection, preserves duplicate rows and saves displayed ID', async () => {
   render(
@@ -240,6 +538,9 @@ it('review: failed status can recover the existing job without a new collection'
     screen.getByRole('button', { name: 'Consultar estado novamente' }),
   );
   await waitFor(() => expect(api.status).toHaveBeenCalledTimes(2));
+  await waitFor(() =>
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument(),
+  );
   expect(api.start).toHaveBeenCalledTimes(1);
 });
 

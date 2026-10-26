@@ -1,5 +1,12 @@
 import {
   StartPPPoECollection,
+  StartPPPoECatalog,
+  StartPPPoERadius,
+  StartPPPoEPing,
+  PPPoEDiagnosticStatus,
+  CancelPPPoEDiagnostic,
+  GetPPPoEDiagnostic,
+  ListPPPoEDiagnostic,
   PPPoECollectionStatus,
   CancelPPPoECollection,
   GetPPPoECurrent,
@@ -185,19 +192,98 @@ export type PPResult = {
   data?: {
     effect_state?: string;
     current?: PPObservation;
+    diagnostic?: PDDiagnostic;
+    diagnostic_rows?: PDRow[];
     rows?: PPRow[];
     references?: PPReference[];
     deltas?: PPDelta[];
     total: number;
     next_cursor?: string;
-    job?: { id: string; state: string; code: string };
+    job?: {
+      id: string;
+      state: string;
+      code: string;
+      pppoe?: { operation_id?: string };
+    };
     attempt?: {
+      job_id?: string;
+      operation_id?: string;
+      source_observation?: string;
+      source_row?: string;
       state: string;
       code: string;
       quality: { status: string; counts_known: boolean; eligible: number };
     };
   };
 };
+export type PDDiagnostic = {
+  diagnostic_id: string;
+  device_id: string;
+  scope: string;
+  provenance: { ended_at: string; version: string };
+  quality: { status: string };
+  source_observation?: string;
+  source_row?: string;
+  count: number;
+};
+export type PDRow = {
+  id: string;
+  kind: string;
+  name?: string;
+  parent?: string;
+  parent_id?: string;
+  relation?: string;
+  type?: string;
+  running?: boolean;
+  disabled?: boolean;
+  dynamic?: boolean;
+  invalid?: boolean;
+  vlan_id?: number;
+  range?: string;
+  service_tag?: boolean;
+  accept_untagged?: boolean;
+  address?: string;
+  services?: string;
+  auth_port?: number;
+  accounting_port?: number;
+  protocol?: string;
+  use_radius?: boolean;
+  accounting?: boolean;
+  counters?: {
+    pending: string;
+    requests: string;
+    accepts: string;
+    rejects: string;
+    resends: string;
+    timeouts: string;
+    bad_replies: string;
+    last_rtt: PPInterval;
+  };
+  ping?: {
+    sent: number;
+    received: number;
+    loss_percent: number;
+    min_ns?: number;
+    avg_ns?: number;
+    max_ns?: number;
+    context: string;
+    probes: { sequence: number; status: string; rtt_ns?: number }[];
+  };
+};
+const pdBindings = {
+  catalog: StartPPPoECatalog,
+  radius: StartPPPoERadius,
+  ping: StartPPPoEPing,
+  status: PPPoEDiagnosticStatus,
+  cancel: CancelPPPoEDiagnostic,
+  current: GetPPPoEDiagnostic,
+  list: ListPPPoEDiagnostic,
+};
+export const pppoeDiagnosticAPI: {
+  [K in keyof typeof pdBindings]: (
+    ...args: Parameters<(typeof pdBindings)[K]>
+  ) => Promise<PPResult>;
+} = pdBindings;
 const ppBindings = {
   start: StartPPPoECollection,
   status: PPPoECollectionStatus,

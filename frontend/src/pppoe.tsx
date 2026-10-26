@@ -17,6 +17,7 @@ import type {
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import './pppoe.css';
+import { PPPoEDiagnostics, PPPoEPing } from './pppoe-diagnostics';
 
 const freshQuery = (): PPQuery => ({
   search: '',
@@ -62,13 +63,15 @@ export function PPPoE({
   useLayoutEffect(() => {
     acceptEquipmentAuthority(profile, activation);
   }, [profile, activation]);
-  const [pageState, setPageState] = useState<'loading' | 'ready' | 'error'>(
-    'loading',
-  );
+  const [pageState, setPageState] = useState<
+    'idle' | 'loading' | 'ready' | 'error'
+  >('loading');
   const [statusFailed, setStatusFailed] = useState(false),
     [statusRetry, retryStatus] = useState(0);
   const [pair, setPair] = useState<{ left?: PPRow; right?: PPRow }>();
   const detailTrigger = useRef<HTMLElement | null>(null);
+  const detailHeading = useRef<HTMLHeadingElement>(null);
+  const pairHeading = useRef<HTMLHeadingElement>(null);
   const focusedControl = useRef<HTMLElement | null>(null);
   const searchControl = useRef<HTMLInputElement>(null);
   const referencesHeading = useRef<HTMLHeadingElement>(null);
@@ -88,7 +91,9 @@ export function PPPoE({
     [next, setNext] = useState('');
   const [selected, select] = useState<PPRow>(),
     [base, setBase] = useState(''),
-    [tab, setTab] = useState<'sessions' | 'compare'>('sessions');
+    [tab, setTab] = useState<'sessions' | 'compare' | 'catalog' | 'radius'>(
+      'sessions',
+    );
   const [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [attempt, setAttempt] = useState(''),
@@ -115,6 +120,36 @@ export function PPPoE({
     }
   }, [busy]);
   const context = [profile, activation, device.id].join('|');
+  useLayoutEffect(() => {
+    if (selected) detailHeading.current?.focus();
+  }, [selected]);
+  useLayoutEffect(() => {
+    if (pair) pairHeading.current?.focus();
+  }, [pair]);
+  const [cursorBase, setCursorBase] = useState(base);
+  if (cursorBase !== base) {
+    setCursorBase(base);
+    setCursor('');
+  }
+
+  const detailIntent = useRef(0);
+  const surface = [
+    context,
+    current?.observation_id,
+    tab,
+    base,
+    JSON.stringify(query),
+    cursor,
+  ].join('|');
+  const [acceptedSurface, setAcceptedSurface] = useState(surface);
+  if (acceptedSurface !== surface) {
+    setAcceptedSurface(surface);
+    select(undefined);
+    setPair(undefined);
+  }
+  useLayoutEffect(() => {
+    ++detailIntent.current;
+  }, [surface]);
   useEffect(() => {
     const lifecycle = life.current;
     ++lifecycle.generation;
@@ -181,14 +216,19 @@ export function PPPoE({
     const generation = life.current.generation;
     let stopped = false;
     void (async () => {
-      if (!current || (tab === 'compare' && !base)) {
-        setRows([]);
-        setDeltas([]);
+      setRows([]);
+      setDeltas([]);
+      setNext('');
+      setTotal(0);
+      if (
+        !current ||
+        (tab !== 'sessions' && tab !== 'compare') ||
+        (tab === 'compare' && !base)
+      ) {
+        setPageState('idle');
         return;
       }
       setPageState('loading');
-      setRows([]);
-      setDeltas([]);
       const r =
         tab === 'sessions'
           ? await api.list(
@@ -225,6 +265,8 @@ export function PPPoE({
     })().catch(() => {
       if (!stopped) {
         setPageState('error');
+        setNext('');
+        setTotal(0);
         setError('Não foi possível carregar a página.');
       }
     });
@@ -279,6 +321,27 @@ export function PPPoE({
       }
     }
   }
+  // Detail queries are disposable intents. Durable mutations keep their own
+  // receipts and lifecycle; changing a filter must never discard those receipts.
+  async function runDetail(
+    action: (accept: () => boolean) => Promise<PPResult>,
+    done: (r: PPResult) => void,
+  ) {
+    const generation = life.current.generation;
+    const intent = ++detailIntent.current;
+    const accept = () =>
+      generation === life.current.generation && intent === detailIntent.current;
+    setError('');
+    try {
+      const r = await action(accept);
+      if (!accept() || !valid(generation, r)) return;
+      if (r.code !== 'OK') setError(message(r));
+      else done(r);
+    } catch {
+      if (accept())
+        setError('Não foi possível carregar o detalhe. Tente novamente.');
+    }
+  }
   function update() {
     const k = context + '|collect|' + device.revision;
     for (const [key, receipt] of pending)
@@ -329,10 +392,11 @@ export function PPPoE({
         else {
           pending.delete(context + '|collect|' + device.revision);
           setJob('');
-          if (r.data?.job?.code !== 'OK')
-            setError(
-              equipmentMessage(r.data?.job?.code || 'SERVICE_UNAVAILABLE'),
-            );
+          setError(
+            r.data?.job?.code === 'OK'
+              ? ''
+              : equipmentMessage(r.data?.job?.code || 'SERVICE_UNAVAILABLE'),
+          );
           setCursor('');
           select(undefined);
           bump((n) => n + 1);
@@ -406,10 +470,9 @@ export function PPPoE({
       () => {
         pending.delete(k);
         removedFocus.current = ref.reference_id;
-        if (base === ref.observation_id) {
-          setBase('');
-          setDeltas([]);
-        }
+        setBase((selectedBase) =>
+          selectedBase === ref.observation_id ? '' : selectedBase,
+        );
         bump((n) => n + 1);
       },
     );
@@ -424,8 +487,8 @@ export function PPPoE({
     detailTrigger.current = trigger;
     let left: PPRow | undefined;
     let right: PPRow | undefined;
-    await run(
-      async () => {
+    await runDetail(
+      async (accept) => {
         let r: PPResult = {
           code: 'OK',
           profile_id: profile,
@@ -439,7 +502,7 @@ export function PPPoE({
             base,
             d.base_row,
           );
-          if (r.code !== 'OK') return r;
+          if (!accept() || r.code !== 'OK') return r;
           left = r.data?.rows?.[0];
         }
         if (d.target_row) {
@@ -468,6 +531,15 @@ export function PPPoE({
       onFocusCapture={(event) => {
         focusedControl.current = event.target;
       }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && (selected || pair)) {
+          ++detailIntent.current;
+          select(undefined);
+          setPair(undefined);
+          if (detailTrigger.current?.isConnected) detailTrigger.current.focus();
+          event.preventDefault();
+        }
+      }}
       aria-label="Diagnóstico PPPoE"
       tabIndex={0}
     >
@@ -477,7 +549,7 @@ export function PPPoE({
           <h1>Sessões PPPoE</h1>
           <p>{device.name}</p>
         </div>
-        {!initialFailed && (
+        {!initialFailed && (tab === 'sessions' || tab === 'compare') && (
           <button
             ref={primary}
             className="primary"
@@ -502,28 +574,39 @@ export function PPPoE({
           Consultar estado novamente
         </button>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && (tab === 'sessions' || tab === 'compare') && (
+        <p role="alert">{error}</p>
+      )}
       {notice && <p role="status">{notice}</p>}
-      {attempt && <p role="status">{attempt}</p>}
-      {initialFailed && !loading && (
-        <button
-          className="primary"
-          onClick={() => {
-            setError('');
-            bump((n) => n + 1);
-          }}
-        >
-          Reabrir leitura armazenada
-        </button>
+      {attempt && (tab === 'sessions' || tab === 'compare') && (
+        <p role="status">{attempt}</p>
       )}
-      {loading && <p role="status">Carregando leitura armazenada…</p>}
-      {!loading && !initialFailed && !current && (
-        <p>
-          Nenhuma leitura de sessões disponível. Atualize para consultar este
-          concentrador.
-        </p>
+      {initialFailed &&
+        !loading &&
+        (tab === 'sessions' || tab === 'compare') && (
+          <button
+            className="primary"
+            onClick={() => {
+              setError('');
+              bump((n) => n + 1);
+            }}
+          >
+            Reabrir leitura armazenada
+          </button>
+        )}
+      {loading && (tab === 'sessions' || tab === 'compare') && (
+        <p role="status">Carregando leitura armazenada…</p>
       )}
-      {current && (
+      {!loading &&
+        !initialFailed &&
+        !current &&
+        (tab === 'sessions' || tab === 'compare') && (
+          <p>
+            Nenhuma leitura de sessões disponível. Atualize para consultar este
+            concentrador.
+          </p>
+        )}
+      {current && (tab === 'sessions' || tab === 'compare') && (
         <>
           <p>
             Última leitura boa:{' '}
@@ -575,28 +658,42 @@ export function PPPoE({
               Exportar JSON sanitizado
             </button>
           </div>
-          <div role="tablist" aria-label="Leitura PPPoE">
-            <button
-              role="tab"
-              aria-selected={tab === 'sessions'}
-              onClick={() => {
-                setTab('sessions');
-                setCursor('');
-              }}
-            >
-              Sessões
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === 'compare'}
-              onClick={() => {
-                setTab('compare');
-                setCursor('');
-              }}
-            >
-              Comparação
-            </button>
-          </div>
+        </>
+      )}
+      <div role="tablist" aria-label="Leitura PPPoE">
+        {(
+          [
+            ['sessions', 'Sessões'],
+            ['compare', 'Comparação'],
+            ['catalog', 'VLANs e serviços'],
+            ['radius', 'RADIUS'],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => {
+              setTab(id);
+              setCursor('');
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {(tab === 'catalog' || tab === 'radius') && (
+        <PPPoEDiagnostics
+          key={context + '|' + tab}
+          profile={profile}
+          activation={activation}
+          device={device}
+          scope={tab}
+          blocked={disabled}
+        />
+      )}
+      {current && (tab === 'sessions' || tab === 'compare') && (
+        <>
           {tab === 'sessions' ? (
             <>
               <div className="pppoe-filters">
@@ -686,7 +783,7 @@ export function PPPoE({
                             }
                             onClick={(event) => {
                               detailTrigger.current = event.currentTarget;
-                              void run(
+                              void runDetail(
                                 () =>
                                   api.detail(
                                     profile,
@@ -719,12 +816,7 @@ export function PPPoE({
               )}
               {selected && (
                 <aside aria-label="Detalhes da sessão">
-                  <h2
-                    tabIndex={-1}
-                    ref={(n) => {
-                      n?.focus();
-                    }}
-                  >
+                  <h2 tabIndex={-1} ref={detailHeading}>
                     {selected.login}
                   </h2>
                   <p>IP: {selected.address || 'Indisponível'}</p>
@@ -736,8 +828,18 @@ export function PPPoE({
                       : 'Indisponível'}
                   </p>
                   <p>Identidade local da linha: {selected.row_id}</p>
+                  <PPPoEPing
+                    key={current.observation_id + '|' + selected.row_id}
+                    profile={profile}
+                    activation={activation}
+                    device={device}
+                    observation={current.observation_id}
+                    row={selected.row_id}
+                    blocked={disabled}
+                  />
                   <button
                     onClick={() => {
+                      ++detailIntent.current;
                       select(undefined);
                       detailTrigger.current?.focus();
                     }}
@@ -806,12 +908,7 @@ export function PPPoE({
           )}
           {pair && (
             <aside aria-label="Detalhes da comparação">
-              <h2
-                tabIndex={-1}
-                ref={(n) => {
-                  n?.focus();
-                }}
-              >
+              <h2 tabIndex={-1} ref={pairHeading}>
                 Sessões do par
               </h2>
               {(['left', 'right'] as const).map((side) => (
@@ -833,6 +930,7 @@ export function PPPoE({
               ))}
               <button
                 onClick={() => {
+                  ++detailIntent.current;
                   setPair(undefined);
                   detailTrigger.current?.focus();
                 }}
@@ -857,7 +955,7 @@ export function PPPoE({
                 Início da lista
               </button>
             )}
-            {next && (
+            {pageState === 'ready' && next && (
               <button
                 onClick={() => {
                   setCursor(next);
@@ -871,40 +969,46 @@ export function PPPoE({
           </div>
         </>
       )}
-      <h2 tabIndex={-1} ref={referencesHeading}>
-        Referências preservadas
-      </h2>
-      {referencesState === 'loading' && (
-        <p role="status">Carregando referências…</p>
+      {(tab === 'sessions' || tab === 'compare') && (
+        <>
+          <h2 tabIndex={-1} ref={referencesHeading}>
+            Referências preservadas
+          </h2>
+          {referencesState === 'loading' && (
+            <p role="status">Carregando referências…</p>
+          )}
+          {referencesState === 'error' && !initialFailed && (
+            <button
+              onClick={() => {
+                setError('');
+                bump((n) => n + 1);
+              }}
+            >
+              Recarregar referências
+            </button>
+          )}
+          {referencesState === 'ready' && !refs.length && (
+            <p>Nenhuma referência salva.</p>
+          )}
+          {refs.map((ref) => (
+            <div key={ref.reference_id} className="pppoe-reference">
+              <span>
+                {new Date(ref.created_at).toLocaleString('pt-BR')} · {ref.count}{' '}
+                sessões
+              </span>
+              <button
+                disabled={disabled}
+                aria-label={
+                  'Excluir referência ' + ref.reference_id.slice(0, 8)
+                }
+                onClick={() => remove(ref)}
+              >
+                Excluir referência
+              </button>
+            </div>
+          ))}
+        </>
       )}
-      {referencesState === 'error' && !initialFailed && (
-        <button
-          onClick={() => {
-            setError('');
-            bump((n) => n + 1);
-          }}
-        >
-          Recarregar referências
-        </button>
-      )}
-      {referencesState === 'ready' && !refs.length && (
-        <p>Nenhuma referência salva.</p>
-      )}
-      {refs.map((ref) => (
-        <div key={ref.reference_id} className="pppoe-reference">
-          <span>
-            {new Date(ref.created_at).toLocaleString('pt-BR')} · {ref.count}{' '}
-            sessões
-          </span>
-          <button
-            disabled={disabled}
-            aria-label={'Excluir referência ' + ref.reference_id.slice(0, 8)}
-            onClick={() => remove(ref)}
-          >
-            Excluir referência
-          </button>
-        </div>
-      ))}
     </section>
   );
 }

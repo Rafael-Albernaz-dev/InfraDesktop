@@ -72,3 +72,49 @@
 .pppoe-workspace > * {
   flex-shrink: 0;
 }
+.pppoe-workspace [role='tablist'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pppoe-workspace [role='tab'][aria-selected='true'] {
+  border-color: var(--accent, #466bd2);
+  box-shadow: inset 0 -2px var(--accent, #466bd2);
+}
+.pppoe-diagnostics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.pppoe-diagnostics > button {
+  align-self: flex-start;
+}
+.pppoe-diagnostic-row {
+  border: 1px solid var(--border, #888);
+  border-radius: 6px;
+  padding: 12px;
+  min-width: 0;
+}
+.pppoe-diagnostic-row h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.pppoe-diagnostic-row p + p {
+  margin-top: 8px;
+}
+.pppoe-diagnostic-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 0;
+}
+.pppoe-diagnostic-values dt {
+  font-size: 0.875rem;
+}
+.pppoe-diagnostic-values dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
