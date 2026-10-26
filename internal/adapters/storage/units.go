@@ -26,6 +26,9 @@ var companyEquipmentSchema string
 //go:embed company_004_operational.sql
 var companyOperationalSchema string
 
+//go:embed company_005_pppoe.sql
+var companyPPPoESchema string
+
 func migrateGlobal(tx *sql.Tx) error {
 	rows, e := tx.Query("SELECT version,checksum FROM schema_migrations ORDER BY version")
 	if e != nil {
@@ -146,10 +149,10 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&n); e != nil {
 		return e
 	}
-	if n < 1 || n > 4 {
+	if n < 1 || n > 5 {
 		return errors.New("unknown company schema")
 	}
-	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema} {
+	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema} {
 		if v+1 > n {
 			break
 		}
@@ -165,8 +168,8 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT installation,company FROM identity WHERE singleton=1").Scan(&installation, &company); e != nil || installation != s.installation || company != id {
 		return errors.New("company identity mismatch")
 	}
-	for version := schemaCount + 1; version <= 4; version++ {
-		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema}[version]
+	for version := schemaCount + 1; version <= 5; version++ {
+		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema}[version]
 		tx, e := db.Begin()
 		if e != nil {
 			return e

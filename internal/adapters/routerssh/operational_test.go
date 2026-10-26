@@ -8,6 +8,28 @@ import (
 	"testing"
 )
 
+func TestPermissionWordsAreData(t *testing.T) {
+	for _, name := range []string{"permission denied", "not enough permissions", "failure: not enough permissions", "core permission denied switch"} {
+		for _, family := range []string{"v6", "v7"} {
+			t.Run(family+"/"+name, func(t *testing.T) {
+				peer, err := sshfixture.Start(sshfixture.Config{Family: family, Identity: name, InterfaceName: name})
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer peer.Close()
+				d := equipment.Device{Address: "127.0.0.1", Port: peer.Port(), Fingerprint: peer.Fingerprint()}
+				o, code := (routerssh.Adapter{}).Query(context.Background(), d, "reader", sshfixture.Password, func() equipment.Code { return equipment.OK })
+				if code != equipment.OK || o == nil {
+					t.Fatalf("valid name rejected: %s", code)
+				}
+				if o.Identity != name || len(o.Interfaces) != 1 || o.Interfaces[0].Name != name || o.Quality != "complete" {
+					t.Fatalf("name not preserved: %#v", o)
+				}
+			})
+		}
+	}
+}
+
 func TestOperationalVolumeKeepsSummary(t *testing.T) {
 	peer, e := sshfixture.Start(sshfixture.Config{Mode: "interfaces"})
 	if e != nil {

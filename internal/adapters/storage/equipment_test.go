@@ -381,7 +381,13 @@ func TestEquipmentQueriesRevocationSaturationAndRestart(t *testing.T) {
 			extra := []equipment.Command{}
 			if change == "saturation" {
 				for range 2 {
+					peer, e := sshfixture.Start(sshfixture.Config{Family: "v7", Hold: hold})
+					if e != nil {
+						t.Fatal(e)
+					}
+					defer peer.Close()
 					second := d
+					second.Port = peer.Port()
 					second.ID = uuid.NewString()
 					second.Operation = uuid.NewString()
 					equipmentCall(t, s, second, equipment.OK)
@@ -549,6 +555,7 @@ func TestEquipmentCoherentRestoreAndSchemaThree(t *testing.T) {
 	st, _ := j.st.ReadEquipment(context.Background(), companyX)
 	installation := st.Installation
 	// Simulate an exact V2 unit, then exercise additive V3 rollback and upgrade.
+	dropPPPoEFixtureSchema(t, j)
 	if _, e := j.st.unit.Exec("DROP TABLE devices;DROP TABLE credentials;DROP TABLE vault_key;DROP TABLE equipment_operations;DELETE FROM schema_migrations WHERE version>=3;CREATE TABLE devices(conflict TEXT)"); e != nil {
 		t.Fatal(e)
 	}
@@ -680,9 +687,27 @@ func TestEquipmentJobRetentionAndRecordLimit(t *testing.T) {
 	q.ID = d.ID
 	q.Revision = 1
 	firstOperation, firstJob := "", ""
+	// Terminal metadata precedes worker exit. Wait on the same deliberate
+	// operation for admission release; BUSY does not reserve/repeat network.
+	admit := func(want equipment.Code) equipment.View {
+		deadline := time.Now().Add(3 * time.Second) // Same existing awaitJob budget.
+		for {
+			v, c := s.Handle(context.Background(), q)
+			if c != access.Busy {
+				if c != want {
+					t.Fatalf("retention admission got %s want %s", c, want)
+				}
+				return v
+			}
+			if !time.Now().Before(deadline) {
+				t.Fatal("worker admission did not release")
+			}
+			time.Sleep(time.Millisecond)
+		}
+	}
 	for i := 0; i < equipment.MaxJobs; i++ {
 		q.Operation = uuid.NewString()
-		v := equipmentCall(t, s, q, equipment.OK)
+		v := admit(equipment.OK)
 		if i == 0 {
 			firstOperation = q.Operation
 			firstJob = v.Job.ID
@@ -693,7 +718,7 @@ func TestEquipmentJobRetentionAndRecordLimit(t *testing.T) {
 		}
 	}
 	q.Operation = uuid.NewString()
-	equipmentCall(t, s, q, equipment.Limit)
+	admit(equipment.Limit)
 	clock.Store(clock.Load().(time.Time).Add(equipment.JobRetention + time.Second))
 	expired := q
 	expired.Op = "device.query-status"
@@ -763,7 +788,13 @@ func TestFocalWriteReplayPreservesJobs(t *testing.T) {
 			}
 			var second equipment.Command
 			if kind == "credential" {
+				secondPeer, e := sshfixture.Start(sshfixture.Config{Family: "v7", Hold: hold})
+				if e != nil {
+					t.Fatal(e)
+				}
+				defer secondPeer.Close()
 				d2 := d
+				d2.Port = secondPeer.Port()
 				d2.ID = uuid.NewString()
 				d2.Operation = uuid.NewString()
 				equipmentCall(t, s, d2, equipment.OK)

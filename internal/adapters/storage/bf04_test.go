@@ -111,6 +111,7 @@ func TestBF04EnterpriseV1MigrationAtomicAndChecksum(t *testing.T) {
 			j := newJourney(t)
 			j.create(companyX, "X", access.OK)
 			j.selectCompany(companyX, access.OK)
+			dropPPPoEFixtureSchema(t, j)
 			_, e := j.st.unit.Exec("DROP TABLE devices; DROP TABLE credentials; DROP TABLE vault_key; DROP TABLE equipment_operations; DROP TABLE branding; DELETE FROM schema_migrations WHERE version>=2; CREATE TABLE preserve(value TEXT); INSERT INTO preserve VALUES('old-data');")
 			if e != nil {
 				t.Fatal(e)
@@ -131,7 +132,7 @@ func TestBF04EnterpriseV1MigrationAtomicAndChecksum(t *testing.T) {
 				if e = j.st.validateUnit(j.st.unit, companyX); e != nil {
 					t.Fatal(e)
 				}
-			} else if err != nil || count != 4 {
+			} else if err != nil || count != 5 {
 				t.Fatal("migration failed", err)
 			}
 			var old string

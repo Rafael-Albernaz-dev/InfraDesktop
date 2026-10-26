@@ -16,6 +16,7 @@ type runningJob struct {
 	device             Device
 	credentialRevision uint64
 	finished           time.Time
+	released           bool
 	cancel             context.CancelFunc
 }
 type Service struct {
@@ -29,10 +30,16 @@ type Service struct {
 	jobs   map[string]*runningJob
 	closed bool
 	wg     sync.WaitGroup
+	epoch  string
+	origin time.Time
 }
 
 func New(auth Authorizer, store Store, vault Vault, remote Remote, ids IDs, now func() time.Time) *Service {
-	return &Service{auth: auth, store: store, vault: vault, remote: remote, ids: ids, now: now, jobs: map[string]*runningJob{}}
+	epoch, c := ids.ID()
+	if c != OK {
+		epoch = ""
+	}
+	return &Service{auth: auth, store: store, vault: vault, remote: remote, ids: ids, now: now, jobs: map[string]*runningJob{}, epoch: epoch, origin: time.Now()}
 }
 func (s *Service) authorized(ctx context.Context, q Command, fn func(uint64) Code) Code {
 	if q.Scope.Profile == "" || q.Scope.ExpectedProfile != q.Scope.Profile || q.Scope.ExpectedActivation != q.Scope.Activation {
@@ -304,6 +311,11 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 					d.Fingerprint = old.Fingerprint
 					d.TrustOrigin = old.TrustOrigin
 					d.TrustAcceptance = old.TrustAcceptance
+					if d.CredentialID == old.CredentialID {
+						// Metadata edits preserve readings tied to the same connection.
+						d.Result = old.Result
+						d.LastAttempt = old.LastAttempt
+					}
 				}
 			}
 			if c := ValidateDevice(d); c != OK {
@@ -335,7 +347,7 @@ func sameScope(a, b Command) bool {
 }
 func (s *Service) prune() {
 	for id, j := range s.jobs {
-		if !j.finished.IsZero() && s.now().Sub(j.finished) >= JobRetention {
+		if j.released && !j.finished.IsZero() && s.now().Sub(j.finished) >= JobRetention {
 			delete(s.jobs, id)
 		}
 	}
@@ -403,8 +415,8 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 	}
 	active := 0
 	for _, j := range s.jobs {
-		if j.finished.IsZero() {
-			if j.command.Scope.Profile == q.Scope.Profile && j.device.ID == q.ID {
+		if !j.released {
+			if Endpoint(j.device) == Endpoint(*d) {
 				return nil, access.Busy
 			}
 			active++
@@ -444,6 +456,9 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 func (s *Service) check(ctx context.Context, j *runningJob, reveal bool) (string, string, Code) {
 	var user, secret string
 	c := s.authorized(ctx, j.command, func(uint64) Code {
+		if j.command.Op == "pppoe.collect-start" {
+			return s.checkPP(ctx, j, reveal, &user, &secret)
+		}
 		st, c := s.store.ReadEquipment(ctx, j.command.Scope.Profile)
 		if c != OK {
 			return c
@@ -478,7 +493,12 @@ func (s *Service) check(ctx context.Context, j *runningJob, reveal bool) (string
 	return user, secret, c
 }
 func (s *Service) run(ctx context.Context, j *runningJob) {
+	if j.command.Op == "pppoe.collect-start" {
+		s.runPP(ctx, j)
+		return
+	}
 	defer s.wg.Done()
+	defer func() { s.mu.Lock(); j.released = true; s.mu.Unlock() }()
 	defer j.cancel()
 	// Finite watcher promptly closes adapter resources after authorization changes.
 	watchDone := make(chan struct{})
@@ -616,12 +636,18 @@ func (s *Service) run(ctx context.Context, j *runningJob) {
 }
 
 func (s *Service) status(ctx context.Context, q Command) (*Job, Code) {
+	return s.statusKind(ctx, q, "legacy")
+}
+func (s *Service) statusKind(ctx context.Context, q Command, kind string) (*Job, Code) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.prune()
 	j := s.jobs[q.JobID]
 	if j == nil || !sameScope(q, j.command) {
 		return nil, Changed
+	}
+	if (kind == "legacy" && j.view.Kind != "device.query-start" && j.view.Kind != "trust.inspect") || (kind != "legacy" && j.view.Kind != kind) {
+		return nil, Invalid
 	}
 	if q.Op == "device.query-cancel" && (j.finished.IsZero() || j.command.Op == "trust.inspect") {
 		j.cancel()

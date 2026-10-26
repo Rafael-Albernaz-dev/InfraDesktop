@@ -163,6 +163,7 @@ type Command struct {
 	JobID, Fingerprint                                                         string
 }
 type Job struct {
+	PPPoE       *PPAttempt   `json:"pppoe,omitempty"`
 	ID          string       `json:"id"`
 	DeviceID    string       `json:"device_id"`
 	Kind        string       `json:"kind"`

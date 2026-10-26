@@ -18,7 +18,9 @@ import (
 	"unicode/utf8"
 )
 
-const IdentityCommand = ":put [/system identity get name]"
+// Label data before classifying diagnostics: even an identity equal to an error
+// phrase remains data. RouterOS scripting supports concatenation in v6/v7.
+const IdentityCommand = `:put ("identity=" . [/system identity get name])`
 const ResourceCommand = `:put ("version=" . [/system resource get version]); :put ("board=" . [/system resource get board-name]); :put ("uptime=" . [/system resource get uptime]); :put ("cpu=" . [/system resource get cpu-load]); :put ("free=" . [/system resource get free-memory]); :put ("total=" . [/system resource get total-memory]); :put "done"`
 
 // Dynamic interfaces (including PPP tunnels) are counted, not enumerated as sessions.
@@ -82,6 +84,16 @@ func dial(ctx context.Context, d equipment.Device) (net.Conn, func(), equipment.
 func config(user string) *ssh.ClientConfig {
 	a := ssh.SupportedAlgorithms()
 	return &ssh.ClientConfig{User: user, Config: ssh.Config{KeyExchanges: a.KeyExchanges, Ciphers: a.Ciphers, MACs: a.MACs}, HostKeyAlgorithms: a.HostKeys, Timeout: 5 * time.Second}
+}
+func permissionDiagnostic(output string) bool {
+	for _, line := range lines(output) {
+		line = strings.TrimPrefix(strings.ToLower(strings.TrimSpace(line)), "failure: ")
+		switch line {
+		case "not enough permissions", "not enough permissions (9)", "permission denied":
+			return true
+		}
+	}
+	return false
 }
 func (Adapter) Inspect(ctx context.Context, d equipment.Device) (string, equipment.Code) {
 	conn, done, c := dial(ctx, d)
@@ -186,8 +198,7 @@ func (Adapter) Query(ctx context.Context, d equipment.Device, user, secret strin
 			return "", "DEADLINE_EXCEEDED"
 		}
 		text := out.buf.String()
-		diagnostic := strings.ToLower(text + stderr.buf.String())
-		if strings.Contains(diagnostic, "not enough permissions") || strings.Contains(diagnostic, "permission denied") {
+		if permissionDiagnostic(text) || permissionDiagnostic(stderr.buf.String()) {
 			return "", "REMOTE_PERMISSION_DENIED"
 		}
 		if e != nil || stderr.buf.Len() != 0 {
@@ -199,6 +210,10 @@ func (Adapter) Query(ctx context.Context, d equipment.Device, user, secret strin
 	if c != equipment.OK {
 		return nil, c
 	}
+	if !strings.HasPrefix(identity, "identity=") {
+		return nil, equipment.Partial
+	}
+	identity = strings.TrimPrefix(identity, "identity=")
 	resource, c := run(ResourceCommand)
 	if c != equipment.OK {
 		return nil, c

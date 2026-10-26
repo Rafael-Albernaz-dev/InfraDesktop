@@ -16,9 +16,12 @@ import (
 const Password = "local-fixture-only"
 
 type Config struct {
-	Family, Mode  string
-	InterfaceMode func() string
-	Hold          <-chan struct{}
+	Family, Mode            string
+	Identity, InterfaceName string
+	InterfaceMode           func() string
+	PPPoE                   func() string
+	PPRows                  int
+	Hold                    <-chan struct{}
 }
 type Server struct {
 	listener net.Listener
@@ -30,6 +33,7 @@ type Server struct {
 	wg       sync.WaitGroup
 	Auth     atomic.Int32
 	Commands atomic.Int32
+	PPCalls  atomic.Int32
 }
 
 func Start(config Config) (*Server, error) {
@@ -153,8 +157,16 @@ func (s *Server) output(command string) (string, bool) {
 		return "unexpected\n", true
 	}
 	switch command {
+	case routerssh.PPPoECommand:
+		if s.config.PPPoE != nil {
+			return s.config.PPPoE(), true
+		}
+		return s.ppOutput(), true
 	case routerssh.IdentityCommand:
-		return "Fixture router\r\n", true
+		if s.config.Identity != "" {
+			return "identity=" + s.config.Identity + "\r\n", true
+		}
+		return "identity=Fixture router\r\n", true
 	case routerssh.ResourceCommand:
 		version := "7.26 (stable)"
 		if s.config.Family == "v6" {
@@ -191,7 +203,11 @@ func (s *Server) output(command string) (string, bool) {
 		}
 		out := fmt.Sprintf("eligible=%d\ndynamic=%d\n", eligible, dynamic)
 		for i := 0; i < count; i++ {
-			out += "name=ether" + strconv.Itoa(i+1) + "\ntype=ether\nrunning=true\ndisabled=false\nend\n"
+			name := "ether" + strconv.Itoa(i+1)
+			if s.config.InterfaceName != "" {
+				name = s.config.InterfaceName
+			}
+			out += "name=" + name + "\ntype=ether\nrunning=true\ndisabled=false\nend\n"
 		}
 		return out + "done\n", true
 
