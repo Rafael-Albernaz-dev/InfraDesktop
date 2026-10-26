@@ -3,12 +3,16 @@ package equipment
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"infradesktop/internal/modules/access"
 	"time"
 )
 
 func ppStamp(kind string, in PPInput) string {
+	if kind == "pppoe.diagnostic-start" {
+		return fmt.Sprintf("ppdiag:%q", []string{kind, in.DeviceID, fmt.Sprint(in.Revision), in.Scope, in.ObservationID, in.RowID})
+	}
 	return fmt.Sprintf("ppref:%q", []string{kind, in.DeviceID, fmt.Sprint(in.Revision), in.ObservationID, in.ReferenceID})
 }
 func (s *Service) checkPP(ctx context.Context, j *runningJob, reveal bool, user, secret *string) Code {
@@ -47,6 +51,9 @@ func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, 
 		}
 		if !PPValidQuery(in.Query) || in.Offset < 0 || in.Offset > 2*PPMaxRows {
 			return Invalid
+		}
+		if strings.HasPrefix(q.Op, "pppoe.diagnostic-") {
+			return s.handlePD(ctx, q, in, &v)
 		}
 		if q.Op == "pppoe.collect-status" || q.Op == "pppoe.collect-cancel" {
 			q.JobID = in.JobID
@@ -135,6 +142,7 @@ func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, 
 			v, c = store.DeletePPReference(ctx, q.Scope.Profile, in, ppStamp(q.Op, in))
 			return c
 		case "pppoe.export-page":
+
 			target, c := store.PPObservation(ctx, q.Scope.Profile, in.DeviceID, in.TargetID)
 			if c != OK {
 				return c
@@ -149,6 +157,21 @@ func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, 
 					return ObservationIncompatible
 				}
 				baseCount = base.Count
+			}
+			if in.ExportPart == "diagnostics" {
+				diagnosticStore, ok := s.store.(PDDiagnosticStore)
+				if !ok || !PDValidScope(in.Scope) || !access.ValidCompanyID(in.DiagnosticID) {
+					return Invalid
+				}
+				page, code := diagnosticStore.PPDiagnosticPage(ctx, q.Scope.Profile, in)
+				if code != OK {
+					return code
+				}
+				if !PDCompatibleExport(target, page.Diagnostic) {
+					return ObservationIncompatible
+				}
+				v = page
+				return OK
 			}
 			total := baseCount + target.Count
 			if in.Offset > total {
@@ -253,7 +276,18 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 	if !ok {
 		return nil, Unavailable
 	}
-	if _, ok := s.remote.(PPRemote); !ok {
+	diagnostic := q.Op == "pppoe.diagnostic-start"
+	reserve := store.ReservePPCollection
+	if diagnostic {
+		if _, ok := s.remote.(PDDiagnosticRemote); !ok {
+			return nil, Unavailable
+		}
+		diagnosticStore, ok := s.store.(PDDiagnosticStore)
+		if !ok {
+			return nil, Unavailable
+		}
+		reserve = diagnosticStore.ReservePPDiagnostic
+	} else if _, ok := s.remote.(PPRemote); !ok {
 		return nil, Unavailable
 	}
 	t, c := store.ReadPPTarget(ctx, q.Scope.Profile, in.DeviceID, true)
@@ -282,7 +316,7 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 	}
 	for _, j := range s.jobs {
 		if sameScope(q, j.command) && j.command.Operation == q.Operation {
-			if j.command.Op != q.Op || j.device.ID != d.ID || j.device.Revision != d.Revision {
+			if j.command.Op != q.Op || j.device.ID != d.ID || j.device.Revision != d.Revision || (diagnostic && ppStamp(q.Op, j.ppInput) != ppStamp(q.Op, in)) {
 				return nil, Revision
 			}
 			return copyJob(j), OK
@@ -294,7 +328,7 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 	in.WorkerEpoch = s.epoch
 	stamp := ppStamp(q.Op, in)
 	// An empty job ID is a read-only preflight of the same ledger (not a second ledger).
-	entity, known, c := store.ReservePPCollection(ctx, q.Scope.Profile, in, stamp, "")
+	entity, known, c := reserve(ctx, q.Scope.Profile, in, stamp, "")
 	if c != OK {
 		return nil, c
 	}
@@ -316,11 +350,18 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 	if len(s.jobs) >= MaxJobs {
 		return nil, "pp_jobs_full"
 	}
+	var ping *PPPingTarget
+	if diagnostic && in.Scope == PDPing {
+		ping, c = s.preparePPPing(ctx, q, in, t)
+		if c != OK {
+			return nil, c
+		}
+	}
 	id, c := s.ids.ID()
 	if c != OK {
 		return nil, c
 	}
-	entity, known, c = store.ReservePPCollection(ctx, q.Scope.Profile, in, stamp, id)
+	entity, known, c = reserve(ctx, q.Scope.Profile, in, stamp, id)
 	if c != OK {
 		return nil, c
 	}
@@ -328,7 +369,7 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 		return &Job{ID: entity}, "JOB_INTERRUPTED"
 	}
 	jobctx, cancel := context.WithTimeout(context.Background(), QueryBudget)
-	j := &runningJob{view: Job{ID: id, DeviceID: d.ID, Kind: q.Op, State: "RUNNING", Code: OK}, command: q, device: d, credentialRevision: t.Credential.Metadata.Revision, cancel: cancel}
+	j := &runningJob{view: Job{ID: id, DeviceID: d.ID, Kind: q.Op, State: "RUNNING", Code: OK}, command: q, device: d, credentialRevision: t.Credential.Metadata.Revision, cancel: cancel, ppInput: in, ping: ping}
 	s.jobs[id] = j
 	s.wg.Add(1)
 	go s.run(jobctx, j)
@@ -338,27 +379,7 @@ func (s *Service) runPP(ctx context.Context, j *runningJob) {
 	defer s.wg.Done()
 	defer func() { s.mu.Lock(); j.released = true; s.mu.Unlock() }()
 	defer j.cancel()
-	watcherDone := make(chan struct{})
-	watcherExit := make(chan struct{})
-	defer func() { close(watcherDone); <-watcherExit }()
-	go func() {
-		defer close(watcherExit)
-		ticker := time.NewTicker(40 * time.Millisecond)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-watcherDone:
-				return
-			case <-ticker.C:
-				if _, _, c := s.check(ctx, j, false); c != OK {
-					j.cancel()
-					return
-				}
-			}
-		}
-	}()
+	defer s.watchPP(ctx, j)()
 	user, secret, c := s.check(ctx, j, true)
 	var o *PPObservation
 	started := s.now()
@@ -478,4 +499,28 @@ func (s *Service) runPP(ctx context.Context, j *runningJob) {
 	j.view.State = a.State
 	j.view.PPPoE = &a
 	j.finished = s.now()
+}
+
+func (s *Service) watchPP(ctx context.Context, j *runningJob) func() {
+	watcherDone := make(chan struct{})
+	watcherExit := make(chan struct{})
+	go func() {
+		defer close(watcherExit)
+		ticker := time.NewTicker(40 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-watcherDone:
+				return
+			case <-ticker.C:
+				if _, _, c := s.check(ctx, j, false); c != OK {
+					j.cancel()
+					return
+				}
+			}
+		}
+	}()
+	return func() { close(watcherDone); <-watcherExit }
 }

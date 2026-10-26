@@ -295,7 +295,12 @@ func TestPPPoERealClientAuthorizationAndCursorBoundaries(t *testing.T) {
 			case "export_key":
 				raw[field] = base64.RawStdEncoding.EncodeToString(bytes.Repeat([]byte{9}, 32))
 			case "export_part":
-				raw[field] = "rows"
+				raw[field] = "diagnostics"
+			case "scope":
+				raw[field] = equipment.PDCatalog
+				if op == "pppoe.diagnostic-start" {
+					raw[field] = equipment.PDPing
+				}
 			case "cursor":
 				raw[field] = ""
 			case "device_id":

@@ -49,7 +49,7 @@ func TestEquipmentStrictSchema(t *testing.T) {
 				t.Fatal("cross-operation field accepted", op, field, c)
 			}
 		}
-		for _, body := range []string{strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":"one","id":"two"}`, 1), strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":null}`, 1), strings.Replace(string(b), `"contract_revision":8`, `"contract_revision":5`, 1)} {
+		for _, body := range []string{strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":"one","id":"two"}`, 1), strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":null}`, 1), strings.Replace(string(b), `"contract_revision":9`, `"contract_revision":5`, 1)} {
 			if _, c := validate([]byte(body)); c == foundation.OK {
 				t.Fatal("malformed/old contract accepted", op)
 			}

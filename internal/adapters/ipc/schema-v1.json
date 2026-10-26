@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 8,
+  "product_revision": 9,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -410,7 +410,33 @@
       "target_id",
       "cursor",
       "export_key",
-      "export_part"
+      "export_part",
+      "scope",
+      "diagnostic_id"
+    ],
+    "pppoe.diagnostic-start": [
+      "device_id",
+      "revision",
+      "operation_id",
+      "scope",
+      "observation_id",
+      "row_id"
+    ],
+    "pppoe.diagnostic-status": [
+      "job_id"
+    ],
+    "pppoe.diagnostic-cancel": [
+      "job_id"
+    ],
+    "pppoe.diagnostic-current": [
+      "device_id",
+      "scope"
+    ],
+    "pppoe.diagnostic-list": [
+      "device_id",
+      "scope",
+      "diagnostic_id",
+      "cursor"
     ]
   },
   "pppoe": {
@@ -433,6 +459,25 @@
       "OBSERVATION_INCOMPATIBLE",
       "CURSOR_INVALID"
     ],
-    "export": "pppoe-sanitized-v1; native picker; ephemeral export_key never bound to JS; rows/comparison projection"
+    "export": "pppoe-sanitized-v1; native picker; ephemeral export_key never bound to JS; rows/comparison projection",
+    "diagnostics": {
+      "scopes": [
+        "catalog",
+        "radius",
+        "ping"
+      ],
+      "rows": 2048,
+      "radius_servers": 32,
+      "ping_count": 3,
+      "ping_interval_ms": 200,
+      "ping_deadline_ms": 5000,
+      "ping_max_age_ms": 60000,
+      "ping_bytes": 8192,
+      "counter_encoding": "unsigned decimal strings; preserve integers beyond JS safe range",
+      "storage": "migration6; one current per device/scope, bounded attempt, shared A+B logical quota; no automatic history",
+      "context": "IPv4 unicast from current immutable session; same daemon epoch; revalidate IDs/IP/uptimes; main only without custom VRF/rules/output mangle; v6 routing-table=main, v7 vrf=main",
+      "privacy": "router-side allowlisted projections; no secret, raw log, whole config, debug or reset; no inferred per-session VLAN or rejection cause",
+      "export": "freeze diagnostic IDs/scope/source; sanitize before IPC; shared16386aliases/2MiB; revalidate pages and publication"
+    }
   }
 }

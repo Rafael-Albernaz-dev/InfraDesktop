@@ -17,15 +17,19 @@ import (
 )
 
 var ppFields = map[string][]string{
-	"pppoe.collect-start":  {"device_id", "revision", "operation_id"},
-	"pppoe.collect-status": {"job_id"}, "pppoe.collect-cancel": {"job_id"},
+	"pppoe.diagnostic-start":  {"device_id", "revision", "operation_id", "scope", "observation_id", "row_id"},
+	"pppoe.diagnostic-status": {"job_id"}, "pppoe.diagnostic-cancel": {"job_id"},
+	"pppoe.diagnostic-current": {"device_id", "scope"},
+	"pppoe.diagnostic-list":    {"device_id", "scope", "diagnostic_id", "cursor"},
+	"pppoe.collect-start":      {"device_id", "revision", "operation_id"},
+	"pppoe.collect-status":     {"job_id"}, "pppoe.collect-cancel": {"job_id"},
 	"pppoe.current": {"device_id"}, "pppoe.observation-get": {"device_id", "observation_id"},
 	"pppoe.sessions-list":  {"device_id", "observation_id", "query", "cursor"},
 	"pppoe.session-get":    {"device_id", "observation_id", "row_id"},
 	"pppoe.reference-save": {"device_id", "observation_id", "reference_id", "operation_id"},
 	"pppoe.reference-list": {"device_id", "cursor"}, "pppoe.reference-delete": {"device_id", "reference_id", "operation_id"},
 	"pppoe.compare":     {"device_id", "base_id", "target_id", "query", "cursor"},
-	"pppoe.export-page": {"device_id", "base_id", "target_id", "cursor", "export_key", "export_part"},
+	"pppoe.export-page": {"device_id", "base_id", "target_id", "cursor", "export_key", "export_part", "scope", "diagnostic_id"},
 }
 
 func isPPPoE(op string) bool { _, ok := ppFields[op]; return ok }
@@ -94,6 +98,31 @@ func validatePPPoE(b []byte, q Request, fields map[string]json.RawMessage) (Requ
 	}
 	required := map[string][]string{"pppoe.collect-start": {"device_id", "revision", "operation_id"}, "pppoe.collect-status": {"job_id"}, "pppoe.collect-cancel": {"job_id"}, "pppoe.observation-get": {"device_id", "observation_id"}, "pppoe.sessions-list": {"device_id", "observation_id"}, "pppoe.session-get": {"device_id", "observation_id", "row_id"}, "pppoe.reference-save": {"device_id", "observation_id", "reference_id", "operation_id"}, "pppoe.reference-delete": {"device_id", "reference_id", "operation_id"}, "pppoe.compare": {"device_id", "base_id", "target_id"}, "pppoe.export-page": {"device_id", "target_id", "export_key"}}
 	r := required[q.Op]
+	if strings.HasPrefix(q.Op, "pppoe.diagnostic-") {
+		switch q.Op {
+		case "pppoe.diagnostic-status", "pppoe.diagnostic-cancel":
+			r = []string{"job_id"}
+		case "pppoe.diagnostic-start":
+			r = []string{"device_id", "revision", "operation_id", "scope"}
+			if input.Revision == 0 {
+				return q, foundation.Invalid
+			}
+			if input.Scope == equipment.PDPing {
+				r = append(r, "observation_id", "row_id")
+			} else if _, exists := raw["observation_id"]; exists {
+				return q, foundation.Invalid
+			} else if _, exists := raw["row_id"]; exists {
+				return q, foundation.Invalid
+			}
+		case "pppoe.diagnostic-current":
+			r = []string{"device_id", "scope"}
+		case "pppoe.diagnostic-list":
+			r = []string{"device_id", "scope", "diagnostic_id"}
+		}
+		if q.Op != "pppoe.diagnostic-status" && q.Op != "pppoe.diagnostic-cancel" && !equipment.PDValidScope(input.Scope) {
+			return q, foundation.Invalid
+		}
+	}
 	if len(r) == 0 {
 		r = []string{"device_id"}
 	}
@@ -106,10 +135,17 @@ func validatePPPoE(b []byte, q Request, fields map[string]json.RawMessage) (Requ
 		return q, foundation.Invalid
 	}
 	if q.Op == "pppoe.export-page" {
-		if input.ExportPart != "" && input.ExportPart != "rows" && input.ExportPart != "comparison" {
+		if input.ExportPart != "" && input.ExportPart != "rows" && input.ExportPart != "comparison" && input.ExportPart != "diagnostics" {
 			return q, foundation.Invalid
 		}
 		if input.ExportPart == "comparison" && input.BaseID == "" {
+			return q, foundation.Invalid
+		}
+		if input.ExportPart == "diagnostics" {
+			if !equipment.PDValidScope(input.Scope) || !access.ValidCompanyID(input.DiagnosticID) {
+				return q, foundation.Invalid
+			}
+		} else if input.Scope != "" || input.DiagnosticID != "" {
 			return q, foundation.Invalid
 		}
 		key, e := base64.RawStdEncoding.DecodeString(input.ExportKey)
@@ -200,6 +236,25 @@ func (s *Server) dispatchPPPoE(ctx context.Context, uid uint32, q Request, owner
 	}
 	if q.Op == "pppoe.export-page" {
 		key, _ := base64.RawStdEncoding.DecodeString(input.ExportKey)
+		for _, row := range v.DiagnosticRows {
+			id := v.Diagnostic.ID
+			row.ID = ppToken(key, "diagnostic-row", id+row.ID)
+			if row.RemoteID != "" {
+				row.RemoteID = ppToken(key, "diagnostic-remote", input.Scope+"/"+row.RemoteID)
+			}
+			row.Name = ppToken(key, "diagnostic-name", row.Name)
+			row.Parent = ppToken(key, "diagnostic-name", row.Parent)
+			if row.ParentID != "" {
+				row.ParentID = ppToken(key, "diagnostic-row", id+row.ParentID)
+			}
+			row.Address = ppToken(key, "address", row.Address)
+			switch row.Type {
+			case "", "ether", "vlan", "bridge", "pppoe-in", "pppoe-out", "wlan", "wifi", "bonding", "eoip", "veth", "loopback", "gre", "vxlan", "wireguard":
+			default:
+				row.Type = "unknown"
+			}
+			v.ExportDiagnostics = append(v.ExportDiagnostics, row)
+		}
 		for _, row := range v.Rows {
 			v.ExportRows = append(v.ExportRows, equipment.PPExportRow{Observation: ppToken(key, "observation", v.Current.ID), Row: ppToken(key, "row", v.Current.ID+row.ID), Login: ppToken(key, "login", row.Login), Address: ppToken(key, "address", row.Address), Caller: ppToken(key, "caller", row.Caller)})
 		}
@@ -219,6 +274,8 @@ func (s *Server) dispatchPPPoE(ctx context.Context, uid uint32, q Request, owner
 		v.Deltas = nil
 		v.Rows = nil
 		v.Current = nil
+		v.Diagnostic = nil
+		v.DiagnosticRows = nil
 	}
 	if v.More {
 		v.Next = s.ppCursor(q, v.NextOffset)
