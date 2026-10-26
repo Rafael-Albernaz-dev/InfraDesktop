@@ -24,6 +24,9 @@ func ListenAccess(dir string, uid uint32, svc *access.Service, identity foundati
 }
 func (s *Server) dispatchAccess(ctx context.Context, uid uint32, q Request, owner string) Response {
 	r := Response{Version: 1, RequestID: q.RequestID, Code: foundation.Invalid}
+	if isPPPoE(q.Op) {
+		return s.dispatchPPPoE(ctx, uid, q, owner)
+	}
 	if isEquipment(q.Op) {
 		return s.dispatchEquipment(ctx, uid, q, owner)
 	}

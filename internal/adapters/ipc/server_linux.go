@@ -16,6 +16,9 @@ import (
 )
 
 type Server struct {
+	ppOnce                sync.Once
+	ppKey                 [32]byte
+	ppKeyError            error
 	dir, capability       string
 	started               time.Time
 	uid                   uint32

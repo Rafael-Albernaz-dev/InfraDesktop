@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 7,
+  "product_revision": 8,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -351,5 +351,88 @@
     "access_response_field": "vault_available",
     "meaning": "configured provider available; does not prove company ciphertext readiness",
     "secret_export": false
+  },
+  "pppoe_operations": {
+    "pppoe.collect-start": [
+      "device_id",
+      "revision",
+      "operation_id"
+    ],
+    "pppoe.collect-status": [
+      "job_id"
+    ],
+    "pppoe.collect-cancel": [
+      "job_id"
+    ],
+    "pppoe.current": [
+      "device_id"
+    ],
+    "pppoe.observation-get": [
+      "device_id",
+      "observation_id"
+    ],
+    "pppoe.sessions-list": [
+      "device_id",
+      "observation_id",
+      "query",
+      "cursor"
+    ],
+    "pppoe.session-get": [
+      "device_id",
+      "observation_id",
+      "row_id"
+    ],
+    "pppoe.reference-save": [
+      "device_id",
+      "observation_id",
+      "reference_id",
+      "operation_id"
+    ],
+    "pppoe.reference-list": [
+      "device_id",
+      "cursor"
+    ],
+    "pppoe.reference-delete": [
+      "device_id",
+      "reference_id",
+      "operation_id"
+    ],
+    "pppoe.compare": [
+      "device_id",
+      "base_id",
+      "target_id",
+      "query",
+      "cursor"
+    ],
+    "pppoe.export-page": [
+      "device_id",
+      "base_id",
+      "target_id",
+      "cursor",
+      "export_key",
+      "export_part"
+    ]
+  },
+  "pppoe": {
+    "scope": "pppoe-active-v1",
+    "page_size": 16,
+    "page_bytes": 49152,
+    "frame_bytes": 65536,
+    "cursor_bytes": 512,
+    "rows": 2048,
+    "wire_bytes": 458752,
+    "observation_bytes": 524288,
+    "row_bytes": 2048,
+    "references_per_device": 8,
+    "references_per_company": 64,
+    "logical_company_bytes": 167772160,
+    "ledger": "equipment_operations only; 2048 shared; no pruning",
+    "incomplete": "attempt metadata only; preserve previous good current",
+    "errors": [
+      "OBSERVATION_UNAVAILABLE",
+      "OBSERVATION_INCOMPATIBLE",
+      "CURSOR_INVALID"
+    ],
+    "export": "pppoe-sanitized-v1; native picker; ephemeral export_key never bound to JS; rows/comparison projection"
   }
 }

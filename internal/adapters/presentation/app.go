@@ -26,6 +26,9 @@ type Result struct {
 	ProductVersion string        `json:"product_version"`
 }
 type App struct {
+	ppExportFS                                                      ppFileOps
+	ppGeneration                                                    uint64
+	ppExporting                                                     bool
 	client                                                          *ipc.AccountClient
 	mu                                                              sync.Mutex
 	ctx                                                             context.Context
@@ -53,7 +56,14 @@ func (a *App) call(q ipc.Request) Result {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	defer a.syncRecoveryPending()
+	switch q.Op {
+	case "access.register", "access.login", "access.logout", "company.select", "company.create", "access.recover", "access.renew-recovery", "access.ack-recovery", "access.ack-issued":
+		a.ppGeneration++
+	}
 	r := a.client.Call(a.ctx, q)
+	if r.Code == "UNAUTHENTICATED" || r.Code == "PROFILE_CHANGED" {
+		a.ppGeneration++
+	}
 	if !a.accessRecoveryPending && (r.Code == "UNAUTHENTICATED" || r.Code == "PROFILE_CHANGED" || (r.Data != nil && a.recovery != "" && (r.Data.Instance != a.recoveryInstance || !r.Data.Authenticated || r.Data.Profile != a.recoveryProfile || r.Data.Activation != a.recoveryActivation))) {
 		a.recovery = ""
 		a.recoveryGeneration++

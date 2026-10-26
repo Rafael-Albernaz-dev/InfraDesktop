@@ -65,11 +65,11 @@ func TestAccessSchema(t *testing.T) {
 		body string
 		want foundation.Code
 	}{
-		{`{"version":1,"contract_revision":7,"request_id":"bf01","op":"access.bootstrap","capability":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`, foundation.OK},
-		{`{"version":1,"contract_revision":7,"request_id":"bf01","op":"access.bootstrap","password":"unexpected"}`, foundation.Invalid},
-		{`{"version":1,"contract_revision":7,"request_id":"bf01","op":"access.login","capability":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"technical","password":"valid long test password","remember":true}`, foundation.OK},
-		{`{"version":1,"contract_revision":7,"request_id":"bf01","op":"access.login","name":"technical","password":"valid long test password","remember":"true"}`, foundation.Invalid},
-		{`{"version":1,"contract_revision":7,"request_id":"bf01","op":"company.select","name":"x","profile_id":"foreign","activation_id":"old","session":"missing","grant":"unexpected"}`, foundation.Invalid},
+		{`{"version":1,"contract_revision":8,"request_id":"bf01","op":"access.bootstrap","capability":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`, foundation.OK},
+		{`{"version":1,"contract_revision":8,"request_id":"bf01","op":"access.bootstrap","password":"unexpected"}`, foundation.Invalid},
+		{`{"version":1,"contract_revision":8,"request_id":"bf01","op":"access.login","capability":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"technical","password":"valid long test password","remember":true}`, foundation.OK},
+		{`{"version":1,"contract_revision":8,"request_id":"bf01","op":"access.login","name":"technical","password":"valid long test password","remember":"true"}`, foundation.Invalid},
+		{`{"version":1,"contract_revision":8,"request_id":"bf01","op":"company.select","name":"x","profile_id":"foreign","activation_id":"old","session":"missing","grant":"unexpected"}`, foundation.Invalid},
 	} {
 		_, got := validate([]byte(test.body))
 		if got != test.want {
@@ -88,7 +88,7 @@ func TestBF03RevisionAndNarrowFields(t *testing.T) {
 		}
 	}
 	for _, extra := range []string{`"operation_id":"aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"`, `"replace_pending":false`, `"password":""`, `"owner":"forged"`, `"path":"/tmp/foreign.db"`} {
-		b := []byte(`{"version":1,"contract_revision":7,"request_id":"strict","op":"access.snapshot",` + extra + `}`)
+		b := []byte(`{"version":1,"contract_revision":8,"request_id":"strict","op":"access.snapshot",` + extra + `}`)
 		if _, c := validate(b); c != foundation.Invalid {
 			t.Fatal("cross-operation capability accepted", extra, c)
 		}
@@ -125,9 +125,9 @@ func TestBF04BrandFramesAndNarrowFields(t *testing.T) {
 		t.Fatal("oversize accepted")
 	}
 	for _, body := range []string{
-		`{"version":1,"contract_revision":7,"request_id":"bad","op":"access.check-issued","password":""}`,
-		`{"version":1,"contract_revision":7,"request_id":"bad","op":"company.brand-set","expected_profile":"aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa","expected_activation":"a","brand":{"name":"","name":"x","accent":"teal","logo":""}}`,
-		`{"version":1,"contract_revision":7,"request_id":"bad","op":"company.brand-set","expected_profile":"aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa","expected_activation":"a","brand":{"name":null,"accent":"teal","logo":""}}`,
+		`{"version":1,"contract_revision":8,"request_id":"bad","op":"access.check-issued","password":""}`,
+		`{"version":1,"contract_revision":8,"request_id":"bad","op":"company.brand-set","expected_profile":"aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa","expected_activation":"a","brand":{"name":"","name":"x","accent":"teal","logo":""}}`,
+		`{"version":1,"contract_revision":8,"request_id":"bad","op":"company.brand-set","expected_profile":"aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa","expected_activation":"a","brand":{"name":null,"accent":"teal","logo":""}}`,
 	} {
 		if _, c := validate([]byte(body)); c != foundation.Invalid {
 			t.Fatal("non-nominal field accepted")

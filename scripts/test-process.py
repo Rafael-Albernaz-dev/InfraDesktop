@@ -34,7 +34,7 @@ def request(runtime, payload):
 
 
 def account(runtime, op, **fields):
-    payload={'version':1,'contract_revision':7,'request_id':'process-test','op':op,'capability':(runtime/'capability').read_text()}
+    payload={'version':1,'contract_revision':8,'request_id':'process-test','op':op,'capability':(runtime/'capability').read_text()}
     if op=='company.create' and 'operation_id' not in fields:
         fields['operation_id']=str(uuid.uuid4())
     payload.update(fields)

@@ -15,6 +15,7 @@ import (
 	"infradesktop/internal/testsupport/sshfixture"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -48,7 +49,7 @@ func TestEquipmentStrictSchema(t *testing.T) {
 				t.Fatal("cross-operation field accepted", op, field, c)
 			}
 		}
-		for _, body := range []string{strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":"one","id":"two"}`, 1), strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":null}`, 1), strings.Replace(string(b), `"contract_revision":7`, `"contract_revision":5`, 1)} {
+		for _, body := range []string{strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":"one","id":"two"}`, 1), strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":null}`, 1), strings.Replace(string(b), `"contract_revision":8`, `"contract_revision":5`, 1)} {
 			if _, c := validate([]byte(body)); c == foundation.OK {
 				t.Fatal("malformed/old contract accepted", op)
 			}
@@ -157,6 +158,26 @@ func TestIntegrationEquipmentSQLiteVaultSSH(t *testing.T) {
 	r = call(request("inventory.get", &EquipmentInput{ID: device.ID}), foundation.OK)
 	if len(r.Data.Equipment.Device.Result.Interfaces) != 1 {
 		t.Fatal("observation not persisted")
+	}
+	// Saving metadata through the real client preserves the completed reading,
+	// including for inactive devices, without another SSH authentication.
+	current := r.Data.Equipment.Device
+	auths, commands := peer.Auth.Load(), peer.Commands.Load()
+	for _, active := range []bool{true, false} {
+		if !active {
+			current = call(request("inventory.set-active", &EquipmentInput{ID: current.ID, Revision: current.Revision, Operation: uuid.NewString(), Active: false}), foundation.OK).Data.Equipment.Device
+		}
+		before := *current
+		edit := &EquipmentInput{ID: before.ID, Revision: before.Revision, Operation: uuid.NewString(), Name: "Edited metadata", Address: before.Address, Port: before.Port, Transport: before.Transport, CredentialID: before.CredentialID}
+		current = call(request("inventory.update", edit), foundation.OK).Data.Equipment.Device
+		if current.Revision != before.Revision+1 || current.Active != active || current.Name != edit.Name || !reflect.DeepEqual(current.Result, before.Result) || !reflect.DeepEqual(current.LastAttempt, before.LastAttempt) || !reflect.DeepEqual(current.TrustAcceptance, before.TrustAcceptance) {
+			t.Fatal("metadata edit lost reading, attempt, trust or active state through IPC")
+		}
+		replay := call(request("inventory.update", edit), foundation.OK).Data.Equipment.Device
+		stored := call(request("inventory.get", &EquipmentInput{ID: current.ID}), foundation.OK).Data.Equipment.Device
+		if !reflect.DeepEqual(replay, current) || !reflect.DeepEqual(stored, current) || peer.Auth.Load() != auths || peer.Commands.Load() != commands {
+			t.Fatal("metadata edit/replay changed persisted data or performed SSH")
+		}
 	}
 	old := request("inventory.list", &EquipmentInput{})
 	call(Request{Op: "company.create", Name: "Y"}, foundation.OK)
