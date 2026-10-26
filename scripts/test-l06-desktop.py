@@ -24,7 +24,7 @@ def main():
   def step(name,**data):
    steps.append({'step':name,**data});print(theme+': '+name,flush=True);flush()
   try:
-   peer=subprocess.Popen([str(ROOT/'build/bin/part1-ssh-fixture'),'--family',family,'--mode','interfaces'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+   peer=subprocess.Popen([str(ROOT/'build/bin/part1-ssh-fixture'),'--family',family,'--mode','interfaces','--realtime'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
    record['fixture_pid']=peer.pid
    peer_output=FixtureOutput(peer);fixture=peer_output.json_line('readiness');assert fixture['scope']=='isolated loopback fixture';record['fixture']={k:v for k,v in fixture.items()}
    argv=[str(ROOT/'build/bin/infradesktopd-part1-test'),'--runtime',str(root/'runtime'),'--state',str(root/'state')]
@@ -56,13 +56,13 @@ def main():
     return None
    def bounds(n):
     r=native.Atspi.Component.get_extents(n,native.Atspi.CoordType.WINDOW);return {'x':r.x,'y':r.y,'width':r.width,'height':r.height}
-   def capture(name,focus_name=None):
+   def capture(name,focus_name=None,viewport=(720,600)):
     assert safe_capture and app.get_process_id()==ui.pid
-    target=OUT/(name+'-'+theme+'-720.png');previous=[None];current=[None]
+    target=OUT/(name+'-'+theme+'-'+str(viewport[0])+'.png');previous=[None];current=[None]
     def stable():
      current[0]=native.capture(ui,target,preserve_focus=True);h=sha(target);done=h==previous[0];previous[0]=h;return done
     native.wait_for('stable native paint '+name,stable)
-    r={**current[0],'sha256':sha(target),'theme':theme,'viewport':[720,600],'runtime':'Wails GTK/WebKit X11; measured owned client surface','browser_geometry':'NOT USED'}
+    r={**current[0],'sha256':sha(target),'theme':theme,'viewport':list(viewport),'runtime':'Wails GTK/WebKit X11; measured owned client surface','browser_geometry':'NOT USED'}
     if focus_name:
      focused=native.wait_for('focused '+focus_name,lambda:next((n for n in native.nodes(app) if n.get_name()==focus_name and n.get_state_set().contains(native.Atspi.StateType.FOCUSED)),None));r['native_focus']={'name':focus_name,'role':focused.get_role_name(),'bounds':bounds(focused)}
     captures.append(r);flush()
@@ -130,7 +130,7 @@ def main():
    exercise(native,ui,app,root,company_db,device_id,click,field,text,node,exact,capture,step,reopen_owned_window)
    native.close_window(ui,app);ui=None
    native.lifecycle.stop(daemon);daemon=None;assert not (root/'runtime/service.sock').exists()
-   stats=peer_output.finish();assert stats['authentications']==3 and stats['commands']==5,stats
+   stats=peer_output.finish();assert stats['authentications']==6 and stats['commands']==10 and stats['ping_requests']==1,stats
    record['fixture_final_counters']=stats;record['status']='PASS';passed=True
    step('owned runtime cleanup',ui_closed=True,daemon_stopped=True,socket_absent=True,fixture_exit=peer.returncode,authentications=stats['authentications'])
   except BaseException:

@@ -63,6 +63,35 @@ def exercise(native,ui,app,root,company_db,device_id,click,field,text,node,exact
   content=native.contents(heading.get_parent())
   for value in ('Login: '+row['login'],'Linha: '+row['row_id'],'IP: '+row['address']):assert value in content,(side,value,content)
  capture('l06-pair');step('selected pair matches exact immutable SQLite inputs',base_row=expected[0]['row_id'],target_row=expected[1]['row_id']);click('Fechar par')
+ # B uses the same production UI, IPC, service, SQLite and pinned loopback SSH.
+ def diagnostic(scope):
+  with sqlite3.connect(company_db) as db:
+   record=db.execute('select o.meta_json from pppoe_diagnostic_current c join pppoe_diagnostic_observations o on o.id=c.diagnostic_id where c.device_id=? and c.scope=?',(device_id,scope)).fetchone()
+   return json.loads(record[0]) if record else None
+ for tab,scope,action,expected in [('VLANs e serviços','catalog','Atualizar serviços e VLANs','fixture-service-a'),('RADIUS','radius','Atualizar RADIUS','198.51.100.20')]:
+  click(tab);text('Nenhuma leitura deste diagnóstico disponível.');capture('l06-'+scope+'-uncollected')
+  trigger=native.wait_for('physical '+action,lambda:node(action));native.Atspi.Component.scroll_to(trigger,native.Atspi.ScrollType.ANYWHERE)
+  physical.pointer(native,ui,app,trigger)
+  saved=native.wait_for('persisted '+scope,lambda:diagnostic(scope));text(expected)
+  assert saved['count']==(7 if scope=='catalog' else 2)
+  native.Atspi.Component.scroll_to(exact(expected),native.Atspi.ScrollType.ANYWHERE)
+  capture('l06-'+scope+'-ready')
+  native.configure_window(ui,1440,860);capture('l06-'+scope+'-desktop',viewport=(1440,860));native.configure_window(ui,720,600)
+  step('real '+scope+' UI/IPC/SQLite/pinned SSH',diagnostic_id=saved['diagnostic_id'],count=saved['count'],physical_refresh=True)
+ click('Sessões');text('synthetic-0000')
+ selected=native.wait_for('session ping detail',lambda:next((n for n in native.nodes(app) if n.get_role_name()=='push button' and n.get_name().startswith('Detalhar synthetic-0000 ')),None));selected_name=selected.get_name();click(selected_name);text('Ping pelo concentrador');capture('l06-ping-uncollected')
+ trigger=native.wait_for('physical ping',lambda:node('Sondar IP pelo concentrador'));native.Atspi.Component.scroll_to(trigger,native.Atspi.ScrollType.ANYWHERE);physical.pointer(native,ui,app,trigger)
+ saved_ping=native.wait_for('persisted ping',lambda:diagnostic('ping'));text('Enviados: 3 · Recebidos: 3 · Perda: 0%');assert saved_ping['source_observation']==second
+ native.Atspi.Component.scroll_to(exact('Ping pelo concentrador'),native.Atspi.ScrollType.TOP_EDGE);capture('l06-ping-ready')
+ native.configure_window(ui,1440,860);capture('l06-ping-desktop',viewport=(1440,860));native.configure_window(ui,720,600)
+ close=node('Fechar detalhe');native.Atspi.Component.scroll_to(close,native.Atspi.ScrollType.ANYWHERE);physical.pointer(native,ui,app,close)
+ native.wait_for('close returns exact ping session trigger',lambda:node(selected_name).get_state_set().contains(native.Atspi.StateType.FOCUSED))
+ click(selected_name)
+ focused=native.wait_for('reopened detail heading focused',lambda:next((n for n in native.nodes(app) if n.get_role_name()=='heading' and n.get_name()=='synthetic-0000' and n.get_state_set().contains(native.Atspi.StateType.FOCUSED)),None))
+ physical.key(native,ui,focused,0xff1b)
+ native.wait_for('Escape returns exact session trigger',lambda:node(selected_name).get_state_set().contains(native.Atspi.StateType.FOCUSED))
+ step('real ping UI/IPC/SSH finite result and physical close/Escape',diagnostic_id=saved_ping['diagnostic_id'],source_observation=second,source_row=saved_ping['source_row'],probes=3)
+ click('Comparação');text('Detalhar par')
  click('Exportar JSON sanitizado')
  cancel=native.wait_for('native picker cancel',lambda:next((n for n in native.nodes(app) if n.get_role_name()=='push button' and n.get_name() in ('Cancel','Cancelar')),None))
  assert cancel.get_action_iface().do_action(0)
@@ -98,7 +127,7 @@ def exercise(native,ui,app,root,company_db,device_id,click,field,text,node,exact
  # creation at this exact owned destination, or fail (no binding/JS fallback).
  assert native.Atspi.EditableText.set_text_contents(entry,str(destination))
  save=native.wait_for('owned picker save',lambda:next((n for n in native.nodes(app) if n.get_role_name()=='push button' and n.get_name() in ('Save','Salvar')),None));assert save.get_action_iface().do_action(0)
- native.wait_for('sanitized export file',destination.is_file);text('Arquivo sanitizado salvo.');raw=destination.read_bytes();export=json.loads(raw);assert export['profile']=='pppoe-sanitized-v1' and len(export['observations'])==2 and export['deltas']
+ native.wait_for('sanitized export file',destination.is_file);text('Arquivo sanitizado salvo.');raw=destination.read_bytes();export=json.loads(raw);assert export['profile']=='pppoe-sanitized-v1' and len(export['observations'])==2 and export['deltas'] and len(export['diagnostic_rows'])==10 and all(d['status']=='available' for d in export['diagnostics'])
  assert stat.S_IMODE(destination.stat().st_mode)==0o600
  for forbidden in (b'synthetic-',b'198.51.',b'02:00:',device_id.encode(),first.encode(),second.encode(),b'export_key',b'local-fixture-only'):assert forbidden not in raw
  ui,app=reopen_owned_window();text('32 sessões');assert current()==second and refs()[0][1]==first;capture('l06-reopen')
@@ -108,4 +137,6 @@ def exercise(native,ui,app,root,company_db,device_id,click,field,text,node,exact
  heading=native.wait_for('reference heading',lambda:next((n for n in native.nodes(app) if n.get_role_name()=='heading' and n.get_name()=='Referências preservadas'),None))
  physical.focused(native,heading,'removed reference returns to references heading')
  capture('l06-reference-removed')
+ for tab,scope,expected in [('VLANs e serviços','catalog','fixture-service-a'),('RADIUS','radius','198.51.100.20')]:
+  click(tab);text(expected);assert diagnostic(scope) is not None;capture('l06-'+scope+'-reopen')
  click('Voltar ao equipamento')
