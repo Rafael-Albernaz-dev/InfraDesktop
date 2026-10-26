@@ -1,137 +1,237 @@
-#!/usr/bin/env python3
-"""Real production Wails bindings and SQLite, explicit test vault and loopback SSH."""
+#!/usr/bin/python3
+"""Owned real Wails journey; no browser bridge/seed or human account/state."""
+from fixture_io import FixtureOutput
+import native_physical
 from pathlib import Path
 import hashlib,importlib.util,json,os,secrets,sqlite3,subprocess,tempfile,time
-spec=importlib.util.spec_from_file_location('native',Path(__file__).with_name('test-desktop.py'));native=importlib.util.module_from_spec(spec);spec.loader.exec_module(native)
-ROOT=native.lifecycle.ROOT
-OUT=ROOT/'docs/evidence/l04-l05-parte1/native'
+ROOT=Path(__file__).resolve().parents[1]
+OUT=Path(os.environ.get('INFRADESKTOP_EVIDENCE_DIR',str(ROOT/'build/part1-native'/time.strftime('%Y%m%dT%H%M%S')))).resolve()
 OUT.mkdir(parents=True,exist_ok=True)
+spec=importlib.util.spec_from_file_location('native',ROOT/'scripts/test-desktop.py');native=importlib.util.module_from_spec(spec);spec.loader.exec_module(native)
+native.DESKTOP_OUTPUT=OUT/'runtime-icon'
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 def main():
- os.umask(0o077)
- root=Path(tempfile.mkdtemp(prefix='id-l04-l05-part1-'))
- for directory in ('runtime','state','client'): (root/directory).mkdir(mode=0o700)
- key=root/'test-master';key.write_bytes(secrets.token_bytes(32));key.chmod(0o600)
- peer=subprocess.Popen([str(ROOT/'build/bin/part1-ssh-fixture'),'--family','v7'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
- daemon=None;ui=None;report=[];capture_safe=False;query_visible=False
- try:
-  fixture=json.loads(peer.stdout.readline());assert fixture['scope']=='isolated loopback fixture'
-  argv=[str(ROOT/'build/bin/infradesktopd-part1-test'),'--runtime',str(root/'runtime'),'--state',str(root/'state')]
-  daemon=subprocess.Popen(argv,env=dict(os.environ,INFRADESKTOP_DEV_VAULT_KEY=str(key)),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-  native.wait_for('owned daemon socket',lambda:(root/'runtime/service.sock').exists())
-  ui,app=native.open_ui(root/'runtime',root/'client')
-  def text(value):
-   def observed():
+ os.umask(0o077);all_runs=[]
+ for theme,family in [('light','v6'),('dark','v7')]:
+  root=Path(tempfile.mkdtemp(prefix='id-jornada-native-'+theme+'-'))
+  for directory in ('runtime','state','client'):(root/directory).mkdir(mode=0o700)
+  (root/'OWNED-JORNADA-TEST').write_text('Only this synthetic root may be inspected by this harness.\n')
+  key=root/'test-master';key.write_bytes(secrets.token_bytes(32));key.chmod(0o600)
+  peer=None;daemon=None;ui=None;app=None;safe_capture=False;steps=[];captures=[];passed=False
+  record={'root':str(root),'theme':theme,'family':family,'viewport':[720,600],'steps':steps,'captures':captures,'scope':'real optimized Wails; separate explicit-test-provider daemon; isolated Unix/SQLite/cofre/SSH loopback; no firmware/human acceptance','status':'RUNNING'}
+  def flush():
+   (OUT/(theme+'-journey.json')).write_text(json.dumps(record,indent=2)+'\n')
+  def step(name,**data):
+   steps.append({'step':name,**data});print(theme+': '+name,flush=True);flush()
+  try:
+   peer=subprocess.Popen([str(ROOT/'build/bin/part1-ssh-fixture'),'--family',family,'--mode','interfaces'],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+   record['fixture_pid']=peer.pid
+   peer_output=FixtureOutput(peer);fixture=peer_output.json_line('readiness');assert fixture['scope']=='isolated loopback fixture';record['fixture']={k:v for k,v in fixture.items()}
+   argv=[str(ROOT/'build/bin/infradesktopd-part1-test'),'--runtime',str(root/'runtime'),'--state',str(root/'state')]
+   env=dict(os.environ,INFRADESKTOP_DEV_VAULT_KEY=str(key));env.pop('CREDENTIALS_DIRECTORY',None)
+   daemon=subprocess.Popen(argv,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True);record['daemon_argv']=argv;record['daemon_pid']=daemon.pid
+   native.wait_for('owned daemon socket',lambda:(root/'runtime/service.sock').exists())
+   ui,app=native.open_ui(root/'runtime',root/'client',owned_home=root/'home');record['ui_pid']=ui.pid;native.configure_window(ui,720,600)
+   def norm(value):return ' '.join(value.split())
+   def node(name,roles=('push button','toggle button')):
+    return next((n for n in native.nodes(app) if norm(n.get_name())==norm(name) and n.get_role_name() in roles),None)
+   def text(value):
+    def observed():app.clear_cache();return norm(value) in norm(native.contents(app))
+    return native.wait_for(value,observed)
+   def click(name):
+    target=native.wait_for('control '+name,lambda:node(name));native.Atspi.Component.scroll_to(target,native.Atspi.ScrollType.ANYWHERE);assert target.get_action_iface().do_action(0)
+   def field(name,value):native.type_field(ui,app,name,value)
+   def exact(name):
+    for n in native.nodes(app):
+     if norm(n.get_name())==norm(name):return n
+     if 'Text' in n.get_interfaces():
+      try:
+       if norm(native.Atspi.Text.get_text(n,0,-1))==norm(name):return n
+      except native.GLib.Error:pass
+    return None
+   def bounds(n):
+    r=native.Atspi.Component.get_extents(n,native.Atspi.CoordType.WINDOW);return {'x':r.x,'y':r.y,'width':r.width,'height':r.height}
+   def capture(name,focus_name=None):
+    assert safe_capture and app.get_process_id()==ui.pid
+    target=OUT/(name+'-'+theme+'-720.png');previous=[None];current=[None]
+    def stable():
+     current[0]=native.capture(ui,target,preserve_focus=True);h=sha(target);done=h==previous[0];previous[0]=h;return done
+    native.wait_for('stable native paint '+name,stable)
+    r={**current[0],'sha256':sha(target),'theme':theme,'viewport':[720,600],'runtime':'Wails GTK/WebKit X11; measured owned client surface','browser_geometry':'NOT USED'}
+    if focus_name:
+     focused=native.wait_for('focused '+focus_name,lambda:next((n for n in native.nodes(app) if n.get_name()==focus_name and n.get_state_set().contains(native.Atspi.StateType.FOCUSED)),None));r['native_focus']={'name':focus_name,'role':focused.get_role_name(),'bounds':bounds(focused)}
+    captures.append(r);flush()
+   account='native-'+theme;password='isolated native password'
+   click('Criar conta');field('Usuário',account);field('Senha',password);click('Criar conta local');text('Guardei meu código');click('Guardei meu código');text('Entrar');field('Senha',password);click('Entrar');text('Empresas');safe_capture=True
+   def account_row():
+    with sqlite3.connect(root/'state/infradesktop.db') as db:return db.execute('select profile,theme from account').fetchone()
+   if theme=='dark':
+    click('Conta: '+account);click('Escuro');native.wait_for('persisted account theme dark',lambda:account_row()[1]=='dark');click('Conta: '+account)
+   assert account_row()[1]==theme
+   step('real local account/login/recovery acknowledgement',theme_persisted=theme,one_time_code_captured=False)
+   click('Nova empresa');company_name='Native '+theme+' company';field('Nome da empresa',company_name);click('Criar empresa');text(company_name)
+   row=native.wait_for('company selection',lambda:exact('Selecionar '+company_name));native.type_label_x11(ui,row,'',activate=True);click('Abrir empresa');text('Nenhum equipamento cadastrado')
+   profile=native.wait_for('selected company',lambda:account_row()[0]);company_db=root/f'state/companies/{profile}.db';assert company_db.is_file()
+   def navigate(name):click('Navegação');click(name)
+   def dashboard_device():
     app.clear_cache()
-    return value in native.contents(app)
-   return native.wait_for(value,observed)
-  def click(value):native.click(app,value)
-  def field(name,value):native.type_field(ui,app,name,value)
-  def select(name,option):
-   assert name=='Estado dos equipamentos' and option in ('Ativos','Inativos')
-   node=native.wait_for('combobox '+name,lambda:native.find(app,'combo box',name))
-   # Collapsed WebKit select does not expose GTK menu items consistently.
-   # Exercise the actual focused control by physical X11 keys, then assert its result below.
-   native.type_label_x11(ui,node,'',key_symbol=0xff50)
-   if option=='Inativos':native.type_label_x11(ui,node,'',key_symbol=0xff54)
-   native.type_label_x11(ui,node,'',key_symbol=0xff0d)
-  def capture(name):
-   previous=[None];measured=[None]
-   def stable():
-    measured[0]=native.capture(ui,OUT/name,preserve_focus=True)
-    current=hashlib.sha256((OUT/name).read_bytes()).hexdigest();done=current==previous[0];previous[0]=current;return done
-   native.wait_for('two stable painted frames '+name,stable)
-   value=measured[0];value['sha256']=previous[0];report.append(value)
-  click('Criar conta');field('Usuário','part1-technical');field('Senha','isolated native password');click('Criar conta local');text('Guardei meu código');click('Guardei meu código');text('Entrar');field('Senha','isolated native password');click('Entrar');text('Empresas');capture_safe=True
-  click('Nova empresa');field('Nome da empresa','Native Part One');click('Criar empresa');text('Native Part One')
-  row=native.wait_for('company row',lambda:next((n for n in native.nodes(app) if n.get_name()=='Selecionar Native Part One'),None));native.type_label_x11(ui,row,'',activate=True);click('Abrir empresa');text('Inventário disponível nesta empresa')
-  click('Equipamentos');text('Nenhum equipamento cadastrado');capture('empty-light.png')
-  assert not native.find(app,'entry','Buscar equipamento')
-  assert len([n for n in native.nodes(app) if n.get_role_name()=='push button' and n.get_name()=='Adicionar equipamento'])==1
-  click('Adicionar equipamento');field('Nome','Loopback Router');field('IP de gerenciamento','127.0.0.1')
-  port=native.wait_for('SSH port',lambda:native.find(app,'spin button','Porta SSH') or native.find(app,'entry','Porta SSH'))
-  native.type_label_x11(ui,port,str(fixture['port']));field('Usuário','reader');capture('device-form-light.png')
-  capture_safe=False
-  field('Senha','local-fixture-only');click('Salvar equipamento')
-  native.wait_for('direct enrollment dialog closed',lambda:native.find(app,'dialog','Adicionar equipamento') is None)
-  capture_safe=True;text('Loopback Router')
-  with sqlite3.connect(root/'state/infradesktop.db') as db:company=db.execute('select profile from account').fetchone()[0]
-  company_db=root/f'state/companies/{company}.db'
-  def device():
-   with sqlite3.connect(company_db) as db:return db.execute('select id,credential_id,revision,active,fingerprint,observation from devices').fetchone()
-  native.wait_for('durable device with credential',lambda:device() and device()[1])
-  click('Verificar identidade');text('Conferir identidade do destino');text(fixture['fingerprint']);capture('trust-light.png')
-  assert peer.poll() is None
-  field('Origem da conferência','Local controlled fixture');click('Confirmar chave conferida');native.wait_for('persisted exact host key',lambda:device()[4]==fixture['fingerprint'])
-  click('Consultar');native.wait_for('persisted SSH observation',lambda:device()[5] is not None)
-  text('Fixture router');query_visible=True;click('Ver resultado')
-  region=native.wait_for('result region',lambda:next((n for n in native.nodes(app) if n.get_name()=='Resultado da consulta'),None))
-  assert native.Atspi.Component.scroll_to(region,native.Atspi.ScrollType.TOP_EDGE)
-  text('ether1');capture('result-light.png')
-  click('Conta: part1-technical');click('Escuro');text('Loopback Router');capture('result-dark.png')
-  click('Editar equipamento');text('Salvar equipamento');capture('device-form-dark.png');click('Fechar painel')
-  click('Desativar');native.wait_for('inactive device committed',lambda:device()[3]==0);text('Nenhum equipamento ativo')
-  select('Estado dos equipamentos','Inativos');text('Reativar');capture('inactive-dark.png');click('Reativar');native.wait_for('reactivated',lambda:device()[3]==1)
-  # Narrow keyboard: real X11 Tab, Shift+Tab, Escape, selection/settings return.
-  native.configure_window(ui,720,600);click('Navegação');picker=native.wait_for('focused navigation',lambda:native.find(app,'push button','Selecionar empresa'));native.wait_for('focus moved into sidebar',lambda:picker.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-  native.type_label_x11(ui,picker,'',key_symbol=0xff09);native.type_label_x11(ui,picker,'',key_symbol=0xff09,shift=True)
-  native.wait_for('Shift Tab returns picker',lambda:picker.get_state_set().contains(native.Atspi.StateType.FOCUSED));native.type_label_x11(ui,picker,'',key_symbol=0xff1b)
-  trigger=native.find(app,'push button','Navegação');native.wait_for('Escape returns trigger',lambda:trigger.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-  click('Navegação');click('Equipamentos');native.wait_for('selection returns trigger',lambda:trigger.get_state_set().contains(native.Atspi.StateType.FOCUSED));capture('narrow-dark.png');assert not native.find(app,'dialog','Adicionar equipamento');assert trigger.get_state_set().contains(native.Atspi.StateType.FOCUSED)
-  # New direct form at the real minimum size, both themes, no password typed/captured.
-  for theme,label in [('dark',None),('light','Claro')]:
-   if label:click('Conta: part1-technical');click(label)
-   opener=native.wait_for('header Add',lambda:native.find(app,'push button','Adicionar'))
-   native.type_label_x11(ui,opener,'',activate=True)
-   panel=native.wait_for('direct minimum dialog',lambda:native.find(app,'dialog','Adicionar equipamento'))
-   close=native.wait_for('X close',lambda:native.find(app,'push button','Fechar painel'))
-   native.wait_for('X initial focus',lambda:close.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-   # Shift+Tab wraps to the actual last form control and scrolls it into view.
-   native.type_label_x11(ui,close,'',key_symbol=0xff09,shift=True)
-   save=native.wait_for('focused Save at scroll end',lambda:native.find(app,'push button','Salvar equipamento'))
-   native.wait_for('Save focused by Shift Tab',lambda:save.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-   def extents(node):
-    r=native.Atspi.Component.get_extents(node,native.Atspi.CoordType.WINDOW)
-    return {'x':r.x,'y':r.y,'width':r.width,'height':r.height}
-   save_bounds=native.wait_for('Save within native viewport after scroll',lambda:(lambda b:b if b['x']>=0 and b['y']>=0 and b['x']+b['width']<=720 and b['y']+b['height']<=600 else None)(extents(save)))
-   capture('direct-'+theme+'-720-scroll-save.png')
-   native.type_label_x11(ui,save,'',key_symbol=0xff09)
-   native.wait_for('Tab wraps to X',lambda:close.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-   close_bounds=extents(close);assert close_bounds['width']>=32 and close_bounds['height']>=32
-   capture('direct-'+theme+'-720-top.png')
-   native.type_label_x11(ui,close,'',key_symbol=0xff1b)
-   native.wait_for('Escape closed direct dialog',lambda:native.find(app,'dialog','Adicionar equipamento') is None)
-   native.wait_for('Escape returns exact header opener',lambda:opener.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-   # Actual pointer activation, using only this owned private-display window.
-   native.type_label_x11(ui,opener,'',activate=True)
-   xbutton=native.wait_for('reopened X button',lambda:native.find(app,'push button','Fechar painel'))
-   native.wait_for('X focused after reopening',lambda:xbutton.get_state_set().contains(native.Atspi.StateType.FOCUSED))
-   screen=native.Atspi.Component.get_extents(xbutton,native.Atspi.CoordType.SCREEN)
-   x=native.C.CDLL('libX11.so.6');xt=native.C.CDLL('libXtst.so.6')
-   x.XOpenDisplay.argtypes=[native.C.c_char_p];x.XOpenDisplay.restype=native.C.c_void_p;x.XCloseDisplay.argtypes=[native.C.c_void_p];x.XSync.argtypes=[native.C.c_void_p,native.C.c_int]
-   xt.XTestFakeMotionEvent.argtypes=[native.C.c_void_p,native.C.c_int,native.C.c_int,native.C.c_int,native.C.c_ulong];xt.XTestFakeButtonEvent.argtypes=[native.C.c_void_p,native.C.c_uint,native.C.c_int,native.C.c_ulong]
-   display=x.XOpenDisplay(None);assert display and app.get_process_id()==ui.pid
-   try:
-    assert xt.XTestFakeMotionEvent(display,-1,screen.x+screen.width//2,screen.y+screen.height//2,0)
-    assert xt.XTestFakeButtonEvent(display,1,True,0);assert xt.XTestFakeButtonEvent(display,1,False,0);x.XSync(display,False)
-   finally:x.XCloseDisplay(display)
-   native.wait_for('physical pointer closes exact dialog',lambda:native.find(app,'dialog','Adicionar equipamento') is None)
-   report.append({'step':'minimum direct form '+theme,'runtime':'Wails WebKit AT-SPI + physical X11 keyboard','viewport':[720,600],'save_after_scroll':save_bounds,'close_at_top':close_bounds,'keyboard':'ShiftTab X->Save; Tab Save->X; Escape->exact header opener','mouse':'XTest click at measured X center in owned private display','password_typed':False,'PASS':True})
-  report.append({'step':'account, company, sealed credential, durable device, trust, fixed SSH read, result, inactive/reactivate, both themes, narrow keyboard','PASS':True})
-  native.close_window(ui,app);ui=None
-  native.lifecycle.stop(daemon);daemon=None
-  # Closed coherent test set remains private for reproduction; no human state.
-  assert not (root/'runtime/service.sock').exists()
- except BaseException:
-  if ui is not None and ui.poll() is None:
-   if capture_safe:
-    native.capture(ui,OUT/'failure.png',preserve_focus=True)
-   print('Control roles/names only:',[(node.get_role_name(),node.get_name()) for node in native.nodes(app) if node.get_role_name() in ('combo box','spin button','spinbutton')],flush=True)
-  raise
- finally:
-  native.terminate_ui(ui)
-  if daemon is not None:native.lifecycle.stop(daemon)
-  peer.terminate();peer.wait(timeout=5)
-  (OUT/'journey.json').write_text(json.dumps({'root':str(root),'scope':'isolated test key/provider/loopback peer; normal product not seeded','daemon_argv':locals().get('argv'),'binaries':{name:hashlib.sha256((ROOT/'build/bin'/name).read_bytes()).hexdigest() for name in ('infradesktop','infradesktopd','infradesktopd-part1-test','part1-ssh-fixture')},'fixture_pid':peer.pid,'fixture_exit':peer.returncode,'steps':report,'human_acceptance':'NOT RUN','cleanup':'owned processes only; private test state and test key retained together'},indent=2)+'\n')
- print('L04/L05 real Wails journey PASS; private test state '+str(root))
+    expected=''.join((router_name+' · 127.0.0.1').split())
+    matches=[n for n in native.nodes(app) if n.get_role_name()=='push button' and ''.join(n.get_name().split())==expected]
+    assert len(matches)<=1,'duplicate dashboard device action'
+    return matches[0] if matches else None
+   navigate('Equipamentos');text('Nenhum equipamento cadastrado');capture('empty')
+   click('Adicionar equipamento');router_name='Native '+theme+' router';field('Nome',router_name);field('IP de gerenciamento','127.0.0.1')
+   # Secondary SSH port disclosure is exercised through the real WebKit accessible action.
+   disclosure=native.wait_for('secondary SSH port disclosure',lambda:exact('Porta SSH · 22'))
+   native.Atspi.Component.scroll_to(disclosure,native.Atspi.ScrollType.ANYWHERE)
+   assert disclosure.get_action_iface().do_action(0)
+   port=native.wait_for('SSH port field',lambda:node('Porta SSH',('spin button','spinbutton','entry')));native.type_label_x11(ui,port,str(fixture['port']))
+   field('Usuário','reader');capture('device-form')
+   safe_capture=False;field('Senha','local-fixture-only');click('Salvar e conectar');native.wait_for('enrollment dialog gone',lambda:exact('Adicionar equipamento') is None);text('Primeira conexão');safe_capture=True
+   def device():
+    with sqlite3.connect(company_db) as db:
+     rows=db.execute('select id,name,credential_id,revision,active,fingerprint,observation,trust_acceptance,last_attempt from devices').fetchall()
+     assert len(rows)==1
+     return rows[0]
+   saved=native.wait_for('durable enrolled device',lambda:device());device_id=saved[0];assert saved[1]==router_name and saved[2] and saved[5]=='' and saved[6] is None
+   assert not exact('Origem da conferência')
+   capture('first-acceptance')
+   step('save leads to deliberate first acceptance',one_saved_device=True,credential_linked=True,no_pin_before_acceptance=True,no_observation_before_acceptance=True)
+   click('Confiar neste equipamento e conectar')
+   def reading_after(previous=None):
+    d=device()
+    if not d[6]:return None
+    r=json.loads(d[6]);return r if r['observed_at']!=previous else None
+   first=native.wait_for('persisted full SSH observation',reading_after)
+   assert first['family']==family and first['identity']=='Fixture router' and len(first['interfaces'])==128
+   part=first['interface_part'];assert part['status']=='limited' and part['counts_known'] and part['eligible']==129 and part['dynamic']==4096 and part['total']==4225
+   d=device();trust=json.loads(d[7]);assert d[5]==fixture['fingerprint'] and trust['mode']=='explicit-first-acceptance' and trust['address']=='127.0.0.1' and trust['port']==fixture['port'] and trust['company_id']==profile
+   text('Resumo');text('Fixture router');capture('summary',focus_name='Resumo')
+   assert not node('Ver resultado')
+   # Scroll the actual owned content to interfaces, not a browser-derived position.
+   iface=native.wait_for('native interface region',lambda:exact('Interfaces observadas'));assert native.Atspi.Component.scroll_to(iface,native.Atspi.ScrollType.TOP_EDGE)
+   text('ether1');capture('interfaces-page1')
+   click('Próxima');text('ether17');capture('interfaces-page2',focus_name='Interfaces observadas')
+   b=bounds(native.wait_for('ether17 cell',lambda:exact('ether17')));assert b['y']>=60 and b['y']+b['height']<=570,b
+   step('automatic full result and honest interface scope/pagination',family=family,static_available=128,eligible=129,dynamic_excluded=4096,first_page2_row_native_bounds=b)
+   click('Atualizar');second=native.wait_for('new persisted reading timestamp',lambda:reading_after(first['observed_at']));text('Leitura concluída');summary=native.wait_for('summary after refresh',lambda:exact('Resumo'));assert native.Atspi.Component.scroll_to(summary,native.Atspi.ScrollType.TOP_EDGE);capture('refresh',focus_name='Resumo')
+   assert device()[0]==device_id and json.loads(device()[8])['state']=='SUCCEEDED'
+   step('one deliberate refresh retains identity and publishes new reading',device_id=device_id,first_observed_at=first['observed_at'],second_observed_at=second['observed_at'])
+   for active in [True,False]:
+    if not active:
+     click('Desativar');native.wait_for('deactivated',lambda:device()[4]==0)
+    before=device();click('Editar equipamento');text('Salvar equipamento')
+    router_name='Native '+theme+(' active edit' if active else ' inactive edit')
+    field('Nome',router_name);capture('edit-form-'+str(active))
+    click('Salvar equipamento');native.wait_for('edit dialog closed',lambda:native.find(app,'dialog','Editar equipamento') is None)
+    native.wait_for('edited name persisted',lambda:device()[1]==router_name)
+    after=device();assert bool(after[4])==active and after[3]==before[3]+1
+    assert after[0]==before[0] and after[2]==before[2] and after[5:]==before[5:]
+    text(router_name);capture('edit-saved-'+str(active))
+    step('edit preserves active state and last reading; no implicit SSH',active=active,revision_before=before[3],revision_after=after[3])
+   click('Reativar');native.wait_for('reactivated',lambda:device()[4]==1)
+   # H01: physical input on the owned Wails window, independent of browser proofs.
+   def focused(target,why):
+    native.wait_for(why,lambda:target.get_state_set().contains(native.Atspi.StateType.FOCUSED))
+    step(why,accessible_name=target.get_name(),role=target.get_role_name(),bounds=bounds(target))
+   def key(target,symbol,shift=False):
+    # Check the starting focus before the helper's grab_focus: it cannot mask a failed transition.
+    focused(target,'physical key starting focus')
+    native_physical.key(native,ui,target,symbol,shift)
+    step('physical XTest key',symbol=hex(symbol),shift=shift,source=target.get_name())
+   trigger=native.wait_for('navigation trigger',lambda:node('Navegação'))
+   native.type_label_x11(ui,trigger,'',activate=True)
+   picker=native.wait_for('navigation picker',lambda:node('Selecionar empresa'))
+   focused(picker,'navigation initial picker focus')
+   key(picker,0xff09)
+   dashboard=native.wait_for('dashboard navigation',lambda:node('Dashboard'))
+   focused(dashboard,'Tab reaches Dashboard')
+   key(dashboard,0xff09,shift=True);focused(picker,'ShiftTab returns exact picker')
+   key(picker,0xff1b);focused(trigger,'navigation Escape returns exact trigger')
+   native.type_label_x11(ui,trigger,'',activate=True);focused(picker,'reopened navigation picker focus')
+   equipment=native.wait_for('equipment navigation',lambda:node('Equipamentos'))
+   native.type_label_x11(ui,equipment,'',activate=True)
+   focused(trigger,'navigation selection returns exact trigger');capture('h01-navigation')
+   # New form and edit form have different current submit labels; cover both.
+   for dialog_name,opener_name,save_name in [('Editar equipamento','Editar equipamento','Salvar equipamento'),('Adicionar equipamento','Adicionar','Salvar e conectar')]:
+    if dialog_name=='Adicionar equipamento':click('Voltar aos equipamentos')
+    opener=native.wait_for('exact form opener '+opener_name,lambda:node(opener_name))
+    native.type_label_x11(ui,opener,'',activate=True)
+    panel=native.wait_for('exact form '+dialog_name,lambda:native.find(app,'dialog',dialog_name))
+    def panel_button(name):
+     return next((n for n in native.nodes(panel) if n.get_role_name()=='push button' and norm(n.get_name())==name),None)
+    close=native.wait_for('dialog X',lambda:panel_button('Fechar painel'))
+    focused(close,'form initial X focus')
+    # Expand real optional sections so even the compact edit form needs scrolling.
+    for label in ['Porta SSH · '+str(fixture['port'] if dialog_name=='Editar equipamento' else 22)]+(['Sobre o acesso'] if dialog_name=='Editar equipamento' else []):
+     disclosure=native.wait_for('form disclosure '+label,lambda:exact(label))
+     assert disclosure.get_action_iface().do_action(0)
+    assert native.Atspi.Component.scroll_to(close,native.Atspi.ScrollType.TOP_EDGE)
+    assert native.Atspi.Component.grab_focus(close)
+    save=native.wait_for('current submit '+save_name,lambda:panel_button(save_name))
+    before_scroll=bounds(save)
+    step('expanded form before physical wrap',dialog=dialog_name,submit_bounds=before_scroll,close_bounds=bounds(close))
+    key(close,0xff09,shift=True)
+    focused(save,'ShiftTab wraps X to '+save_name)
+    def visible(target):
+     b=bounds(target)
+     return b if b['width']>0 and b['height']>0 and b['x']>=0 and b['y']>=0 and b['x']+b['width']<=720 and b['y']+b['height']<=600 else None
+    save_bounds=native.wait_for('native submit reachable after scroll',lambda:visible(save))
+    assert save_bounds!=before_scroll,'physical wrap did not scroll to submit'
+    capture('h01-'+opener_name+'-scroll',focus_name=save_name)
+    key(save,0xff09);focused(close,'Tab wraps submit to exact X')
+    close_bounds=native.wait_for('X reachable after wrap',lambda:visible(close))
+    assert close_bounds['width']>=32 and close_bounds['height']>=32
+    capture('h01-'+opener_name+'-top',focus_name='Fechar painel')
+    key(close,0xff1b)
+    native.wait_for('Escape closes exact form',lambda:native.find(app,'dialog',dialog_name) is None)
+    focused(opener,'form Escape returns exact opener')
+    native.type_label_x11(ui,opener,'',activate=True)
+    panel=native.wait_for('reopened exact form',lambda:native.find(app,'dialog',dialog_name))
+    close=native.wait_for('reopened X',lambda:panel_button('Fechar painel'))
+    focused(close,'reopened form initial X focus');assert visible(close)
+    screen=native.Atspi.Component.get_extents(close,native.Atspi.CoordType.SCREEN)
+    center=native_physical.pointer(native,ui,app,close)
+    native.wait_for('physical X click closes exact form',lambda:native.find(app,'dialog',dialog_name) is None)
+    focused(opener,'physical X click returns exact opener')
+    step('H01 form physical proof',dialog=dialog_name,submit=save_name,save_after_scroll=save_bounds,close_after_wrap=close_bounds,screen_bounds={'x':screen.x,'y':screen.y,'width':screen.width,'height':screen.height},XTest_click_center=center,password_typed=False)
+   navigate('Dashboard');link=native.wait_for('same named device and IP in dashboard',dashboard_device);assert 'Nenhum equipamento cadastrado' not in native.contents(app);capture('dashboard')
+   native.Atspi.Component.scroll_to(link,native.Atspi.ScrollType.ANYWHERE);assert link.get_action_iface().do_action(0)
+   text('Resumo');text('Fixture router');assert device()[0]==device_id and json.loads(device()[6])['observed_at']==second['observed_at'];capture('reopen',focus_name='Resumo')
+   step('dashboard and reopen use same device and persisted reading',device_id=device_id,observed_at=second['observed_at'])
+   native.close_window(ui,app);ui=None
+   native.lifecycle.stop(daemon);daemon=None;assert not (root/'runtime/service.sock').exists()
+   stats=peer_output.finish();assert stats['authentications']==2 and stats['commands']==6,stats
+   record['fixture_final_counters']=stats;record['status']='PASS';passed=True
+   step('owned runtime cleanup',ui_closed=True,daemon_stopped=True,socket_absent=True,fixture_exit=peer.returncode,authentications=stats['authentications'])
+  except BaseException:
+   record['status']='FAIL'
+   if ui and ui.poll() is None and safe_capture:
+    native.capture(ui,OUT/('failure-'+theme+'.png'),preserve_focus=True)
+   raise
+  finally:
+   cleanup_errors=[]
+   for name,process in [('ui',ui),('daemon',daemon),('fixture',peer)]:
+    if process is None:continue
+    try:
+     if name=='ui':native.terminate_ui(process)
+     elif name=='daemon':native.lifecycle.stop(process)
+     elif process.poll() is None:process.terminate();process.wait(timeout=5)
+    except BaseException as error:
+     cleanup_errors.append(name+': '+type(error).__name__)
+     if process.poll() is None:
+      try:process.kill();process.wait(timeout=5)
+      except BaseException as forced:cleanup_errors.append(name+' forced: '+type(forced).__name__)
+   record['cleanup_errors']=cleanup_errors
+   record['processes_alive_after_cleanup']={str(pid):Path('/proc',str(pid)).exists() for pid in [record.get('ui_pid'),record.get('daemon_pid'),record.get('fixture_pid')] if pid}
+   record['socket_present_after_cleanup']=(root/'runtime/service.sock').exists()
+   if cleanup_errors or any(record['processes_alive_after_cleanup'].values()) or record['socket_present_after_cleanup']:
+    record['status']='FAIL';passed=False
+   record['binaries']={name:sha(ROOT/'build/bin'/name) for name in ['infradesktop','infradesktopd','infradesktopd-part1-test','part1-ssh-fixture']}
+   flush();all_runs.append(record)
+   (OUT/'journey.json').write_text(json.dumps({'runs':all_runs,'status':'PASS' if len(all_runs)==2 and all(r['status']=='PASS' for r in all_runs) else 'INCOMPLETE','human_acceptance':'NOT RUN','firmware_homologation':'NOT RUN'},indent=2)+'\n')
+   assert not cleanup_errors and not any(record['processes_alive_after_cleanup'].values()) and not record['socket_present_after_cleanup'],'owned process cleanup failed'
+  assert passed
+ print('Real Wails operational journey PASS: light/dark720, SSH loopback, immutable human state; no firmware acceptance.')
 if __name__=='__main__':main()

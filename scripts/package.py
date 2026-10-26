@@ -48,7 +48,7 @@ for binary in ['infradesktop', 'infradesktopd']:
 deps = subprocess.check_output(['dpkg-shlibdeps', '-O', '-S' + str(stage), '-e' + str(stage / 'usr/bin/infradesktop'), '-e' + str(stage / 'usr/lib/infradesktop/infradesktopd')], cwd=work, text=True).strip()
 if not deps.startswith('shlibs:Depends='):
     raise RuntimeError('Could not determine runtime dependencies')
-deps = deps.split('=', 1)[1]
+deps = deps.split('=', 1)[1] + ', python3'
 (stage / 'DEBIAN').mkdir()
 (stage / 'DEBIAN/control').write_text(f'Package: infradesktop\nVersion: 0.6.0\nSection: net\nPriority: optional\nArchitecture: amd64\nMaintainer: InfraDesktop <noreply@localhost>\nDepends: {deps}, systemd\nDescription: Local ISP workspace with local account and persistence\n Local account, company inventory, encrypted credentials and on-demand SSH reads.\n')
 # Verify a named non-root instantiated unit against the actual staged binary.

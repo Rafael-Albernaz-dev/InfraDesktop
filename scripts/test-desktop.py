@@ -163,16 +163,37 @@ def configure_window(process,width=1440,height=860):
     finally:x.XCloseDisplay(d)
 
 
-def open_ui(runtime,client,expected="Serviço ativo"):
+def open_ui(runtime,client,expected="Serviço ativo",owned_home=None,viewport=(1440,860)):
     env = dict(os.environ, INFRADESKTOP_RUNTIME=str(runtime), INFRADESKTOP_CLIENT_STATE=str(client), NO_AT_BRIDGE='0', GTK_MODULES='atk-bridge', GDK_BACKEND='x11')
+    test_cwd = None
+    if owned_home is not None:
+        test_cwd = Path(owned_home)
+        assert test_cwd.parent == Path(client).parent
+        test_cwd.mkdir(mode=0o700, exist_ok=True)
+        # A synthetic child home isolates GTK bookmarks/recent files and the
+        # native picker from the human profile. No host environment is changed.
+        env['HOME'] = str(test_cwd)
+        env['GTK_USE_PORTAL'] = '0'
+        env['GIO_USE_VFS'] = 'local'
+        env['GIO_USE_VOLUME_MONITOR'] = 'unix'
+        env['GSETTINGS_BACKEND'] = 'memory'
+        gio_modules = test_cwd / 'gio-modules'
+        gio_modules.mkdir(mode=0o700, exist_ok=True)
+        assert not any(gio_modules.iterdir())
+        env['GIO_MODULE_DIR'] = str(gio_modules)
+        env.pop('GIO_EXTRA_MODULES', None)
+        for key, suffix in [('XDG_CONFIG_HOME','config'),('XDG_DATA_HOME','data'),('XDG_CACHE_HOME','cache')]:
+            location = test_cwd / suffix
+            location.mkdir(mode=0o700, exist_ok=True)
+            env[key] = str(location)
     print('owned UI command: INFRADESKTOP_RUNTIME='+str(runtime)+' GDK_BACKEND=x11 '+str(lifecycle.ROOT / 'build/bin/infradesktop'),flush=True)
     started=time.monotonic()
-    process = subprocess.Popen([str(lifecycle.ROOT / 'build/bin/infradesktop')], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    process = subprocess.Popen([str(lifecycle.ROOT / 'build/bin/infradesktop')], env=env, cwd=test_cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
         app = wait_for('owned Wails accessibility application', lambda: owned_app(process))
         wait_for('connected Wails snapshot', lambda: expected in contents(app))
         openings.append(time.monotonic()-started)
-        configure_window(process)
+        configure_window(process,*viewport)
         print('owned optimized Wails pid=' + str(process.pid) + ' connected (real GTK/WebKit, X11 backend)')
         return process, app
     except BaseException:
