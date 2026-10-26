@@ -32,6 +32,10 @@ func (a *App) ExportPPPoE(p, act, device, target, base string) string {
 	defer func() { a.mu.Lock(); a.ppExporting = false; a.mu.Unlock() }()
 	a.mu.Lock()
 	initial := a.checkPPExportLocked(p, act, device, target, base)
+	var diagnosticSnapshots []pdExportSnapshot
+	if initial == "OK" {
+		diagnosticSnapshots, initial = a.freezePPDiagnosticsLocked(p, act, device, target)
+	}
 	a.mu.Unlock()
 	if initial != "OK" {
 		return initial
@@ -73,7 +77,10 @@ func (a *App) ExportPPPoE(p, act, device, target, base string) string {
 		if generation != a.ppGeneration {
 			return "PROFILE_CHANGED"
 		}
-		return a.checkPPExportLocked(p, act, device, target, base)
+		if code := a.checkPPExportLocked(p, act, device, target, base); code != "OK" {
+			return code
+		}
+		return a.checkPPDiagnosticsLocked(p, act, device, diagnosticSnapshots)
 	}
 	producer := func(w io.Writer) string {
 		if c := check(); c != "OK" {
@@ -96,7 +103,7 @@ func (a *App) ExportPPPoE(p, act, device, target, base string) string {
 			role := []string{"base", "target"}[index]
 			metas = append(metas, map[string]any{"role": role, "observation": alias("observation", token), "observed_at": o.Provenance.Ended, "count": o.Count, "quality": o.Quality.Status, "atomic": false})
 		}
-		header, _ := json.Marshal(map[string]any{"profile": "pppoe-sanitized-v1", "observations": metas, "limits": map[string]int{"rows": equipment.PPMaxRows, "wire_bytes": equipment.PPWireBytes, "observation_bytes": equipment.PPObservationBytes}})
+		header, _ := json.Marshal(map[string]any{"profile": "pppoe-sanitized-v1", "observations": metas, "diagnostics": pdExportMetadata(diagnosticSnapshots, key[:], alias), "limits": map[string]int{"rows": equipment.PPMaxRows, "wire_bytes": equipment.PPWireBytes, "observation_bytes": equipment.PPObservationBytes}})
 		if _, e := w.Write(header[:len(header)-1]); e != nil {
 			return "EXPORT_UNAVAILABLE"
 		}
@@ -170,6 +177,9 @@ func (a *App) ExportPPPoE(p, act, device, target, base string) string {
 			if _, e := io.WriteString(w, "]"); e != nil {
 				return "EXPORT_UNAVAILABLE"
 			}
+		}
+		if code := a.writePPDiagnosticExport(w, p, act, in, diagnosticSnapshots, generation, key[:], alias, func() int { return len(aliases) }, check); code != "OK" {
+			return code
 		}
 		if _, e := io.WriteString(w, "}\n"); e != nil {
 			return "EXPORT_UNAVAILABLE"

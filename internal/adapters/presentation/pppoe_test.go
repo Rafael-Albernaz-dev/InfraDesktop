@@ -145,6 +145,48 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 		t.Fatal(save.Code)
 	}
 	b := collect()
+	collectDiagnostic := func(scope string) *equipment.PDDiagnostic {
+		var response PPPoEResult
+		switch scope {
+		case equipment.PDCatalog:
+			response = app.StartPPPoECatalog(profile, activation, d.ID, uuid.NewString(), 2)
+		case equipment.PDRadius:
+			response = app.StartPPPoERadius(profile, activation, d.ID, uuid.NewString(), 2)
+		case equipment.PDPing:
+			page := app.ListPPPoESessions(profile, activation, d.ID, b.ID, equipment.PPQuery{}, "")
+			if page.Code != "OK" || len(page.Data.Rows) == 0 {
+				t.Fatal("no ping source")
+			}
+			response = app.StartPPPoEPing(profile, activation, d.ID, b.ID, page.Data.Rows[0].ID, uuid.NewString(), 2)
+		}
+		if response.Code != "OK" || response.Data == nil || response.Data.Job == nil {
+			t.Fatal("diagnostic start", response)
+		}
+		until := time.Now().Add(3 * time.Second)
+		for time.Now().Before(until) {
+			status := app.PPPoEDiagnosticStatus(profile, activation, response.Data.Job.ID)
+			if status.Code != "OK" {
+				t.Fatal(status.Code)
+			}
+			if status.Data.Job.State != "RUNNING" {
+				if status.Data.Job.Code != equipment.OK {
+					t.Fatal("diagnostic failed", status.Data.Job)
+				}
+				return app.GetPPPoEDiagnostic(profile, activation, d.ID, scope).Data.Diagnostic
+			}
+			time.Sleep(time.Millisecond)
+		}
+		t.Fatal("diagnostic did not finish")
+		return nil
+	}
+	diagnosticIDs := []string{}
+	for _, scope := range []string{equipment.PDCatalog, equipment.PDRadius, equipment.PDPing} {
+		result := collectDiagnostic(scope)
+		if result == nil {
+			t.Fatal("diagnostic missing", scope)
+		}
+		diagnosticIDs = append(diagnosticIDs, result.ID)
+	}
 	auths, commands := peer.Auth.Load(), peer.Commands.Load()
 	destination := filepath.Join(root, "export.json")
 	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) { return destination, nil }
@@ -161,6 +203,27 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 	}
 	if len(file["observations"].([]any)) != 2 || len(file["deltas"].([]any)) == 0 || file["limits"] == nil {
 		t.Fatal("export lacks useful comparison context")
+	}
+	if len(file["diagnostics"].([]any)) != 3 || len(file["diagnostic_rows"].([]any)) != 10 {
+		t.Fatal("missing sanitized diagnostic scopes", file["diagnostics"], file["diagnostic_rows"])
+	}
+	diagnosticGroups := map[string]bool{}
+	for _, rawMeta := range file["diagnostics"].([]any) {
+		meta := rawMeta.(map[string]any)
+		if meta["status"] != "available" {
+			t.Fatal("matching scope excluded", meta)
+		}
+		diagnosticGroups[meta["diagnostic"].(string)] = true
+	}
+	for _, rawRow := range file["diagnostic_rows"].([]any) {
+		if !diagnosticGroups[rawRow.(map[string]any)["diagnostic"].(string)] {
+			t.Fatal("diagnostic row lost frozen group")
+		}
+	}
+	for _, id := range diagnosticIDs {
+		if bytes.Contains(raw, []byte(id)) {
+			t.Fatal("raw diagnostic ID exported")
+		}
 	}
 	groups := map[string]string{}
 	for i, value := range file["observations"].([]any) {
@@ -189,6 +252,14 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 		for _, k := range []string{"base_row", "target_row"} {
 			if id, ok := d[k].(string); ok && !rowAliases[id] {
 				t.Fatal("delta cannot be related to exported row")
+			}
+		}
+	}
+	for _, value := range file["diagnostics"].([]any) {
+		meta := value.(map[string]any)
+		if meta["scope"] == equipment.PDPing {
+			if groups[meta["source_observation"].(string)] != "target" || !rowAliases[meta["source_row"].(string)] {
+				t.Fatal("ping source detached from exported observation/row", meta)
 			}
 		}
 	}
@@ -228,6 +299,40 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 	if c := app.ExportPPPoE(profile, activation, d.ID, b.ID, a.ID); c != "EXPORT_CANCELLED" {
 		t.Fatal(c)
 	}
+	if peer.Auth.Load() != auths || peer.Commands.Load() != commands {
+		t.Fatal("local export connected before replacement tests")
+	}
+	// A deliberate refresh during the picker cannot mix a new current into pages.
+	replaced := filepath.Join(root, "diagnostic-replaced-picker.json")
+	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) {
+		collectDiagnostic(equipment.PDCatalog)
+		return replaced, nil
+	}
+	if code := app.ExportPPPoE(profile, activation, d.ID, b.ID, a.ID); code != "OBSERVATION_UNAVAILABLE" {
+		t.Fatal("picker replacement accepted", code)
+	}
+	if _, err := os.Stat(replaced); !os.IsNotExist(err) {
+		t.Fatal("picker replacement published file", err)
+	}
+	// Repeat at the final file-sync boundary, before publication revalidation.
+	replacedFinal := filepath.Join(root, "diagnostic-replaced-final.json")
+	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) { return replacedFinal, nil }
+	mutated := false
+	app.ppExportFS = ppFileOps{sync: func(fd int) error {
+		if !mutated {
+			mutated = true
+			collectDiagnostic(equipment.PDCatalog)
+		}
+		return unix.Fsync(fd)
+	}}
+	if code := app.ExportPPPoE(profile, activation, d.ID, b.ID, a.ID); code != "OBSERVATION_UNAVAILABLE" {
+		t.Fatal("final replacement accepted", code)
+	}
+	if _, err := os.Stat(replacedFinal); !os.IsNotExist(err) {
+		t.Fatal("final replacement published file", err)
+	}
+	app.ppExportFS = ppFileOps{}
+	auths, commands = peer.Auth.Load(), peer.Commands.Load()
 	late := filepath.Join(root, "late.json")
 	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) { app.Logout(); return late, nil }
 	if c := app.ExportPPPoE(profile, activation, d.ID, b.ID, a.ID); c != "PROFILE_CHANGED" {
