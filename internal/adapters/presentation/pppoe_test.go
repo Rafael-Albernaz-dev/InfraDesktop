@@ -3,6 +3,7 @@ package presentation
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -78,7 +80,10 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 		t.Fatal(selected.Code)
 	}
 	profile, activation := selected.Profile, selected.Activation
-	peer, e := sshfixture.Start(sshfixture.Config{Mode: "interfaces"})
+	var omitContext atomic.Bool
+	peer, e := sshfixture.Start(sshfixture.Config{Mode: "interfaces", Command: func(command string) (string, bool) {
+		return strings.Repeat("x", routerssh.MaxOutput+1), omitContext.Load() && command == routerssh.PPContextCommand
+	}})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -144,7 +149,11 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 	if save.Code != "OK" {
 		t.Fatal(save.Code)
 	}
+	omitContext.Store(true)
 	b := collect()
+	if !b.ContextOmitted {
+		t.Fatal("optional context budget marker lost before export")
+	}
 	collectDiagnostic := func(scope string) *equipment.PDDiagnostic {
 		var response PPPoEResult
 		switch scope {
@@ -302,6 +311,63 @@ func TestPPPoEBindingExportAndContext(t *testing.T) {
 	if peer.Auth.Load() != auths || peer.Commands.Load() != commands {
 		t.Fatal("local export connected before replacement tests")
 	}
+
+	// Operational export intentionally retains subscriber identity, through the
+	// same daemon, immutable observation and no-overwrite filesystem boundary.
+	csvPath := filepath.Join(root, "operational.csv")
+	app.saveDialog = func(_ context.Context, o runtime.SaveDialogOptions) (string, error) {
+		if !strings.Contains(o.Title, "dados sensíveis") || !strings.Contains(o.Title, "assinantes") {
+			t.Fatal("missing native sensitive-data warning", o.Title)
+		}
+		return csvPath, nil
+	}
+	if code := app.ExportPPPoEOperational(profile, activation, d.ID, b.ID); code != "OK" {
+		t.Fatal("operational export", code)
+	}
+	csvRaw, e := os.ReadFile(csvPath)
+	if e != nil {
+		t.Fatal(e)
+	}
+	records, e := csv.NewReader(bytes.NewReader(csvRaw)).ReadAll()
+	if e != nil {
+		t.Fatal(e)
+	}
+	expected := []string{"login", "ip", "caller_id", "estado", "uptime_min_ns", "uptime_max_ns", "vlan", "servico", "perfil", "upload_limite_bit_s", "download_limite_bit_s", "contexto", "estado_secret"}
+	if strings.Join(records[0], "|") != strings.Join(expected, "|") || len(records) != b.Count+1 || !strings.HasPrefix(records[1][0], "synthetic-") {
+		t.Fatal("operational columns/rows/identity", len(records))
+	}
+	for _, row := range records[1:] {
+		if row[11] != "não incluído por limite" || strings.Join(row[6:11], "") != "" {
+			t.Fatal("CSV omission became unknown zero or unmarked blank")
+		}
+	}
+	if st, e := os.Stat(csvPath); e != nil || st.Mode().Perm() != 0600 {
+		t.Fatal("operational permissions", e)
+	}
+	if strings.Contains(string(csvRaw), "password") || strings.Contains(string(csvRaw), "fingerprint") || strings.Contains(string(csvRaw), "127.0.0.1") {
+		t.Fatal("forbidden operational metadata")
+	}
+	if code := app.ExportPPPoEOperational(profile, activation, d.ID, b.ID); code != "EXPORT_EXISTS" {
+		t.Fatal("operational overwrite allowed", code)
+	}
+	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) { return "", nil }
+	if code := app.ExportPPPoEOperational(profile, activation, d.ID, b.ID); code != "EXPORT_CANCELLED" {
+		t.Fatal("operational cancel", code)
+	}
+	finalCSV := filepath.Join(root, "stale.csv")
+	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) { return finalCSV, nil }
+	app.ppExportFS = ppFileOps{sync: func(fd int) error { app.mu.Lock(); app.ppGeneration++; app.mu.Unlock(); return unix.Fsync(fd) }}
+	if code := app.ExportPPPoEOperational(profile, activation, d.ID, b.ID); code != "PROFILE_CHANGED" {
+		t.Fatal("stale operational publish", code)
+	}
+	if _, e := os.Stat(finalCSV); !os.IsNotExist(e) {
+		t.Fatal("stale csv published")
+	}
+	app.ppExportFS = ppFileOps{}
+	if peer.Auth.Load() != auths || peer.Commands.Load() != commands {
+		t.Fatal("operational export caused remote work")
+	}
+
 	// A deliberate refresh during the picker cannot mix a new current into pages.
 	replaced := filepath.Join(root, "diagnostic-replaced-picker.json")
 	app.saveDialog = func(context.Context, runtime.SaveDialogOptions) (string, error) {
@@ -581,4 +647,17 @@ func TestPPPoEReviewExportInitialAndFinalInputs(t *testing.T) {
 			t.Fatal("final output exists", e)
 		}
 	})
+}
+
+func TestL06DCSVFormulaNeutralization(t *testing.T) {
+	for _, value := range []string{"=1+1", " +SUM(A1:A2)", "-1", "@SUM(1)", "\tformula", "\rformula", "\nformula"} {
+		if cell := ppCSVCell(value); !strings.HasPrefix(cell, "'") || cell[1:] != value {
+			t.Fatal("active formula/control cell", value)
+		}
+	}
+	for _, value := range []string{"ordinary", "a,b", "a\"b", "198.51.100.1", "02:00:00:00:00:01", "10000000"} {
+		if ppCSVCell(value) != value {
+			t.Fatal("ordinary cell changed", value)
+		}
+	}
 }

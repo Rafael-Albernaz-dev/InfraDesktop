@@ -59,3 +59,25 @@ func (a *App) DeletePPPoEReference(p, act, device, reference, operation string) 
 func (a *App) ComparePPPoE(p, act, device, base, target string, query equipment.PPQuery, cursor string) PPPoEResult {
 	return a.ppCall("pppoe.compare", p, act, equipment.PPInput{DeviceID: device, BaseID: base, TargetID: target, Query: &query, Cursor: cursor})
 }
+
+func (a *App) PPPoEContextCounts(p, act, device, observation, cursor string) PPPoEResult {
+	return a.ppCall("pppoe.context-counts", p, act, equipment.PPInput{DeviceID: device, ObservationID: observation, Cursor: cursor})
+}
+
+func (a *App) StartPPPoERead(p, act, device, operation, scope, observation string, rows []string, revision uint64) PPPoEResult {
+	return a.ppCall("pppoe.read-start", p, act, equipment.PPInput{DeviceID: device, Operation: operation, Scope: scope, ObservationID: observation, RowIDs: rows, Revision: revision})
+}
+func (a *App) PPPoEReadStatus(p, act, job string) PPPoEResult {
+	return a.ppCall("pppoe.read-status", p, act, equipment.PPInput{JobID: job})
+}
+func (a *App) CancelPPPoERead(p, act, job string) PPPoEResult {
+	return a.ppCall("pppoe.read-cancel", p, act, equipment.PPInput{JobID: job})
+}
+func (a *App) PPPoEReadPage(p, act, job, cursor string) PPPoEResult {
+	return a.ppCall("pppoe.read-page", p, act, equipment.PPInput{JobID: job, Cursor: cursor})
+}
+
+func (a *App) CancelPPPoEReadOperation(p, act, device, operation string) PPPoEResult {
+	// App's ppCall mutex serializes this behind an uncertain start call.
+	return a.ppCall("pppoe.read-cancel", p, act, equipment.PPInput{DeviceID: device, Operation: operation})
+}

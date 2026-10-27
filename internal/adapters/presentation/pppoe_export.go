@@ -241,7 +241,10 @@ func (w *ppLimitWriter) Write(b []byte) (int, error) {
 	return n, e
 }
 func writePPExport(path string, produce func(io.Writer) string, publish func(func() string) string, ops ppFileOps) string {
-	if !filepath.IsAbs(path) || filepath.Clean(path) != path || filepath.Ext(path) != ".json" {
+	return writePPExportFile(path, ".json", produce, publish, ops)
+}
+func writePPExportFile(path, extension string, produce func(io.Writer) string, publish func(func() string) string, ops ppFileOps) string {
+	if !filepath.IsAbs(path) || filepath.Clean(path) != path || filepath.Ext(path) != extension {
 		return "EXPORT_INVALID_DESTINATION"
 	}
 	dir, e := recoveryDir(filepath.Dir(path))
