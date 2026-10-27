@@ -17,6 +17,9 @@ import (
 )
 
 var ppFields = map[string][]string{
+	"pppoe.read-start":  {"device_id", "revision", "operation_id", "scope", "observation_id", "row_ids"},
+	"pppoe.read-status": {"job_id"}, "pppoe.read-cancel": {"job_id", "device_id", "operation_id"}, "pppoe.read-page": {"job_id", "cursor"},
+	"pppoe.context-counts":    {"device_id", "observation_id", "cursor"},
 	"pppoe.diagnostic-start":  {"device_id", "revision", "operation_id", "scope", "observation_id", "row_id"},
 	"pppoe.diagnostic-status": {"job_id"}, "pppoe.diagnostic-cancel": {"job_id"},
 	"pppoe.diagnostic-current": {"device_id", "scope"},
@@ -99,8 +102,49 @@ func validatePPPoE(b []byte, q Request, fields map[string]json.RawMessage) (Requ
 			}
 		}
 	}
-	required := map[string][]string{"pppoe.collect-start": {"device_id", "revision", "operation_id"}, "pppoe.collect-status": {"job_id"}, "pppoe.collect-cancel": {"job_id"}, "pppoe.observation-get": {"device_id", "observation_id"}, "pppoe.sessions-list": {"device_id", "observation_id"}, "pppoe.session-get": {"device_id", "observation_id", "row_id"}, "pppoe.reference-save": {"device_id", "observation_id", "reference_id", "operation_id"}, "pppoe.reference-delete": {"device_id", "reference_id", "operation_id"}, "pppoe.compare": {"device_id", "base_id", "target_id"}, "pppoe.export-page": {"device_id", "target_id", "export_key"}}
+	required := map[string][]string{"pppoe.context-counts": {"device_id", "observation_id"}, "pppoe.collect-start": {"device_id", "revision", "operation_id"}, "pppoe.collect-status": {"job_id"}, "pppoe.collect-cancel": {"job_id"}, "pppoe.observation-get": {"device_id", "observation_id"}, "pppoe.sessions-list": {"device_id", "observation_id"}, "pppoe.session-get": {"device_id", "observation_id", "row_id"}, "pppoe.reference-save": {"device_id", "observation_id", "reference_id", "operation_id"}, "pppoe.reference-delete": {"device_id", "reference_id", "operation_id"}, "pppoe.compare": {"device_id", "base_id", "target_id"}, "pppoe.export-page": {"device_id", "target_id", "export_key"}}
 	r := required[q.Op]
+	if strings.HasPrefix(q.Op, "pppoe.read-") {
+		r = []string{"job_id"}
+		if q.Op == "pppoe.read-cancel" {
+			if input.JobID != "" {
+				if len(raw) != 1 {
+					return q, foundation.Invalid
+				}
+			} else {
+				if len(raw) != 2 {
+					return q, foundation.Invalid
+				}
+				r = []string{"device_id", "operation_id"}
+			}
+		}
+		if q.Op == "pppoe.read-start" {
+			r = []string{"device_id", "revision", "operation_id", "scope", "observation_id", "row_ids"}
+			if !equipment.PPReadScope(input.Scope) || input.Revision == 0 {
+				return q, foundation.Invalid
+			}
+			if input.Scope == "top" || input.Scope == "health" {
+				r = []string{"device_id", "revision", "operation_id", "scope"}
+				if _, exists := raw["row_ids"]; exists {
+					return q, foundation.Invalid
+				}
+				if _, exists := raw["observation_id"]; exists {
+					return q, foundation.Invalid
+				}
+			} else {
+				if len(input.RowIDs) == 0 || len(input.RowIDs) > equipment.PageSize || ((input.Scope == "log" || input.Scope == "secret") && len(input.RowIDs) != 1) {
+					return q, foundation.Invalid
+				}
+				seen := map[string]bool{}
+				for _, id := range input.RowIDs {
+					if !access.ValidCompanyID(id) || seen[id] {
+						return q, foundation.Invalid
+					}
+					seen[id] = true
+				}
+			}
+		}
+	}
 	if strings.HasPrefix(q.Op, "pppoe.diagnostic-") {
 		switch q.Op {
 		case "pppoe.diagnostic-status", "pppoe.diagnostic-cancel":
@@ -162,7 +206,11 @@ func ppDigest(q Request) string {
 	p := *q.PPPoE
 	p.Cursor = ""
 	p.Offset = 0
-	b, _ := json.Marshal([]any{q.Op, q.Profile, q.Activation, p})
+	op := q.Op
+	if op == "pppoe.read-status" {
+		op = "pppoe.read-page"
+	}
+	b, _ := json.Marshal([]any{op, q.Profile, q.Activation, p})
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }

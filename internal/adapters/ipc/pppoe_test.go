@@ -197,6 +197,9 @@ func TestPPPoERealClientPersistenceReplayAndQuota(t *testing.T) {
 	auth = j.peer.Auth.Load()
 	// Reads still work at the mutation ceiling; the saved mutation replay is stable.
 	j.collect(uuid.NewString())
+	if j.peer.Auth.Load() != auth+1 {
+		t.Fatal("read at mutation ceiling did not perform exactly one authenticated collection")
+	}
 	j.call("pppoe.reference-delete", equipment.PPInput{DeviceID: j.device, ReferenceID: ref.ReferenceID, Operation: uuid.NewString()}, foundation.Code(equipment.Limit))
 	j.call("pppoe.reference-save", ref, foundation.OK)
 	// After restart a deliberate submission is a fresh read, even with old ID.
@@ -365,11 +368,11 @@ func TestL06CReadReplayOnlyWhileActive(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	if j.peer.Commands.Load() != 1 {
-		t.Fatal("active read repeated remote command")
+	if j.peer.PPCalls.Load() != 1 || j.peer.Commands.Load() != 2 || j.peer.Auth.Load() != 1 {
+		t.Fatal("active read repeated collection or enrichment")
 	}
 	next := j.collect(in.Operation)
-	if next == nil || j.peer.Commands.Load() != 2 {
+	if next == nil || j.peer.PPCalls.Load() != 2 || j.peer.Commands.Load() != 4 || j.peer.Auth.Load() != 2 {
 		t.Fatal("completed read was durably replayed")
 	}
 }

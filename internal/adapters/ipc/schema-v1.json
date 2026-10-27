@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 10,
+  "product_revision": 11,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -445,6 +445,31 @@
       "diagnostic_id",
       "cursor",
       "query"
+    ],
+    "pppoe.context-counts": [
+      "device_id",
+      "observation_id",
+      "cursor"
+    ],
+    "pppoe.read-start": [
+      "device_id",
+      "revision",
+      "operation_id",
+      "scope",
+      "observation_id",
+      "row_ids"
+    ],
+    "pppoe.read-status": [
+      "job_id"
+    ],
+    "pppoe.read-cancel": [
+      "job_id",
+      "device_id",
+      "operation_id"
+    ],
+    "pppoe.read-page": [
+      "job_id",
+      "cursor"
     ]
   },
   "pppoe": {
@@ -487,6 +512,31 @@
       "context": "IPv4 unicast from current immutable session; same daemon epoch; revalidate IDs/IP/uptimes; main only without custom VRF/rules/output mangle; v6 routing-table=main, v7 vrf=main",
       "privacy": "router-side allowlisted projections; no secret, raw log, whole config, debug or reset; no inferred per-session VLAN or rejection cause",
       "export": "freeze diagnostic IDs/scope/source; sanitize before IPC; shared16386aliases/2MiB; revalidate pages and publication"
+    },
+    "session_context": "optional stable context; unique login/caller/IP/uptime association; no rates; migration8 additive index; unavailable never zero; optional enrichment yields to base sessions at SSH/row/observation/company budgets; observation.context_omitted=true marks omission; context-counts returns current marker without asserting groups; CSV contexto column discloses omission; secret_state active/disabled/ambiguous/none/unavailable; profile only for active unique local secret; dynamic queue limit upload/download order; legacy missing state never attributes active profile",
+    "limited_reads": {
+      "scopes": [
+        "bandwidth",
+        "live",
+        "top",
+        "log",
+        "health",
+        "secret"
+      ],
+      "global_concurrency": 2,
+      "result_rows": 2048,
+      "result_bytes": 524288,
+      "page_size": 16,
+      "retention_seconds": 120,
+      "read_receipts": "active job only; no SQL mutation",
+      "live_deadline_seconds": 60,
+      "live_samples": "last pair only; approximately2s; cumulative SSH512KiB/job",
+      "cancel": "job_id OR exact device_id+operation_id; own scope only",
+      "top": "explicit two counter snapshots of all running tunnels; no observation or row IDs; known lower bounds first; cost commands/bytes/duration/CPU samples",
+      "log": "current immutable row/login only; last50 projected time/category; exact token/tunnel regex; excludesdebug; never raw log; SSH32KiB; no export",
+      "health": "device-only; two samples of static interfaces; revalidate dated link/name/type after counters; pool scalar size/used only; unavailable distinct from zero; uint64 errors/drops as decimal strings",
+      "wire_shape": "read.rows always array including empty; serialization sizes measured at adapter; service enforces512KiB/row2048B/meta16KiB",
+      "secret": "exact selected current row/login only; at most4 secrets; disabled/service/profile/last-logged-out/last-caller-id/last-disconnect-reason/comment only; no password/map; absent fields unavailable; comment control-free and max128 characters; 20s/SSH32KiB; memory only/no SQL or exports"
     }
   }
 }
