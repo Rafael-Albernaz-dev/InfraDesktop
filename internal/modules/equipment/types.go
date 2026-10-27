@@ -102,6 +102,8 @@ type Observation struct {
 	Quality       string             `json:"quality"`
 }
 type Device struct {
+	Role            string           `json:"role"`
+	PPPoE           *PPSummary       `json:"pppoe,omitempty"`
 	TrustAcceptance *TrustAcceptance `json:"trust_acceptance,omitempty"`
 	LastAttempt     *Attempt         `json:"last_attempt,omitempty"`
 	ID              string           `json:"id"`
@@ -115,6 +117,11 @@ type Device struct {
 	Fingerprint     string           `json:"fingerprint"`
 	TrustOrigin     string           `json:"trust_origin"`
 	Result          *Observation     `json:"result,omitempty"`
+}
+type PPSummary struct {
+	Online  int    `json:"online"`
+	Offline int    `json:"offline"`
+	At      string `json:"at"`
 }
 type SealedCredential struct {
 	Metadata Credential
@@ -148,19 +155,19 @@ type Remote interface {
 }
 type IDs interface{ ID() (string, Code) }
 type Command struct {
-	Authority                                                                  uint64
-	Op                                                                         string
-	Scope                                                                      access.Command
-	UID                                                                        uint32
-	Operation, ID, Name, Address, Transport, CredentialID, Alias, User, Secret string
-	Revision                                                                   uint64
-	Port                                                                       int
-	Active                                                                     bool
-	Inactive                                                                   bool
-	Cursor                                                                     int
-	Search                                                                     string
-	Affected                                                                   int
-	JobID, Fingerprint                                                         string
+	Authority                                                                        uint64
+	Op                                                                               string
+	Scope                                                                            access.Command
+	UID                                                                              uint32
+	Operation, ID, Name, Address, Transport, CredentialID, Alias, User, Secret, Role string
+	Revision                                                                         uint64
+	Port                                                                             int
+	Active                                                                           bool
+	Inactive                                                                         bool
+	Cursor                                                                           int
+	Search                                                                           string
+	Affected                                                                         int
+	JobID, Fingerprint                                                               string
 }
 type Job struct {
 	PPPoE       *PPAttempt   `json:"pppoe,omitempty"`

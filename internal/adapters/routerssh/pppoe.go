@@ -19,7 +19,7 @@ import (
 
 const ppEscapeScript = `:local esc do={:local v [:tostr $1]; :local out ""; :if ([:len $v]=0) do={:return ""}; :if ([:len $v] > 512) do={:error "field-limit"}; :for n from=0 to=([:len $v]-1) do={:local c [:pick $v $n ($n+1)]; :if ($c="\\") do={:set c "\\\\"} else={:if ($c="\t") do={:set c "\\t"} else={:if ($c="\r") do={:set c "\\r"} else={:if ($c="\n") do={:set c "\\n"}}}}; :set out ($out.$c)}; :return $out}`
 
-const PPPoECommand = ppEscapeScript + `; :local count [/ppp active print count-only where service=pppoe]; :local up [/system resource get uptime]; :put ("H\t1\t".$count."\t".[/system resource get version]."\t".$up); :if ($count>2048) do={:put "Z\t0\trows"} else={:local ids [/ppp active find where service=pppoe]; :local n 0; :local bytes 0; :local reason "complete"; :foreach i in=$ids do={:if (($n<2048)&&($reason="complete")) do={:local sid ""; :do {:set sid [/ppp active get $i session-id]} on-error={}; :local u [/ppp active get $i uptime]; :local line ("R\t".[$esc $i]."\t".[$esc $sid]."\t".[$esc [/ppp active get $i name]]."\t".[$esc [/ppp active get $i address]]."\t".[$esc [/ppp active get $i caller-id]]."\t".$u); :local after ""; :do {:set after [/ppp active get $i session-id]} on-error={}; :if (($sid!=$after)||([/ppp active get $i uptime]<$u)) do={:set reason "churn"}; :if (($bytes+[:len $line]+2)>458752) do={:set reason "wire_bytes"}; :if ($reason="complete") do={:put $line; :set bytes ($bytes+[:len $line]+2); :set n ($n+1)}}}; :if (([:tostr $ids]!=[:tostr [/ppp active find where service=pppoe]])||([/system resource get uptime]<$up)) do={:set reason "churn"}; :put ("Z\t".$n."\t".$reason."\t".[/system resource get uptime])}`
+const PPPoECommand = ppEscapeScript + `; :local count [/ppp active print count-only where service=pppoe]; :local up [/system resource get uptime]; :put ("H\t1\t".$count."\t".[/system resource get version]."\t".$up); :if ($count>2048) do={:put "Z\t0\trows"} else={:local ids [/ppp active find where service=pppoe]; :local n 0; :local bytes 0; :local reason "complete"; :if ([:len $ids]>2048) do={:set reason "rows"}; :foreach i in=$ids do={:if ($reason="complete") do={:local present true; :local sid ""; :local after ""; :local u; :local name; :local address; :local caller; :do {:do {:set sid [/ppp active get $i session-id]} on-error={}; :set u [/ppp active get $i uptime]; :set name [/ppp active get $i name]; :set address [/ppp active get $i address]; :set caller [/ppp active get $i caller-id]; :do {:set after [/ppp active get $i session-id]} on-error={}; :if (($sid!=$after)||([/ppp active get $i uptime]<$u)) do={:set reason "item_changed"}} on-error={:set present false; :foreach remaining in=[/ppp active find where service=pppoe] do={:if ($remaining=$i) do={:set reason "item_error"}}}; :if (($present=true)&&($reason="complete")) do={:local line ("R\t".[$esc $i]."\t".[$esc $sid]."\t".[$esc $name]."\t".[$esc $address]."\t".[$esc $caller]."\t".$u); :if (($bytes+[:len $line]+2)>458752) do={:set reason "wire_bytes"}; :if ($reason="complete") do={:put $line; :set bytes ($bytes+[:len $line]+2); :set n ($n+1)}}}}; :if ([/system resource get uptime]<$up) do={:set reason "reboot"}; :put ("Z\t".$n."\t".$reason."\t".[/system resource get uptime])}`
 
 type ppConnection struct {
 	run     func(string) (string, equipment.Code)
@@ -95,7 +95,7 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 		session.Stdout = out
 		session.Stderr = stderr
 		e = session.Run(command)
-		if strings.Contains(command, "/tool ping address=") {
+		if strings.Contains(command, "/tool ping address=") || strings.Contains(command, "/ping address=") {
 			exit := -1
 			var status *ssh.ExitError
 			if e == nil {
@@ -154,7 +154,7 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 			o.Rows = nil
 			o.Quality.Status = "partial"
 			o.Quality.Code = equipment.Partial
-			o.Quality.Reason = "churn"
+			o.Quality.Reason = "reboot"
 			o.Quality.MembershipChecked = false
 		}
 	}
@@ -328,8 +328,11 @@ func ParsePPPoE(text string) (*equipment.PPObservation, equipment.Code) {
 				if !o.Provenance.RouterFinalUptime.Known {
 					return fail("codec")
 				}
-				if n != o.Quality.Eligible {
-					return fail("churn")
+				if o.Quality.Eligible > equipment.PPMaxRows {
+					return fail("rows")
+				}
+				if !o.Provenance.RouterUptime.Known || o.Provenance.RouterFinalUptime.Max < o.Provenance.RouterUptime.Min {
+					return fail("reboot")
 				}
 				o.Quality.Status = "complete"
 				o.Quality.Code = equipment.OK
@@ -339,7 +342,7 @@ func ParsePPPoE(text string) (*equipment.PPObservation, equipment.Code) {
 				o.Quality.Code = equipment.Limit
 				o.Quality.Reason = f[2]
 				o.Rows = nil
-			case "churn":
+			case "churn", "reboot", "item_error", "item_changed":
 				return fail("churn")
 			default:
 				return fail("codec")

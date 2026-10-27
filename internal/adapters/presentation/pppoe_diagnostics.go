@@ -20,6 +20,6 @@ func (a *App) CancelPPPoEDiagnostic(p, act, job string) PPPoEResult {
 func (a *App) GetPPPoEDiagnostic(p, act, device, scope string) PPPoEResult {
 	return a.ppCall("pppoe.diagnostic-current", p, act, equipment.PPInput{DeviceID: device, Scope: scope})
 }
-func (a *App) ListPPPoEDiagnostic(p, act, device, scope, diagnostic, cursor string) PPPoEResult {
-	return a.ppCall("pppoe.diagnostic-list", p, act, equipment.PPInput{DeviceID: device, Scope: scope, DiagnosticID: diagnostic, Cursor: cursor})
+func (a *App) ListPPPoEDiagnostic(p, act, device, scope, diagnostic, cursor, kind string) PPPoEResult {
+	return a.ppCall("pppoe.diagnostic-list", p, act, equipment.PPInput{DeviceID: device, Scope: scope, DiagnosticID: diagnostic, Cursor: cursor, Query: &equipment.PPQuery{Type: kind}})
 }

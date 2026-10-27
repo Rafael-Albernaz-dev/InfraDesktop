@@ -16,10 +16,8 @@ func ppTotalBytes(ctx context.Context, tx *sql.Tx) (int64, error) {
 func (s *Store) ReservePPDiagnostic(ctx context.Context, company string, in equipment.PPInput, stamp, job string) (string, bool, equipment.Code) {
 	entity, known := "", false
 	c := s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
-		var code equipment.Code
-		entity, known, code = ppReceipt(ctx, tx, in.Operation, stamp)
-		if code != equipment.OK || known || job == "" {
-			return code
+		if job == "" {
+			return equipment.OK
 		}
 		target, code := ppTarget(ctx, tx, s.installation, company, in.DeviceID, false)
 		if code != equipment.OK {
@@ -34,9 +32,7 @@ func (s *Store) ReservePPDiagnostic(ctx context.Context, company string, in equi
 		if !equipment.PDValidScope(in.Scope) {
 			return equipment.Invalid
 		}
-		if _, err := tx.ExecContext(ctx, "INSERT INTO equipment_operations VALUES(?,?,?)", in.Operation, stamp, job); err != nil {
-			return equipment.Unavailable
-		}
+
 		attempt := equipment.PPAttempt{Epoch: in.WorkerEpoch, JobID: job, State: "RUNNING", Code: equipment.OK, At: in.SavedAt, Operation: in.Operation, Scope: in.Scope, SourceObservation: in.ObservationID, SourceRow: in.RowID}
 		body, _ := json.Marshal(attempt)
 		_, err := tx.ExecContext(ctx, "INSERT INTO pppoe_diagnostic_attempts VALUES(?,?,?,?,?) ON CONFLICT(device_id,scope) DO UPDATE SET operation_id=excluded.operation_id,job_id=excluded.job_id,meta_json=excluded.meta_json", in.DeviceID, in.Scope, in.Operation, job, string(body))
@@ -107,6 +103,7 @@ func pdBudget(o *equipment.PDDiagnostic) bool {
 
 func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target equipment.PPTarget, in equipment.PPInput, job string, attempt equipment.PPAttempt, o *equipment.PDDiagnostic) equipment.Code {
 	return s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
+		s.observe("pp-phase-read-start")
 		current, code := ppTarget(ctx, tx, s.installation, company, target.Device.ID, false)
 		if code != equipment.OK {
 			return code
@@ -119,16 +116,24 @@ func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target e
 			return equipment.Revision
 		}
 		if o != nil {
+			s.observe("pp-phase-serialize-start")
 			if o.Scope != in.Scope || o.DeviceID != target.Device.ID || !pdBudget(o) {
 				return equipment.Limit
 			}
 			body, _ := json.Marshal(o)
+			s.observe("pp-phase-inserts-start")
 			if _, err := tx.ExecContext(ctx, "INSERT INTO pppoe_diagnostic_observations VALUES(?,?,?,?,?,?)", o.ID, o.DeviceID, o.Scope, string(body), o.Count, o.Bytes); err != nil {
 				return equipment.Unavailable
 			}
 			// Bound each SQL call to the existing page cardinality. This avoids
 			// thousands of driver/context crossings under the unchanged1s commit
 			// budget, while the complete observation still commits atomically.
+			valuesFor := func(n int) string { return strings.TrimSuffix(strings.Repeat("(?,?,?,?),", n), ",") }
+			full, e := tx.PrepareContext(ctx, "INSERT INTO pppoe_diagnostic_rows VALUES"+valuesFor(equipment.PageSize))
+			if e != nil {
+				return equipment.Unavailable
+			}
+			defer full.Close()
 			for start := 0; start < len(o.Rows); start += equipment.PageSize {
 				end := start + equipment.PageSize
 				if end > len(o.Rows) {
@@ -140,8 +145,14 @@ func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target e
 					body, _ := json.Marshal(row)
 					args = append(args, o.ID, row.ID, ordinal, string(body))
 				}
-				values := strings.TrimSuffix(strings.Repeat("(?,?,?,?),", end-start), ",")
-				if _, err := tx.ExecContext(ctx, "INSERT INTO pppoe_diagnostic_rows VALUES"+values, args...); err != nil {
+				var err error
+				if end-start == equipment.PageSize {
+					_, err = full.ExecContext(ctx, args...)
+				} else {
+					_, err = tx.ExecContext(ctx, "INSERT INTO pppoe_diagnostic_rows VALUES"+valuesFor(end-start), args...)
+				}
+				if err != nil {
+					s.observe("pp-phase-inserts-error")
 					return equipment.Unavailable
 				}
 			}
@@ -149,6 +160,7 @@ func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target e
 			if _, err := tx.ExecContext(ctx, "INSERT INTO pppoe_diagnostic_current VALUES(?,?,?) ON CONFLICT(device_id,scope) DO UPDATE SET diagnostic_id=excluded.diagnostic_id", o.DeviceID, o.Scope, o.ID); err != nil {
 				return equipment.Unavailable
 			}
+			s.observe("pp-phase-cascade-start")
 			if _, err := tx.ExecContext(ctx, "DELETE FROM pppoe_diagnostic_observations WHERE NOT EXISTS(SELECT 1 FROM pppoe_diagnostic_current WHERE diagnostic_id=pppoe_diagnostic_observations.id)"); err != nil {
 				return equipment.Unavailable
 			}
@@ -159,6 +171,7 @@ func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target e
 			if bytes > equipment.PPCompanyBytes {
 				return equipment.Limit
 			}
+			s.observe("pp-phase-cascade-end")
 		}
 		body, _ := json.Marshal(attempt)
 		if _, err := tx.ExecContext(ctx, "UPDATE pppoe_diagnostic_attempts SET meta_json=? WHERE device_id=? AND scope=? AND job_id=?", string(body), target.Device.ID, in.Scope, job); err != nil {
@@ -236,7 +249,23 @@ func (s *Store) PPDiagnosticPage(ctx context.Context, company string, in equipme
 	}
 	v.Diagnostic = o
 	v.Total = o.Count
-	rows, err := s.unit.QueryContext(ctx, "SELECT row_json FROM pppoe_diagnostic_rows WHERE diagnostic_id=? ORDER BY ordinal LIMIT ? OFFSET ?", o.ID, equipment.PageSize, in.Offset)
+	where := "diagnostic_id=?"
+	args := []any{o.ID}
+	if in.Query != nil && in.Query.Type != "" {
+		if in.Scope != equipment.PDCatalog || !equipment.PPValidQuery(in.Query) {
+			return v, equipment.Invalid
+		}
+		where += " AND (json_extract(row_json,'$.type')=? OR json_extract(row_json,'$.kind')=?)"
+		args = append(args, in.Query.Type, in.Query.Type)
+	}
+	if s.unit.QueryRowContext(ctx, "SELECT count(*) FROM pppoe_diagnostic_rows WHERE "+where, args...).Scan(&v.Total) != nil {
+		return v, equipment.Unavailable
+	}
+	if in.Offset > v.Total {
+		return v, equipment.CursorInvalid
+	}
+	args = append(args, equipment.PageSize, in.Offset)
+	rows, err := s.unit.QueryContext(ctx, "SELECT row_json FROM pppoe_diagnostic_rows WHERE "+where+" ORDER BY ordinal LIMIT ? OFFSET ?", args...)
 	if err != nil {
 		return v, equipment.Unavailable
 	}

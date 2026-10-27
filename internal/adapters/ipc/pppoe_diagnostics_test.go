@@ -67,10 +67,10 @@ func TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay(t *testing.T)
 		if len(exported.Data.PPPoE.ExportDiagnostics) == 0 || j.peer.Commands.Load() != before {
 			t.Fatal("stored page/export caused network")
 		}
-		// In-memory replay is the original job, never another SSH run.
-		j.call("pppoe.diagnostic-start", in, foundation.OK)
-		if j.peer.Commands.Load() != before {
-			t.Fatal("replayed diagnostic collected again")
+		// A second deliberate read after completion gets a new job, not a permanent replay.
+		again := j.diagnostic(in, equipment.OK)
+		if again.ID == diagnostic.ID || j.peer.Commands.Load() != before+1 {
+			t.Fatal("completed read retained permanent replay")
 		}
 	}
 	session := j.call("pppoe.sessions-list", equipment.PPInput{DeviceID: j.device, ObservationID: observation.ID}, foundation.OK).Data.PPPoE.Rows[0]
@@ -79,19 +79,19 @@ func TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay(t *testing.T)
 	if result == nil || result.SourceObservation != observation.ID || result.SourceRow != session.ID || j.peer.PingCalls.Load() != 1 {
 		t.Fatal("ping source/run identity", result, j.peer.PingCalls.Load())
 	}
-	j.call("pppoe.diagnostic-start", ping, foundation.OK)
-	if j.peer.PingCalls.Load() != 1 {
-		t.Fatal("uncertain replay resent ping")
+	// No automatic ping retry; a deliberate second run is a fresh finite action.
+	j.diagnostic(ping, equipment.OK)
+	if j.peer.PingCalls.Load() != 2 {
+		t.Fatal("explicit second ping did not execute once")
 	}
 	before := j.peer.Auth.Load()
 	j.svc.Close()
 	j.svc = equipment.New(j.auth, j.store, vault.New(func() ([]byte, error) { return bytes.Repeat([]byte{8}, 32), nil }), routerssh.Adapter{}, testEquipmentIDs{}, time.Now)
 	AttachEquipment(j.server, j.svc)
-	j.call("pppoe.diagnostic-start", ping, "JOB_INTERRUPTED")
-	if j.peer.PingCalls.Load() != 1 || j.peer.Auth.Load() != before {
-		t.Fatal("restart replay reached network")
+	j.call("pppoe.diagnostic-start", ping, "PING_READING_STALE")
+	if j.peer.Auth.Load() != before {
+		t.Fatal("stale ping after restart reached network")
 	}
-	// Existing receipt precedes quota; a new operation cannot bypass the SAME2048 ledger.
 	if c := j.store.UpdateEquipment(context.Background(), j.client.profile, func(s *equipment.State) equipment.Code {
 		for len(s.Operations) < equipment.MaxOperations {
 			s.Operations = append(s.Operations, equipment.Operation{ID: uuid.NewString(), Stamp: "synthetic-budget", Entity: uuid.NewString()})
@@ -100,11 +100,12 @@ func TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay(t *testing.T)
 	}); c != equipment.OK {
 		t.Fatal(c)
 	}
-	j.call("pppoe.diagnostic-start", inputs[0], "JOB_INTERRUPTED")
-	denied := j.call("pppoe.diagnostic-start", equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: equipment.PDCatalog, Operation: uuid.NewString()}, foundation.Code(equipment.Limit))
-	if denied.ErrorDetail == nil || denied.ErrorDetail.Reason != "operation_receipts" || j.peer.Auth.Load() != before {
-		t.Fatal("shared quota bypass", denied)
+	j.diagnostic(inputs[0], equipment.OK)
+	j.diagnostic(equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: equipment.PDCatalog, Operation: uuid.NewString()}, equipment.OK)
+	if j.peer.Auth.Load() != before+2 {
+		t.Fatal("mutation ceiling blocked reads")
 	}
+
 }
 
 func TestPPDiagnosticStrictInputAndContextBeforeNetwork(t *testing.T) {

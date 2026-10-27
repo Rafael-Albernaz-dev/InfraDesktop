@@ -89,8 +89,8 @@ func (s *Service) preparePPPing(ctx context.Context, q Command, in PPInput, targ
 	}
 	p := o.Provenance
 	now := time.Since(s.origin).Nanoseconds()
-	if p.Epoch != s.epoch || p.Connection != PPConnection(target.Device) || p.Revision != target.Device.Revision || p.CredentialRevision != target.Credential.Metadata.Revision || !p.Sample.Known || p.Sample.Min < 0 || p.Sample.Max < p.Sample.Min || now < p.Sample.Max || now-p.Sample.Min > int64(PDPingAge) || !p.RouterUptime.Known {
-		return nil, ObservationIncompatible
+	if p.Epoch != s.epoch || p.Connection != PPConnection(target.Device) || p.Revision != target.Device.Revision || p.CredentialRevision != target.Credential.Metadata.Revision || !p.Sample.Known || p.Sample.Min < 0 || p.Sample.Max < p.Sample.Min || now < p.Sample.Max || !p.RouterUptime.Known {
+		return nil, "PING_READING_STALE"
 	}
 	detail, c := store.PPSession(ctx, q.Scope.Profile, in)
 	if c != OK {
@@ -100,6 +100,9 @@ func (s *Service) preparePPPing(ctx context.Context, q Command, in PPInput, targ
 		return nil, ObservationMissing
 	}
 	row := detail.Rows[0]
+	if row.State == "OFFLINE" {
+		return nil, "PING_OFFLINE"
+	}
 	address, ok := PPPingAddress(row)
 	if !ok || !row.Uptime.Known || row.RemoteID == "" || row.SessionID == "" {
 		return nil, ObservationIncompatible
@@ -185,7 +188,7 @@ func (s *Service) runPD(ctx context.Context, j *runningJob) {
 	if o != nil {
 		attempt.ObservationID = o.ID
 	}
-	persist, cancel := context.WithTimeout(context.Background(), time.Second)
+	persist, cancel := context.WithTimeout(context.Background(), PPPersistenceBudget)
 	defer cancel()
 	persisted := s.authorized(persist, j.command, func(uint64) Code {
 		s.mu.Lock()

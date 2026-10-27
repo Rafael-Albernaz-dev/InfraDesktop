@@ -2,16 +2,45 @@ package equipment
 
 import (
 	"context"
+	"math"
 	"net/netip"
 	"time"
 )
+
+// PPPingBounds protects session identity after an arbitrary user delay. The
+// upper window includes the remaining bounded job, never a fixed freshness TTL.
+// Adapters only quantize/serialize these bounds in the remote technology.
+func PPPingBounds(target *PPPingTarget, elapsed time.Duration) (router, session, age PPInterval, ok bool) {
+	if target == nil || target.Row.State == "OFFLINE" || elapsed < 0 {
+		return
+	}
+	age = target.Age
+	advance := elapsed.Nanoseconds()
+	if !age.Known || age.Min < 0 || age.Max < age.Min || age.Max > math.MaxInt64-advance-int64(QueryBudget) {
+		return
+	}
+	age.Min += advance
+	age.Max += advance + int64(QueryBudget)
+	bounds := func(old PPInterval) (PPInterval, bool) {
+		if !old.Known || old.Min < 0 || old.Max < old.Min || old.Max > math.MaxInt64-age.Max-int64(time.Second) {
+			return PPInterval{}, false
+		}
+		return PPInterval{Known: true, Min: old.Min + age.Min, Max: old.Max + age.Max}, true
+	}
+	var valid bool
+	router, valid = bounds(target.Observation.Provenance.RouterUptime)
+	if !valid {
+		return
+	}
+	session, ok = bounds(target.Row.Uptime)
+	return
+}
 
 const (
 	PDCatalog    = "catalog"
 	PDRadius     = "radius"
 	PDPing       = "ping"
 	PDMaxRadius  = 32
-	PDPingAge    = 60 * time.Second
 	PDPingBudget = 5 * time.Second
 )
 
@@ -122,7 +151,7 @@ func PPPingStable(target *PPPingTarget, fresh *PPObservation, elapsed time.Durat
 	}
 	age := target.Age
 	advance := elapsed.Nanoseconds()
-	if !age.Known || advance < 0 || age.Min < 0 || age.Max < age.Min || age.Max > int64(PDPingAge)-advance {
+	if !age.Known || advance < 0 || age.Min < 0 || age.Max < age.Min || age.Max > int64(^uint64(0)>>1)-advance {
 		return false
 	}
 	age.Min += advance

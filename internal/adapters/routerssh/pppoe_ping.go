@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-const PDPingContextV6 = `:put ("C\tv6\t".[/ip route vrf print count-only]."\t".[/ip route rule print count-only]."\t".[/ip firewall mangle print count-only where chain=output])`
-const PDPingContextV7 = `:put ("C\tv7\t".[/ip vrf print count-only where name!="main"]."\t".[/routing rule print count-only]."\t".[/ip firewall mangle print count-only where chain=output])`
+const PDPingContextV6 = `:put ("C\tv6\t".[/ip route vrf print count-only where disabled!=yes and invalid!=yes]."\t".[/ip route rule print count-only where disabled!=yes and invalid!=yes]."\t".[/ip firewall mangle print count-only where chain=output and disabled!=yes and invalid!=yes])`
+const PDPingContextV7 = `:put ("C\tv7\t".[/ip vrf print count-only where name!="main" and disabled!=yes and invalid!=yes]."\t".[/routing rule print count-only where disabled!=yes and invalid!=yes]."\t".[/ip firewall mangle print count-only where chain=output and disabled!=yes and invalid!=yes])`
 
 func pdContextSafe(family, text string) bool {
 	text, counts, ok := ppCountPrelude(text, 3)
@@ -62,22 +62,35 @@ func BuildPDPingCommand(target *equipment.PPPingTarget) (string, bool) {
 		return "", false
 	}
 	family := target.Observation.Provenance.Family
-	tables, argument := "", ""
+	tables, argument, pingCommand := "", "", "/tool ping"
 	switch family {
 	case "v6":
-		tables = `([/ip route vrf print count-only]>0)||([/ip route rule print count-only]>0)`
+		tables = `([/ip route vrf print count-only where disabled!=yes and invalid!=yes]>0)||([/ip route rule print count-only where disabled!=yes and invalid!=yes]>0)`
 		argument = "routing-table=main"
+		// ROS6 /tool ping resolves to ping-speed, not the ICMP command.
+		pingCommand = "/ping"
 	case "v7":
-		tables = `([/ip vrf print count-only where name!="main"]>0)||([/routing rule print count-only]>0)`
+		tables = `([/ip vrf print count-only where name!="main" and disabled!=yes and invalid!=yes]>0)||([/routing rule print count-only where disabled!=yes and invalid!=yes]>0)`
 		argument = "vrf=main"
 	default:
 		return "", false
 	}
+	routerBounds, sessionBounds, age, valid := equipment.PPPingBounds(target, time.Since(target.Prepared))
+	if !valid {
+		return "", false
+	}
 	seconds := func(n int64) string { return strconv.FormatInt(n/int64(time.Second), 10) + "s" }
-	command := `:if (` + tables + `||([/ip firewall mangle print count-only where chain=output]>0)) do={:error "context-unavailable"}; `
+	upper := func(n int64) string { return seconds(n + int64(time.Second) - 1) }
+	guard := func(variable string, bounds equipment.PPInterval) string {
+		return "($" + variable + "<" + seconds(bounds.Min) + ")||($" + variable + ">" + upper(bounds.Max) + ")||($" + variable + "<=" + upper(age.Max) + ")"
+	}
+	// RouterOS string literals escape dollars too: login is data, never script.
+	login := strings.NewReplacer(`\`, `\\`, `"`, `\"`, `$`, `\$`, "\n", `\n`, "\r", `\r`, "\t", `\t`).Replace(target.Row.Login)
+	command := `:if (` + tables + `||([/ip firewall mangle print count-only where chain=output and disabled!=yes and invalid!=yes]>0)) do={:put "E\tcontext"} else={:do {`
 	id := target.Row.RemoteID
-	command += `:if (([:tostr [/ppp active get ` + id + ` session-id]]!="` + target.Row.SessionID + `")||([/ppp active get ` + id + ` address]!=` + address + `)||([/ppp active print count-only where address=` + address + `]!=1)||([/ppp active get ` + id + ` uptime]<` + seconds(target.Row.Uptime.Min) + `)||([/system resource get uptime]<` + seconds(target.Observation.Provenance.RouterUptime.Min) + `)) do={:error "session-changed"}; `
-	command += `/tool ping address=` + address + ` count=3 interval=200ms size=64 ttl=64 ` + argument
+	command += `:local ru [/system resource get uptime]; :local su [/ppp active get ` + id + ` uptime]; :if (([:tostr [/ppp active get ` + id + ` session-id]]!="` + target.Row.SessionID + `")||([/ppp active get ` + id + ` name]!="` + login + `")||([/ppp active get ` + id + ` address]!=` + address + `)||([/ppp active print count-only where address=` + address + `]!=1)||` + guard("ru", routerBounds) + `||` + guard("su", sessionBounds) + `) do={:put "E\tsession"} else={`
+	command += pingCommand + ` address=` + address + ` count=3 interval=200ms size=64 ttl=64 ` + argument + `}} on-error={:put "E\tsession"}}`
+
 	return command, true
 }
 
@@ -96,19 +109,7 @@ func collectPDPing(ctx context.Context, connection *ppConnection, target *equipm
 		return nil, c
 	}
 	if !pdContextSafe(family, text) {
-		return nil, equipment.ObservationIncompatible
-	}
-	revalidationStarted := time.Now()
-	text, c = connection.run(PPPoECommand)
-	if c != equipment.OK {
-		return nil, c
-	}
-	fresh, c := ParsePPPoE(text)
-	if c != equipment.OK {
-		return nil, c
-	}
-	if fresh == nil || !ppCollectionStable(fresh.Provenance, time.Since(revalidationStarted)) || !equipment.PPPingStable(target, fresh, time.Since(target.Prepared)) {
-		return nil, equipment.ObservationIncompatible
+		return nil, "PING_CONTEXT_UNAVAILABLE"
 	}
 	if c = check(); c != equipment.OK {
 		return nil, c
@@ -125,12 +126,18 @@ func collectPDPing(ctx context.Context, connection *ppConnection, target *equipm
 	if c != equipment.OK {
 		return nil, c
 	}
+	if strings.HasSuffix(strings.TrimSpace(text), "E\tcontext") {
+		return nil, "PING_CONTEXT_UNAVAILABLE"
+	}
+	if strings.HasSuffix(strings.TrimSpace(text), "E\tsession") {
+		return nil, "PING_SESSION_CHANGED"
+	}
 	result, c := ParsePDPing(text, 3, target.Row.Address)
 	if c != equipment.OK {
 		log.Printf("routerssh ping parsing: bytes=%d esc=%d lf=%d cr=%d headers=%d summaries=%d leading_blank=%t", len(text), strings.Count(text, "\x1b"), strings.Count(text, "\n"), strings.Count(text, "\r"), strings.Count(text, "SEQ"), strings.Count(text, "sent="), strings.HasPrefix(text, "\r") || strings.HasPrefix(text, "\n"))
 		return nil, c
 	}
-	o := &equipment.PDDiagnostic{Scope: equipment.PDPing, Provenance: fresh.Provenance, Quality: equipment.PPQuality{Status: "complete", Code: equipment.OK, CountsKnown: true, Eligible: 1, Returned: 1, WireBytes: len(text), Terminated: true, MembershipChecked: true}, Rows: []equipment.PDRow{{Kind: "ping", Address: target.Row.Address, Ping: result}}}
+	o := &equipment.PDDiagnostic{Scope: equipment.PDPing, Provenance: target.Observation.Provenance, Quality: equipment.PPQuality{Status: "complete", Code: equipment.OK, CountsKnown: true, Eligible: 1, Returned: 1, WireBytes: len(text), Terminated: true, MembershipChecked: true}, Rows: []equipment.PDRow{{Kind: "ping", Address: target.Row.Address, Ping: result}}}
 	return o, equipment.OK
 }
 

@@ -44,9 +44,11 @@ func TestPPDiagnosticPingIdentityIsOpaqueAndConservative(t *testing.T) {
 	if PPPingStable(target, &changed, time.Millisecond) {
 		t.Fatal("nonunique address accepted")
 	}
-	target.Age.Max = int64(PDPingAge) + 1
-	if PPPingStable(target, fresh, 0) {
-		t.Fatal("stale context accepted")
+	target.Age = PPInterval{Known: true, Min: int64(120 * time.Second), Max: int64(120*time.Second + time.Millisecond)}
+	fresh.Provenance.RouterUptime = interval(10120)
+	fresh.Rows[0].Uptime = interval(620)
+	if !PPPingStable(target, fresh, 0) {
+		t.Fatal("valid long interval refused by former60s window")
 	}
 	for _, address := range []string{"127.0.0.1", "0.0.0.0", "224.0.0.1", "169.254.1.1", "fe80::1", "example.test", "198.51.100.1;ping"} {
 		if _, ok := PPPingAddress(PPRow{Address: address}); ok {

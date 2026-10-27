@@ -159,6 +159,12 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 	// Canonicalize only non-secret identifiers, before the idempotency stamp.
 	if q.Op == "inventory.enroll" || q.Op == "inventory.create" || q.Op == "inventory.update" {
 		q.Name = strings.TrimSpace(q.Name)
+		if q.Role == "" {
+			q.Role = "other"
+		}
+		if q.Role != "concentrator" && q.Role != "ap" && q.Role != "cpe" && q.Role != "other" {
+			return Invalid
+		}
 		q.Address = strings.TrimSpace(q.Address)
 		if ip, e := netip.ParseAddr(q.Address); e == nil {
 			q.Address = ip.String()
@@ -180,6 +186,9 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 		}
 	}
 	stamp := fmt.Sprintf("%q", []string{q.Op, q.ID, q.Name, q.Address, fmt.Sprint(q.Port), q.Transport, q.CredentialID, fmt.Sprint(q.Revision), fmt.Sprint(q.Active), q.Alias, q.User, secretStamp, fmt.Sprint(q.Affected)})
+	if q.Role != "" && q.Role != "other" {
+		stamp += ";role:" + q.Role
+	}
 	mutated := false
 	c := s.store.UpdateEquipment(ctx, q.Scope.Profile, func(st *State) Code {
 		for _, op := range st.Operations {
@@ -254,7 +263,7 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 			if len(st.Devices) >= MaxDevices || len(st.Credentials) >= MaxCredentials {
 				return Limit
 			}
-			d := Device{ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port, Transport: q.Transport, CredentialID: q.ID, Revision: 1, Active: true}
+			d := Device{Role: q.Role, ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port, Transport: q.Transport, CredentialID: q.ID, Revision: 1, Active: true}
 			if c := ValidateDevice(d); c != OK {
 				return c
 			}
@@ -289,7 +298,7 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 			v.Device = d
 		case "inventory.create", "inventory.update", "inventory.set-active":
 			old := device(st, q.ID)
-			d := Device{ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port, Transport: q.Transport, CredentialID: q.CredentialID, Revision: 1, Active: true}
+			d := Device{Role: q.Role, ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port, Transport: q.Transport, CredentialID: q.CredentialID, Revision: 1, Active: true}
 			if q.Op == "inventory.create" {
 				if old != nil || q.Revision != 0 {
 					return Revision
@@ -396,24 +405,12 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 		return nil, Unavailable
 	}
 	for _, j := range s.jobs {
-		if sameScope(j.command, q) && j.command.Operation == q.Operation {
+		if j.view.State == "RUNNING" && sameScope(j.command, q) && j.command.Operation == q.Operation {
 			if j.command.ID != q.ID || j.command.Revision != q.Revision || j.command.Op != q.Op {
 				return nil, Revision
 			}
 			return copyJob(j), OK
 		}
-	}
-	stamp := fmt.Sprintf("job:%q:%d:%q:%d", q.Op, q.Revision, q.ID, credentialRevision)
-	for _, op := range st.Operations {
-		if op.ID == q.Operation {
-			if op.Stamp != stamp {
-				return nil, Revision
-			}
-			return nil, "JOB_INTERRUPTED"
-		}
-	}
-	if len(st.Operations) >= MaxOperations {
-		return nil, Limit
 	}
 	active := 0
 	for _, j := range s.jobs {
@@ -435,7 +432,6 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 		return nil, c
 	}
 	c = s.store.UpdateEquipment(ctx, q.Scope.Profile, func(current *State) Code {
-		current.Operations = append(current.Operations, Operation{q.Operation, stamp, id})
 		if q.Op == "device.query-start" {
 			target := device(current, q.ID)
 			if target == nil || target.Revision != q.Revision {

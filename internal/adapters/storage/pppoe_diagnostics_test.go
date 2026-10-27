@@ -12,6 +12,9 @@ import (
 
 func dropPPDiagnosticFixtureSchema(t *testing.T, j *journey) {
 	t.Helper()
+	if _, e := j.st.unit.Exec("DROP TABLE equipment_read_receipt_migration; ALTER TABLE devices DROP COLUMN role; DELETE FROM schema_migrations WHERE version=7"); e != nil {
+		t.Fatal(e)
+	}
 	for _, table := range []string{"pppoe_diagnostic_attempts", "pppoe_diagnostic_current", "pppoe_diagnostic_rows", "pppoe_diagnostic_observations"} {
 		if _, err := j.st.unit.Exec("DROP TABLE " + table); err != nil {
 			t.Fatal(err)

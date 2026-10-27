@@ -32,6 +32,9 @@ var companyPPPoESchema string
 //go:embed company_006_pppoe_diagnostics.sql
 var companyPPDiagnosticSchema string
 
+//go:embed company_007_sessions_offline.sql
+var companySessionsOfflineSchema string
+
 func migrateGlobal(tx *sql.Tx) error {
 	rows, e := tx.Query("SELECT version,checksum FROM schema_migrations ORDER BY version")
 	if e != nil {
@@ -152,10 +155,10 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&n); e != nil {
 		return e
 	}
-	if n < 1 || n > 6 {
+	if n < 1 || n > 7 {
 		return errors.New("unknown company schema")
 	}
-	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema} {
+	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema, companySessionsOfflineSchema} {
 		if v+1 > n {
 			break
 		}
@@ -171,13 +174,16 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT installation,company FROM identity WHERE singleton=1").Scan(&installation, &company); e != nil || installation != s.installation || company != id {
 		return errors.New("company identity mismatch")
 	}
-	for version := schemaCount + 1; version <= 6; version++ {
-		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema}[version]
+	for version := schemaCount + 1; version <= 7; version++ {
+		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema, 7: companySessionsOfflineSchema}[version]
 		tx, e := db.Begin()
 		if e != nil {
 			return e
 		}
-		if _, e = tx.Exec(src); e == nil {
+		if _, e = tx.Exec(src); e == nil && version == 7 {
+			e = migrateReadReceipts(tx)
+		}
+		if e == nil {
 			_, e = tx.Exec("INSERT INTO schema_migrations VALUES(?,?)", version, checksum([]byte(src)))
 		}
 		if e != nil {

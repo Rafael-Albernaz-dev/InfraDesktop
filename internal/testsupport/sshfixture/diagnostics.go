@@ -18,7 +18,7 @@ func PingTranscript(address string) string {
 	return "SEQ HOST SIZE TTL TIME STATUS\n0 " + address + " 64 64 1ms45us\n1 " + address + " 64 64 1ms89us\n2 " + address + " 64 64 1ms163us\nsent=3 received=3 packet-loss=0% min-rtt=1ms45us avg-rtt=1ms99us max-rtt=1ms163us\n"
 }
 
-var fixturePingSuffix = regexp.MustCompile(`/tool ping address=(198\.51\.[0-9]+\.[0-9]+) count=3 interval=200ms size=64 ttl=64 (vrf|routing-table)=main$`)
+var fixturePingSuffix = regexp.MustCompile(`(/ping|/tool ping) address=(198\.51\.[0-9]+\.[0-9]+) count=3 interval=200ms size=64 ttl=64 (vrf|routing-table)=main\}\} on-error=\{:put "E\\tsession"\}\}$`)
 
 func (s *Server) diagnosticOutput(command string) (string, bool) {
 	family, version := "v7", "7.26"
@@ -42,16 +42,17 @@ func (s *Server) diagnosticOutput(command string) (string, bool) {
 		}
 		return "C\tv7\t0\t0\t0\n", true
 	}
-	if match := fixturePingSuffix.FindStringSubmatch(command); match != nil && strings.HasPrefix(command, ":if (") && strings.Contains(command, "session-changed") && strings.Contains(command, "context-unavailable") {
-		expected := "vrf"
+	if match := fixturePingSuffix.FindStringSubmatch(command); match != nil && strings.HasPrefix(command, ":if (") && strings.Contains(command, `:put "E\tsession"`) && strings.Contains(command, `:put "E\tcontext"`) {
+		expected, pingCommand := "vrf", "/tool ping"
 		if family == "v6" {
 			expected = "routing-table"
+			pingCommand = "/ping"
 		}
-		if match[2] != expected {
+		if match[1] != pingCommand || match[3] != expected {
 			return "", false
 		}
 		s.PingCalls.Add(1)
-		return PingTranscript(match[1]), true
+		return PingTranscript(match[2]), true
 	}
 	return "", false
 }

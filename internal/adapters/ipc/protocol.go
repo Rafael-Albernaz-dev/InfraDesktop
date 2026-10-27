@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 )
 
-const ProductRevision = 9
+const ProductRevision = 10
 const ProductVersion = "0.6.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104

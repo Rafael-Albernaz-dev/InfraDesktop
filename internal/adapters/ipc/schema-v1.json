@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 9,
+  "product_revision": 10,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -211,6 +211,7 @@
       "operation_id",
       "id",
       "name",
+      "role",
       "address",
       "port",
       "transport",
@@ -221,6 +222,7 @@
       "id",
       "revision",
       "name",
+      "role",
       "address",
       "port",
       "transport",
@@ -271,6 +273,7 @@
       "operation_id",
       "id",
       "name",
+      "role",
       "address",
       "port",
       "transport",
@@ -314,7 +317,7 @@
     "credentials": 128,
     "operations_per_company": 2048,
     "interfaces": "At most 128 static interfaces, complete/limited with eligible and dynamic counts; dynamic rows excluded; parts have separate timestamps, failures preserve prior snapshot as stale",
-    "restart": "JOB_INTERRUPTED; stable operation IDs never repeat authentication",
+    "restart": "Read jobs have active-only replay; after restart no automatic retry. Durable mutation receipts retain replay. Latest interrupted attempt remains visible.",
     "error_codes": [
       "VAULT_UNAVAILABLE",
       "CREDENTIAL_NOT_FOUND",
@@ -338,7 +341,11 @@
       "CREDENTIAL_SECRET_INVALID",
       "SSH_NEGOTIATION_FAILED",
       "SSH_CONNECTION_LOST",
-      "PERSISTENCE_FAILED"
+      "PERSISTENCE_FAILED",
+      "PING_READING_STALE",
+      "PING_CONTEXT_UNAVAILABLE",
+      "PING_SESSION_CHANGED",
+      "PING_OFFLINE"
     ],
     "view_fields": {
       "total_devices": "company total independent of filter, activity and page",
@@ -436,7 +443,8 @@
       "device_id",
       "scope",
       "diagnostic_id",
-      "cursor"
+      "cursor",
+      "query"
     ]
   },
   "pppoe": {
@@ -452,7 +460,7 @@
     "references_per_device": 8,
     "references_per_company": 64,
     "logical_company_bytes": 167772160,
-    "ledger": "equipment_operations only; 2048 shared; no pruning",
+    "ledger": "equipment_operations:2048 durable mutations, never pruned. Reads replay only while active; latest attempt per device/scope; migration7 removes only canonical historical read stamps and records counts.",
     "incomplete": "attempt metadata only; preserve previous good current",
     "errors": [
       "OBSERVATION_UNAVAILABLE",
@@ -471,10 +479,11 @@
       "ping_count": 3,
       "ping_interval_ms": 200,
       "ping_deadline_ms": 5000,
-      "ping_max_age_ms": 60000,
+      "ping_revalidation": "exact tuple/login, unique IP and conservative uptime bounds in final command; no60s TTL",
+      "publication_budget_ms": 3000,
       "ping_bytes": 8192,
       "counter_encoding": "unsigned decimal strings; preserve integers beyond JS safe range",
-      "storage": "migration6; one current per device/scope, bounded attempt, shared A+B logical quota; no automatic history",
+      "storage": "migration7 (preserves migration6 data); one current per device/scope, bounded attempt, shared A+B logical quota; no automatic history",
       "context": "IPv4 unicast from current immutable session; same daemon epoch; revalidate IDs/IP/uptimes; main only without custom VRF/rules/output mangle; v6 routing-table=main, v7 vrf=main",
       "privacy": "router-side allowlisted projections; no secret, raw log, whole config, debug or reset; no inferred per-session VLAN or rejection cause",
       "export": "freeze diagnostic IDs/scope/source; sanitize before IPC; shared16386aliases/2MiB; revalidate pages and publication"

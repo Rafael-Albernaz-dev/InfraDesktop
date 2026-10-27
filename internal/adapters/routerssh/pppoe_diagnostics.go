@@ -26,13 +26,13 @@ func pdFooter() string {
 	return `:if ([/system resource get uptime]<$up) do={:set reason "churn"}; :put ("Z\t".$n."\t".$reason."\t".[/system resource get uptime]); `
 }
 func buildPDCatalog() string {
-	body := pdPrefix(equipment.PDCatalog, `[/interface print count-only]+[/interface vlan print count-only]+[/interface pppoe-server server print count-only]`)
+	body := pdPrefix(equipment.PDCatalog, `[/interface print count-only where !(dynamic=yes and type="pppoe-in")]+[/interface vlan print count-only]+[/interface pppoe-server server print count-only]`)
 	body += routerFlagScript
-	body += `:if ($eligible>2048) do={:set reason "rows"} else={:local ifs [/interface find]; :local vlans [/interface vlan find]; :local servers [/interface pppoe-server server find]; `
+	body += `:if ($eligible>2048) do={:set reason "rows"} else={:local ifs [/interface find where !(dynamic=yes and type="pppoe-in")]; :local vlans [/interface vlan find]; :local servers [/interface pppoe-server server find]; `
 	body += `:foreach i in=$ifs do={:if ($reason="complete") do={` + pdEmit(`"I\t".[$esc $i]."\t".[$esc [/interface get $i name]]."\t".[$esc [/interface get $i type]]."\t".[$ppflag [/interface get $i running]]."\t".[/interface get $i disabled]."\t".[$ppflag [/interface get $i dynamic]]`) + `}}; `
 	body += `:foreach i in=$vlans do={:if ($reason="complete") do={` + pdEmit(`"V\t".[$esc $i]."\t".[$esc [/interface vlan get $i name]]."\t".[$esc [/interface vlan get $i interface]]."\t".[/interface vlan get $i vlan-id]."\t".[/interface vlan get $i use-service-tag]."\t".[$ppflag [/interface vlan get $i running]]."\t".[/interface vlan get $i disabled]`) + `}}; `
 	body += `:foreach i in=$servers do={:if ($reason="complete") do={:local ranges "?"; :local untagged "?"; :do {:set ranges [:tostr [/interface pppoe-server server get $i pppoe-over-vlan-range]]} on-error={}; :do {:set untagged [/interface pppoe-server server get $i accept-untagged]} on-error={}; ` + pdEmit(`"S\t".[$esc $i]."\t".[$esc [/interface pppoe-server server get $i service-name]]."\t".[$esc [/interface pppoe-server server get $i interface]]."\t".[/interface pppoe-server server get $i disabled]."\t".[$ppflag [/interface pppoe-server server get $i invalid]]."\t".[$esc $ranges]."\t".$untagged`) + `}}; `
-	body += `:if (([:tostr $ifs]!=[:tostr [/interface find]])||([:tostr $vlans]!=[:tostr [/interface vlan find]])||([:tostr $servers]!=[:tostr [/interface pppoe-server server find]])) do={:set reason "churn"}}; `
+	body += `:if (([:tostr $ifs]!=[:tostr [/interface find where !(dynamic=yes and type="pppoe-in")]])||([:tostr $vlans]!=[:tostr [/interface vlan find]])||([:tostr $servers]!=[:tostr [/interface pppoe-server server find]])) do={:set reason "churn"}}; `
 	return body + pdFooter()
 }
 func buildPDRadius() string {
@@ -318,7 +318,8 @@ func parsePDRow(scope string, f []string) (equipment.PDRow, bool) {
 		if r.Services != "" {
 			for _, service := range strings.Split(r.Services, ",") {
 				if !allowedService[service] {
-					return r, false
+					r.Services = "desconhecido"
+					break
 				}
 			}
 		}
@@ -352,9 +353,6 @@ func parsePDRow(scope string, f []string) (equipment.PDRow, bool) {
 			*p = strconv.FormatUint(n, 10)
 		}
 		c.LastRTT = ParsePDRTTInterval(f[15])
-		if !c.LastRTT.Known {
-			return r, false
-		}
 		r.Counters = c
 	default:
 		return r, false

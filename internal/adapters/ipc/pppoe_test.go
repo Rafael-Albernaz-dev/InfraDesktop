@@ -165,6 +165,11 @@ func TestPPPoERealClientPersistenceReplayAndQuota(t *testing.T) {
 			t.Fatal("export leaked", canary)
 		}
 	}
+	for _, row := range ex.Data.PPPoE.ExportRows {
+		if row.State != "ONLINE" || !row.Uptime.Known || row.Duplicates != 2 {
+			t.Fatal("sanitized fields lost", row)
+		}
+	}
 	if j.peer.Auth.Load() != auth || j.peer.Commands.Load() != commands {
 		t.Fatal("local actions connected")
 	}
@@ -179,7 +184,7 @@ func TestPPPoERealClientPersistenceReplayAndQuota(t *testing.T) {
 	}
 	// Fill the SAME ledger synthetically; no new ledger or pruning.
 	c := j.store.UpdateEquipment(context.Background(), j.client.profile, func(s *equipment.State) equipment.Code {
-		for len(s.Operations) < 2047 {
+		for len(s.Operations) < equipment.MaxOperations {
 			s.Operations = append(s.Operations, equipment.Operation{ID: uuid.NewString(), Stamp: "synthetic-fill", Entity: uuid.NewString()})
 		}
 		return equipment.OK
@@ -190,20 +195,20 @@ func TestPPPoERealClientPersistenceReplayAndQuota(t *testing.T) {
 	j.mode.Store(0)
 	j.collect(uuid.NewString())
 	auth = j.peer.Auth.Load()
-	r := j.call("pppoe.collect-start", equipment.PPInput{DeviceID: j.device, Revision: 2, Operation: uuid.NewString()}, foundation.Code(equipment.Limit))
-	if r.ErrorDetail == nil || r.ErrorDetail.Reason != "operation_receipts" || r.Data != nil {
-		t.Fatal("quota cause not preserved through AccountClient", r)
-	}
+	// Reads still work at the mutation ceiling; the saved mutation replay is stable.
+	j.collect(uuid.NewString())
 	j.call("pppoe.reference-delete", equipment.PPInput{DeviceID: j.device, ReferenceID: ref.ReferenceID, Operation: uuid.NewString()}, foundation.Code(equipment.Limit))
 	j.call("pppoe.reference-save", ref, foundation.OK)
-	// Loss/pruning of the in-memory job cannot replay remote work.
+	// After restart a deliberate submission is a fresh read, even with old ID.
 	j.svc.Close()
 	j.svc = equipment.New(j.auth, j.store, vault.New(func() ([]byte, error) { return bytes.Repeat([]byte{8}, 32), nil }), routerssh.Adapter{}, testEquipmentIDs{}, time.Now)
 	AttachEquipment(j.server, j.svc)
-	j.call("pppoe.collect-start", equipment.PPInput{DeviceID: j.device, Revision: 2, Operation: op}, "JOB_INTERRUPTED")
-	if j.peer.Auth.Load() != auth {
-		t.Fatal("quota/replay caused network")
+	auth = j.peer.Auth.Load()
+	j.collect(op)
+	if j.peer.Auth.Load() != auth+1 {
+		t.Fatal("fresh deliberate read after restart did not run once")
 	}
+
 }
 func TestPPPoERecursiveSchemaAndCursor(t *testing.T) {
 	j := newPPJourney(t)
@@ -323,5 +328,115 @@ func TestPPPoERealClientAuthorizationAndCursorBoundaries(t *testing.T) {
 	}
 	if j.peer.Auth.Load() != auths {
 		t.Fatal("negative/local operation connected")
+	}
+}
+
+func TestL06CReadReplayOnlyWhileActive(t *testing.T) {
+	hold := make(chan struct{})
+	released := false
+	j := newPPJourney(t, sshfixture.Config{Hold: hold, PPRows: 1})
+	defer func() {
+		if !released {
+			close(hold)
+		}
+	}()
+	in := equipment.PPInput{DeviceID: j.device, Revision: 2, Operation: uuid.NewString()}
+	first := j.call("pppoe.collect-start", in, foundation.OK).Data.PPPoE.Job
+	again := j.call("pppoe.collect-start", in, foundation.OK).Data.PPPoE.Job
+	if first.ID != again.ID {
+		t.Fatal("active read started twice")
+	}
+	other := in
+	other.Scope = equipment.PDCatalog
+	j.call("pppoe.diagnostic-start", other, foundation.Code(equipment.Revision))
+	close(hold)
+	released = true
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		job := j.call("pppoe.collect-status", equipment.PPInput{JobID: first.ID}, foundation.OK).Data.PPPoE.Job
+		if job.State != "RUNNING" {
+			if job.Code != equipment.OK {
+				t.Fatal(job)
+			}
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("held read did not complete")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if j.peer.Commands.Load() != 1 {
+		t.Fatal("active read repeated remote command")
+	}
+	next := j.collect(in.Operation)
+	if next == nil || j.peer.Commands.Load() != 2 {
+		t.Fatal("completed read was durably replayed")
+	}
+}
+
+type l06cPublicationAuthorization struct {
+	equipment.Authorizer
+	armed     atomic.Bool
+	attempted chan equipment.Code
+}
+
+func (a *l06cPublicationAuthorization) WithAuthorization(ctx context.Context, uid uint32, q access.Command, fn func(uint64) equipment.Code) equipment.Code {
+	c := a.Authorizer.WithAuthorization(ctx, uid, q, fn)
+	// Worker checks/watchers use the20s network context. The separate publish
+	// authorization has its own3s deadline. This observes denial without cancelling
+	// a worker or granting authority to a revoked session.
+	if until, ok := ctx.Deadline(); ok && a.armed.Load() && time.Until(until) <= equipment.PPPersistenceBudget {
+		select {
+		case a.attempted <- c:
+		default:
+		}
+	}
+	return c
+}
+func TestL06CRevokedBeforePublication(t *testing.T) {
+	hold := make(chan struct{})
+	released := false
+	j := newPPJourney(t, sshfixture.Config{Hold: hold, PPRows: 1})
+	defer func() {
+		if !released {
+			close(hold)
+		}
+	}()
+	observed := &l06cPublicationAuthorization{Authorizer: j.auth, attempted: make(chan equipment.Code, 1)}
+	j.svc.Close() // No jobs exist yet. Never close/cancel the job under test.
+	j.svc = equipment.New(observed, j.store, vault.New(func() ([]byte, error) { return bytes.Repeat([]byte{8}, 32), nil }), routerssh.Adapter{}, testEquipmentIDs{}, time.Now)
+	AttachEquipment(j.server, j.svc)
+	profile := j.client.profile
+	j.call("pppoe.collect-start", equipment.PPInput{DeviceID: j.device, Revision: 2, Operation: uuid.NewString()}, foundation.OK)
+	deadline := time.Now().Add(3 * time.Second)
+	for j.peer.Commands.Load() == 0 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if j.peer.Commands.Load() != 1 {
+		t.Fatal("remote read barrier")
+	}
+	observed.armed.Store(true)
+	if r := j.client.Call(context.Background(), Request{Op: "access.logout"}); r.Code != foundation.OK {
+		t.Fatal(r.Code)
+	}
+	close(hold)
+	released = true
+	select {
+	case c := <-observed.attempted:
+		if c == equipment.OK {
+			t.Fatal("revoked publication authorized")
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("worker did not reach publication authorization")
+	}
+	if r := j.client.Call(context.Background(), Request{Op: "access.login", Name: "synthetic", Password: "synthetic PPPoE password"}); r.Code != foundation.OK {
+		t.Fatal(r.Code)
+	}
+	if r := j.client.Call(context.Background(), Request{Op: "company.select", Name: profile}); r.Code != foundation.OK {
+		t.Fatal(r.Code)
+	}
+	cur := j.call("pppoe.current", equipment.PPInput{DeviceID: j.device}, foundation.OK)
+	if cur.Data.PPPoE.Current != nil {
+		t.Fatal("published after effective logout")
 	}
 }

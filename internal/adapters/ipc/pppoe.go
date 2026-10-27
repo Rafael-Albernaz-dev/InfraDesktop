@@ -20,7 +20,7 @@ var ppFields = map[string][]string{
 	"pppoe.diagnostic-start":  {"device_id", "revision", "operation_id", "scope", "observation_id", "row_id"},
 	"pppoe.diagnostic-status": {"job_id"}, "pppoe.diagnostic-cancel": {"job_id"},
 	"pppoe.diagnostic-current": {"device_id", "scope"},
-	"pppoe.diagnostic-list":    {"device_id", "scope", "diagnostic_id", "cursor"},
+	"pppoe.diagnostic-list":    {"device_id", "scope", "diagnostic_id", "cursor", "query"},
 	"pppoe.collect-start":      {"device_id", "revision", "operation_id"},
 	"pppoe.collect-status":     {"job_id"}, "pppoe.collect-cancel": {"job_id"},
 	"pppoe.current": {"device_id"}, "pppoe.observation-get": {"device_id", "observation_id"},
@@ -78,6 +78,9 @@ func validatePPPoE(b []byte, q Request, fields map[string]json.RawMessage) (Requ
 	_ = json.Unmarshal(fields["pppoe"], &raw)
 	if query, ok := raw["query"]; ok {
 		allowedQuery := []string{"search", "duplicates_only", "sort", "desc"}
+		if q.Op == "pppoe.diagnostic-list" {
+			allowedQuery = []string{"type"}
+		}
 		if q.Op == "pppoe.compare" {
 			allowedQuery = []string{"category"}
 		}
@@ -256,7 +259,10 @@ func (s *Server) dispatchPPPoE(ctx context.Context, uid uint32, q Request, owner
 			v.ExportDiagnostics = append(v.ExportDiagnostics, row)
 		}
 		for _, row := range v.Rows {
-			v.ExportRows = append(v.ExportRows, equipment.PPExportRow{Observation: ppToken(key, "observation", v.Current.ID), Row: ppToken(key, "row", v.Current.ID+row.ID), Login: ppToken(key, "login", row.Login), Address: ppToken(key, "address", row.Address), Caller: ppToken(key, "caller", row.Caller)})
+			if row.State == "" {
+				row.State = "ONLINE"
+			}
+			v.ExportRows = append(v.ExportRows, equipment.PPExportRow{State: row.State, Uptime: row.Uptime, Duplicates: row.Duplicates, Observation: ppToken(key, "observation", v.Current.ID), Row: ppToken(key, "row", v.Current.ID+row.ID), Login: ppToken(key, "login", row.Login), Address: ppToken(key, "address", row.Address), Caller: ppToken(key, "caller", row.Caller)})
 		}
 		for _, delta := range v.Deltas {
 			v.ExportDeltas = append(v.ExportDeltas, equipment.PPExportDelta{BaseRow: ppToken(key, "row", func() string {

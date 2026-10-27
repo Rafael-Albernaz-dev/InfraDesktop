@@ -315,26 +315,18 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 		return nil, Unavailable
 	}
 	for _, j := range s.jobs {
-		if sameScope(q, j.command) && j.command.Operation == q.Operation {
+		if j.view.State == "RUNNING" && sameScope(q, j.command) && j.command.Operation == q.Operation {
 			if j.command.Op != q.Op || j.device.ID != d.ID || j.device.Revision != d.Revision || (diagnostic && ppStamp(q.Op, j.ppInput) != ppStamp(q.Op, in)) {
 				return nil, Revision
 			}
 			return copyJob(j), OK
 		}
 	}
-	// Check replay without committing an effect before checking admission. The store
-	// rechecks the same receipt/quota atomically when it reserves a new job.
+	// Read idempotency is owned by active jobs under this lock. The durable
+	// attempt below is just the latest result, never a permanent read receipt.
 	in.SavedAt = PPTime(s.now())
 	in.WorkerEpoch = s.epoch
 	stamp := ppStamp(q.Op, in)
-	// An empty job ID is a read-only preflight of the same ledger (not a second ledger).
-	entity, known, c := reserve(ctx, q.Scope.Profile, in, stamp, "")
-	if c != OK {
-		return nil, c
-	}
-	if known {
-		return &Job{ID: entity}, "JOB_INTERRUPTED"
-	}
 	active := 0
 	for _, j := range s.jobs {
 		if !j.released {
@@ -361,7 +353,7 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 	if c != OK {
 		return nil, c
 	}
-	entity, known, c = reserve(ctx, q.Scope.Profile, in, stamp, id)
+	entity, known, c := reserve(ctx, q.Scope.Profile, in, stamp, id)
 	if c != OK {
 		return nil, c
 	}
@@ -442,7 +434,7 @@ func (s *Service) runPP(ctx context.Context, j *runningJob) {
 	if o != nil {
 		a.ObservationID = o.ID
 	}
-	persistCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	persistCtx, cancel := context.WithTimeout(context.Background(), PPPersistenceBudget)
 	defer cancel()
 	persisted := s.authorized(persistCtx, j.command, func(uint64) Code {
 		s.mu.Lock()

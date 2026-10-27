@@ -90,7 +90,11 @@ export const access: {
 };
 
 export type Observation = Omit<equipment.Observation, 'convertValues'>;
-export type Device = Omit<equipment.Device, 'convertValues' | 'result'> & {
+export type Device = Omit<
+  equipment.Device,
+  'convertValues' | 'result' | 'role'
+> & {
+  role?: string;
   result?: Observation;
 };
 export type Credential = Omit<equipment.Credential, 'convertValues'>;
@@ -113,7 +117,10 @@ export type EquipmentResult = {
     operation_state?: string;
   };
 };
-export type DeviceInput = Omit<presentation.DeviceInput, 'convertValues'>;
+export type DeviceInput = Omit<
+  presentation.DeviceInput,
+  'convertValues' | 'role'
+> & { role?: string };
 export type CredentialInput = Omit<
   presentation.CredentialInput,
   'convertValues'
@@ -155,6 +162,9 @@ export type PPQuery = {
 };
 export type PPInterval = { min: number; max: number; known: boolean };
 export type PPRow = {
+  state?: string;
+  absent_start?: string;
+  absent_end?: string;
   row_id: string;
   remote_id: string;
   session_id: string;
@@ -165,6 +175,8 @@ export type PPRow = {
   duplicates: number;
 };
 export type PPObservation = {
+  online?: number;
+  offline?: number;
   observation_id: string;
   count: number;
   provenance: { ended_at: string };
@@ -177,6 +189,8 @@ export type PPReference = {
   count: number;
 };
 export type PPDelta = {
+  base?: Pick<PPRow, 'login' | 'address' | 'caller_id' | 'uptime' | 'state'>;
+  target?: Pick<PPRow, 'login' | 'address' | 'caller_id' | 'uptime' | 'state'>;
   base_row?: string;
   target_row?: string;
   category: string;
@@ -277,7 +291,15 @@ const pdBindings = {
   status: PPPoEDiagnosticStatus,
   cancel: CancelPPPoEDiagnostic,
   current: GetPPPoEDiagnostic,
-  list: ListPPPoEDiagnostic,
+  list: (
+    p: string,
+    a: string,
+    d: string,
+    s: string,
+    o: string,
+    c: string,
+    kind = '',
+  ) => ListPPPoEDiagnostic(p, a, d, s, o, c, kind),
 };
 export const pppoeDiagnosticAPI: {
   [K in keyof typeof pdBindings]: (

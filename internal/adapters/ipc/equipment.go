@@ -15,6 +15,7 @@ type EquipmentInput struct {
 	ID           string `json:"id,omitempty"`
 	Operation    string `json:"operation_id,omitempty"`
 	Revision     uint64 `json:"revision,omitempty"`
+	Role         string `json:"role,omitempty"`
 	Name         string `json:"name,omitempty"`
 	Address      string `json:"address,omitempty"`
 	Port         int    `json:"port,omitempty"`
@@ -34,12 +35,12 @@ type EquipmentInput struct {
 
 var equipmentFields = map[string][]string{
 	"trust.reset":             {"operation_id", "id", "revision"},
-	"inventory.enroll":        {"operation_id", "id", "name", "address", "port", "transport", "user", "secret"},
+	"inventory.enroll":        {"operation_id", "id", "name", "role", "address", "port", "transport", "user", "secret"},
 	"inventory.enroll-status": {"operation_id", "id"},
 	"inventory.list":          {"search", "cursor", "inactive"},
 	"inventory.get":           {"id"},
-	"inventory.create":        {"operation_id", "id", "name", "address", "port", "transport", "credential_id"},
-	"inventory.update":        {"operation_id", "id", "revision", "name", "address", "port", "transport", "credential_id"},
+	"inventory.create":        {"operation_id", "id", "name", "role", "address", "port", "transport", "credential_id"},
+	"inventory.update":        {"operation_id", "id", "revision", "name", "role", "address", "port", "transport", "credential_id"},
 	"inventory.set-active":    {"operation_id", "id", "revision", "active"},
 	"credential.list":         {"cursor"},
 	"credential.put":          {"operation_id", "id", "revision", "alias", "user", "secret", "affected_links"},
@@ -93,7 +94,7 @@ func (s *Server) dispatchEquipment(ctx context.Context, uid uint32, q Request, o
 	}
 	s.account.Reap(ownerAlive)
 	e := q.Equipment
-	v, c := s.equipment.Handle(ctx, equipment.Command{Op: q.Op, UID: uid, Scope: access.Command{Session: q.Session, Owner: owner, Profile: q.Profile, Activation: q.Activation, ExpectedProfile: q.ExpectedProfile, ExpectedActivation: q.ExpectedActivation}, ID: e.ID, Operation: e.Operation, Revision: e.Revision, Name: e.Name, Address: e.Address, Port: e.Port, Transport: e.Transport, CredentialID: e.CredentialID, Active: e.Active, Inactive: e.Inactive, Search: e.Search, Cursor: e.Cursor, Alias: e.Alias, User: e.User, Secret: e.Secret, Affected: e.Affected, JobID: e.JobID, Fingerprint: e.Fingerprint})
+	v, c := s.equipment.Handle(ctx, equipment.Command{Op: q.Op, UID: uid, Scope: access.Command{Session: q.Session, Owner: owner, Profile: q.Profile, Activation: q.Activation, ExpectedProfile: q.ExpectedProfile, ExpectedActivation: q.ExpectedActivation}, ID: e.ID, Operation: e.Operation, Revision: e.Revision, Role: e.Role, Name: e.Name, Address: e.Address, Port: e.Port, Transport: e.Transport, CredentialID: e.CredentialID, Active: e.Active, Inactive: e.Inactive, Search: e.Search, Cursor: e.Cursor, Alias: e.Alias, User: e.User, Secret: e.Secret, Affected: e.Affected, JobID: e.JobID, Fingerprint: e.Fingerprint})
 	r.Code = foundation.Code(c)
 	if c != equipment.OK {
 		return r

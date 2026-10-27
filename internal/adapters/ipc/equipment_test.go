@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -49,7 +50,7 @@ func TestEquipmentStrictSchema(t *testing.T) {
 				t.Fatal("cross-operation field accepted", op, field, c)
 			}
 		}
-		for _, body := range []string{strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":"one","id":"two"}`, 1), strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":null}`, 1), strings.Replace(string(b), `"contract_revision":9`, `"contract_revision":5`, 1)} {
+		for _, body := range []string{strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":"one","id":"two"}`, 1), strings.Replace(string(b), `"equipment":{}`, `"equipment":{"id":null}`, 1), strings.Replace(string(b), `"contract_revision":`+strconv.Itoa(ProductRevision), `"contract_revision":`+strconv.Itoa(ProductRevision-1), 1)} {
 			if _, c := validate([]byte(body)); c == foundation.OK {
 				t.Fatal("malformed/old contract accepted", op)
 			}
@@ -144,7 +145,10 @@ func TestIntegrationEquipmentSQLiteVaultSSH(t *testing.T) {
 		t.Fatal("job deadline")
 		return equipment.Job{}
 	}
-	call(request("inventory.enroll-status", &EquipmentInput{ID: device.ID, Operation: inspect.Operation}), foundation.Code(equipment.Revision))
+	status := call(request("inventory.enroll-status", &EquipmentInput{ID: device.ID, Operation: inspect.Operation}), foundation.OK)
+	if status.Data.Equipment.OperationState != "NOT_FOUND" {
+		t.Fatal("read ID acquired durable enrollment receipt")
+	}
 	job := poll(r.Data.Equipment.Job.ID)
 	if job.Code != equipment.OK || peer.Auth.Load() != 0 {
 		t.Fatal("inspect sent authentication")

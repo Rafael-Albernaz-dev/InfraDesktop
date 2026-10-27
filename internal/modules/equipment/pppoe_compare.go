@@ -60,7 +60,7 @@ func ComparePP(a, b *PPObservation) ([]PPDelta, Code) {
 	if a.ID == b.ID {
 		out := make([]PPDelta, 0, len(a.Rows))
 		for _, r := range a.Rows {
-			out = append(out, PPDelta{BaseRow: r.ID, TargetRow: r.ID, Category: "unchanged", Reason: "same_observation"})
+			out = append(out, PPDelta{Base: ppDeltaSession(r), Target: ppDeltaSession(r), BaseRow: r.ID, TargetRow: r.ID, Category: "unchanged", Reason: "same_observation"})
 		}
 		return out, OK
 	}
@@ -74,7 +74,7 @@ func ComparePP(a, b *PPObservation) ([]PPDelta, Code) {
 		if r.RemoteID == "" || r.SessionID == "" {
 			return ""
 		}
-		return r.RemoteID + "\x00" + r.SessionID
+		return r.RemoteID + "\x00" + r.SessionID + "\x00" + r.Login
 	}
 	am, bm := map[string][]int{}, map[string][]int{}
 	al, bl := map[string]int{}, map[string]int{}
@@ -91,12 +91,32 @@ func ComparePP(a, b *PPObservation) ([]PPDelta, Code) {
 	for _, x := range a.Rows {
 		k := key(x)
 		ys := bm[k]
-		if k != "" && len(am[k]) == 1 && len(ys) == 1 {
+		reconnected := false
+		if x.Login != "" && x.State == "OFFLINE" && al[x.Login] == 1 && bl[x.Login] == 1 {
+			for yi, y := range b.Rows {
+				if y.Login == x.Login && y.State != "OFFLINE" {
+					ys = []int{yi}
+					reconnected = true
+					break
+				}
+			}
+		}
+		if (k != "" && len(am[k]) == 1 && len(ys) == 1) || reconnected {
 			yi := ys[0]
 			y := b.Rows[yi]
 			used[yi] = true
-			d := PPDelta{BaseRow: x.ID, TargetRow: y.ID, Category: "ambiguous", Reason: "continuity_unknown"}
-			if a.ID == b.ID || continuity(a, b, x, y, wall) {
+			d := PPDelta{Base: ppDeltaSession(x), Target: ppDeltaSession(y), BaseRow: x.ID, TargetRow: y.ID, Category: "ambiguous", Reason: "continuity_unknown"}
+			if x.State == "OFFLINE" && y.State != "OFFLINE" {
+				d.Category = "changed"
+				d.Reason = "reconnected"
+			} else if x.State == "OFFLINE" || y.State == "OFFLINE" {
+				d.Category = "changed"
+				d.Reason = "state_changed"
+				if x.State == y.State {
+					d.Category = "unchanged"
+					d.Reason = "retained_offline"
+				}
+			} else if a.ID == b.ID || continuity(a, b, x, y, wall) {
 				d.Category = "unchanged"
 				d.Reason = "continuity_supported"
 				d.AddressChanged = x.Address != y.Address
@@ -111,7 +131,7 @@ func ComparePP(a, b *PPObservation) ([]PPDelta, Code) {
 			if bl[x.Login] > 0 || len(ys) > 0 {
 				cat, reason = "ambiguous", "possible_reconnection"
 			}
-			out = append(out, PPDelta{BaseRow: x.ID, Category: cat, Reason: reason})
+			out = append(out, PPDelta{Base: ppDeltaSession(x), BaseRow: x.ID, Category: cat, Reason: reason})
 		}
 	}
 	for i, y := range b.Rows {
@@ -120,7 +140,7 @@ func ComparePP(a, b *PPObservation) ([]PPDelta, Code) {
 			if al[y.Login] > 0 {
 				cat, reason = "ambiguous", "possible_reconnection"
 			}
-			out = append(out, PPDelta{TargetRow: y.ID, Category: cat, Reason: reason})
+			out = append(out, PPDelta{Target: ppDeltaSession(y), TargetRow: y.ID, Category: cat, Reason: reason})
 		}
 	}
 	return out, OK

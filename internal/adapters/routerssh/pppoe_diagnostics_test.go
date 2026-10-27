@@ -173,6 +173,15 @@ func TestPPDiagnosticPingContextAndIdentityBeforeAnyProbe(t *testing.T) {
 				if family == "v7" && !strings.Contains(expected, "vrf=main") || family == "v6" && !strings.Contains(expected, "routing-table=main") {
 					t.Fatal("wrong family template")
 				}
+				// On ROS6, /tool ping abbreviates ping-speed, which rejects
+				// count. Its ICMP tool is /ping. Keep ROS7's proven path too.
+				pingCommand := "/tool ping address="
+				if family == "v6" {
+					pingCommand = "/ping address="
+				}
+				if !strings.Contains(expected, "else={"+pingCommand+"198.51.100.1 count=3 interval=200ms size=64 ttl=64 ") {
+					t.Fatal("wrong ICMP command: v6 must use /ping, not the ping-speed abbreviation")
+				}
 				if !strings.Contains(expected, "[/ppp active print count-only where address=198.51.100.1]!=1") || strings.Contains(expected, "count-only where service=pppoe and address=") {
 					t.Fatal("address uniqueness restricted to only PPPoE")
 				}
@@ -190,32 +199,20 @@ func TestPPDiagnosticPingContextAndIdentityBeforeAnyProbe(t *testing.T) {
 						if scenario == "permission" {
 							return "failure: not enough permissions\n", true
 						}
-						return "C\t" + family + "\t0\t0\t0\n", true
-					case routerssh.PPPoECommand:
-						version := target.Observation.Provenance.Version
-						up, session, address, sid := "2d1h1s", "1h1s", "198.51.100.1", "1"
-						switch scenario {
-						case "address-reused":
-							address = "198.51.100.2"
-						case "session-reused":
-							sid = "2"
-						case "reboot":
-							up = "1s"
-						case "unknown-uptime":
-							session = "1h1h"
-						case "revoked-before-probe":
+						if scenario == "revoked-before-probe" {
 							revoked.Store(true)
 						}
-						body := pingFresh(version, up, session, address, sid)
-						if scenario == "duplicate-address" {
-							body = strings.Replace(body, "H\t1\t1", "H\t1\t2", 1)
-							body = strings.Replace(body, "Z\t1", "R\t*2\t2\tother\t198.51.100.1\tcaller\t1h1s\nZ\t2", 1)
-						}
-						return body, true
+						return "C\t" + family + "\t0\t0\t0\n", true
+					case routerssh.PPPoECommand:
+						t.Error("ping reread global PPP table")
+						return "", false
 					default:
-						if command == expected {
-							if scenario == "other-ppp-service-conflict" {
-								return "failure: session-changed\n", true
+						if strings.Contains(command, pingCommand) {
+							if !strings.Contains(command, "get *1 name") || !strings.Contains(command, "$ru>") || !strings.Contains(command, "$su>") || !strings.Contains(command, "disabled!=yes and invalid!=yes") {
+								t.Error("final identity/context guard missing")
+							}
+							if scenario != "valid" {
+								return "E\tsession\n", true
 							}
 							probes.Add(3)
 							return pingReplies("198.51.100.1"), true
@@ -269,6 +266,13 @@ func TestPPDiagnosticPingParserIndependentExampleAndFailures(t *testing.T) {
 	if c != equipment.OK || o.Received != 0 || o.Min != nil || o.Loss != 100 {
 		t.Fatal("no reply fabricated RTT/offline", o, c)
 	}
+	// ROS6.49.18 reply supplied from the authorized pilot; only the IP is
+	// replaced. Its integer loss is rounded down, not a malformed result.
+	v6 := "SEQ HOST SIZE TTL TIME STATUS\n0 198.51.100.1 64 64 1ms\n1 198.51.100.1 timeout\n2 198.51.100.1 64 64 1ms\nsent=3 received=2 packet-loss=33% min-rtt=1ms avg-rtt=1ms max-rtt=1ms\n"
+	o, c = routerssh.ParsePDPing(v6, 3, "198.51.100.1")
+	if c != equipment.OK || o.Sent != 3 || o.Received != 2 || o.Loss < 33 || o.Loss > 34 || o.Min == nil || *o.Min != int64(time.Millisecond) || len(o.Probes) != 3 || o.Probes[1].Status != "timeout" || o.Probes[1].RTT != nil {
+		t.Fatal("valid v6 partial loss rejected or timeout fabricated RTT", o, c)
+	}
 	for _, bad := range []string{strings.Replace(body, "received=3", "received=2", 1), strings.Replace(body, "packet-loss=0%", "packet-loss=99%", 1), strings.Replace(body, "1 1.1.1.1", "0 1.1.1.1", 1), strings.Split(body, "sent=")[0], body + "extra\n", strings.Replace(body, "1ms45us", "+1ms", 1)} {
 		if _, c := routerssh.ParsePDPing(bad, 3, "1.1.1.1"); c == equipment.OK {
 			t.Fatal("malformed run accepted", bad)
@@ -290,7 +294,7 @@ func TestPPDiagnosticPingDeadlineCancelAndByteBudget(t *testing.T) {
 	for _, scenario := range []string{"deadline", "cancel", "bytes"} {
 		t.Run(scenario, func(t *testing.T) {
 			target := pingTarget("v7")
-			command, _ := routerssh.BuildPDPingCommand(target)
+			_, _ = routerssh.BuildPDPingCommand(target)
 			entered, release := make(chan struct{}), make(chan struct{})
 			released := false
 			var attempts atomic.Int32
@@ -301,7 +305,7 @@ func TestPPDiagnosticPingDeadlineCancelAndByteBudget(t *testing.T) {
 				case routerssh.PPPoECommand:
 					return pingFresh("7.26", "2d1h1s", "1h1s", "198.51.100.1", "1"), true
 				}
-				if value == command {
+				if strings.Contains(value, "/tool ping address=") {
 					attempts.Add(1)
 					close(entered)
 					if scenario == "bytes" {
