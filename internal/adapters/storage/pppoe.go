@@ -181,6 +181,22 @@ func (s *Store) FinishPPCollection(ctx context.Context, company string, target e
 			if !ppWithinBudget(o) {
 				return equipment.Limit
 			}
+			// A+B share the company budget. Only an unreferenced previous current
+			// can be reclaimed by the GC below; never edit a protected snapshot.
+			existing, err := ppTotalBytes(ctx, tx)
+			if err != nil {
+				return equipment.Unavailable
+			}
+			var reclaim int64
+			if previousID != "" && tx.QueryRowContext(ctx, "SELECT CASE WHEN EXISTS(SELECT 1 FROM pppoe_references r WHERE r.observation_id=o.id) THEN 0 ELSE o.payload_bytes END FROM pppoe_observations o WHERE o.id=?", previousID).Scan(&reclaim) != nil {
+				return equipment.Unavailable
+			}
+			if existing-reclaim+int64(o.Bytes) > equipment.PPCompanyBytes {
+				ppOmitContext(o)
+				if !ppWithinBudget(o) || existing-reclaim+int64(o.Bytes) > equipment.PPCompanyBytes {
+					return equipment.Limit
+				}
+			}
 			b, _ := json.Marshal(o)
 			s.observe("pp-phase-inserts-start")
 			if _, e := tx.ExecContext(ctx, "INSERT INTO pppoe_observations VALUES(?,?,?,?,?,?,?)", o.ID, o.DeviceID, equipment.PPScope, string(b), len(b), o.Count, o.Bytes); e != nil {
@@ -546,14 +562,22 @@ func ppWithinBudget(o *equipment.PPObservation) bool {
 		return false
 	}
 	rowsBytes := 0
+	oversized := false
 	seen := map[string]bool{}
 	for _, r := range o.Rows {
 		b, e := json.Marshal(r)
-		if e != nil || len(b) > equipment.PPRowBytes || seen[r.ID] || r.ID == "" {
+		if e != nil || seen[r.ID] || r.ID == "" {
 			return false
 		}
+		oversized = oversized || len(b) > equipment.PPRowBytes
 		seen[r.ID] = true
 		rowsBytes += len(b)
+	}
+	if oversized {
+		if !ppOmitContext(o) {
+			return false
+		}
+		return ppWithinBudget(o)
 	}
 	o.Count = len(o.Rows)
 	// Solve metadata self-size independently from the finite number of retained
@@ -579,6 +603,10 @@ func ppWithinBudget(o *equipment.PPObservation) bool {
 		if o.Bytes <= equipment.PPObservationBytes {
 			return true
 		}
+		// Optional enrichment yields before any base row or retained absence.
+		if ppOmitContext(o) {
+			return ppWithinBudget(o)
+		}
 		if o.Offline == 0 || len(o.Rows) == 0 || o.Rows[len(o.Rows)-1].State != "OFFLINE" {
 			return false
 		}
@@ -591,4 +619,71 @@ func ppWithinBudget(o *equipment.PPObservation) bool {
 	}
 
 	return false
+}
+
+func ppOmitContext(o *equipment.PPObservation) bool {
+	removed := false
+	for i := range o.Rows {
+		if o.Rows[i].Context != nil {
+			o.Rows[i].Context = nil
+			removed = true
+		}
+	}
+	if removed {
+		o.ContextOmitted = true
+		o.Bytes = 0
+	}
+	return removed
+}
+
+func (s *Store) PPContextCounts(ctx context.Context, company string, in equipment.PPInput) (equipment.PPView, equipment.Code) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	v := equipment.PPView{}
+	if s.unit == nil || s.unitID != company {
+		return v, equipment.Changed
+	}
+	if s.checkActive() != nil {
+		return v, equipment.Unavailable
+	}
+	o, c := ppMeta(ctx, s.unit, in.DeviceID, in.ObservationID)
+	if c != equipment.OK {
+		return v, c
+	}
+	v.Current = o
+	if o.ContextOmitted {
+		// No grouping is asserted when optional context was budget-omitted.
+		// Consumers use Current.ContextOmitted to distinguish this from empty.
+		return v, equipment.OK
+	}
+	query := `SELECT COALESCE(json_extract(row_json,'$.context.service'),''),json_extract(row_json,'$.context.vlan'),count(*) FROM pppoe_rows WHERE observation_id=? GROUP BY 1,2 ORDER BY 1,2`
+	rows, e := s.unit.QueryContext(ctx, query, in.ObservationID)
+	if e != nil {
+		return v, equipment.Unavailable
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var group equipment.PPGroup
+		var vlan sql.NullInt64
+		if rows.Scan(&group.Service, &vlan, &group.Count) != nil {
+			return v, equipment.Unavailable
+		}
+		if vlan.Valid {
+			n := int(vlan.Int64)
+			group.VLAN = &n
+		}
+		if v.Total >= in.Offset && len(v.Groups) < equipment.PageSize {
+			v.Groups = append(v.Groups, group)
+		}
+		v.Total++
+	}
+	if rows.Err() != nil {
+		return v, equipment.Unavailable
+	}
+	if in.Offset > v.Total {
+		return v, equipment.CursorInvalid
+	}
+	v.NextOffset = in.Offset + len(v.Groups)
+	v.More = v.NextOffset < v.Total
+	return v, equipment.OK
 }

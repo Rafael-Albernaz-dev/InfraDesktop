@@ -12,7 +12,7 @@ import (
 
 func dropPPDiagnosticFixtureSchema(t *testing.T, j *journey) {
 	t.Helper()
-	if _, e := j.st.unit.Exec("DROP TABLE equipment_read_receipt_migration; ALTER TABLE devices DROP COLUMN role; DELETE FROM schema_migrations WHERE version=7"); e != nil {
+	if _, e := j.st.unit.Exec("DROP TABLE equipment_read_receipt_migration; ALTER TABLE devices DROP COLUMN role; DROP INDEX pppoe_rows_service_vlan; DELETE FROM schema_migrations WHERE version>=7"); e != nil {
 		t.Fatal(e)
 	}
 	for _, table := range []string{"pppoe_diagnostic_attempts", "pppoe_diagnostic_current", "pppoe_diagnostic_rows", "pppoe_diagnostic_observations"} {
@@ -225,5 +225,38 @@ func TestPPDiagnosticSharedCompanyBudgetBothPublicationDirections(t *testing.T) 
 	bytes, err := ppTotalBytes(ctx, check)
 	if err != nil || bytes != equipment.PPCompanyBytes {
 		t.Fatal("quota changed after rollback", bytes, err)
+	}
+	if err := check.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	// Free only enough logical A+B budget for a new base reading, while the
+	// previous current remains protected by its reference. Context must yield.
+	next := capacityObservation(10)
+	next.DeviceID = target.Device.ID
+	next.Provenance = good.Provenance
+	base := *next
+	base.Rows = append([]equipment.PPRow(nil), next.Rows...)
+	for i := range base.Rows {
+		base.Rows[i].Context = nil
+		base.Rows[i].Duplicates = 10
+	}
+	space := capacityBytes(&base) + 64 // includes the omission marker itself
+	if _, err := j.st.unit.Exec("UPDATE pppoe_diagnostic_observations SET payload_bytes=payload_bytes-? WHERE id=(SELECT id FROM pppoe_diagnostic_observations LIMIT 1)", space); err != nil {
+		t.Fatal(err)
+	}
+	job = uuid.NewString()
+	in = equipment.PPInput{DeviceID: target.Device.ID, Revision: target.Device.Revision, Operation: uuid.NewString()}
+	if _, _, code := j.st.ReservePPCollection(ctx, companyX, in, "synthetic:context-quota", job); code != equipment.OK {
+		t.Fatal(code)
+	}
+	if code := j.st.FinishPPCollection(ctx, companyX, target, job, equipment.PPAttempt{JobID: job, State: "SUCCEEDED", Code: equipment.OK}, next); code != equipment.OK {
+		t.Fatal("optional context displaced base at shared company quota", code)
+	}
+	if !next.ContextOmitted || next.Rows[0].Context != nil || next.Bytes > space {
+		t.Fatal("company context omission not explicit/bounded", next.Bytes, space)
+	}
+	retained, code := j.st.PPObservation(ctx, companyX, target.Device.ID, good.ID)
+	if code != equipment.OK || retained.Count != good.Count || retained.ContextOmitted {
+		t.Fatal("protected reading changed at company quota", code)
 	}
 }

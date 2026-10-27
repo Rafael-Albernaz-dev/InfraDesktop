@@ -48,7 +48,7 @@ func TestL06CReadAtMutationQuota(t *testing.T) {
 func TestL06CMigrationPreservesMutationsAndAttempts(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	// Reconstruct only schema6 in this disposable synthetic company.
-	if _, e := j.st.unit.Exec("DROP TABLE pppoe_attempts; DROP TABLE pppoe_diagnostic_attempts; DROP TABLE equipment_read_receipt_migration; ALTER TABLE devices DROP COLUMN role; DELETE FROM schema_migrations WHERE version=7"); e != nil {
+	if _, e := j.st.unit.Exec("DROP TABLE pppoe_attempts; DROP TABLE pppoe_diagnostic_attempts; DROP TABLE equipment_read_receipt_migration; ALTER TABLE devices DROP COLUMN role; DROP INDEX pppoe_rows_service_vlan; DELETE FROM schema_migrations WHERE version>=7"); e != nil {
 		t.Fatal(e)
 	}
 	for _, src := range []string{companyPPPoESchema, companyPPDiagnosticSchema} {
