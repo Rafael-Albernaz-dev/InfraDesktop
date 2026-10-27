@@ -8,10 +8,20 @@ import {
 import { it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 import { Equipment } from './equipment';
-import { access, equipmentAPI as api } from './presentation';
+import {
+  access,
+  equipmentAPI as api,
+  pppoeAPI as sessions,
+} from './presentation';
 import type { Device, EquipmentResult } from './equipment-api';
 vi.mock('./presentation', () => ({
   access: { status: vi.fn(), getBrand: vi.fn() },
+  pppoeAPI: {
+    current: vi.fn(),
+    references: vi.fn(),
+    list: vi.fn(),
+    start: vi.fn(),
+  },
   equipmentAPI: {
     list: vi.fn(),
     credentials: vi.fn(),
@@ -70,11 +80,85 @@ const result = (d = device): EquipmentResult => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(sessions.current).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'X',
+    activation_id: 'a',
+    data: { total: 0 },
+  });
+  vi.mocked(sessions.references).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'X',
+    activation_id: 'a',
+    data: { total: 0, references: [] },
+  });
   vi.mocked(api.list).mockResolvedValue(result());
   vi.mocked(api.get).mockResolvedValue(result());
   vi.mocked(api.credentials).mockResolvedValue(result());
 });
+
+it('L06C-UX: equipment summary and interfaces are separate, with a visible PPPoE path', async () => {
+  const concentrator = {
+    ...device,
+    role: 'concentrator',
+    result: {
+      ...device.result!,
+      interfaces: [
+        ...device.result!.interfaces,
+        { name: 'VLAN100', kind: 'vlan', running: true, disabled: false },
+        { name: 'WG-VPN', kind: 'wireguard', running: true, disabled: false },
+      ],
+    },
+  };
+  vi.mocked(api.get).mockResolvedValue(result(concentrator));
+  render(
+    <Equipment
+      profile="X"
+      activation="a"
+      connected={true}
+      createRequest={0}
+      targetID="router"
+    />,
+  );
+  await screen.findByRole('heading', { name: 'Resumo' });
+  expect(screen.queryByText('ether1')).not.toBeInTheDocument();
+  expect(
+    screen
+      .getAllByRole('button')
+      .filter((button) => button.classList.contains('primary')),
+  ).toHaveLength(1);
+  fireEvent.click(screen.getByRole('tab', { name: 'Interfaces físicas' }));
+  expect(await screen.findByText('ether1')).toBeVisible();
+  expect(
+    screen.queryByRole('heading', { name: 'Resumo' }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText('VLAN100')).not.toBeInTheDocument();
+  expect(screen.queryByText('WG-VPN')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'VLANs' }));
+  expect(screen.getByText('VLAN100')).toBeVisible();
+  expect(screen.queryByText('ether1')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'VPNs e túneis' }));
+  expect(screen.getByText('WG-VPN')).toBeVisible();
+  expect(screen.queryByText('VLAN100')).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Abrir sessões PPPoE' }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Abrir sessões PPPoE' }));
+  await screen.findByRole('heading', { name: 'Sessões PPPoE' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Voltar ao equipamento' }),
+  );
+  expect(await screen.findByRole('complementary')).toHaveFocus();
+  expect(sessions.start).not.toHaveBeenCalled();
+});
 it('dashboard reads the normal company inventory and reopens its full detail', async () => {
+  vi.mocked(api.list).mockResolvedValue(
+    result({
+      ...device,
+      role: 'concentrator',
+      pppoe: { online: 53, offline: 2, at: '2026-10-26T12:00:00Z' },
+    }),
+  );
   vi.mocked(access.status).mockResolvedValue({
     code: 'OK',
     request_id: 't',
@@ -94,9 +178,16 @@ it('dashboard reads the normal company inventory and reopens its full detail', a
     brand: { name: '', accent: 'teal', logo: '' },
   } as Awaited<ReturnType<typeof access.getBrand>>);
   render(<App />);
+  const summary = await screen.findByText(/53 ONLINE · 2 OFFLINE/);
+  expect(summary).toHaveTextContent(
+    new Date('2026-10-26T12:00:00Z').toLocaleString('pt-BR'),
+  );
   const open = await screen.findByRole('button', { name: /Saved router/ });
   fireEvent.click(open);
   await screen.findByRole('heading', { name: 'Resumo' });
+  fireEvent.click(
+    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+  );
   expect(await screen.findByText('ether1')).toBeVisible();
   expect(api.get).toHaveBeenCalledWith('X', 'a', 'router');
 });
@@ -121,6 +212,9 @@ it('successful query automatically opens full result without a second action', a
     screen.getByRole('button', { name: /^(Atualizar|Consultar)$/ }),
   );
   await waitFor(() => expect(api.get).toHaveBeenCalled());
+  fireEvent.click(
+    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+  );
   expect(await screen.findByText('ether1')).toBeVisible();
   expect(
     screen.queryByRole('button', { name: 'Ver resultado' }),
@@ -208,6 +302,9 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
       name: 'Confiar neste equipamento e conectar',
     }),
   );
+  fireEvent.click(
+    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+  );
   expect(await screen.findByText('ether1')).toBeVisible();
   expect(api.start).toHaveBeenCalledTimes(1);
   expect(api.save).toHaveBeenCalledTimes(1);
@@ -219,7 +316,7 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
     ...result(current),
     code: 'CONNECT_FAILED',
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Atualizar resumo' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('porta SSH');
   expect(screen.getByText('ether1')).toBeVisible();
   expect(api.save).toHaveBeenCalledTimes(1);
@@ -264,7 +361,9 @@ it('cancel first acceptance never authenticates and leaves a resumable saved dev
     />,
   );
   await screen.findByRole('heading', { name: 'Saved router' });
-  fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+  );
   fireEvent.click(
     within(
       await screen.findByRole('dialog', { name: 'Primeira conexão' }),
@@ -280,7 +379,9 @@ it('cancel first acceptance never authenticates and leaves a resumable saved dev
   );
   expect(api.start).not.toHaveBeenCalled();
   expect(api.confirm).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+  );
   await screen.findByRole('dialog', { name: 'Primeira conexão' });
   expect(api.save).not.toHaveBeenCalled();
 });
@@ -315,6 +416,9 @@ it('dashboard return preserves target while Back exposes the inventory list', as
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
   fireEvent.click(await screen.findByRole('button', { name: /Saved router/ }));
+  fireEvent.click(
+    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+  );
   expect(await screen.findByText('ether1')).toBeVisible();
 });
 

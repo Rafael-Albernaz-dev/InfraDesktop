@@ -854,6 +854,7 @@ function Dashboard({
                       <th>Sistema</th>
                       <th>Estado da leitura</th>
                       <th>Última leitura válida</th>
+                      <th>Sessões PPPoE</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -870,6 +871,13 @@ function Dashboard({
                         <td>{d.os}</td>
                         <td>{d.state}</td>
                         <td>{d.time}</td>
+                        <td>
+                          {d.type === 'Concentrador'
+                            ? d.pppoeAt
+                              ? `${d.sessions ?? 0} ONLINE · ${d.offline ?? 0} OFFLINE · ${new Date(d.pppoeAt).toLocaleString('pt-BR')}`
+                              : 'Sem leitura PPPoE'
+                            : '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -877,7 +885,7 @@ function Dashboard({
               </div>
             )}
             <p className="muted">
-              Topologia, tráfego, sessões, alertas e histórico ainda não estão
+              Topologia, tráfego, alertas e histórico ainda não estão
               disponíveis. O serviço ativo indica apenas o serviço local.
             </p>
           </>

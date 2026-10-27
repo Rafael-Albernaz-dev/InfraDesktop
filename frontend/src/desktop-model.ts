@@ -12,6 +12,8 @@ export type Device = {
   time: string;
   detail: string;
   sessions?: number;
+  offline?: number;
+  pppoeAt?: string;
   uptime?: string;
   position?: [number, number];
   relations?: [string, string][];

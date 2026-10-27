@@ -56,7 +56,10 @@ export function useEquipmentOperations(
             id: d.id,
             name: d.name,
             ip: d.address,
-            type: 'Equipamento',
+            type: d.role === 'concentrator' ? 'Concentrador' : 'Equipamento',
+            sessions: d.role === 'concentrator' ? d.pppoe?.online : undefined,
+            offline: d.pppoe?.offline,
+            pppoeAt: d.pppoe?.at,
             os: d.result?.version
               ? `RouterOS ${d.result.version}`
               : 'Não identificado',

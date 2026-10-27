@@ -29,6 +29,7 @@ vi.mock('./presentation', () => ({
 }));
 const device = {
   id: 'device-X',
+  role: 'concentrator',
   name: 'Router X',
   address: '127.0.0.1',
   port: 22,
@@ -169,7 +170,9 @@ for (const changeSurface of [true, false]) {
       <Equipment profile="late" activation="a" connected createRequest={0} />,
     );
     await screen.findByRole('heading', { name: 'Router X' });
-    fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+    );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
     if (changeSurface) {
       fireEvent.click(
@@ -529,12 +532,16 @@ it('an uncertain query start reuses its ID and never retries authentication by i
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
   await screen.findByRole('heading', { name: 'Router X' });
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await screen.findByText(/O prazo da operação/);
   expect(api.start).toHaveBeenCalledTimes(1);
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(2));
   expect(vi.mocked(api.start).mock.calls[0][3]).toBe(
@@ -576,6 +583,9 @@ it('full detail interfaces survive a subsequent list projection and a new contex
   );
   await screen.findByRole('heading', { name: 'Router X' });
   fireEvent.click(screen.getByRole('button', { name: 'Abrir equipamento' }));
+  fireEvent.click(
+    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+  );
   await screen.findByText('ether1');
   fireEvent.click(
     screen.getByRole('button', { name: 'Voltar aos equipamentos' }),
@@ -790,7 +800,9 @@ it.each(['reject', 'reply'])(
     );
     await screen.findByRole('heading', { name: 'Router X' });
     fireEvent.click(
-      screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+      screen.getByRole('button', {
+        name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+      }),
     );
     await waitFor(() => expect(api.status).toHaveBeenCalledTimes(2));
     await waitFor(() =>
@@ -820,17 +832,23 @@ it('exhausted status recovery unlocks UI and deliberate retry reconciles the sam
   );
   await screen.findByRole('heading', { name: 'Router X' });
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await waitFor(() => expect(api.status).toHaveBeenCalledTimes(3));
   await waitFor(() =>
     expect(
-      screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+      screen.getByRole('button', {
+        name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+      }),
     ).toBeEnabled(),
   );
   expect(api.start).toHaveBeenCalledTimes(1);
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(2));
   expect(vi.mocked(api.start).mock.calls[0][3]).toBe(
@@ -861,14 +879,18 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
   const view = mount();
   await screen.findByRole('heading', { name: 'Router X' });
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await screen.findByText(/O prazo/);
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await waitFor(() => expect(api.inspect).toHaveBeenCalledTimes(1));
   await waitFor(() =>
     expect(
-      screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+      screen.getByRole('button', {
+        name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+      }),
     ).toBeEnabled(),
   );
   if (screen.queryByRole('button', { name: 'Voltar aos equipamentos' }))
@@ -877,7 +899,9 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
     );
   fireEvent.click(screen.getByRole('row', { name: /Router B/ }));
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(2));
   view.unmount();
@@ -888,7 +912,9 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
     code: 'JOB_INTERRUPTED',
   });
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await screen.findByText(/interrompida ou expirou/);
   expect(vi.mocked(api.start).mock.calls[2][3]).toBe(
@@ -896,7 +922,9 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
   );
   expect(api.start).toHaveBeenCalledTimes(3);
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(4));
   expect(vi.mocked(api.start).mock.calls[3][3]).not.toBe(
@@ -994,7 +1022,9 @@ it('an uncertain inspection retains its own ID across unmount and another operat
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByText(/O serviço está indisponível/);
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   await screen.findByText(/O prazo da operação/);
   view.unmount();
@@ -1044,7 +1074,9 @@ it('cancel reconciles the running job without another authentication', async () 
   );
   await screen.findByRole('heading', { name: 'Router X' });
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+    screen.getByRole('button', {
+      name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
+    }),
   );
   fireEvent.click(
     await screen.findByRole('button', { name: 'Cancelar consulta' }),
@@ -1594,7 +1626,9 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   const view = render(<Equipment {...props} />);
   for (let i = 0; i < 130; i++) {
     view.rerender(<Equipment {...props} activation={'a' + i} />);
-    const connect = await screen.findByRole('button', { name: 'Conectar' });
+    const connect = await screen.findByRole('button', {
+      name: /^(Conectar|Consultar resumo)$/,
+    });
     await act(async () => {
       fireEvent.click(connect);
     });
@@ -1605,7 +1639,9 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   view.unmount();
   render(<Equipment {...props} activation="a129" />);
   await screen.findByRole('heading', { name: 'Router X' });
-  fireEvent.click(screen.getByRole('button', { name: 'Conectar' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+  );
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(131));
   expect(vi.mocked(api.start).mock.calls.at(-1)![3]).toBe(operation);
   expect(api.inspect).not.toHaveBeenCalled();
@@ -1675,4 +1711,17 @@ it('Q03 updates the credential catalog after successful replacement and recovers
   ).toBeInTheDocument();
   expect(api.list).toHaveBeenCalledTimes(inventoryCalls);
   expect(api.start).not.toHaveBeenCalled();
+});
+
+it('L06C: credentials remain accessible for an empty company', async () => {
+  vi.mocked(api.list).mockResolvedValue(data([]));
+  render(
+    <Equipment profile="X" activation="a" connected={true} createRequest={0} />,
+  );
+  await screen.findByText('Nenhum equipamento cadastrado');
+  expect(screen.getAllByRole('button', { name: 'Credenciais' })).toHaveLength(
+    1,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  await screen.findByRole('dialog');
 });

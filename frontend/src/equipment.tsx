@@ -176,6 +176,7 @@ export function Equipment({
   const [credentialRefresh, reloadCredentials] = useState(0);
   const [credentialError, setCredentialError] = useState('');
   const [ppOpen, setPPOpen] = useState(false);
+  const detailSurface = useRef<HTMLElement>(null);
   const [devices, setDevices] = useState<Device[]>([]);
   const [credentialCatalog, setCredentialCatalog] = useState<{
     key: string;
@@ -201,6 +202,12 @@ export function Equipment({
     [credentialForm, setCredentialForm] = useState<Credential | 'new'>();
   const [job, setJob] = useState<Job>();
   const [detailOpen, setDetailOpen] = useState(Boolean(targetID));
+  useLayoutEffect(() => {
+    if (detailOpen && selected?.id && !ppOpen) {
+      detailSurface.current?.focus({ preventScroll: true });
+      detailSurface.current?.scrollIntoView?.({ block: 'start' });
+    }
+  }, [detailOpen, selected?.id, ppOpen]);
   const [connectRequest, setConnectRequest] = useState<Device>();
   const [resetTrust, setResetTrust] = useState(false);
   const resetOperation = useRef('');
@@ -716,6 +723,17 @@ export function Equipment({
         }
       >
         <section className="pane-main" hidden={detailOpen}>
+          {total === 0 && !search && !inactive && (
+            <Button
+              onClick={() => {
+                setError('');
+                setCredentialForm('new');
+              }}
+              disabled={!connected || !vault}
+            >
+              Credenciais
+            </Button>
+          )}
           {(total > 0 || search || inactive) && (
             <div className="inventory-tools">
               {!primaryInHeader && (
@@ -876,7 +894,11 @@ export function Equipment({
           )}
         </section>
         {selected && (
-          <aside className={detailOpen ? 'equipment-detail' : 'inspector'}>
+          <aside
+            ref={detailSurface}
+            tabIndex={-1}
+            className={detailOpen ? 'equipment-detail' : 'inspector'}
+          >
             {selected && (
               <>
                 {detailOpen && (
@@ -894,22 +916,49 @@ export function Equipment({
                 )}
                 <p className="inspector-heading">Detalhes do equipamento</p>
                 <h2>{selected.name}</h2>
+                <p>
+                  Papel declarado:{' '}
+                  {
+                    (
+                      {
+                        concentrator: 'Concentrador',
+                        ap: 'AP',
+                        cpe: 'CPE',
+                        other: 'Outro',
+                      } as Record<string, string>
+                    )[selected.role || 'other']
+                  }
+                </p>
+                {(!selected.role || selected.role === 'other') && (
+                  <p>
+                    Para ver os logins de clientes PPPoE, edite o cadastro e
+                    declare o papel Concentrador.
+                  </p>
+                )}
                 <p className="subtitle">
                   SSH · {selected.result?.family || 'Sistema desconhecido'}
                 </p>
                 {!detailOpen && accessDetails}
                 <div className="bottom-actions equipment-actions">
+                  {selected.role === 'concentrator' &&
+                    (!detailOpen || !selected.result) && (
+                      <Button
+                        kind={detailOpen ? 'primary' : undefined}
+                        disabled={!connected || !selected.fingerprint}
+                        onClick={() => {
+                          setDetailOpen(true);
+                          setPPOpen(true);
+                        }}
+                      >
+                        Abrir sessões PPPoE
+                      </Button>
+                    )}
                   <Button
-                    disabled={!connected || !selected.fingerprint}
-                    onClick={() => {
-                      setDetailOpen(true);
-                      setPPOpen(true);
-                    }}
-                  >
-                    Abrir sessões PPPoE
-                  </Button>
-                  <Button
-                    kind={detailOpen ? 'primary' : undefined}
+                    kind={
+                      detailOpen && selected.role !== 'concentrator'
+                        ? 'primary'
+                        : undefined
+                    }
                     disabled={
                       locked ||
                       !vault ||
@@ -925,7 +974,13 @@ export function Equipment({
                       );
                     }}
                   >
-                    {selected.result ? 'Atualizar' : 'Conectar'}
+                    {detailOpen
+                      ? selected.result
+                        ? 'Atualizar resumo'
+                        : 'Consultar resumo'
+                      : selected.result
+                        ? 'Atualizar'
+                        : 'Conectar'}
                   </Button>
                   {!detailOpen && (
                     <Button
@@ -995,7 +1050,13 @@ export function Equipment({
                   <EquipmentReading
                     key={selected.id + selected.result.observed_at}
                     device={selected}
-                    focus={detailOpen}
+                    focus={false}
+                    separate={detailOpen}
+                    openPPPoE={
+                      selected.role === 'concentrator'
+                        ? () => setPPOpen(true)
+                        : undefined
+                    }
                   />
                 )}
                 {detailOpen && (
@@ -1256,6 +1317,7 @@ function DeviceForm({
     operation_id: receipt?.operation_id || id(),
     revision: device?.revision || 0,
     name: device?.name || '',
+    role: device?.role || 'other',
     address: device?.address || '',
     port: device?.port || 22,
     transport: 'ssh',
@@ -1274,6 +1336,7 @@ function DeviceForm({
     dirty:
       uncertain ||
       draft.name !== (device?.name || '') ||
+      draft.role !== (device?.role || 'other') ||
       draft.address !== (device?.address || '') ||
       draft.port !== (device?.port || 22) ||
       draft.credential_id !== (device?.credential_id || '') ||
@@ -1411,6 +1474,19 @@ function DeviceForm({
                 onChange={(e) => change({ name: e.target.value })}
               />
               {message('name')}
+            </label>
+            <label className="field">
+              Papel do equipamento
+              <select
+                aria-label="Papel do equipamento"
+                value={draft.role}
+                onChange={(e) => change({ role: e.target.value })}
+              >
+                <option value="other">Outro</option>
+                <option value="concentrator">Concentrador</option>
+                <option value="ap">AP</option>
+                <option value="cpe">CPE</option>
+              </select>
             </label>
             <label className="field">
               IP de gerenciamento
@@ -1733,9 +1809,13 @@ function CredentialForm({
 function EquipmentReading({
   device,
   focus,
+  separate = false,
+  openPPPoE,
 }: {
   device: Device;
   focus: boolean;
+  separate?: boolean;
+  openPPPoE?: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const table = useRef<HTMLDivElement>(null);
@@ -1751,136 +1831,246 @@ function EquipmentReading({
     }
   };
   const [page, setPage] = useState(0);
+  const [tab, setTab] = useState('summary');
+  const tabs = [
+    ['summary', 'Resumo'],
+    ['physical', 'Interfaces físicas'],
+    ['vlan', 'VLANs'],
+    ['vpn', 'VPNs e túneis'],
+    ['other', 'Outras interfaces'],
+  ];
+  const category = (kind: string) => {
+    const value = kind.toLowerCase();
+    if (['ether', 'wlan', 'wifi', 'w60g', 'lte'].includes(value))
+      return 'physical';
+    if (value === 'vlan') return 'vlan';
+    if (
+      /^(wireguard|pptp|l2tp|ovpn|sstp|eoip|gre|ipip|6to4|6in4|vti|vxlan)/.test(
+        value,
+      )
+    )
+      return 'vpn';
+    return 'other';
+  };
+  const pickTab = (next: string) => {
+    setTab(next);
+    setPage(0);
+  };
   const r = device.result!;
   const part = r.interface_part;
-  const rows = r.interfaces || [];
+  const allRows = r.interfaces || [];
+  const rows = separate
+    ? allRows.filter((row) => category(row.kind) === tab)
+    : allRows;
   const memory = (v: number | undefined) =>
     v === undefined
       ? 'Não informado'
       : `${(v / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MiB`;
   return (
     <section className="equipment-result" aria-label="Resultado da consulta">
-      <h2 ref={heading} tabIndex={-1}>
-        Resumo
-      </h2>
-      <h3>{r.identity || 'Identidade não informada'}</h3>
-      <div className="equipment-summary">
-        {[
-          ['RouterOS', r.version || 'Não informado'],
-          ['Placa / modelo', r.board || 'Não informado'],
-          ['Tempo ligado', r.uptime || 'Não informado'],
-          [
-            'CPU',
-            r.cpu_percent === undefined ? 'Não informada' : `${r.cpu_percent}%`,
-          ],
-          [
-            'Memória livre / total',
-            `${memory(r.free_memory_bytes)} / ${memory(r.total_memory_bytes)}`,
-          ],
-        ].map(([label, value]) => (
-          <div className="kv" key={label}>
-            <span className="key">{label}</span>
-            <span>{value}</span>
+      {separate && (
+        <nav
+          className="equipment-reading-tabs"
+          aria-label="Áreas do equipamento"
+        >
+          <div
+            role="tablist"
+            aria-label="Dados do equipamento"
+            onKeyDown={(event) => {
+              if (
+                !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
+              )
+                return;
+              const controls = Array.from(
+                event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                  '[role=tab]',
+                ),
+              );
+              const index = controls.indexOf(event.target as HTMLButtonElement);
+              if (index < 0) return;
+              const next =
+                event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? controls.length - 1
+                    : (index +
+                        (event.key === 'ArrowRight' ? 1 : -1) +
+                        controls.length) %
+                      controls.length;
+              event.preventDefault();
+              controls[next]?.click();
+              controls[next]?.focus();
+            }}
+          >
+            {tabs.map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                role="tab"
+                aria-selected={tab === value}
+                onClick={() => pickTab(value)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
-      <p className="muted">
-        Última leitura válida: {stamp(device)} ·{' '}
-        {r.quality === 'complete'
-          ? 'Resumo completo'
-          : 'Leitura com parte limitada ou indisponível'}
-      </p>
-      <details className="equipment-help">
-        <summary>Origem da leitura</summary>
-        <p className="fingerprint">{r.source}</p>
-      </details>
-      <h2>Interfaces</h2>
-      {part ? (
-        <>
-          <p>
-            {part.status === 'stale'
-              ? 'Última listagem válida preservada'
-              : part.status === 'failed'
-                ? 'Listagem indisponível'
-                : 'Interfaces estáticas'}
-            {part.observed_at
-              ? ` · ${new Date(part.observed_at).toLocaleString('pt-BR')}`
-              : ''}
-          </p>
-          {['failed', 'stale'].includes(part.status) ? (
-            <p className="inventory-notice">{equipmentMessage(part.code)}</p>
-          ) : part.counts_known ? (
-            <p className="muted">
-              {rows.length} de {part.eligible} estáticas · {part.dynamic}{' '}
-              dinâmicas fora desta listagem · {part.total} no destino.{' '}
-              {part.status === 'limited'
-                ? 'Listagem limitada por volume ou tamanho: até 128 estáticas.'
-                : ''}
-            </p>
-          ) : (
-            <p className="muted">Contagens não registradas nesta leitura.</p>
+          {openPPPoE && (
+            <Button kind="primary" onClick={openPPPoE}>
+              Abrir sessões PPPoE
+            </Button>
           )}
-          {part.status === 'stale' && (
-            <details>
-              <summary>Origem da listagem preservada</summary>
-              <p className="fingerprint">{part.source}</p>
-            </details>
+        </nav>
+      )}
+      {(!separate || tab === 'summary') && (
+        <>
+          <h2 ref={heading} tabIndex={-1}>
+            Resumo
+          </h2>
+          <h3>{r.identity || 'Identidade não informada'}</h3>
+          <div className="equipment-summary">
+            {[
+              ['RouterOS', r.version || 'Não informado'],
+              ['Placa / modelo', r.board || 'Não informado'],
+              ['Tempo ligado', r.uptime || 'Não informado'],
+              [
+                'CPU',
+                r.cpu_percent === undefined
+                  ? 'Não informada'
+                  : `${r.cpu_percent}%`,
+              ],
+              [
+                'Memória livre / total',
+                `${memory(r.free_memory_bytes)} / ${memory(r.total_memory_bytes)}`,
+              ],
+            ].map(([label, value]) => (
+              <div className="kv" key={label}>
+                <span className="key">{label}</span>
+                <span>{value}</span>
+              </div>
+            ))}
+          </div>
+          <p className="muted">
+            Última leitura válida: {stamp(device)} ·{' '}
+            {r.quality === 'complete'
+              ? 'Resumo completo'
+              : 'Leitura com parte limitada ou indisponível'}
+          </p>
+          <details className="equipment-help">
+            <summary>Origem da leitura</summary>
+            <p className="fingerprint">{r.source}</p>
+          </details>
+        </>
+      )}
+      {(!separate || tab !== 'summary') && (
+        <>
+          <h2>
+            {separate
+              ? tabs.find(([value]) => value === tab)?.[1]
+              : 'Interfaces'}
+          </h2>
+          {separate && (
+            <p>
+              {rows.length} nesta categoria da leitura armazenada. Logins de
+              clientes ficam em Sessões PPPoE.
+            </p>
+          )}
+
+          {part ? (
+            <>
+              <p>
+                {part.status === 'stale'
+                  ? 'Última listagem válida preservada'
+                  : part.status === 'failed'
+                    ? 'Listagem indisponível'
+                    : 'Interfaces estáticas'}
+                {part.observed_at
+                  ? ` · ${new Date(part.observed_at).toLocaleString('pt-BR')}`
+                  : ''}
+              </p>
+              {['failed', 'stale'].includes(part.status) ? (
+                <p className="inventory-notice">
+                  {equipmentMessage(part.code)}
+                </p>
+              ) : part.counts_known ? (
+                <p className="muted">
+                  {allRows.length} de {part.eligible} estáticas · {part.dynamic}{' '}
+                  dinâmicas fora desta listagem · {part.total} no destino.{' '}
+                  {part.status === 'limited'
+                    ? 'Listagem limitada por volume ou tamanho: até 128 estáticas.'
+                    : ''}
+                </p>
+              ) : (
+                <p className="muted">
+                  Contagens não registradas nesta leitura.
+                </p>
+              )}
+              {part.status === 'stale' && (
+                <details>
+                  <summary>Origem da listagem preservada</summary>
+                  <p className="fingerprint">{part.source}</p>
+                </details>
+              )}
+            </>
+          ) : (
+            <p className="muted">
+              Listagem da leitura anterior; escopo e contagens não registrados.
+            </p>
+          )}
+          {!!rows.length && (
+            <div
+              className="table-scroll"
+              tabIndex={0}
+              aria-label="Interfaces observadas"
+              ref={table}
+            >
+              <table className="app-table">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.slice(page * 16, (page + 1) * 16).map((i) => (
+                    <tr key={i.name}>
+                      <td>{i.name}</td>
+                      <td>{i.kind}</td>
+                      <td>
+                        {i.disabled
+                          ? 'Desativada'
+                          : i.running
+                            ? 'Ativa'
+                            : 'Parada'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {rows.length > 16 && (
+            <div className="list-footer">
+              <span>
+                Página {page + 1} de {Math.ceil(rows.length / 16)}
+              </span>
+              <div>
+                <Button disabled={!page} onClick={() => showPage(page - 1)}>
+                  Anterior
+                </Button>
+                <Button
+                  disabled={(page + 1) * 16 >= rows.length}
+                  onClick={() => showPage(page + 1)}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
+          {!rows.length && part?.status !== 'failed' && (
+            <p className="muted">Nenhuma interface nesta listagem.</p>
           )}
         </>
-      ) : (
-        <p className="muted">
-          Listagem da leitura anterior; escopo e contagens não registrados.
-        </p>
-      )}
-      {!!rows.length && (
-        <div
-          className="table-scroll"
-          tabIndex={0}
-          aria-label="Interfaces observadas"
-          ref={table}
-        >
-          <table className="app-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.slice(page * 16, (page + 1) * 16).map((i) => (
-                <tr key={i.name}>
-                  <td>{i.name}</td>
-                  <td>{i.kind}</td>
-                  <td>
-                    {i.disabled ? 'Desativada' : i.running ? 'Ativa' : 'Parada'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {rows.length > 16 && (
-        <div className="list-footer">
-          <span>
-            Página {page + 1} de {Math.ceil(rows.length / 16)}
-          </span>
-          <div>
-            <Button disabled={!page} onClick={() => showPage(page - 1)}>
-              Anterior
-            </Button>
-            <Button
-              disabled={(page + 1) * 16 >= rows.length}
-              onClick={() => showPage(page + 1)}
-            >
-              Próxima
-            </Button>
-          </div>
-        </div>
-      )}
-      {!rows.length && part?.status !== 'failed' && (
-        <p className="muted">Nenhuma interface nesta listagem.</p>
       )}
     </section>
   );
