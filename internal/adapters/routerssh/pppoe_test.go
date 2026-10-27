@@ -47,7 +47,11 @@ func TestPPPoEAdapterCodecAndFailures(t *testing.T) {
 					if o != nil && tc.status != "complete" && len(o.Rows) != 0 {
 						t.Fatal("incomplete rows leaked")
 					}
-					if peer.Auth.Load() != 1 || peer.Commands.Load() != 1 {
+					expectedCommands := int32(1)
+					if tc.status == "complete" {
+						expectedCommands = 2
+					}
+					if peer.Auth.Load() != 1 || peer.Commands.Load() != expectedCommands {
 						t.Fatal("unexpected network effects")
 					}
 				})

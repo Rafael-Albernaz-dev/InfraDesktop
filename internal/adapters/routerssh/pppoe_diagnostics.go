@@ -369,7 +369,7 @@ func (Adapter) CollectPPDiagnostic(ctx context.Context, d equipment.Device, user
 			return nil, equipment.ObservationIncompatible
 		}
 	}
-	connection, c := openPPConnection(ctx, d, user, secret, check)
+	connection, c := openPPConnection(ctx, d, user, secret, check, equipment.QueryBudget)
 	if c != equipment.OK {
 		return nil, c
 	}

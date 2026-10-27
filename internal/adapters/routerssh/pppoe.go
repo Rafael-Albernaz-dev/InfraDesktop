@@ -25,13 +25,14 @@ type ppConnection struct {
 	run     func(string) (string, equipment.Code)
 	close   func()
 	tighten func(int)
+	metrics func() (int, int)
 }
 
-func openPPConnection(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code) (*ppConnection, equipment.Code) {
+func openPPConnection(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code, deadlineBudget time.Duration) (*ppConnection, equipment.Code) {
 	if c := check(); c != equipment.OK {
 		return nil, c
 	}
-	conn, done, c := dial(ctx, d)
+	conn, done, c := dialBudget(ctx, d, deadlineBudget)
 	if c != equipment.OK {
 		return nil, c
 	}
@@ -78,6 +79,7 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 	}
 	client := ssh.NewClient(cc, channels, requests)
 	budget := &outputBudget{conn: conn}
+	commands := 0
 	run := func(command string) (string, equipment.Code) {
 		if c := check(); c != equipment.OK {
 			return "", c
@@ -94,6 +96,9 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 		out, stderr := &limitedOutput{budget: budget}, &limitedOutput{budget: budget}
 		session.Stdout = out
 		session.Stderr = stderr
+		budget.mu.Lock()
+		commands++
+		budget.mu.Unlock()
 		e = session.Run(command)
 		if strings.Contains(command, "/tool ping address=") || strings.Contains(command, "/ping address=") {
 			exit := -1
@@ -125,7 +130,7 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 		}
 		return text, equipment.OK
 	}
-	return &ppConnection{run: run, close: func() { _ = client.Close(); done() }, tighten: func(bytes int) {
+	return &ppConnection{run: run, metrics: func() (int, int) { budget.mu.Lock(); defer budget.mu.Unlock(); return commands, budget.n }, close: func() { _ = client.Close(); done() }, tighten: func(bytes int) {
 		budget.mu.Lock()
 		defer budget.mu.Unlock()
 		next := budget.n + bytes
@@ -136,7 +141,7 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 }
 
 func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code) (*equipment.PPObservation, equipment.Code) {
-	connection, c := openPPConnection(ctx, d, user, secret, check)
+	connection, c := openPPConnection(ctx, d, user, secret, check, equipment.QueryBudget)
 	if c != equipment.OK {
 		return nil, c
 	}
@@ -156,6 +161,32 @@ func (Adapter) CollectPPPoE(ctx context.Context, d equipment.Device, user, secre
 			o.Quality.Code = equipment.Partial
 			o.Quality.Reason = "reboot"
 			o.Quality.MembershipChecked = false
+		}
+	}
+	if c == equipment.OK && o != nil && o.Quality.Status == "complete" && len(o.Rows) > 0 {
+		// Optional enrichment shares this connection's cumulative SSH budget.
+		// Failure never invents a join or discards the complete active reading.
+		enriched, code := connection.run(PPContextCommand)
+		if c := check(); c != equipment.OK {
+			return nil, c
+		}
+		if ctx.Err() != nil {
+			if ctx.Err() == context.DeadlineExceeded {
+				return nil, "DEADLINE_EXCEEDED"
+			}
+			return nil, equipment.Cancelled
+		}
+		if code == equipment.OK {
+			tunnels, version, up, parsed := ParsePPContext(enriched)
+			if parsed == equipment.Limit {
+				o.ContextOmitted = true
+			}
+			age := equipment.PPInterval{Known: true, Max: time.Since(commandStarted).Nanoseconds()}
+			if parsed == equipment.OK && version == o.Provenance.Version && up.Known && up.Min > age.Max && up.Max >= o.Provenance.RouterUptime.Min {
+				equipment.AssociatePPTunnels(o.Rows, tunnels, age)
+			}
+		} else if code == equipment.Limit {
+			o.ContextOmitted = true
 		}
 	}
 	return o, c

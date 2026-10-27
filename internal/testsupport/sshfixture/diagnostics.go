@@ -1,9 +1,11 @@
 package sshfixture
 
 import (
+	"fmt"
 	"infradesktop/internal/adapters/routerssh"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Fabricated fixtures for isolated integration/native journeys only. Recognizing
@@ -27,6 +29,24 @@ func (s *Server) diagnosticOutput(command string) (string, bool) {
 		version = "6.49.19"
 	}
 	switch command {
+
+	case routerssh.PPHealthFirstCommand, routerssh.PPHealthCommand:
+		tick := int(time.Since(s.started)/time.Second) + 1
+		pools := "false"
+		n := 1
+		var b strings.Builder
+		if command == routerssh.PPHealthCommand {
+			pools = "true"
+			n = 2
+		}
+		fmt.Fprintf(&b, "N\t1\t%s\t2d1h%ds\t%s\ttrue\n", version, tick, pools)
+		if pools == "true" {
+			b.WriteString("P\t*1\tfixture-pool\t198.51.100.1-198.51.100.3\t0\n")
+		}
+		fmt.Fprintf(&b, "I\t*1\tfixture-ether\tether\t2026-10-27 00:00:00\t%d\t%d\t0\t?\t0\t?\ttrue\tfalse\nZ\t%d\tcomplete\t2d1h%ds\n", tick*1024, tick*2048, n, tick)
+		return b.String(), true
+	case routerssh.PPContextCommand:
+		return "C\t1\t" + version + "\t2d1h1s\nZ\t0\tcomplete\t2d1h1s\n", true
 	case routerssh.PDCatalogCommand:
 		return CatalogTranscript(version), true
 	case routerssh.PDRadiusCommand:
@@ -41,6 +61,23 @@ func (s *Server) diagnosticOutput(command string) (string, bool) {
 			return "", false
 		}
 		return "C\tv7\t0\t0\t0\n", true
+	}
+	if strings.Contains(command, `:put ("B\t1\t"`) && strings.HasPrefix(command, ":local esc do=") {
+		tick := int(time.Since(s.started)/time.Second) + 1
+		n := s.config.PPRows
+		if n == 0 {
+			n = 32
+		}
+		var b strings.Builder
+		fmt.Fprintf(&b, "B\t1\t%s\t2d1h%ds\n", version, tick)
+		for i := 0; i < n; i++ {
+			fmt.Fprintf(&b, "T\t*%X\ttunnel-%d\tsynthetic-%04d\t02:00:00:00:%02x:%02x\t198.51.%d.%d\t2h%ds\t%d\t%d\n", i+100, i, i/2, i/256, i%256, (i/250)%256, i%250+1, tick, tick*(i+1)*1024, tick*(i+1)*2048)
+		}
+		fmt.Fprintf(&b, "Z\t%d\tcomplete\t2d1h%ds\n", n, tick)
+		return b.String(), true
+	}
+	if strings.Contains(command, `:put ("L\t1\t"`) && strings.Contains(command, `/log print count-only where topics~"ppp"`) {
+		return "L\t1\t" + version + "\t2d1h1s\t2\nE\t01:00:00\tauth_failed\nE\t01:00:01\tdisconnected\nZ\t2\tcomplete\t2d1h1s\n", true
 	}
 	if match := fixturePingSuffix.FindStringSubmatch(command); match != nil && strings.HasPrefix(command, ":if (") && strings.Contains(command, `:put "E\tsession"`) && strings.Contains(command, `:put "E\tcontext"`) {
 		expected, pingCommand := "vrf", "/tool ping"

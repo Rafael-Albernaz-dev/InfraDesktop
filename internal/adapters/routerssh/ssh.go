@@ -76,7 +76,13 @@ func timedOut(ctx context.Context, err error) bool {
 	return errors.As(err, &timeout) && timeout.Timeout()
 }
 func dial(ctx context.Context, d equipment.Device) (net.Conn, func(), equipment.Code) {
-	ctx, cancel := context.WithTimeout(ctx, equipment.QueryBudget)
+	return dialBudget(ctx, d, equipment.QueryBudget)
+}
+func dialBudget(ctx context.Context, d equipment.Device, budget time.Duration) (net.Conn, func(), equipment.Code) {
+	if budget <= 0 || budget > 60*time.Second {
+		return nil, func() {}, equipment.Invalid
+	}
+	ctx, cancel := context.WithTimeout(ctx, budget)
 	conn, e := (&net.Dialer{Timeout: 5 * time.Second}).DialContext(ctx, "tcp", net.JoinHostPort(d.Address, strconv.Itoa(d.Port)))
 	if e != nil {
 		expired := timedOut(ctx, e)
