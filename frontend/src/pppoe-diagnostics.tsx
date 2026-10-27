@@ -14,15 +14,26 @@ import { pendingPPPoE as pending } from './equipment-receipts';
 type Scope = 'catalog' | 'radius' | 'ping';
 type Source = { observation: string; row: string };
 const diagnosticMessage = (code: string) =>
-  code === 'PARTIAL'
+  (
+    ({
+      PING_CONTEXT_UNAVAILABLE:
+        'O contexto main contém VRF, regras ou mangle ativos incompatíveis com a sondagem.',
+      PING_SESSION_CHANGED:
+        'A sessão mudou no concentrador. Atualize as sessões antes de sondar.',
+      PING_READING_STALE:
+        'A leitura pertence a um contexto anterior do serviço. Atualize as sessões.',
+      PING_OFFLINE: 'Ping indisponível: sessão OFFLINE.',
+    }) as Record<string, string>
+  )[code] ||
+  (code === 'PARTIAL'
     ? 'O concentrador não devolveu uma leitura completa.'
     : code === 'OBSERVATION_INCOMPATIBLE'
-      ? 'A sessão ou o contexto não permite uma sondagem segura. Atualize as sessões e confira as permissões e o contexto main no concentrador.'
+      ? 'A leitura não permite uma sondagem segura. Confira a identidade da sessão.'
       : code === 'OBSERVATION_UNAVAILABLE'
         ? 'A leitura foi substituída. Reabra os dados armazenados.'
         : code === 'JOB_INTERRUPTED'
           ? 'A ação anterior foi interrompida. Ela não será reenviada automaticamente.'
-          : equipmentMessage(code);
+          : equipmentMessage(code));
 
 function useDiagnostic(
   profile: string,
@@ -30,6 +41,7 @@ function useDiagnostic(
   device: Device,
   scope: Scope,
   source?: Source,
+  kind = '',
 ) {
   const sourceObservation = source?.observation;
   const sourceRow = source?.row;
@@ -171,7 +183,7 @@ function useDiagnostic(
       ? meta
       : undefined;
   const diagnosticID = visibleMeta?.diagnostic_id;
-  const pageKey = [context, diagnosticID, cursor, refresh].join('|');
+  const pageKey = [context, diagnosticID, cursor, refresh, kind].join('|');
   const [storedPageKey, setStoredPageKey] = useState(pageKey);
   if (storedPageKey !== pageKey) {
     setStoredPageKey(pageKey);
@@ -185,7 +197,7 @@ function useDiagnostic(
     const generation = life.current.generation;
     if (!diagnosticID) return;
     void api
-      .list(profile, activation, device.id, scope, diagnosticID, cursor)
+      .list(profile, activation, device.id, scope, diagnosticID, cursor, kind)
       .then((result) => {
         if (stopped || !active(generation, result)) return;
         if (result.code !== 'OK') {
@@ -208,6 +220,7 @@ function useDiagnostic(
   }, [
     context,
     diagnosticID,
+    kind,
     cursor,
     refresh,
     profile,
@@ -236,6 +249,7 @@ function useDiagnostic(
           timer = setTimeout(() => void poll(), 150);
         else {
           acknowledge(current.pppoe?.operation_id);
+          setUncertain(false);
           setJob('');
           setCursor('');
           setError(
@@ -261,6 +275,41 @@ function useDiagnostic(
     };
   }, [context, job, statusRetry, profile, activation, active, acknowledge]);
   async function start() {
+    if (pending.has(key)) {
+      const generation = life.current.generation;
+      setStarting(true);
+      setError('');
+      try {
+        const result = await api.current(profile, activation, device.id, scope);
+        if (!active(generation, result)) return;
+        if (result.code !== 'OK') {
+          setError(diagnosticMessage(result.code));
+          return;
+        }
+        const latest = result.data?.attempt;
+        if (
+          latest?.operation_id === pending.get(key)?.operation &&
+          latest?.state === 'RUNNING' && latest.job_id
+        )
+          setJob(latest.job_id);
+        else {
+          pending.delete(key);
+          setUncertain(false);
+          setError(
+            'Não há trabalho ativo desta ação. Inicie uma nova leitura deliberadamente.',
+          );
+          reload((n) => n + 1);
+        }
+      } catch {
+        if (active(generation))
+          setError(
+            'Não foi possível consultar o estado. Nenhuma sondagem foi reenviada.',
+          );
+      } finally {
+        if (active(generation)) setStarting(false);
+      }
+      return;
+    }
     if (!pending.has(key) && pending.size >= 32) {
       setError(
         'Há 32 ações incertas. Reconcilie uma delas no contexto original.',
@@ -306,6 +355,10 @@ function useDiagnostic(
             'TRUST_REQUIRED',
             'OBSERVATION_INCOMPATIBLE',
             'OBSERVATION_UNAVAILABLE',
+            'PING_READING_STALE',
+            'PING_CONTEXT_UNAVAILABLE',
+            'PING_SESSION_CHANGED',
+            'PING_OFFLINE',
             'BUSY',
             'LIMIT_EXCEEDED',
           ].includes(result.code)
@@ -485,7 +538,15 @@ export function PPPoEDiagnostics({
   scope: 'catalog' | 'radius';
   blocked: boolean;
 }) {
-  const view = useDiagnostic(profile, activation, device, scope);
+  const [kind, setKind] = useState('');
+  const view = useDiagnostic(
+    profile,
+    activation,
+    device,
+    scope,
+    undefined,
+    kind,
+  );
   const title =
     scope === 'catalog'
       ? 'Serviços, interfaces e VLANs'
@@ -554,6 +615,26 @@ export function PPPoEDiagnostics({
             RouterOS {view.meta.provenance.version} · {view.meta.count} itens ·
             origem: concentrador via SSH.
           </p>
+          {scope === 'catalog' && (
+            <label>
+              Filtrar por tipo
+              <select
+                aria-label="Filtrar por tipo"
+                value={kind}
+                onChange={(e) => {
+                  setKind(e.target.value);
+                  view.first();
+                }}
+              >
+                <option value="">Todos</option>
+                <option value="ether">Ethernet</option>
+                <option value="bridge">Bridge</option>
+                <option value="vlan">VLAN</option>
+                <option value="service">Serviço PPPoE</option>
+                <option value="wlan">Wireless</option>
+              </select>
+            </label>
+          )}
           {scope === 'catalog' ? (
             <p>
               VLANs e faixas representam configuração. Não há vínculo individual
@@ -561,9 +642,10 @@ export function PPPoEDiagnostics({
             </p>
           ) : (
             <p>
-              Contadores são agregados por servidor. Eles não identificam motivo
-              de rejeição ou autenticação de um assinante. Motivo individual
-              indisponível; nenhum log bruto é coletado.
+              Contadores acumulados desde o boot, agregados por servidor. Eles
+              não identificam motivo de rejeição ou autenticação de um
+              assinante. Motivo individual indisponível; nenhum log bruto é
+              coletado.
             </p>
           )}
           {view.pageLoading && (

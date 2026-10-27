@@ -130,6 +130,7 @@ it('opens and pages persisted catalog without remote refresh; rejected page has 
     'catalog',
     'catalog-snapshot',
     'signed-page',
+    '',
   ]);
   fireEvent.click(
     screen.getByRole('button', { name: 'Reabrir dados armazenados' }),
@@ -138,7 +139,7 @@ it('opens and pages persisted catalog without remote refresh; rejected page has 
   expect(api.catalog).not.toHaveBeenCalled();
 });
 
-it('reconciles an uncertain start with the same operation and no automatic second collection', async () => {
+it('reconciles an uncertain start through stored state without a second collection', async () => {
   vi.mocked(api.catalog)
     .mockRejectedValueOnce(new Error('lost receipt'))
     .mockResolvedValue(
@@ -163,6 +164,18 @@ it('reconciles an uncertain start with the same operation and no automatic secon
   await screen.findByRole('alert');
   expect(api.catalog).toHaveBeenCalledTimes(1);
   const operation = vi.mocked(api.catalog).mock.calls[0][3];
+  vi.mocked(api.current).mockResolvedValueOnce(
+    response({
+      attempt: {
+        operation_id: operation,
+        state: 'RUNNING',
+        job_id: 'job',
+        code: 'OK',
+        quality: { status: 'complete', counts_known: true, eligible: 1 },
+      },
+      total: 0,
+    }),
+  );
   fireEvent.click(
     screen.getByRole('button', { name: 'Consultar ação pendente' }),
   );
@@ -171,8 +184,8 @@ it('reconciles an uncertain start with the same operation and no automatic secon
       screen.getByRole('button', { name: 'Atualizar serviços e VLANs' }),
     ).toBeEnabled(),
   );
-  expect(api.catalog).toHaveBeenCalledTimes(2);
-  expect(vi.mocked(api.catalog).mock.calls[1][3]).toBe(operation);
+  expect(api.catalog).toHaveBeenCalledTimes(1);
+  expect(api.current).toHaveBeenCalled();
   expect(pendingPPPoE.size).toBe(0);
 });
 
@@ -480,4 +493,45 @@ it.each([
     ).toBeEnabled(),
   );
   expect(api.catalog).toHaveBeenCalledTimes(1);
+});
+
+it('L06C: lost ping response after worker exit never re-probes on reconcile', async () => {
+  vi.mocked(api.current).mockResolvedValue(response());
+  vi.mocked(api.ping).mockRejectedValueOnce(new Error('lost'));
+  render(
+    <PPPoEPing
+      profile="company"
+      activation="active"
+      device={device}
+      observation="o"
+      row="r"
+      blocked={false}
+    />,
+  );
+  await screen.findByText('Nenhuma sondagem armazenada para esta sessão.');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Sondar IP pelo concentrador' }),
+  );
+  await screen.findByRole('button', { name: 'Consultar sondagem pendente' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar sondagem pendente' }),
+  );
+  await screen.findByText(
+    'Não há trabalho ativo desta ação. Inicie uma nova leitura deliberadamente.',
+  );
+  expect(api.ping).toHaveBeenCalledTimes(1);
+});
+it('L06C: catalog type filter resets paging and queries the stored full reading', async () => {
+  panel();
+  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  fireEvent.change(screen.getByLabelText('Filtrar por tipo'), {
+    target: { value: 'service' },
+  });
+  await waitFor(() =>
+    expect(vi.mocked(api.list).mock.calls.at(-1)?.slice(5)).toEqual([
+      '',
+      'service',
+    ]),
+  );
+  expect(api.catalog).not.toHaveBeenCalled();
 });
