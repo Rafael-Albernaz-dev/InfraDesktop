@@ -95,6 +95,50 @@ function showPP() {
     />,
   );
 }
+
+it('L06C-UX: references have their own tab and session states have an explanation', async () => {
+  vi.mocked(api.current).mockResolvedValue(
+    result({ current: { ...obs, online: 0, offline: 0 }, total: 2 }),
+  );
+  showPP();
+  await screen.findByRole('button', { name: 'Detalhar duplicado row-1' });
+  expect(
+    screen.queryByRole('heading', { name: 'Referências preservadas' }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText('2 ONLINE')).toBeInTheDocument();
+  expect(
+    screen.getByText(/ONLINE: vista na última leitura concluída/),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Referências' }));
+  expect(
+    await screen.findByRole('heading', { name: 'Referências preservadas' }),
+  ).toBeVisible();
+  expect(
+    screen
+      .getAllByRole('button')
+      .filter((button) => button.classList.contains('primary')),
+  ).toHaveLength(1);
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  expect(api.start).not.toHaveBeenCalled();
+});
+
+it('UX-R01: references can recover an initial reading failure without remote collection', async () => {
+  vi.mocked(api.current).mockResolvedValueOnce({
+    ...result(),
+    code: 'SERVICE_UNAVAILABLE',
+  });
+  showPP();
+  await screen.findByRole('alert');
+  fireEvent.click(screen.getByRole('tab', { name: 'Referências' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Reabrir leitura armazenada' }),
+  );
+  await screen.findByRole('button', {
+    name: 'Salvar referência desta leitura',
+  });
+  expect(screen.getByText(/Leitura atual:/)).toHaveTextContent('2 registros');
+  expect(api.start).not.toHaveBeenCalled();
+});
 it.each(['success', 'error', 'reject'] as const)(
   'A-H01: late detail %s cannot restore a filtered intent or steal focus',
   async (kind) => {
@@ -343,14 +387,15 @@ it('A-H01/H02: open pair/reference and pending deletion respect the latest selec
   vi.mocked(api.remove).mockReturnValueOnce(deleted.promise);
   showPP();
   await screen.findAllByText('duplicado');
+  fireEvent.click(screen.getByRole('tab', { name: 'Referências' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Excluir referência ref-a' }),
+  );
   fireEvent.click(screen.getByRole('tab', { name: 'Comparação' }));
   const selection = screen.getByLabelText('Referência para comparar');
   fireEvent.change(selection, { target: { value: 'base-a' } });
   fireEvent.click(await screen.findByRole('button', { name: 'Detalhar par' }));
   await screen.findByRole('complementary', { name: 'Detalhes da comparação' });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Excluir referência ref-a' }),
-  );
   selection.focus();
   fireEvent.change(selection, { target: { value: 'base-b' } });
   expect(selection).toHaveFocus();
@@ -715,6 +760,7 @@ it('review focus: disappearing clear/delete controls and cancelled picker restor
   clear.focus();
   fireEvent.click(clear);
   expect(search).toHaveFocus();
+  fireEvent.click(screen.getByRole('tab', { name: 'Referências' }));
   const remove = screen.getByRole('button', {
     name: 'Excluir referência ref-focu',
   });
@@ -724,6 +770,8 @@ it('review focus: disappearing clear/delete controls and cancelled picker restor
   expect(
     screen.getByRole('heading', { name: 'Referências preservadas' }),
   ).toHaveFocus();
+  fireEvent.click(screen.getByRole('tab', { name: 'Sessões' }));
+  await screen.findByRole('button', { name: 'Detalhar duplicado row-1' });
   const exporting = screen.getByRole('button', {
     name: 'Exportar JSON sanitizado',
   });
@@ -752,6 +800,7 @@ it('review references: loading and failure do not claim an empty catalog; local 
     />,
   );
   await screen.findAllByText('duplicado');
+  fireEvent.click(screen.getByRole('tab', { name: 'Referências' }));
   expect(
     screen.queryByText('Nenhuma referência salva.'),
   ).not.toBeInTheDocument();
@@ -780,4 +829,89 @@ it('exposes the completed result count as an accessible status', async () => {
   expect(
     screen.getByRole('status', { name: '2 resultados' }),
   ).toHaveTextContent('2 resultados');
+});
+
+it('L06C: fields, offline reason and previous page use stored data', async () => {
+  const offline = {
+    ...rows[0],
+    state: 'OFFLINE',
+    absent_start: '2026-10-26T12:00:00Z',
+    absent_end: '2026-10-26T12:01:00Z',
+  };
+  vi.mocked(api.list).mockImplementation(async (_p, _a, _d, _o, _q, c) =>
+    result({
+      rows: c ? [rows[1]] : [offline],
+      total: 2,
+      next_cursor: c ? undefined : 'second',
+    }),
+  );
+  vi.mocked(api.detail).mockResolvedValue(
+    result({ rows: [offline], total: 1 }),
+  );
+  showPP();
+  await screen.findByText('OFFLINE');
+  expect(
+    screen.getByRole('columnheader', { name: 'Caller ID' }),
+  ).toBeInTheDocument();
+  expect(screen.getByText('1 s')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
+  await screen.findByRole('button', { name: 'Página anterior' });
+  fireEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
+  await screen.findByText('OFFLINE');
+  expect(vi.mocked(api.list).mock.calls.at(-1)?.[5]).toBe('');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  await screen.findByText('Ping indisponível: sessão OFFLINE.');
+  expect(
+    screen.getByRole('button', { name: 'Sondar IP pelo concentrador' }),
+  ).toBeDisabled();
+  expect(
+    screen.queryByText(/Identidade local da linha/),
+  ).not.toBeInTheDocument();
+  expect(diagnosticAPI.ping).not.toHaveBeenCalled();
+});
+it('L06C: comparison identifies each side without UUID labels', async () => {
+  vi.mocked(api.references).mockResolvedValue(
+    result({
+      references: [
+        {
+          reference_id: 'ref',
+          observation_id: 'base',
+          created_at: '2026-10-25T00:00:00Z',
+          count: 1,
+        },
+      ],
+      total: 1,
+    }),
+  );
+  vi.mocked(api.compare).mockResolvedValue(
+    result({
+      deltas: [
+        {
+          base_row: 'internal-base-id',
+          target_row: 'internal-target-id',
+          base: { ...rows[0], login: 'old-login' },
+          target: { ...rows[1], login: 'new-login' },
+          category: 'changed',
+          reason: 'reconnected',
+          address_changed: false,
+          caller_changed: false,
+        },
+      ],
+      total: 1,
+    }),
+  );
+  showPP();
+  await screen.findByRole('button', {
+    name: 'Salvar referência desta leitura',
+  });
+  fireEvent.click(screen.getByRole('tab', { name: 'Comparação' }));
+  fireEvent.change(screen.getByLabelText('Referência para comparar'), {
+    target: { value: 'base' },
+  });
+  await screen.findByText(/old-login · 198.51.100.1/);
+  expect(screen.getByText(/new-login · 198.51.100.1/)).toBeInTheDocument();
+  expect(screen.getByText(/Reconectada/)).toBeInTheDocument();
+  expect(screen.queryByText(/internal-base-id/)).not.toBeInTheDocument();
 });

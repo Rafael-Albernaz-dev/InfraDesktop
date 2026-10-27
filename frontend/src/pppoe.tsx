@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import { pppoeAPI as api } from './presentation';
+import { formatPPUptime } from './pppoe-format';
 import type {
   PPResult,
   PPRow,
@@ -28,7 +29,7 @@ const freshQuery = (): PPQuery => ({
 });
 const message = (r: PPResult) =>
   r.error?.reason === 'operation_receipts'
-    ? 'Limite de 2048 operações atingido. Novas atualizações, referências e exclusões estão bloqueadas. Consultar, comparar e exportar continuam disponíveis.'
+    ? 'Limite de 2048 alterações permanentes atingido. Salvar e excluir referências estão bloqueados. Atualizar leituras, consultar, comparar e exportar continuam disponíveis.'
     : r.error?.reason?.startsWith('references')
       ? 'Limite de referências atingido. Exclua uma referência que não precisa mais.'
       : {
@@ -89,11 +90,12 @@ export function PPPoE({
   const [query, setQuery] = useState(freshQuery),
     [cursor, setCursor] = useState(''),
     [next, setNext] = useState('');
+  const [history, setHistory] = useState<string[]>([]);
   const [selected, select] = useState<PPRow>(),
     [base, setBase] = useState(''),
-    [tab, setTab] = useState<'sessions' | 'compare' | 'catalog' | 'radius'>(
-      'sessions',
-    );
+    [tab, setTab] = useState<
+      'sessions' | 'compare' | 'references' | 'catalog' | 'radius'
+    >('sessions');
   const [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [attempt, setAttempt] = useState(''),
@@ -130,6 +132,7 @@ export function PPPoE({
   if (cursorBase !== base) {
     setCursorBase(base);
     setCursor('');
+    setHistory([]);
   }
 
   const detailIntent = useRef(0);
@@ -398,6 +401,7 @@ export function PPPoE({
               : equipmentMessage(r.data?.job?.code || 'SERVICE_UNAVAILABLE'),
           );
           setCursor('');
+          setHistory([]);
           select(undefined);
           bump((n) => n + 1);
           primary.current?.focus();
@@ -480,6 +484,7 @@ export function PPPoE({
   function change(q: Partial<PPQuery>) {
     setQuery((v) => ({ ...v, ...q }));
     setCursor('');
+    setHistory([]);
     select(undefined);
     setPair(undefined);
   }
@@ -525,6 +530,12 @@ export function PPPoE({
     );
   }
   const disabled = busy || Boolean(job);
+  const offlineCount = current?.offline || 0;
+  let onlineCount =
+    current?.online ?? Math.max(0, (current?.count || 0) - offlineCount);
+  // Pre-007 metadata has rows but no persisted state counters. Its rows are ONLINE.
+  if (onlineCount === 0 && offlineCount === 0 && current?.count)
+    onlineCount = current.count;
   return (
     <section
       className="pppoe-workspace"
@@ -547,7 +558,7 @@ export function PPPoE({
       <div className="pppoe-head">
         <div>
           <h1>Sessões PPPoE</h1>
-          <p>{device.name}</p>
+          <p>{device.name} · Logins dos clientes</p>
         </div>
         {!initialFailed && (tab === 'sessions' || tab === 'compare') && (
           <button
@@ -562,6 +573,30 @@ export function PPPoE({
           </button>
         )}
       </div>
+      <div role="tablist" aria-label="Leitura PPPoE">
+        {(
+          [
+            ['sessions', 'Sessões'],
+            ['compare', 'Comparação'],
+            ['references', 'Referências'],
+            ['catalog', 'VLANs e serviços'],
+            ['radius', 'RADIUS'],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => {
+              setTab(id);
+              setCursor('');
+              setHistory([]);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       {job && (
         <button
           onClick={() => void run(() => api.cancel(profile, activation, job))}
@@ -574,16 +609,17 @@ export function PPPoE({
           Consultar estado novamente
         </button>
       )}
-      {error && (tab === 'sessions' || tab === 'compare') && (
-        <p role="alert">{error}</p>
-      )}
+      {error &&
+        (tab === 'sessions' || tab === 'compare' || tab === 'references') && (
+          <p role="alert">{error}</p>
+        )}
       {notice && <p role="status">{notice}</p>}
       {attempt && (tab === 'sessions' || tab === 'compare') && (
         <p role="status">{attempt}</p>
       )}
       {initialFailed &&
         !loading &&
-        (tab === 'sessions' || tab === 'compare') && (
+        (tab === 'sessions' || tab === 'compare' || tab === 'references') && (
           <button
             className="primary"
             onClick={() => {
@@ -609,10 +645,9 @@ export function PPPoE({
       {current && (tab === 'sessions' || tab === 'compare') && (
         <>
           <p>
-            Última leitura boa:{' '}
+            Leitura de{' '}
             {new Date(current.provenance.ended_at).toLocaleString('pt-BR')} ·{' '}
-            {current.count} sessões · SSH · {current.quality.status}. Leitura
-            por janela, sem snapshot remoto atômico.
+            {current.count} registros
           </p>
           <div className="pppoe-actions">
             <button disabled={disabled} onClick={save}>
@@ -660,28 +695,6 @@ export function PPPoE({
           </div>
         </>
       )}
-      <div role="tablist" aria-label="Leitura PPPoE">
-        {(
-          [
-            ['sessions', 'Sessões'],
-            ['compare', 'Comparação'],
-            ['catalog', 'VLANs e serviços'],
-            ['radius', 'RADIUS'],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => {
-              setTab(id);
-              setCursor('');
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
       {(tab === 'catalog' || tab === 'radius') && (
         <PPPoEDiagnostics
           key={context + '|' + tab}
@@ -696,6 +709,16 @@ export function PPPoE({
         <>
           {tab === 'sessions' ? (
             <>
+              <p className="pppoe-state-explanation">
+                ONLINE: vista na última leitura concluída. OFFLINE: vista antes,
+                mas ausente nessa leitura; mantém os últimos dados até
+                reconectar ou por 24 h.
+              </p>
+              <p>
+                <strong>{onlineCount} ONLINE</strong> ·{' '}
+                <strong>{offlineCount} OFFLINE</strong>
+              </p>
+
               <div className="pppoe-filters">
                 <label>
                   Buscar sessões
@@ -739,6 +762,7 @@ export function PPPoE({
                     onClick={() => {
                       setQuery(freshQuery());
                       setCursor('');
+                      setHistory([]);
                       searchControl.current?.focus();
                     }}
                   >
@@ -759,6 +783,9 @@ export function PPPoE({
                     <tr>
                       <th>Login</th>
                       <th>IP</th>
+                      <th>Caller ID</th>
+                      <th>Tempo conectado</th>
+                      <th>Estado</th>
                       <th>Duplicidade</th>
                       <th>Detalhe</th>
                     </tr>
@@ -768,6 +795,9 @@ export function PPPoE({
                       <tr key={row.row_id}>
                         <td>{row.login || 'Indisponível'}</td>
                         <td>{row.address || 'Indisponível'}</td>
+                        <td>{row.caller_id || 'Indisponível'}</td>
+                        <td>{formatPPUptime(row.uptime)}</td>
+                        <td>{row.state || 'ONLINE'}</td>
                         <td>
                           {row.duplicates > 1
                             ? row.duplicates + ' sessões do mesmo login'
@@ -776,10 +806,7 @@ export function PPPoE({
                         <td>
                           <button
                             aria-label={
-                              'Detalhar ' +
-                              row.login +
-                              ' ' +
-                              row.row_id.slice(0, 8)
+                              'Detalhar ' + row.login + ' ' + row.remote_id
                             }
                             onClick={(event) => {
                               detailTrigger.current = event.currentTarget;
@@ -821,13 +848,25 @@ export function PPPoE({
                   </h2>
                   <p>IP: {selected.address || 'Indisponível'}</p>
                   <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
-                  <p>
-                    Tempo conectado:{' '}
-                    {selected.uptime.known
-                      ? Math.floor(selected.uptime.min / 1e9) + ' s'
-                      : 'Indisponível'}
-                  </p>
-                  <p>Identidade local da linha: {selected.row_id}</p>
+                  <p>Tempo conectado: {formatPPUptime(selected.uptime)}</p>
+                  <p>Estado: {selected.state || 'ONLINE'}</p>
+                  <p>ID no roteador: {selected.remote_id || 'Indisponível'}</p>
+                  <p>Session ID: {selected.session_id || 'Indisponível'}</p>
+                  {selected.state === 'OFFLINE' && (
+                    <p>
+                      Deixou de ser vista entre{' '}
+                      {selected.absent_start
+                        ? new Date(selected.absent_start).toLocaleString(
+                            'pt-BR',
+                          )
+                        : 'instante desconhecido'}{' '}
+                      e{' '}
+                      {selected.absent_end
+                        ? new Date(selected.absent_end).toLocaleString('pt-BR')
+                        : 'instante desconhecido'}
+                      . Últimos dados observados.
+                    </p>
+                  )}
                   <PPPoEPing
                     key={current.observation_id + '|' + selected.row_id}
                     profile={profile}
@@ -835,8 +874,11 @@ export function PPPoE({
                     device={device}
                     observation={current.observation_id}
                     row={selected.row_id}
-                    blocked={disabled}
+                    blocked={disabled || selected.state === 'OFFLINE'}
                   />
+                  {selected.state === 'OFFLINE' && (
+                    <p>Ping indisponível: sessão OFFLINE.</p>
+                  )}
                   <button
                     onClick={() => {
                       ++detailIntent.current;
@@ -858,6 +900,7 @@ export function PPPoE({
                   onChange={(e) => {
                     setBase(e.target.value);
                     setCursor('');
+                    setHistory([]);
                   }}
                 >
                   <option value="">Selecione uma referência</option>
@@ -894,8 +937,17 @@ export function PPPoE({
               {deltas.map((d, i) => (
                 <div key={d.base_row + '|' + d.target_row + '|' + i}>
                   <span>
-                    {d.base_row?.slice(0, 8) || '—'} →{' '}
-                    {d.target_row?.slice(0, 8) || '—'} · {category[d.category]}
+                    {d.base
+                      ? `${d.base.login} · ${d.base.address || 'IP indisponível'} · ${d.base.caller_id || 'Caller ID indisponível'} · ${formatPPUptime(d.base.uptime)} · ${d.base.state || 'ONLINE'}`
+                      : 'Ausente na referência'}{' '}
+                    →{' '}
+                    {d.target
+                      ? `${d.target.login} · ${d.target.address || 'IP indisponível'} · ${d.target.caller_id || 'Caller ID indisponível'} · ${formatPPUptime(d.target.uptime)} · ${d.target.state || 'ONLINE'}`
+                      : 'Ausente na atual'}{' '}
+                    ·{' '}
+                    {d.reason === 'reconnected'
+                      ? 'Reconectada'
+                      : category[d.category]}
                   </span>
                   {d.address_changed ? ' · IP alterado' : ''}
                   {d.caller_changed ? ' · Caller ID alterado' : ''}
@@ -921,7 +973,10 @@ export function PPPoE({
                       <p>
                         Caller ID: {pair[side]!.caller_id || 'Indisponível'}
                       </p>
-                      <p>Linha: {pair[side]!.row_id}</p>
+                      <p>
+                        Tempo conectado: {formatPPUptime(pair[side]!.uptime)}
+                      </p>
+                      <p>Estado: {pair[side]!.state || 'ONLINE'}</p>
                     </>
                   ) : (
                     <p>Ausente neste conjunto.</p>
@@ -940,6 +995,17 @@ export function PPPoE({
             </aside>
           )}
           <div className="pppoe-actions">
+            {history.length > 0 && (
+              <button
+                onClick={() => {
+                  setCursor(history[history.length - 1]);
+                  setHistory(history.slice(0, -1));
+                  searchControl.current?.focus();
+                }}
+              >
+                Página anterior
+              </button>
+            )}
             {pageState === 'ready' && (
               <span role="status" aria-label={`${total} resultados`}>
                 {total} resultados
@@ -949,6 +1015,7 @@ export function PPPoE({
               <button
                 onClick={() => {
                   setCursor('');
+                  setHistory([]);
                   searchControl.current?.focus();
                 }}
               >
@@ -958,6 +1025,7 @@ export function PPPoE({
             {pageState === 'ready' && next && (
               <button
                 onClick={() => {
+                  setHistory((v) => [...v, cursor]);
                   setCursor(next);
                   select(undefined);
                   searchControl.current?.focus();
@@ -969,8 +1037,20 @@ export function PPPoE({
           </div>
         </>
       )}
-      {(tab === 'sessions' || tab === 'compare') && (
+      {tab === 'references' && (
         <>
+          {current && (
+            <p>
+              Leitura atual:{' '}
+              {new Date(current.provenance.ended_at).toLocaleString('pt-BR')} ·{' '}
+              {current.count} registros
+            </p>
+          )}
+          {current && (
+            <button className="primary" disabled={disabled} onClick={save}>
+              Salvar referência desta leitura
+            </button>
+          )}
           <h2 tabIndex={-1} ref={referencesHeading}>
             Referências preservadas
           </h2>
