@@ -2363,3 +2363,22 @@ textarea:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+.pppoe-read-panel > button {
+  font: inherit;
+  color: var(--text);
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.pppoe-read-panel > button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.pppoe-read-panel > button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

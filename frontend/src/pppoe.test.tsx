@@ -14,6 +14,13 @@ import {
 import type { PPResult, PPRow } from './presentation';
 import type { Device } from './equipment-api';
 vi.mock('./presentation', () => ({
+  pppoeReadAPI: {
+    start: vi.fn(),
+    status: vi.fn(),
+    cancel: vi.fn(),
+    cancelOperation: vi.fn(),
+    page: vi.fn(),
+  },
   pppoeDiagnosticAPI: {
     current: vi.fn(),
     list: vi.fn(),
@@ -24,6 +31,7 @@ vi.mock('./presentation', () => ({
     cancel: vi.fn(),
   },
   pppoeAPI: {
+    groups: vi.fn(),
     current: vi.fn(),
     references: vi.fn(),
     list: vi.fn(),
@@ -35,6 +43,7 @@ vi.mock('./presentation', () => ({
     remove: vi.fn(),
     compare: vi.fn(),
     export: vi.fn(),
+    exportOperational: vi.fn(),
   },
 }));
 const device = {
@@ -68,6 +77,7 @@ const result = (data: PPResult['data'] = { total: 0 }): PPResult => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(api.groups).mockResolvedValue(result({ groups: [], total: 0 }));
   vi.mocked(diagnosticAPI.current).mockResolvedValue(result());
   vi.mocked(diagnosticAPI.list).mockResolvedValue(result());
   vi.mocked(api.current).mockResolvedValue(result({ current: obs, total: 2 }));
@@ -75,6 +85,43 @@ beforeEach(() => {
     result({ references: [], total: 0 }),
   );
   vi.mocked(api.list).mockResolvedValue(result({ rows, total: 2 }));
+});
+
+it('budget-omitted context preserves sessions, explains detail and avoids unknown groups', async () => {
+  vi.mocked(api.current).mockResolvedValue(
+    result({ current: { ...obs, context_omitted: true }, total: 2 }),
+  );
+  vi.mocked(api.detail).mockResolvedValue(
+    result({ rows: [rows[0]], total: 1 }),
+  );
+  render(
+    <PPPoE
+      profile="company"
+      activation="active"
+      device={device}
+      back={vi.fn()}
+    />,
+  );
+  await screen.findByText(
+    'Contexto não incluído por limite. As sessões e seus estados foram preservados.',
+  );
+  expect(
+    await screen.findAllByRole('button', { name: /^Detalhar duplicado/ }),
+  ).toHaveLength(2);
+  expect(api.groups).not.toHaveBeenCalled();
+  expect(screen.queryByText('Não associado')).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  await screen.findByText(
+    'Contexto não incluído por limite. VLAN, IPv6 e plano indisponíveis nesta leitura.',
+  );
+  expect(
+    screen.queryByText(
+      'Túnel: não associado. Dados de VLAN, IPv6 e plano indisponíveis.',
+    ),
+  ).not.toBeInTheDocument();
+  expect(api.start).not.toHaveBeenCalled();
 });
 function deferredPP() {
   let resolve!: (r: PPResult) => void;
@@ -914,4 +961,129 @@ it('L06C: comparison identifies each side without UUID labels', async () => {
   expect(screen.getByText(/new-login · 198.51.100.1/)).toBeInTheDocument();
   expect(screen.getByText(/Reconectada/)).toBeInTheDocument();
   expect(screen.queryByText(/internal-base-id/)).not.toBeInTheDocument();
+});
+
+it('L06D-S1: stable context shows negotiated IPv6 and unavailable fields without invented zero', async () => {
+  const detail = {
+    ...rows[0],
+    context: {
+      association: 'associated',
+      service: 'service',
+      vlan: 100,
+      ipv6: true,
+      pd_status: 'none',
+      profile: 'local-profile',
+      secret_state: 'active',
+      upload_limit: '5000000',
+      download_limit: '10000000',
+    },
+  };
+  vi.mocked(api.detail).mockResolvedValue(result({ rows: [detail], total: 1 }));
+  vi.mocked(api.groups).mockResolvedValue(
+    result({ groups: [{ service: 'service', vlan: 100, count: 2 }], total: 1 }),
+  );
+  showPP();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  expect(await screen.findByText('Sim')).toBeInTheDocument();
+  expect(screen.getByText('Sem prefixo delegado')).toBeInTheDocument();
+  expect(screen.getByText('5000000 / 10000000 bit/s')).toBeInTheDocument();
+  expect(screen.getByText('100 · service: 2')).toBeInTheDocument();
+});
+
+it.each([
+  ['disabled', 'Secret local desativado: a autenticação não vem dele'],
+  ['ambiguous', 'Vários secrets locais ativos: perfil ambíguo'],
+  ['none', 'Nenhum secret local para este login'],
+  ['unavailable', 'Não lido ou falha na leitura do secret local'],
+  ['', 'Não lido ou falha na leitura do secret local'],
+])(
+  'L06D ajuste2: %s never presents an unverified local profile',
+  async (state, label) => {
+    vi.mocked(api.detail).mockResolvedValue(
+      result({
+        rows: [
+          {
+            ...rows[0],
+            context: {
+              association: 'associated',
+              secret_state: state,
+              profile: 'disabled-default-canary',
+              upload_limit: '5000000',
+              download_limit: '10000000',
+            },
+          },
+        ],
+        total: 1,
+      }),
+    );
+    showPP();
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+    );
+    expect(await screen.findByText(label)).toBeInTheDocument();
+    expect(
+      screen.queryByText('disabled-default-canary'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Perfil do secret ativo'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Limite aplicado (fila dinâmica) — upload / download'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('5000000 / 10000000 bit/s')).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: 'Ver evidência do secret' }),
+    ).toHaveLength(1);
+  },
+);
+
+it('L06D-H-D10: a concentrator with no stored observation can request fresh top', async () => {
+  vi.mocked(api.current).mockResolvedValue(result({ total: 0 }));
+  showPP();
+  await screen.findByText(/Nenhuma leitura de sessões disponível/);
+  expect(
+    screen.getAllByRole('button', { name: 'Buscar top consumo' }),
+  ).toHaveLength(1);
+  expect(
+    screen.queryByRole('button', { name: 'Medir banda da página' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Salvar referência desta leitura' }),
+  ).not.toBeInTheDocument();
+});
+
+it('L06D-S7: operational CSV uses the exact observation and returns focus after native cancellation', async () => {
+  vi.mocked(api.exportOperational).mockResolvedValue('EXPORT_CANCELLED');
+  render(
+    <PPPoE
+      profile="company"
+      activation="active"
+      device={device}
+      back={vi.fn()}
+    />,
+  );
+  const action = await screen.findByRole('button', {
+    name: 'Exportar CSV operacional',
+  });
+  expect(
+    screen.getByText('O CSV contém dados identificáveis de assinantes.'),
+  ).toBeInTheDocument();
+  action.focus();
+  fireEvent.click(action);
+  await waitFor(() =>
+    expect(api.exportOperational).toHaveBeenCalledWith(
+      'company',
+      'active',
+      device.id,
+      obs.observation_id,
+    ),
+  );
+  await waitFor(() => expect(action).toBeEnabled());
+  expect(action).toHaveFocus();
+  expect(
+    screen.queryByText('Arquivo CSV operacional salvo.'),
+  ).not.toBeInTheDocument();
+  expect(api.export).not.toHaveBeenCalled();
 });

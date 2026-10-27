@@ -1,5 +1,10 @@
 import {
   StartPPPoECollection,
+  StartPPPoERead,
+  PPPoEReadStatus,
+  CancelPPPoERead,
+  CancelPPPoEReadOperation,
+  PPPoEReadPage,
   StartPPPoECatalog,
   StartPPPoERadius,
   StartPPPoEPing,
@@ -12,12 +17,14 @@ import {
   GetPPPoECurrent,
   GetPPPoEObservation,
   ListPPPoESessions,
+  PPPoEContextCounts,
   GetPPPoESession,
   SavePPPoEReference,
   ListPPPoEReferences,
   DeletePPPoEReference,
   ComparePPPoE,
   ExportPPPoE,
+  ExportPPPoEOperational,
   Status,
   Register,
   Login,
@@ -161,7 +168,22 @@ export type PPQuery = {
   category: string;
 };
 export type PPInterval = { min: number; max: number; known: boolean };
+export type PPContext = {
+  association: string;
+  service?: string;
+  interface?: string;
+  vlan?: number;
+  ipv6?: boolean;
+  delegated_prefix?: string;
+  pd_status?: string;
+  profile?: string;
+  secret_state?: string;
+  upload_limit?: string;
+  download_limit?: string;
+};
+export type PPGroup = { service: string; vlan?: number; count: number };
 export type PPRow = {
+  context?: PPContext;
   state?: string;
   absent_start?: string;
   absent_end?: string;
@@ -175,6 +197,7 @@ export type PPRow = {
   duplicates: number;
 };
 export type PPObservation = {
+  context_omitted?: boolean;
   online?: number;
   offline?: number;
   observation_id: string;
@@ -198,6 +221,57 @@ export type PPDelta = {
   address_changed: boolean;
   caller_changed: boolean;
 };
+export type PPRate = { min: number; max: number };
+export type PPReadRow = {
+  secret?: {
+    disabled?: boolean;
+    service?: string;
+    profile?: string;
+    last_logged_out?: string;
+    last_caller_id?: string;
+    last_disconnect_reason?: string;
+    comment?: string;
+  };
+  kind: string;
+  row_id?: string;
+  login?: string;
+  name?: string;
+  download?: PPRate;
+  upload?: PPRate;
+  uptime: PPInterval;
+  at?: string;
+  event?: string;
+  used?: number;
+  size?: number;
+  tx?: PPRate;
+  rx?: PPRate;
+  running?: boolean;
+  disabled?: boolean;
+  rx_errors?: string;
+  tx_errors?: string;
+  rx_drops?: string;
+  tx_drops?: string;
+};
+export type PPReadResult = {
+  pools_available?: boolean;
+  uplinks_available?: boolean;
+  pool_total?: number;
+  uplink_total?: number;
+  scope: string;
+  started_at: string;
+  ended_at: string;
+  duration_ns: number;
+  rows: PPReadRow[];
+  remote_version?: string;
+  cost?: {
+    ssh_commands: number;
+    ssh_bytes: number;
+    first_tunnels: number;
+    last_tunnels: number;
+    cpu_start?: number;
+    cpu_end?: number;
+  };
+};
 export type PPResult = {
   code: string;
   profile_id: string;
@@ -209,6 +283,8 @@ export type PPResult = {
     diagnostic?: PDDiagnostic;
     diagnostic_rows?: PDRow[];
     rows?: PPRow[];
+    groups?: PPGroup[];
+    read?: PPReadResult;
     references?: PPReference[];
     deltas?: PPDelta[];
     total: number;
@@ -322,6 +398,7 @@ const ppBindings = {
       c,
     ),
   detail: GetPPPoESession,
+  groups: PPPoEContextCounts,
   save: SavePPPoEReference,
   references: ListPPPoEReferences,
   remove: DeletePPPoEReference,
@@ -354,4 +431,24 @@ export const pppoeAPI: {
   [K in keyof typeof ppBindings]: (
     ...args: Parameters<(typeof ppBindings)[K]>
   ) => Promise<PPResult>;
-} & { export: typeof ExportPPPoE } = { ...ppBindings, export: ExportPPPoE };
+} & {
+  export: typeof ExportPPPoE;
+  exportOperational: typeof ExportPPPoEOperational;
+} = {
+  ...ppBindings,
+  export: ExportPPPoE,
+  exportOperational: ExportPPPoEOperational,
+};
+
+const readBindings = {
+  start: StartPPPoERead,
+  status: PPPoEReadStatus,
+  cancel: CancelPPPoERead,
+  cancelOperation: CancelPPPoEReadOperation,
+  page: PPPoEReadPage,
+};
+export const pppoeReadAPI: {
+  [K in keyof typeof readBindings]: (
+    ...args: Parameters<(typeof readBindings)[K]>
+  ) => Promise<PPResult>;
+} = readBindings;

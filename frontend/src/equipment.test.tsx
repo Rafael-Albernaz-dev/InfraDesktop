@@ -10,8 +10,16 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { Equipment } from './equipment';
 import { Desktop, Statusbar } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
+import { pppoeReadAPI as readAPI } from './presentation';
 import type { EquipmentResult, Device } from './equipment-api';
 vi.mock('./presentation', () => ({
+  pppoeReadAPI: {
+    start: vi.fn(),
+    status: vi.fn(),
+    cancel: vi.fn(),
+    cancelOperation: vi.fn(),
+    page: vi.fn(),
+  },
   equipmentAPI: {
     list: vi.fn(),
     enrollmentStatus: vi.fn(),
@@ -1724,4 +1732,100 @@ it('L06C: credentials remain accessible for an empty company', async () => {
   );
   fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
   await screen.findByRole('dialog');
+});
+
+it('L06D-S6: concentrator detail exposes one health entry without a saved reading', async () => {
+  vi.mocked(readAPI.start).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'X',
+    activation_id: 'a',
+    data: { total: 0, job: { id: 'health-job', state: 'RUNNING', code: 'OK' } },
+  });
+  vi.mocked(readAPI.status)
+    .mockResolvedValueOnce({
+      code: 'OK',
+      profile_id: 'X',
+      activation_id: 'a',
+      data: {
+        total: 1,
+        job: { id: 'health-job', state: 'SUCCEEDED', code: 'OK' },
+        read: {
+          scope: 'health',
+          pools_available: true,
+          uplinks_available: true,
+          pool_total: 1,
+          uplink_total: 0,
+          started_at: '2026-10-27T00:00:00Z',
+          ended_at: '2026-10-27T00:00:02Z',
+          duration_ns: 2e9,
+          rows: [
+            {
+              kind: 'pool',
+              name: 'pool-from-real-composition',
+              used: 0,
+              size: 3,
+              uptime: { known: false, min: 0, max: 0 },
+            },
+          ],
+        },
+      },
+    })
+    .mockResolvedValue({
+      code: 'OK',
+      profile_id: 'X',
+      activation_id: 'a',
+      data: {
+        total: 0,
+        job: { id: 'health-job', state: 'FAILED', code: 'PARTIAL' },
+      },
+    });
+
+  vi.mocked(api.list).mockResolvedValue(
+    data([{ ...device, fingerprint: 'pinned' }]),
+  );
+  render(
+    <Equipment
+      profile="X"
+      activation="a"
+      connected
+      createRequest={0}
+      targetID={device.id}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      screen.getAllByRole('button', { name: 'Consultar pools e interfaces' }),
+    ).toHaveLength(1),
+  );
+  expect(
+    screen.getByRole('button', { name: 'Consultar pools e interfaces' }),
+  ).toBeEnabled();
+  expect(
+    screen.queryByRole('button', { name: 'Medir banda da página' }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar pools e interfaces' }),
+  );
+  expect(
+    await screen.findByText('pool-from-real-composition'),
+  ).toBeInTheDocument();
+  expect(readAPI.start).toHaveBeenCalledWith(
+    'X',
+    'a',
+    device.id,
+    expect.any(String),
+    'health',
+    '',
+    [],
+    device.revision,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Consultar pools e interfaces' }),
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Não foi possível concluir esta leitura. Tente novamente.',
+  );
+  expect(
+    screen.queryByText('pool-from-real-composition'),
+  ).not.toBeInTheDocument();
 });

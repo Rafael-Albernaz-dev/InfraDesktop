@@ -118,3 +118,15 @@
   overflow-wrap: anywhere;
   font-weight: 500;
 }
+
+/* Selected context/evidence keeps each label beside its own value. */
+.pppoe-context-values {
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 8px 16px;
+  align-items: start;
+}
+.pppoe-context-values dt,
+.pppoe-context-values dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

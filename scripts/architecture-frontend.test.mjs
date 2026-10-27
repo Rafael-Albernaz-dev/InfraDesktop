@@ -181,7 +181,7 @@ for (const code of [
 }
 
 test('accepts nominal equipment bindings and rejects a secret getter', () => {
-  const good=runGuard({'presentation.ts':"import {ListEquipment, GetEquipment, SaveEquipment, SetEquipmentActive, ListCredentials, PutCredential, InspectTrust, ConfirmTrust, ResetTrust, StartQuery, QueryStatus, CancelQuery} from '../wailsjs/go/presentation/App';"});
+  const good=runGuard({'presentation.ts':"import {ListEquipment, GetEquipment, SaveEquipment, SetEquipmentActive, ListCredentials, PutCredential, InspectTrust, ConfirmTrust, ResetTrust, StartQuery, QueryStatus, CancelQuery, StartPPPoERead, PPPoEReadStatus, CancelPPPoERead, CancelPPPoEReadOperation, PPPoEReadPage, PPPoEContextCounts, ExportPPPoEOperational} from '../wailsjs/go/presentation/App';"});
   assert.equal(good.status,0,good.output);
   const bad=runGuard({'presentation.ts':"import {GetSecret} from '../wailsjs/go/presentation/App';"});assert.notEqual(bad.status,0);
 });

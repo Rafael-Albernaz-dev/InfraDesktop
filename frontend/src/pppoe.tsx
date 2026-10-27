@@ -14,11 +14,16 @@ import type {
   PPReference,
   PPDelta,
   PPQuery,
+  PPGroup,
 } from './presentation';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import './pppoe.css';
-import { PPPoEDiagnostics, PPPoEPing } from './pppoe-diagnostics';
+import {
+  PPPoEDiagnostics,
+  PPPoEPing,
+  PPPoEReadPanel,
+} from './pppoe-diagnostics';
 
 const freshQuery = (): PPQuery => ({
   search: '',
@@ -77,8 +82,9 @@ export function PPPoE({
   const searchControl = useRef<HTMLInputElement>(null);
   const referencesHeading = useRef<HTMLHeadingElement>(null);
   const exportControl = useRef<HTMLButtonElement>(null);
+  const csvExportControl = useRef<HTMLButtonElement>(null);
   const removedFocus = useRef('');
-  const exportFocus = useRef(false);
+  const exportFocus = useRef<'sanitized' | 'operational' | ''>('');
   const [referencesState, setReferencesState] = useState<
     'loading' | 'ready' | 'error'
   >('loading');
@@ -117,8 +123,12 @@ export function PPPoE({
   }, [refs]);
   useLayoutEffect(() => {
     if (!busy && exportFocus.current) {
-      exportFocus.current = false;
-      exportControl.current?.focus();
+      const control =
+        exportFocus.current === 'operational'
+          ? csvExportControl
+          : exportControl;
+      exportFocus.current = '';
+      control.current?.focus();
     }
   }, [busy]);
   const context = [profile, activation, device.id].join('|');
@@ -642,6 +652,29 @@ export function PPPoE({
             concentrador.
           </p>
         )}
+      {tab === 'sessions' && !loading && !initialFailed && (
+        <PPPoEReadPanel
+          key={
+            (current?.observation_id || 'none') +
+            '|' +
+            (selected?.row_id || rows.map((r) => r.row_id).join(','))
+          }
+          profile={profile}
+          activation={activation}
+          device={device}
+          observation={current?.observation_id || ''}
+          rows={
+            current
+              ? (selected ? [selected] : rows)
+                  .filter((r) => r.state !== 'OFFLINE')
+                  .map((r) => r.row_id)
+              : []
+          }
+          blocked={disabled}
+          allowTop
+          logRow={selected?.row_id}
+        />
+      )}
       {current && (tab === 'sessions' || tab === 'compare') && (
         <>
           <p>
@@ -649,6 +682,21 @@ export function PPPoE({
             {new Date(current.provenance.ended_at).toLocaleString('pt-BR')} ·{' '}
             {current.count} registros
           </p>
+          {current.context_omitted && (
+            <p role="status">
+              Contexto não incluído por limite. As sessões e seus estados foram
+              preservados.
+            </p>
+          )}
+          {tab === 'sessions' && !current.context_omitted && (
+            <ContextCounts
+              key={current.observation_id}
+              profile={profile}
+              activation={activation}
+              device={device.id}
+              observation={current.observation_id}
+            />
+          )}
           <div className="pppoe-actions">
             <button disabled={disabled} onClick={save}>
               Salvar referência desta leitura
@@ -657,7 +705,7 @@ export function PPPoE({
               ref={exportControl}
               disabled={busy}
               onClick={() => {
-                exportFocus.current = true;
+                exportFocus.current = 'sanitized';
                 setNotice('');
                 setError('');
                 const g = life.current.generation;
@@ -692,6 +740,44 @@ export function PPPoE({
             >
               Exportar JSON sanitizado
             </button>
+            <button
+              ref={csvExportControl}
+              disabled={busy}
+              onClick={() => {
+                exportFocus.current = 'operational';
+                setNotice('');
+                setError('');
+                const g = life.current.generation;
+                setBusy(true);
+                void api
+                  .exportOperational(
+                    profile,
+                    activation,
+                    device.id,
+                    current.observation_id,
+                  )
+                  .then((code) => {
+                    if (g === life.current.generation)
+                      setNotice(
+                        code === 'OK'
+                          ? 'Arquivo CSV operacional salvo.'
+                          : code === 'EXPORT_CANCELLED'
+                            ? ''
+                            : 'Exportação: ' + code,
+                      );
+                  })
+                  .catch(() => {
+                    if (g === life.current.generation)
+                      setError('Falha na exportação.');
+                  })
+                  .finally(() => {
+                    if (g === life.current.generation) setBusy(false);
+                  });
+              }}
+            >
+              Exportar CSV operacional
+            </button>
+            <p>O CSV contém dados identificáveis de assinantes.</p>
           </div>
         </>
       )}
@@ -786,6 +872,7 @@ export function PPPoE({
                       <th>Caller ID</th>
                       <th>Tempo conectado</th>
                       <th>Estado</th>
+                      <th>VLAN / serviço / interface</th>
                       <th>Duplicidade</th>
                       <th>Detalhe</th>
                     </tr>
@@ -798,6 +885,13 @@ export function PPPoE({
                         <td>{row.caller_id || 'Indisponível'}</td>
                         <td>{formatPPUptime(row.uptime)}</td>
                         <td>{row.state || 'ONLINE'}</td>
+                        <td>
+                          {row.context?.association === 'associated'
+                            ? `${row.context.vlan ?? 'VLAN indisponível'} / ${row.context.service || 'Serviço indisponível'} / ${row.context.interface || 'Interface indisponível'}`
+                            : current.context_omitted
+                              ? 'Contexto não incluído por limite'
+                              : 'Não associado'}
+                        </td>
                         <td>
                           {row.duplicates > 1
                             ? row.duplicates + ' sessões do mesmo login'
@@ -850,6 +944,10 @@ export function PPPoE({
                   <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
                   <p>Tempo conectado: {formatPPUptime(selected.uptime)}</p>
                   <p>Estado: {selected.state || 'ONLINE'}</p>
+                  <SessionContext
+                    row={selected}
+                    omitted={current?.context_omitted}
+                  />
                   <p>ID no roteador: {selected.remote_id || 'Indisponível'}</p>
                   <p>Session ID: {selected.session_id || 'Indisponível'}</p>
                   {selected.state === 'OFFLINE' && (
@@ -1088,6 +1186,124 @@ export function PPPoE({
             </div>
           ))}
         </>
+      )}
+    </section>
+  );
+}
+
+function SessionContext({ row, omitted }: { row: PPRow; omitted?: boolean }) {
+  const c = row.context;
+  if (!c && omitted)
+    return (
+      <p>
+        Contexto não incluído por limite. VLAN, IPv6 e plano indisponíveis nesta
+        leitura.
+      </p>
+    );
+  if (!c || c.association !== 'associated')
+    return (
+      <p>Túnel: não associado. Dados de VLAN, IPv6 e plano indisponíveis.</p>
+    );
+  return (
+    <dl className="pppoe-diagnostic-values pppoe-context-values">
+      <dt>Interface de origem</dt>
+      <dd>{c.interface || 'Indisponível'}</dd>
+      <dt>VLAN</dt>
+      <dd>{c.vlan ?? 'Indisponível'}</dd>
+      <dt>Serviço</dt>
+      <dd>{c.service || 'Indisponível'}</dd>
+      <dt>IPv6 negociado</dt>
+      <dd>{c.ipv6 === undefined ? 'Indisponível' : c.ipv6 ? 'Sim' : 'Não'}</dd>
+      <dt>Prefixo delegado</dt>
+      <dd>
+        {c.delegated_prefix ||
+          (c.pd_status === 'none' ? 'Sem prefixo delegado' : 'Indisponível')}
+      </dd>
+      <dt>Secret local</dt>
+      <dd>
+        {(
+          {
+            active: 'Um secret local ativo',
+            disabled: 'Secret local desativado: a autenticação não vem dele',
+            ambiguous: 'Vários secrets locais ativos: perfil ambíguo',
+            none: 'Nenhum secret local para este login',
+          } as Record<string, string>
+        )[c.secret_state || ''] ||
+          'Não lido ou falha na leitura do secret local'}
+      </dd>
+      {c.secret_state === 'active' && (
+        <>
+          <dt>Perfil do secret ativo</dt>
+          <dd>{c.profile || 'Indisponível'}</dd>
+        </>
+      )}
+      <dt>Limite aplicado (fila dinâmica) — upload / download</dt>
+      <dd>
+        {c.upload_limit !== undefined && c.download_limit !== undefined
+          ? `${c.upload_limit} / ${c.download_limit} bit/s`
+          : 'Indisponível'}
+      </dd>
+    </dl>
+  );
+}
+function ContextCounts({
+  profile,
+  activation,
+  device,
+  observation,
+}: {
+  profile: string;
+  activation: string;
+  device: string;
+  observation: string;
+}) {
+  const [groups, setGroups] = useState<PPGroup[]>([]),
+    [cursor, setCursor] = useState(''),
+    [next, setNext] = useState(''),
+    [error, setError] = useState('');
+  useEffect(() => {
+    let current = true;
+    void api
+      .groups(profile, activation, device, observation, cursor)
+      .then((r) => {
+        if (!current) return;
+        if (
+          r.profile_id !== profile ||
+          r.activation_id !== activation ||
+          r.code !== 'OK'
+        ) {
+          setError('Contagem por VLAN e serviço indisponível.');
+          return;
+        }
+        setGroups(r.data?.groups || []);
+        setNext(r.data?.next_cursor || '');
+        setError('');
+      })
+      .catch(() => {
+        if (current) setError('Contagem por VLAN e serviço indisponível.');
+      });
+    return () => {
+      current = false;
+    };
+  }, [profile, activation, device, observation, cursor]);
+  return (
+    <section aria-label="Sessões por VLAN e serviço">
+      <h3>Sessões por VLAN e serviço</h3>
+      {error ? (
+        <p role="status">{error}</p>
+      ) : (
+        <ul>
+          {groups.map((g, i) => (
+            <li key={i}>
+              {g.vlan ?? 'VLAN indisponível'} ·{' '}
+              {g.service || 'Serviço indisponível'}: {g.count}
+            </li>
+          ))}
+        </ul>
+      )}
+      {next && <button onClick={() => setCursor(next)}>Próximos grupos</button>}
+      {cursor && (
+        <button onClick={() => setCursor('')}>Primeiros grupos</button>
       )}
     </section>
   );

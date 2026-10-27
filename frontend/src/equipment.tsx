@@ -1,3 +1,4 @@
+import { PPPoEReadPanel } from './pppoe-diagnostics';
 import { PPPoE } from './pppoe';
 import {
   createContext,
@@ -1056,6 +1057,22 @@ export function Equipment({
                       selected.role === 'concentrator'
                         ? () => setPPOpen(true)
                         : undefined
+                    }
+                  />
+                )}
+                {detailOpen && selected.role === 'concentrator' && (
+                  <PPPoEReadPanel
+                    profile={profile}
+                    activation={activation}
+                    device={selected}
+                    observation=""
+                    rows={[]}
+                    health
+                    blocked={
+                      locked ||
+                      !vault ||
+                      !selected.active ||
+                      !selected.fingerprint
                     }
                   />
                 )}
