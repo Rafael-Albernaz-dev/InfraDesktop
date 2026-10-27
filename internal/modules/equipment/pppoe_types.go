@@ -61,6 +61,7 @@ type PPQuality struct {
 	MembershipChecked bool   `json:"membership_checked"`
 }
 type PPRow struct {
+	Context     *PPContext `json:"context,omitempty"`
 	State       string     `json:"state,omitempty"`
 	AbsentStart string     `json:"absent_start,omitempty"`
 	AbsentEnd   string     `json:"absent_end,omitempty"`
@@ -75,16 +76,19 @@ type PPRow struct {
 	Duplicates  int        `json:"duplicates"`
 }
 type PPObservation struct {
-	Online     int          `json:"online"`
-	Offline    int          `json:"offline"`
-	ID         string       `json:"observation_id"`
-	DeviceID   string       `json:"device_id"`
-	Scope      string       `json:"scope"`
-	Provenance PPProvenance `json:"provenance"`
-	Quality    PPQuality    `json:"quality"`
-	Count      int          `json:"count"`
-	Bytes      int          `json:"bytes"`
-	Rows       []PPRow      `json:"-"`
+	// Some optional context was omitted by a wire, row, observation or company
+	// budget. The complete base sessions remain authoritative, including absences.
+	ContextOmitted bool         `json:"context_omitted,omitempty"`
+	Online         int          `json:"online"`
+	Offline        int          `json:"offline"`
+	ID             string       `json:"observation_id"`
+	DeviceID       string       `json:"device_id"`
+	Scope          string       `json:"scope"`
+	Provenance     PPProvenance `json:"provenance"`
+	Quality        PPQuality    `json:"quality"`
+	Count          int          `json:"count"`
+	Bytes          int          `json:"bytes"`
+	Rows           []PPRow      `json:"-"`
 }
 type PPAttempt struct {
 	Operation         string    `json:"operation_id,omitempty"`
@@ -114,6 +118,7 @@ type PPQuery struct {
 	Category   string `json:"category,omitempty"`
 }
 type PPInput struct {
+	RowIDs        []string `json:"row_ids,omitempty"`
 	Scope         string   `json:"scope,omitempty"`
 	DiagnosticID  string   `json:"diagnostic_id,omitempty"`
 	WorkerEpoch   string   `json:"-"`
@@ -167,7 +172,14 @@ type PPExportDelta struct {
 	AddressChanged bool   `json:"address_changed"`
 	CallerChanged  bool   `json:"caller_changed"`
 }
+type PPGroup struct {
+	Service string `json:"service"`
+	VLAN    *int   `json:"vlan,omitempty"`
+	Count   int    `json:"count"`
+}
 type PPView struct {
+	Read              *PPReadResult   `json:"read,omitempty"`
+	Groups            []PPGroup       `json:"groups,omitempty"`
 	Diagnostic        *PDDiagnostic   `json:"diagnostic,omitempty"`
 	DiagnosticRows    []PDRow         `json:"diagnostic_rows,omitempty"`
 	ExportDiagnostics []PDRow         `json:"export_diagnostics,omitempty"`

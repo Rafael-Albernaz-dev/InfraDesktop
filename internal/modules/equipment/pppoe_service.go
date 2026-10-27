@@ -52,6 +52,9 @@ func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, 
 		if !PPValidQuery(in.Query) || in.Offset < 0 || in.Offset > 2*PPMaxRows {
 			return Invalid
 		}
+		if strings.HasPrefix(q.Op, "pppoe.read-") {
+			return s.handlePPRead(ctx, q, in, &v)
+		}
 		if strings.HasPrefix(q.Op, "pppoe.diagnostic-") {
 			return s.handlePD(ctx, q, in, &v)
 		}
@@ -113,6 +116,16 @@ func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, 
 		case "pppoe.observation-get":
 			var c Code
 			v.Current, c = store.PPObservation(ctx, q.Scope.Profile, in.DeviceID, in.ObservationID)
+			return c
+		case "pppoe.context-counts":
+			groupStore, ok := s.store.(interface {
+				PPContextCounts(context.Context, string, PPInput) (PPView, Code)
+			})
+			if !ok {
+				return Unavailable
+			}
+			var c Code
+			v, c = groupStore.PPContextCounts(ctx, q.Scope.Profile, in)
 			return c
 		case "pppoe.sessions-list":
 			var c Code

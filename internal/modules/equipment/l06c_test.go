@@ -17,8 +17,9 @@ func TestL06COfflineReconnectionRetention(t *testing.T) {
 	if c := ReconcilePP(nil, a); c != OK {
 		t.Fatal(c)
 	}
+	a.ContextOmitted = true
 	b := l06cObservation("b", at.Add(time.Minute))
-	if c := ReconcilePP(a, b); c != OK || b.Online != 0 || b.Offline != 1 || b.Rows[0].State != "OFFLINE" || b.Rows[0].Address != row.Address || b.Rows[0].AbsentStart != a.Provenance.Started || b.Rows[0].AbsentEnd != b.Provenance.Ended {
+	if c := ReconcilePP(a, b); c != OK || b.Online != 0 || b.Offline != 1 || !b.ContextOmitted || b.Rows[0].State != "OFFLINE" || b.Rows[0].Address != row.Address || b.Rows[0].AbsentStart != a.Provenance.Started || b.Rows[0].AbsentEnd != b.Provenance.Ended {
 		t.Fatal("absence lost last data/window", b, c)
 	}
 	if a.Rows[0].State != "ONLINE" {
@@ -40,7 +41,7 @@ func TestL06COfflineReconnectionRetention(t *testing.T) {
 	reconnected.SessionID = "s2"
 	online := l06cObservation("online", at.Add(2*time.Hour), reconnected)
 	ReconcilePP(later, online)
-	if online.Offline != 0 || online.Online != 1 || online.Rows[0].ID != "new-row" {
+	if online.Offline != 0 || online.Online != 1 || online.ContextOmitted || online.Rows[0].ID != "new-row" {
 		t.Fatal("reconnection retained offline identity", online)
 	}
 	ds, c := ComparePP(b, online)

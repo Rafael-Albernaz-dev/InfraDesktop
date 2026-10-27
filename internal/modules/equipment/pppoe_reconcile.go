@@ -69,6 +69,14 @@ func ReconcilePP(previous, next *PPObservation) Code {
 	next.Online = len(next.Rows)
 	next.Offline = len(offline)
 	next.Rows = append(next.Rows, offline...)
+	if previous != nil && previous.ContextOmitted {
+		for _, row := range offline {
+			if row.Context == nil {
+				next.ContextOmitted = true
+				break
+			}
+		}
+	}
 	next.Count = len(next.Rows)
 	// Duplicity describes simultaneous online sessions, never retained absences.
 	counts := map[string]int{}

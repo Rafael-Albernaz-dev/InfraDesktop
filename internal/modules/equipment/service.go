@@ -11,6 +11,8 @@ import (
 )
 
 type runningJob struct {
+	read               *PPReadResult
+	readTarget         *PPReadTarget
 	ppInput            PPInput
 	ping               *PPPingTarget
 	view               Job
@@ -454,7 +456,7 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 func (s *Service) check(ctx context.Context, j *runningJob, reveal bool) (string, string, Code) {
 	var user, secret string
 	c := s.authorized(ctx, j.command, func(uint64) Code {
-		if j.command.Op == "pppoe.collect-start" || j.command.Op == "pppoe.diagnostic-start" {
+		if j.command.Op == "pppoe.collect-start" || j.command.Op == "pppoe.diagnostic-start" || j.command.Op == "pppoe.read-start" {
 			return s.checkPP(ctx, j, reveal, &user, &secret)
 		}
 		st, c := s.store.ReadEquipment(ctx, j.command.Scope.Profile)
