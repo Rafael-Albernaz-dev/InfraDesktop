@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -64,7 +66,38 @@ func main() {
 		}
 		fmt.Println("guard fixture:", f.name, "rejected=", v != "")
 	}
-	cmd := exec.Command("go", "list", "-tags", "webkit2_41", "-deps", "-test", "-json", "./...")
+	// Evidence under docs is historical data, not a product package. Discover
+	// authored package directories before go list so broken historical copies
+	// cannot prevent checking the complete product dependency closure.
+	packageDirs := map[string]bool{}
+	err := filepath.WalkDir(".", func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			name := entry.Name()
+			if path != "." && (path == "docs" || name == "vendor" || name == "testdata" || name == "node_modules" || strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_")) {
+				return filepath.SkipDir
+			}
+		} else if strings.HasSuffix(entry.Name(), ".go") {
+			dir := filepath.Dir(path)
+			if dir != "." {
+				dir = "./" + filepath.ToSlash(dir)
+			}
+			packageDirs[dir] = true
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	patterns := make([]string, 0, len(packageDirs))
+	for dir := range packageDirs {
+		patterns = append(patterns, dir)
+	}
+	sort.Strings(patterns)
+	args := append([]string{"list", "-tags", "webkit2_41", "-deps", "-test", "-json"}, patterns...)
+	cmd := exec.Command("go", args...)
 	cmd.Stderr = os.Stderr
 	b, e := cmd.Output()
 	if e != nil {
