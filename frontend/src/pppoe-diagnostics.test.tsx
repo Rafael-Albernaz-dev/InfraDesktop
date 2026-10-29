@@ -266,6 +266,54 @@ it('a late catalog response cannot populate a newer RADIUS surface', async () =>
   ).not.toBeInTheDocument();
 });
 
+it('L07 R2: a completed collection waits for new metadata before paging; the retired reading cannot report replacement', async () => {
+  panel();
+  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  const nextCurrent = deferred();
+  const fresh = { ...meta(), diagnostic_id: 'fresh-catalog' };
+  vi.mocked(api.current).mockReturnValueOnce(nextCurrent.promise);
+  vi.mocked(api.catalog).mockResolvedValue(
+    response({
+      job: { id: 'replacement-job', state: 'RUNNING', code: 'OK' },
+      total: 0,
+    }),
+  );
+  vi.mocked(api.status).mockResolvedValue(
+    response({
+      job: { id: 'replacement-job', state: 'SUCCEEDED', code: 'OK' },
+      total: 0,
+    }),
+  );
+  vi.mocked(api.list).mockImplementation(async (_p, _a, _d, _s, id) =>
+    id === 'fresh-catalog'
+      ? response({
+          diagnostic_rows: [{ ...rows[0], name: 'Serviço atualizado' }],
+          total: 1,
+        })
+      : { ...response(), code: 'OBSERVATION_UNAVAILABLE' },
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Atualizar serviços e VLANs' }),
+  );
+  await waitFor(() => expect(api.current).toHaveBeenCalledTimes(2));
+  // The old ID was valid on initial open only. A new page against it after
+  // successful publication would inevitably race the daemon's replacement.
+  expect(api.list).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByText(
+      'A leitura foi substituída. Reabra os dados armazenados.',
+    ),
+  ).not.toBeInTheDocument();
+  await act(async () =>
+    nextCurrent.resolve(response({ diagnostic: fresh, total: 1 })),
+  );
+  await screen.findByRole('heading', { name: 'Serviço atualizado' });
+  expect(api.list).toHaveBeenCalledTimes(2);
+  expect(vi.mocked(api.list).mock.calls.at(-1)?.[4]).toBe('fresh-catalog');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(api.catalog).toHaveBeenCalledTimes(1);
+});
+
 it('does not show a different session ping and sends only immutable source IDs', async () => {
   vi.mocked(api.current).mockResolvedValue(
     response({

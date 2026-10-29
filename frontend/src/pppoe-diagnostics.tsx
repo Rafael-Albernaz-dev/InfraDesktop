@@ -152,6 +152,8 @@ function useDiagnostic(
     setLoading(true);
   }
   const readKey = context + '|' + refresh;
+  const [metaReadKey, setMetaReadKey] = useState('');
+  const readSequence = useRef(0);
   const [storedReadKey, setStoredReadKey] = useState(readKey);
   if (storedReadKey !== readKey) {
     setStoredReadKey(readKey);
@@ -166,16 +168,23 @@ function useDiagnostic(
   }, [context]);
   useEffect(() => {
     const generation = life.current.generation;
+    const request = ++readSequence.current;
     let stopped = false;
     void api
       .current(profile, activation, device.id, scope)
       .then((result) => {
-        if (stopped || !active(generation, result)) return;
+        if (
+          stopped ||
+          request !== readSequence.current ||
+          !active(generation, result)
+        )
+          return;
         if (result.code !== 'OK') {
           setError(diagnosticMessage(result.code));
           return;
         }
         setMeta(result.data?.diagnostic);
+        setMetaReadKey(readKey);
         const candidate = result.data?.attempt;
         const latest =
           !sourceObservation ||
@@ -208,6 +217,7 @@ function useDiagnostic(
     acknowledge,
     sourceObservation,
     sourceRow,
+    readKey,
   ]);
   const visibleMeta =
     storedContext === context &&
@@ -229,7 +239,9 @@ function useDiagnostic(
   useEffect(() => {
     let stopped = false;
     const generation = life.current.generation;
-    if (!diagnosticID) return;
+    // Publishing a new reading retires the old ID in the daemon. Resolve the
+    // metadata for this request generation before asking for any page.
+    if (!diagnosticID || metaReadKey !== readKey) return;
     void api
       .list(profile, activation, device.id, scope, diagnosticID, cursor, kind)
       .then((result) => {
@@ -262,6 +274,8 @@ function useDiagnostic(
     device.id,
     scope,
     active,
+    metaReadKey,
+    readKey,
   ]);
   useEffect(() => {
     if (!job) return;
