@@ -171,8 +171,9 @@ export function formatRouterDuration(value?: string): string {
     h: 3600,
     m: 60,
     s: 1,
+    ms: 0.001,
   };
-  const matches = [...value.matchAll(/(\d+(?:\.\d+)?)(w|d|h|m|s)/g)];
+  const matches = [...value.matchAll(/(\d+(?:\.\d+)?)(ms|w|d|h|m|s)/g)];
   if (!matches.length || matches.map((m) => m[0]).join('') !== value) {
     const clock =
       /^(?:(\d+)w)?(?:(\d+)d)?(\d+):(\d{2}):(\d{2}(?:\.\d+)?)$/.exec(value);
@@ -187,6 +188,8 @@ export function formatRouterDuration(value?: string): string {
       : unavailable;
   }
   for (const m of matches) seconds += Number(m[1]) * units[m[2]];
+  if (seconds < 1 && matches.some((m) => m[2] === 'ms'))
+    return formatMetric(seconds * 1000, 'ms');
   return formatDuration(seconds);
 }
 export function formatDate(value?: string, history = false): string {

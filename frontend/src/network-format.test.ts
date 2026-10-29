@@ -72,3 +72,11 @@ describe('L06T3 units and exact audit values', () => {
     expect(raw).toEqual([1000000000, 950000, 1000000]);
   });
 });
+import { formatRouterDuration } from './network-format';
+
+it('L07 formats observed wireless last-activity milliseconds through the common duration formatter', () => {
+  expect(formatRouterDuration('90ms')).toBe('90 ms');
+  expect(formatRouterDuration('3s50ms')).toBe('3 s');
+  expect(formatRouterDuration('1d22h27m58s')).toBe('1 d 22 h');
+  expect(formatRouterDuration('unavailable')).toBe('Indisponível');
+});
