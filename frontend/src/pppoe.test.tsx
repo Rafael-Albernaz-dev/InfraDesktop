@@ -8,13 +8,17 @@ import {
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoE } from './pppoe';
 import {
+  deviceMonitoringAPI as monitoringAPI,
   pppoeAPI as api,
+  pppoeReadAPI as readAPI,
   pppoeDiagnosticAPI as diagnosticAPI,
 } from './presentation';
 import type { PPResult, PPRow } from './presentation';
 import type { Device } from './equipment-api';
 vi.mock('./presentation', () => ({
+  deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
+    stop: vi.fn(),
     start: vi.fn(),
     status: vi.fn(),
     cancel: vi.fn(),
@@ -77,6 +81,11 @@ const result = (data: PPResult['data'] = { total: 0 }): PPResult => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(monitoringAPI.current).mockResolvedValue(result());
+  vi.mocked(readAPI.start).mockResolvedValue({ ...result(), code: 'BUSY' });
+  vi.mocked(readAPI.cancel).mockResolvedValue(result());
+  vi.mocked(readAPI.cancelOperation).mockResolvedValue(result());
+  vi.mocked(readAPI.stop).mockResolvedValue(result());
   vi.mocked(api.groups).mockResolvedValue(result({ groups: [], total: 0 }));
   vi.mocked(diagnosticAPI.current).mockResolvedValue(result());
   vi.mocked(diagnosticAPI.list).mockResolvedValue(result());
@@ -112,6 +121,9 @@ it('budget-omitted context preserves sessions, explains detail and avoids unknow
   expect(screen.queryByText('Não associado')).not.toBeInTheDocument();
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Informações e ping' }),
   );
   await screen.findByText(
     'Contexto não incluído por limite. VLAN, IPv6 e plano indisponíveis nesta leitura.',
@@ -243,6 +255,9 @@ it('A-H01: closing an existing detail invalidates its pending replacement, while
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Informações e ping' }),
+  );
   expect(
     await screen.findByRole('complementary', { name: 'Detalhes da sessão' }),
   ).toHaveTextContent('row-2');
@@ -364,6 +379,9 @@ it('A-H01: newer detail wins when two queries resolve in reverse order', async (
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
   await act(async () => second.resolve(result({ rows: [rows[1]], total: 1 })));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Informações e ping' }),
+  );
   expect(
     screen.getByRole('complementary', { name: 'Detalhes da sessão' }),
   ).toHaveTextContent('row-2');
@@ -879,6 +897,9 @@ it('exposes the completed result count as an accessible status', async () => {
 });
 
 it('L06C: fields, offline reason and previous page use stored data', async () => {
+  const clock = vi
+    .spyOn(Date, 'now')
+    .mockReturnValue(Date.parse('2026-10-26T12:02:30Z'));
   const offline = {
     ...rows[0],
     state: 'OFFLINE',
@@ -900,7 +921,7 @@ it('L06C: fields, offline reason and previous page use stored data', async () =>
   expect(
     screen.getByRole('columnheader', { name: 'Caller ID' }),
   ).toBeInTheDocument();
-  expect(screen.getByText('1 s')).toBeInTheDocument();
+  expect(screen.getByText('1s')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
   await screen.findByRole('button', { name: 'Página anterior' });
   fireEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
@@ -909,7 +930,17 @@ it('L06C: fields, offline reason and previous page use stored data', async () =>
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Informações e ping' }),
+  );
   await screen.findByText('Ping indisponível: sessão OFFLINE.');
+  expect(screen.getByText('Offline desde (intervalo)')).toBeInTheDocument();
+  expect(screen.getByText(/Duração da última sessão:/)).toHaveTextContent(
+    '1 s',
+  );
+  expect(screen.getByText('Há quanto tempo (pelo menos)')).toBeInTheDocument();
+  expect(screen.getByText(/1 min 30 s/)).toBeInTheDocument();
+  clock.mockRestore();
   expect(
     screen.getByRole('button', { name: 'Sondar IP pelo concentrador' }),
   ).toBeDisabled();
@@ -986,10 +1017,15 @@ it('L06D-S1: stable context shows negotiated IPv6 and unavailable fields without
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Informações e ping' }),
+  );
   expect(await screen.findByText('Sim')).toBeInTheDocument();
   expect(screen.getByText('Sem prefixo delegado')).toBeInTheDocument();
-  expect(screen.getByText('5000000 / 10000000 bit/s')).toBeInTheDocument();
-  expect(screen.getByText('100 · service: 2')).toBeInTheDocument();
+  expect(screen.getByText('10 Mbps / 5 Mbps')).toBeInTheDocument();
+  expect(
+    screen.getByText('100 · service: 2 / Pico 7 d: Indisponível'),
+  ).toBeInTheDocument();
 });
 
 it.each([
@@ -1022,6 +1058,9 @@ it.each([
     fireEvent.click(
       await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
     );
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Informações e ping' }),
+    );
     expect(await screen.findByText(label)).toBeInTheDocument();
     expect(
       screen.queryByText('disabled-default-canary'),
@@ -1030,9 +1069,9 @@ it.each([
       screen.queryByText('Perfil do secret ativo'),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText('Limite aplicado (fila dinâmica) — upload / download'),
+      screen.getByText('Limite de plano (fila dinâmica) — download / upload'),
     ).toBeInTheDocument();
-    expect(screen.getByText('5000000 / 10000000 bit/s')).toBeInTheDocument();
+    expect(screen.getByText('10 Mbps / 5 Mbps')).toBeInTheDocument();
     expect(
       screen.getAllByRole('button', { name: 'Ver evidência do secret' }),
     ).toHaveLength(1);
@@ -1086,4 +1125,102 @@ it('L06D-S7: operational CSV uses the exact observation and returns focus after 
     screen.queryByText('Arquivo CSV operacional salvo.'),
   ).not.toBeInTheDocument();
   expect(api.export).not.toHaveBeenCalled();
+});
+
+it('L06T3: FastTrack marks every displayed plan limit without a router action', async () => {
+  vi.mocked(monitoringAPI.current).mockResolvedValue(
+    result({
+      total: 1,
+      read: {
+        scope: 'equipment',
+        started_at: '',
+        ended_at: '2026-10-28T17:00:00Z',
+        duration_ns: 0,
+        rows: [
+          {
+            kind: 'resource',
+            uptime: { known: false, min: 0, max: 0 },
+            health: {
+              fasttrack_rules: 1,
+              uptime: { known: false, min: 0, max: 0 },
+              clock_offset: { known: false, min: 0, max: 0 },
+            },
+          },
+        ],
+      },
+    }),
+  );
+  vi.mocked(api.detail).mockResolvedValue(
+    result({
+      total: 1,
+      rows: [
+        {
+          ...rows[0],
+          context: {
+            association: 'associated',
+            download_limit: '100000000',
+            upload_limit: '50000000',
+          },
+        },
+      ],
+    }),
+  );
+  showPP();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Informações e ping' }),
+  );
+  expect(
+    await screen.findByText('limite lido, não garantido'),
+  ).toBeInTheDocument();
+  expect(screen.getByText('100 Mbps / 50 Mbps')).toHaveAttribute(
+    'title',
+    '100.000.000 bit/s download / 50.000.000 bit/s upload',
+  );
+  expect(
+    screen.queryByRole('button', { name: /desativar FastTrack/i }),
+  ).not.toBeInTheDocument();
+});
+
+it('L06T3: VLAN peak uses raw counts, a configurable drop threshold and optional plan column', async () => {
+  vi.mocked(api.groups).mockResolvedValue(
+    result({
+      total: 1,
+      groups: [{ service: 'X-service', vlan: 100, count: 4, peak_7d: 10 }],
+    }),
+  );
+  vi.mocked(api.list).mockResolvedValue(
+    result({
+      total: 1,
+      rows: [
+        {
+          ...rows[0],
+          context: {
+            association: 'associated',
+            download_limit: '100000000',
+            upload_limit: '50000000',
+          },
+        },
+      ],
+    }),
+  );
+  showPP();
+  expect(
+    await screen.findByText(/100 · X-service: 4 \/ Pico 7 d: 10/),
+  ).toHaveTextContent('Δ −60 %');
+  expect(screen.getByText('· Queda local detectada')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Queda local (%)'), {
+    target: { value: '75' },
+  });
+  expect(screen.queryByText('· Queda local detectada')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByLabelText('Mostrar plano/limite'));
+  expect(
+    screen.getByRole('columnheader', { name: 'Plano · download / upload' }),
+  ).toBeInTheDocument();
+  expect(screen.getByText('100 Mbps / 50 Mbps')).toHaveAttribute(
+    'title',
+    '100.000.000 bit/s download / 50.000.000 bit/s upload',
+  );
 });

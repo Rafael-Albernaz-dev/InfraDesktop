@@ -1,3 +1,4 @@
+import { formatDate } from './network-format';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type { Device } from './equipment-api';
@@ -73,7 +74,7 @@ export function useEquipmentOperations(
                   : 'Não consultado',
             style: 'muted',
             time: d.result?.observed_at
-              ? new Date(d.result.observed_at).toLocaleString('pt-BR')
+              ? formatDate(d.result.observed_at)
               : 'Não consultado',
             detail: d.last_attempt ? equipmentMessage(d.last_attempt.code) : '',
           })),

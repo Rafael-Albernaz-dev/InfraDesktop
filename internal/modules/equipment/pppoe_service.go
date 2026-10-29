@@ -95,6 +95,14 @@ func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, 
 			q.Op = "pppoe.compare"
 		}
 		switch q.Op {
+		case "pppoe.monitor-current":
+			monitoring, ok := s.store.(DeviceMonitoringStore)
+			if !ok {
+				return Unavailable
+			}
+			var c Code
+			v, c = monitoring.DeviceMonitoring(ctx, q.Scope.Profile, in)
+			return c
 		case "pppoe.current":
 			var c Code
 			v, c = store.PPCurrent(ctx, q.Scope.Profile, in.DeviceID)

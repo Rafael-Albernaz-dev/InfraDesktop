@@ -10,9 +10,20 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { Equipment } from './equipment';
 import { Desktop, Statusbar } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
-import { pppoeReadAPI as readAPI } from './presentation';
+import {
+  deviceMonitoringAPI as monitoringAPI,
+  pppoeReadAPI as readAPI,
+} from './presentation';
 import type { EquipmentResult, Device } from './equipment-api';
 vi.mock('./presentation', () => ({
+  deviceMonitoringAPI: {
+    current: vi.fn().mockResolvedValue({
+      code: 'OK',
+      profile_id: 'company',
+      activation_id: 'active',
+      data: { total: 0 },
+    }),
+  },
   pppoeReadAPI: {
     start: vi.fn(),
     status: vi.fn(),
@@ -57,6 +68,26 @@ const data = (devices: Device[] = [device]) =>
   }) as EquipmentResult;
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(monitoringAPI.current).mockImplementation(
+    async (profile_id, activation_id) => ({
+      code: 'OK',
+      profile_id,
+      activation_id,
+      data: { total: 0 },
+    }),
+  );
+  vi.mocked(readAPI.cancel).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'X',
+    activation_id: 'a',
+    data: { total: 0 },
+  });
+  vi.mocked(readAPI.cancelOperation).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'X',
+    activation_id: 'a',
+    data: { total: 0 },
+  });
   vi.mocked(api.list).mockResolvedValue(data());
   vi.mocked(api.get).mockImplementation(async (_p, _a, id) => {
     const latest = (await vi.mocked(api.list).mock.results.at(-1)?.value) as
@@ -1828,4 +1859,33 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
   expect(
     screen.queryByText('pool-from-real-composition'),
   ).not.toBeInTheDocument();
+});
+
+it('L06T3: equipment list projects saved health with role and explicit reading age', async () => {
+  const at = new Date(Date.now() - 60000).toISOString();
+  vi.mocked(api.list).mockResolvedValue(
+    data([
+      {
+        ...device,
+        monitoring_at: at,
+        monitoring: {
+          version: '7.14.3',
+          cpu: 37,
+          uptime: { known: true, min: 172800e9, max: 172801e9 },
+          clock_offset: { known: false, min: 0, max: 0 },
+        },
+      },
+    ]),
+  );
+  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  const row = await screen.findByRole('row', { name: /Router X/ });
+  expect(within(row).getByText('Concentrador PPPoE')).toBeInTheDocument();
+  expect(within(row).getByText('37 %')).toBeInTheDocument();
+  expect(within(row).getByText('2 d')).toHaveAttribute(
+    'title',
+    '172.800–172.801 s (intervalo observado)',
+  );
+  expect(
+    within(row).getByText(/Últimos dados conhecidos · há 1 min/),
+  ).toBeInTheDocument();
 });

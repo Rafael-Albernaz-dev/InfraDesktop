@@ -4,8 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"infradesktop/internal/modules/equipment"
 	"strings"
+	"time"
 )
 
 type ppTx func(*sql.Tx) equipment.Code
@@ -192,6 +194,15 @@ func (s *Store) FinishPPCollection(ctx context.Context, company string, target e
 				return equipment.Unavailable
 			}
 			if existing-reclaim+int64(o.Bytes) > equipment.PPCompanyBytes {
+				if e := trimMonitoring(ctx, tx, equipment.PPCompanyBytes+reclaim-int64(o.Bytes), time.Now().Unix()); e != nil && !errors.Is(e, errMonitoringQuota) {
+					return equipment.Unavailable
+				}
+				existing, err = ppTotalBytes(ctx, tx)
+				if err != nil {
+					return equipment.Unavailable
+				}
+			}
+			if existing-reclaim+int64(o.Bytes) > equipment.PPCompanyBytes {
 				ppOmitContext(o)
 				if !ppWithinBudget(o) || existing-reclaim+int64(o.Bytes) > equipment.PPCompanyBytes {
 					return equipment.Limit
@@ -247,7 +258,24 @@ func (s *Store) FinishPPCollection(ctx context.Context, company string, target e
 			if bytes > equipment.PPCompanyBytes {
 				return equipment.Limit
 			}
+			if e := recordSessionMonitoring(ctx, tx, previous, o); e != nil {
+				if errors.Is(e, errMonitoringQuota) {
+					return equipment.Limit
+				}
+				return equipment.Unavailable
+			}
+			finalBytes, e := ppTotalBytes(ctx, tx)
+			if e != nil {
+				return equipment.Unavailable
+			}
+			if finalBytes > equipment.PPCompanyBytes {
+				return equipment.Limit
+			}
 			s.observe("pp-phase-cascade-end")
+		} else {
+			if _, err := tx.ExecContext(ctx, "UPDATE device_monitoring_checkpoint SET continuous=0 WHERE device_id=?", t.Device.ID); err != nil {
+				return equipment.Unavailable
+			}
 		}
 		b, _ := json.Marshal(a)
 		_, e := tx.ExecContext(ctx, "UPDATE pppoe_attempts SET meta_json=? WHERE device_id=? AND scope=? AND job_id=?", string(b), t.Device.ID, equipment.PPScope, job)
@@ -656,7 +684,48 @@ func (s *Store) PPContextCounts(ctx context.Context, company string, in equipmen
 		// Consumers use Current.ContextOmitted to distinguish this from empty.
 		return v, equipment.OK
 	}
-	query := `SELECT COALESCE(json_extract(row_json,'$.context.service'),''),json_extract(row_json,'$.context.vlan'),count(*) FROM pppoe_rows WHERE observation_id=? GROUP BY 1,2 ORDER BY 1,2`
+	q, e := s.unit.QueryContext(ctx, "SELECT row_json FROM pppoe_rows WHERE observation_id=? ORDER BY ordinal", o.ID)
+	if e != nil {
+		return v, equipment.Unavailable
+	}
+	for q.Next() {
+		var raw string
+		var row equipment.PPRow
+		if e = q.Scan(&raw); e != nil {
+			q.Close()
+			return v, equipment.Unavailable
+		}
+		if e = json.Unmarshal([]byte(raw), &row); e != nil {
+			q.Close()
+			return v, equipment.Unavailable
+		}
+		o.Rows = append(o.Rows, row)
+	}
+	e = q.Err()
+	q.Close()
+	if e != nil {
+		return v, equipment.Unavailable
+	}
+	window, e := time.Parse(time.RFC3339Nano, o.Provenance.Ended)
+	if e != nil {
+		return v, equipment.Unavailable
+	}
+	all, complete, e := contextPeakGroups(ctx, s.unit, o, window)
+	if e != nil {
+		return v, equipment.Unavailable
+	}
+	if complete {
+		v.Total = len(all)
+		if in.Offset > v.Total {
+			return v, equipment.CursorInvalid
+		}
+		end := min(in.Offset+equipment.PageSize, v.Total)
+		v.Groups = all[in.Offset:end]
+		v.NextOffset = end
+		v.More = end < v.Total
+		return v, equipment.OK
+	}
+	query := `SELECT COALESCE(json_extract(row_json,'$.context.service'),''),json_extract(row_json,'$.context.vlan'),count(*) FROM pppoe_rows WHERE observation_id=? AND COALESCE(json_extract(row_json,'$.state'),'ONLINE')='ONLINE' GROUP BY 1,2 ORDER BY 1,2`
 	rows, e := s.unit.QueryContext(ctx, query, in.ObservationID)
 	if e != nil {
 		return v, equipment.Unavailable

@@ -122,6 +122,9 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 			return "", "DEADLINE_EXCEEDED"
 		}
 		text := out.buf.String()
+		if collectorSyntaxDiagnostic(text) || collectorSyntaxDiagnostic(stderr.buf.String()) {
+			return "", equipment.CollectorDefect
+		}
 		if permissionDiagnostic(text) || permissionDiagnostic(stderr.buf.String()) {
 			return "", "REMOTE_PERMISSION_DENIED"
 		}

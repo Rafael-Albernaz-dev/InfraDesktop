@@ -102,6 +102,8 @@ type Observation struct {
 	Quality       string             `json:"quality"`
 }
 type Device struct {
+	Monitoring      *DeviceHealth    `json:"monitoring,omitempty"`
+	MonitoringAt    string           `json:"monitoring_at,omitempty"`
 	Role            string           `json:"role"`
 	PPPoE           *PPSummary       `json:"pppoe,omitempty"`
 	TrustAcceptance *TrustAcceptance `json:"trust_acceptance,omitempty"`

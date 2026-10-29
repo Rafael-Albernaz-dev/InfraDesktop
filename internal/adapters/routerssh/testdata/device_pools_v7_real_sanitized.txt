@@ -1,0 +1,58 @@
+N	1	7.14.3 (stable)	29w1d21:50:42	true	true
+52
+P	*101	lab-pool-01	198.18.16.0/26	52
+0
+P	*102	lab-pool-02	198.18.32.0/28	0
+0
+P	*103	lab-pool-03	198.18.48.0/24	0
+0
+P	*104	lab-pool-04	198.18.64.0/22	0
+I	*1	lab-interface-001	ether		0	0					false	true
+I	*2	lab-interface-002	ether		0	0					false	true
+I	*3	lab-interface-003	ether		0	0					false	true
+I	*4	lab-interface-004	ether		0	0					false	true
+I	*5	lab-interface-005	ether		0	0					false	true
+I	*6	lab-interface-006	ether	2026-10-07 20:09:51	124341886275369	26250121348821					true	false
+I	*7	lab-interface-007	ether	2026-06-03 12:09:21	4982024497979	26838577668021					false	false
+I	*8	lab-interface-008	ether	2026-10-17 17:17:07	13079077440667	74020072501200					true	false
+I	*9	lab-interface-009	ether	2026-07-21 14:27:52	1943568228313	17015946672945					true	false
+I	*A	lab-interface-010	ether		0	0					false	false
+I	*B	lab-interface-011	ether		0	0	0	0	0	0	false	false
+I	*C	lab-interface-012	bridge	2026-04-06 14:52:59	0	355906762	0	0	0	0	true	false
+I	*D	lab-interface-013	l2tp-out	2026-10-28 00:32:01	355353831	2268721946	0	0	0	131	true	false
+I	*E	lab-interface-014	pptp-out		0	0	0	0	0	0	false	true
+I	*F	lab-interface-015	vlan	2026-10-07 20:09:51	87946128093	1049399052783	0	0	0	13	true	false
+I	*10	lab-interface-016	vlan	2026-10-07 20:09:51	77810482831	397265389931	0	0	0	3	true	false
+I	*11	lab-interface-017	vlan	2026-10-07 20:09:51	54469234661	457470455076	0	0	0	2	true	false
+I	*12	lab-interface-018	vlan	2026-10-07 20:09:51	162963256079	1056697424969	0	0	0	5	true	false
+I	*13	lab-interface-019	vlan	2026-10-07 20:09:51	126095470162	1139752251730	0	0	0	3	true	false
+I	*14	lab-interface-020	vlan	2026-10-07 20:09:51	51251878945	325332232947	0	0	0	1	true	false
+I	*15	lab-interface-021	vlan	2026-10-07 20:09:51	35179913754	229597254341	0	0	0	1	true	false
+I	*16	lab-interface-022	vlan	2026-10-07 20:09:51	6327401507	38578669006	0	0	0	2	true	false
+I	*17	lab-interface-023	vlan	2026-10-07 20:09:51	491680354776	3750738501428	0	0	0	258	true	false
+I	*18	lab-interface-024	vlan	2026-10-07 20:09:51	14701151819	101148454477	0	0	0	1	true	false
+I	*19	lab-interface-025	vlan		0	0	0	0	0	0	false	true
+I	*1A	lab-interface-026	vlan	2026-10-07 20:09:51	15803138290	56264066060	0	0	0	3	true	false
+I	*1B	lab-interface-027	vlan	2026-10-07 20:09:51	16699973485	96931085542	0	0	0	1	true	false
+I	*1C	lab-interface-028	vlan	2026-10-07 20:09:51	393687245980	38588910760	0	0	0	2	true	false
+I	*1D	lab-interface-029	vlan	2026-10-07 20:09:51	121895005698699	16954540872000	0	0	0	197609	true	false
+I	*1E	lab-interface-030	vlan	2026-10-17 17:17:07	1260	423454790	0	0	0	5	true	false
+I	*1F	lab-interface-031	vlan	2026-07-21 14:27:52	0	422314990	0	0	0	14	true	false
+I	*20	lab-interface-032	vlan	2026-10-17 17:17:07	698256503326	4340779205867	0	0	0	76	true	false
+I	*21	lab-interface-033	vlan	2026-10-07 20:09:51	0	413191854	0	0	0	0	true	false
+I	*22	lab-interface-034	vlan		0	0	0	0	0	0	false	true
+I	*23	lab-interface-035	vlan	2026-10-17 17:17:07	2236874104088	8389700342401	0	0	0	168	true	false
+I	*24	lab-interface-036	vlan	2026-10-17 17:17:07	1129363756653	10276375385103	0	0	0	221	true	false
+I	*25	lab-interface-037	vlan	2026-10-17 17:17:07	1994202661759	20842104272106	0	0	0	681	true	false
+I	*26	lab-interface-038	vlan	2026-10-17 17:17:07	1771153875605	19020319434269	0	0	0	405095	true	false
+I	*27	lab-interface-039	vlan	2026-10-17 17:17:07	434616707903	5121307757547	0	0	0	70	true	false
+I	*28	lab-interface-040	vlan	2026-10-17 17:17:07	2151	441034006	0	0	0	6	true	false
+I	*29	lab-interface-041	vlan	2026-10-17 17:17:07	8380931	31521779	0	0	0	0	true	false
+I	*2A	lab-interface-042	vlan	2026-10-07 20:09:51	0	575051585	0	0	0	2	true	false
+I	*2B	lab-interface-043	vlan	2026-10-17 17:17:07	3767315843	3925586136	0	0	0	9	true	false
+I	*2C	lab-interface-044	vlan	2026-10-17 17:17:07	3283234860	3476666956	0	0	0	11	true	false
+I	*2D	lab-interface-045	vlan	2026-10-07 20:09:51	442837410	419616101	0	0	0	1	true	false
+I	*2E	lab-interface-046	vlan	2026-10-07 20:09:51	26346612839	2734245595	0	0	0	4	true	false
+I	*2F	lab-interface-047	vlan	2026-10-07 20:09:51	537491236	586665436	0	0	0	1	true	false
+I	*30	lab-interface-048	loopback	2026-04-06 14:52:58	57214253	57214253	0	0	0	0	true	false
+Z	52	complete	29w1d21:50:42

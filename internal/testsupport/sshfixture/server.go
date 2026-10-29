@@ -22,6 +22,7 @@ type Config struct {
 	InterfaceMode           func() string
 	PPPoE                   func() string
 	Command                 func(string) (string, bool)
+	DisconnectCommand       func(string) bool
 	PPRows                  int
 	RealTime                bool
 	Hold                    <-chan struct{}
@@ -138,6 +139,9 @@ func (s *Server) handle(conn net.Conn) {
 					case <-s.closed:
 						return
 					}
+				}
+				if s.config.DisconnectCommand != nil && s.config.DisconnectCommand(exec.Command) {
+					return
 				}
 				out, ok := s.output(exec.Command)
 				status := uint32(0)

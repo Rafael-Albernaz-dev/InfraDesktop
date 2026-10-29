@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 11,
+  "product_revision": 13,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -470,6 +470,14 @@
     "pppoe.read-page": [
       "job_id",
       "cursor"
+    ],
+    "pppoe.monitor-current": [
+      "device_id",
+      "scope",
+      "cursor"
+    ],
+    "pppoe.read-stop": [
+      "job_id"
     ]
   },
   "pppoe": {
@@ -521,7 +529,9 @@
         "top",
         "log",
         "health",
-        "secret"
+        "secret",
+        "operations",
+        "traffic"
       ],
       "global_concurrency": 2,
       "result_rows": 2048,
@@ -536,7 +546,28 @@
       "log": "current immutable row/login only; last50 projected time/category; exact token/tunnel regex; excludesdebug; never raw log; SSH32KiB; no export",
       "health": "device-only; two samples of static interfaces; revalidate dated link/name/type after counters; pool scalar size/used only; unavailable distinct from zero; uint64 errors/drops as decimal strings",
       "wire_shape": "read.rows always array including empty; serialization sizes measured at adapter; service enforces512KiB/row2048B/meta16KiB",
-      "secret": "exact selected current row/login only; at most4 secrets; disabled/service/profile/last-logged-out/last-caller-id/last-disconnect-reason/comment only; no password/map; absent fields unavailable; comment control-free and max128 characters; 20s/SSH32KiB; memory only/no SQL or exports"
+      "secret": "exact selected current row/login only; at most4 secrets; disabled/service/profile/last-logged-out/last-caller-id/last-disconnect-reason/comment only; no password/map; absent fields unavailable; comment control-free and max128 characters; 20s/SSH32KiB; memory only/no SQL or exports",
+      "operations": "migration11 adds 7day per-VLAN/service count samples; unknown membership never fabricates0; scope duplicates requires both ages<=15min and overlapping collection windows; ping jitter plus previous10 successful3/3 means in bounded service memory, not SQL history; inventory projects dated health snapshot; IPC13 adds fasttrack_rules and typed port/before_port; migration10 saves current snapshot and port/restart events30d within existing logical20MiB/shared160MiB, no rates; exact human-proved FastTrack/ethernet scripts share20s job; role-neutral DeviceHealth; demand only/minute bucket; resources, projected services/packages/clock/counters/auth counts, no raw messages; migration9 retains min/max/last sessions24h minute+6days hour; transitions24h; logical20MiB within shared160MiB; base readings take priority",
+      "monitor_current_scopes": [
+        "series",
+        "flapping",
+        "versions",
+        "hygiene",
+        "equipment",
+        "port-history",
+        "duplicates"
+      ],
+      "traffic": "same live60s budget; immutable 5s plot bins, uint64 byte totals and conservative covered-time average, sampled peak; stop retains final result, cancel discards; traffic cache300s within32 shared jobs",
+      "collector_failures": {
+        "code": "COLLECTOR_DEFECT",
+        "meaning": "recognized RouterOS parser diagnostic; InfraDesktop collector incompatible with firmware, never unavailable",
+        "partial": "inconsistent/truncated protocol, not absent capability",
+        "reason": "closed structural enum from equipment.ValidCollectorReason; never remote text",
+        "async_transport": "Response.OK + job.FAILED + job.pppoe.quality.reason, repeated in error_detail.reason and validated against job code",
+        "storage": "ephemeral job receipt only; no migration/SQL/new persistence",
+        "local_log": "adapter code+reason only",
+        "ui": "collector defect message; generic PARTIAL with collapsible technical reason"
+      }
     }
   }
 }

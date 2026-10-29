@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"infradesktop/internal/modules/equipment"
 	"strings"
+	"time"
 )
 
 func ppTotalBytes(ctx context.Context, tx *sql.Tx) (int64, error) {
 	var bytes int64
-	err := tx.QueryRowContext(ctx, "SELECT (SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_observations)+(SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_diagnostic_observations)").Scan(&bytes)
+	err := tx.QueryRowContext(ctx, "SELECT (SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_observations)+(SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_diagnostic_observations)+"+monitoringBytesExpression).Scan(&bytes)
 	return bytes, err
 }
 func (s *Store) ReservePPDiagnostic(ctx context.Context, company string, in equipment.PPInput, stamp, job string) (string, bool, equipment.Code) {
@@ -120,6 +122,54 @@ func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target e
 			if o.Scope != in.Scope || o.DeviceID != target.Device.ID || !pdBudget(o) {
 				return equipment.Limit
 			}
+			if o.Scope == equipment.PDCatalog {
+				previous, c := pdMeta(ctx, tx, o.DeviceID, o.Scope, "")
+				if c != equipment.OK && c != equipment.ObservationMissing {
+					return c
+				}
+				if previous != nil {
+					q, e := tx.QueryContext(ctx, "SELECT row_json FROM pppoe_diagnostic_rows WHERE diagnostic_id=? ORDER BY ordinal", previous.ID)
+					if e != nil {
+						return equipment.Unavailable
+					}
+					for q.Next() {
+						var raw string
+						var row equipment.PDRow
+						if e = q.Scan(&raw); e != nil {
+							q.Close()
+							return equipment.Unavailable
+						}
+						if e = json.Unmarshal([]byte(raw), &row); e != nil {
+							q.Close()
+							return equipment.Unavailable
+						}
+						previous.Rows = append(previous.Rows, row)
+					}
+					e = q.Err()
+					q.Close()
+					if e != nil {
+						return equipment.Unavailable
+					}
+				}
+				if c = equipment.ReconcileCatalogAbsences(previous, o); c != equipment.OK {
+					return c
+				}
+				if !pdBudget(o) {
+					// Auxiliary absences never displace the complete current set.
+					current := o.Rows[:0]
+					for _, row := range o.Rows {
+						if row.NotSeenSince == "" {
+							current = append(current, row)
+						}
+					}
+					o.Rows = current
+					o.AbsentInterfaces = 0
+					o.AbsencesLimited = true
+					if !pdBudget(o) {
+						return equipment.Limit
+					}
+				}
+			}
 			body, _ := json.Marshal(o)
 			s.observe("pp-phase-inserts-start")
 			if _, err := tx.ExecContext(ctx, "INSERT INTO pppoe_diagnostic_observations VALUES(?,?,?,?,?,?)", o.ID, o.DeviceID, o.Scope, string(body), o.Count, o.Bytes); err != nil {
@@ -169,7 +219,16 @@ func (s *Store) FinishPPDiagnostic(ctx context.Context, company string, target e
 				return equipment.Unavailable
 			}
 			if bytes > equipment.PPCompanyBytes {
-				return equipment.Limit
+				if e := trimMonitoring(ctx, tx, equipment.PPCompanyBytes, time.Now().Unix()); e != nil && !errors.Is(e, errMonitoringQuota) {
+					return equipment.Unavailable
+				}
+				bytes, err = ppTotalBytes(ctx, tx)
+				if err != nil {
+					return equipment.Unavailable
+				}
+				if bytes > equipment.PPCompanyBytes {
+					return equipment.Limit
+				}
 			}
 			s.observe("pp-phase-cascade-end")
 		}

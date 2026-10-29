@@ -29,6 +29,14 @@ func (s *Server) diagnosticOutput(command string) (string, bool) {
 		version = "6.49.19"
 	}
 	switch command {
+	case routerssh.DeviceFastTrackCommand:
+		return "T3F\t1\t" + version + "\nF\t1\nD\t00:00:00\nZ\tcomplete\n", true
+	case routerssh.DevicePortsCommand:
+		return "T3E\t1\t" + version + "\nE\tfixture-uplink\tlink-ok\t100Mbps\ttrue\t2\nD\t00:00:00\t10\t10\nZ\t1\tcomplete\n", true
+	case routerssh.DeviceOperationalCommand:
+		return DeviceOperationalTranscript(version), true
+	case routerssh.DeviceAuthFailuresCommand:
+		return "A\t1\t" + version + "\t2d1h1s\nF\tsynthetic-0000\t01:00:00\nF\tsynthetic-0000\t01:00:01\nG\tauth\t0\nZ\t2\tcomplete\t2d1h1s\n", true
 
 	case routerssh.PPHealthFirstCommand, routerssh.PPHealthCommand:
 		tick := int(time.Since(s.started)/time.Second) + 1
@@ -92,4 +100,8 @@ func (s *Server) diagnosticOutput(command string) (string, bool) {
 		return PingTranscript(match[2]), true
 	}
 	return "", false
+}
+
+func DeviceOperationalTranscript(version string) string {
+	return "O\t1\t" + version + "\t2d1h1s\nR\tcpu-load\t=10\nR\tfree-memory\t=67108864\nR\ttotal-memory\t=134217728\nR\tuptime\t=2d1h1s\nR\tversion\t=" + version + "\nR\ttemperature\t?\nR\terror-count\t=2\nC\t=oct/28/2026\t=01:00:00\t=4294956496\t=true\t?\nS\ttelnet\t23\tfalse\nS\tftp\t21\ttrue\nS\twww\t80\tfalse\nG\tservices\tcomplete\nK\tfixture-package\t" + version + "\tfalse\nG\tpackages\tcomplete\nI\tfixture-uplink\tether\t0\t?\t2\nI\tfixture-vlan\tvlan\t3\t0\t?\nG\tinterfaces\tcomplete\nP\tfixture-pool\t198.51.100.1-198.51.100.10\t8\nG\tpools\tcomplete\nZ\t7\tcomplete\t2d1h1s\n"
 }

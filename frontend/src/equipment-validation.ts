@@ -1,3 +1,4 @@
+import { formatVolume } from './network-format';
 // Presentation checks give immediate feedback; the daemon remains authoritative.
 export const fieldForEquipmentCode: Record<string, string> = {
   DEVICE_NAME_INVALID: 'name',
@@ -15,7 +16,7 @@ export const fieldMessages: Record<string, string> = {
   port: 'Informe uma porta SSH inteira de 1 a 65535.',
   alias: 'Informe um alias de até 80 caracteres, sem caracteres de controle.',
   user: 'Informe um usuário de até 80 caracteres, sem caracteres de controle.',
-  secret: 'Informe a senha, com no máximo 1024 bytes.',
+  secret: `Informe a senha, com no máximo ${formatVolume(1024)}.`,
   credential_id: 'Selecione uma credencial desta empresa.',
 };
 export const validEquipmentText = (s: string) => {

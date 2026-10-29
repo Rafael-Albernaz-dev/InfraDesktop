@@ -1,13 +1,16 @@
+import { useDisplayNow } from './equipment-snapshot';
 import {
   Fragment,
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react';
 import {
   pppoeReadAPI as readAPI,
+  deviceMonitoringAPI as monitoringAPI,
   pppoeDiagnosticAPI as api,
 } from './presentation';
 import type {
@@ -15,9 +18,29 @@ import type {
   PDRow,
   PPResult,
   PPReadResult,
+  DeviceMonitoringPoint,
+  PPReadRow,
   PPRate,
 } from './presentation';
 import { formatPPUptime } from './pppoe-format';
+import {
+  formatLatencyRange,
+  portLabel,
+  formatDate,
+  formatClockOffset,
+  formatLatency,
+  exactNumber,
+  exactRate,
+  exactVolume,
+  formatAtScale,
+  formatDuration,
+  formatMetric,
+  formatRate,
+  formatVolume,
+  formatVolumePair,
+  networkScale,
+  uptimeTitle,
+} from './network-format';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import { pendingPPPoE as pending } from './equipment-receipts';
@@ -431,10 +454,6 @@ function useDiagnostic(
 
 const state = (value?: boolean) =>
   value === undefined ? 'Indisponível' : value ? 'Sim' : 'Não';
-const latency = (ns?: number) =>
-  ns === undefined
-    ? 'Indisponível'
-    : (ns / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 6 }) + ' ms';
 const relation: Record<string, string> = {
   resolved: 'Pai identificado',
   missing: 'Pai ausente',
@@ -444,6 +463,16 @@ const relation: Record<string, string> = {
 };
 
 function DiagnosticRow({ row }: { row: PDRow }) {
+  if (row.not_seen_since)
+    return (
+      <article className="pppoe-diagnostic-row">
+        <h3>{row.name || 'Interface sem nome'}</h3>
+        <p title={row.not_seen_since}>
+          Não visto desde {formatDate(row.not_seen_since, true)}. Estado atual
+          indisponível; última interface dinâmica observada.
+        </p>
+      </article>
+    );
   if (row.kind === 'aaa')
     return (
       <article className="pppoe-diagnostic-row">
@@ -480,14 +509,14 @@ function DiagnosticRow({ row }: { row: PDRow }) {
             }).map(([name, value]) => (
               <div key={name}>
                 <dt>{name}</dt>
-                <dd>{value}</dd>
+                <dd>{exactNumber(value)}</dd>
               </div>
             ))}
             <div>
               <dt>RTT da última solicitação</dt>
-              <dd>
+              <dd title={uptimeTitle(row.counters.last_rtt)}>
                 {row.counters.last_rtt.known
-                  ? latency(row.counters.last_rtt.min)
+                  ? formatLatencyRange(row.counters.last_rtt)
                   : 'Indisponível'}
               </dd>
             </div>
@@ -622,8 +651,7 @@ export function PPPoEDiagnostics({
       {view.meta && (
         <>
           <p>
-            Última leitura boa:{' '}
-            {new Date(view.meta.provenance.ended_at).toLocaleString('pt-BR')} ·
+            Última leitura boa: {formatDate(view.meta.provenance.ended_at)} ·
             RouterOS {view.meta.provenance.version} · {view.meta.count} itens ·
             origem: concentrador via SSH.
           </p>
@@ -650,7 +678,13 @@ export function PPPoEDiagnostics({
           {scope === 'catalog' ? (
             <p>
               VLANs e faixas representam configuração. Não há vínculo individual
-              de VLAN comprovado para as sessões.
+              de VLAN comprovado para as sessões.{' '}
+              {view.meta.absent_interfaces !== undefined
+                ? `${view.meta.absent_interfaces} interfaces dinâmicas não vistas, retidas por até 24 h e separadas das presentes.`
+                : ''}
+              {view.meta.absences_limited
+                ? ' Retenção de ausentes limitada para preservar a leitura atual.'
+                : ''}
             </p>
           ) : (
             <p>
@@ -671,9 +705,21 @@ export function PPPoEDiagnostics({
             view.rows[0]?.kind === 'aaa' && (
               <p>Nenhum servidor RADIUS configurado nesta leitura.</p>
             )}
-          {view.rows.map((row) => (
-            <DiagnosticRow key={row.id} row={row} />
-          ))}
+          {view.rows
+            .filter((row) => !row.not_seen_since)
+            .map((row) => (
+              <DiagnosticRow key={row.id} row={row} />
+            ))}
+          {view.rows.some((row) => row.not_seen_since) && (
+            <section aria-label="Interfaces dinâmicas não vistas na leitura atual">
+              <h3>Não vistas na leitura atual</h3>
+              {view.rows
+                .filter((row) => row.not_seen_since)
+                .map((row) => (
+                  <DiagnosticRow key={row.id} row={row} />
+                ))}
+            </section>
+          )}
         </>
       )}
       {view.pageError && <p role="alert">{view.pageError}</p>}
@@ -773,25 +819,56 @@ export function PPPoEPing({
         <>
           <p>
             Origem: {result.context} ·{' '}
-            {new Date(view.meta.provenance.ended_at).toLocaleString('pt-BR')}
+            {formatDate(view.meta.provenance.ended_at)}
           </p>
           <p>
             Enviados: {result.sent} · Recebidos: {result.received} · Perda:{' '}
-            {result.loss_percent.toLocaleString('pt-BR', {
-              maximumFractionDigits: 2,
-            })}
-            %
+            {formatMetric(result.loss_percent, '%')}
           </p>
           <p>
-            RTT mínimo: {latency(result.min_ns)} · médio:{' '}
-            {latency(result.avg_ns)} · máximo: {latency(result.max_ns)}
+            RTT mínimo:{' '}
+            <span title={exactNumber(result.min_ns, 'ns')}>
+              {formatLatency(result.min_ns)}
+            </span>{' '}
+            · médio:{' '}
+            <span title={exactNumber(result.avg_ns, 'ns')}>
+              {formatLatency(result.avg_ns)}
+            </span>{' '}
+            · máximo:{' '}
+            <span title={exactNumber(result.max_ns, 'ns')}>
+              {formatLatency(result.max_ns)}
+            </span>
+          </p>
+          <p>
+            Amostra de 3 probes · jitter:{' '}
+            <span title={exactNumber(result.jitter_ns, 'ns')}>
+              {formatLatency(result.jitter_ns)}
+            </span>
+            .
+          </p>
+          <p>
+            Mediana dos 10 pings anteriores bem-sucedidos deste alvo e sessão:{' '}
+            <span title={exactNumber(result.baseline_median_ns, 'ns')}>
+              {formatLatency(result.baseline_median_ns)}
+            </span>
+            {result.baseline_median_ns !== undefined &&
+            result.baseline_median_ns > 0 &&
+            result.avg_ns !== undefined
+              ? ` · RTT médio ${result.avg_ns >= result.baseline_median_ns ? '+' : '−'}${formatMetric((Math.abs(result.avg_ns - result.baseline_median_ns) * 100) / result.baseline_median_ns, '%')}`
+              : ''}
+            .{' '}
+            {result.baseline_samples !== undefined
+              ? `${result.baseline_samples}/10 amostras anteriores disponíveis.`
+              : 'Histórico não registrado.'}{' '}
+            Histórico em memória desde o início do serviço; perdas não entram na
+            baseline.
           </p>
           <ol>
             {result.probes.map((probe) => (
               <li key={probe.sequence} value={probe.sequence + 1}>
                 {probe.status || 'Resposta ICMP'}
                 {probe.rtt_ns !== undefined
-                  ? ` · ${latency(probe.rtt_ns)}`
+                  ? ` · ${formatLatency(probe.rtt_ns)}`
                   : ''}
               </li>
             ))}
@@ -806,16 +883,9 @@ export function PPPoEPing({
   );
 }
 
-const formatRate = (rate?: PPRate) => {
-  if (!rate) return 'Indisponível';
-  const scale = rate.max >= 1e6 ? 1e6 : rate.max >= 1e3 ? 1e3 : 1;
-  const unit = scale === 1e6 ? 'Mbit/s' : scale === 1e3 ? 'kbit/s' : 'bit/s';
-  const f = (n: number) =>
-    new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(n);
-  const low = Math.floor((rate.min / scale) * 100) / 100,
-    high = Math.ceil((rate.max / scale) * 100) / 100;
-  return low === high ? `${f(low)} ${unit}` : `${f(low)}–${f(high)} ${unit}`;
-};
+function RateValue({ rate }: { rate?: PPRate }) {
+  return <span title={exactRate(rate)}>{formatRate(rate)}</span>;
+}
 
 function ppReadMessage(code: string) {
   if (code === 'PARTIAL')
@@ -835,6 +905,10 @@ type PPReadPanelProps = {
   allowTop?: boolean;
   logRow?: string;
   health?: boolean;
+  monitoring?: boolean;
+  onRead?: () => void;
+  summaryOnly?: boolean;
+  traffic?: boolean;
 };
 export function PPPoEReadPanel(props: PPReadPanelProps) {
   const key = [
@@ -847,6 +921,8 @@ export function PPPoEReadPanel(props: PPReadPanelProps) {
     props.allowTop,
     props.logRow,
     props.health,
+    props.monitoring,
+    props.traffic,
   ].join('|');
   return <PPPoEReadContent key={key} {...props} />;
 }
@@ -860,6 +936,10 @@ function PPPoEReadContent({
   allowTop = false,
   logRow,
   health = false,
+  monitoring = false,
+  onRead,
+  summaryOnly = false,
+  traffic = false,
 }: PPReadPanelProps) {
   const [job, setJob] = useState(''),
     [starting, setStarting] = useState(false),
@@ -870,16 +950,22 @@ function PPPoEReadContent({
     [pageBusy, setPageBusy] = useState(false),
     [resultJob, setResultJob] = useState('');
   const [error, setError] = useState(''),
+    [failureReason, setFailureReason] = useState(''),
     [result, setResult] = useState<PPReadResult>(),
     [scope, setScope] = useState('bandwidth');
   const [pollRetry, retryPoll] = useState(0),
+    [statusLatency, setStatusLatency] = useState<number>(),
+    [firstStatus, setFirstStatus] = useState<number>(),
     [deadlineReached, setDeadlineReached] = useState(false),
-    [sampleAge, setSampleAge] = useState(0);
+    [sampleAge, setSampleAge] = useState(0),
+    [stoppedTraffic, setStoppedTraffic] = useState(false);
+  const autoStarted = useRef(false);
   const generation = useRef(0),
     activeJob = useRef(''),
     privateResultJob = useRef(''),
     pendingOperation = useRef('');
   const liveStarted = useRef(0),
+    requestedAt = useRef(0),
     sampleClock = useRef(0),
     lastSample = useRef('');
   useEffect(() => {
@@ -901,6 +987,9 @@ function PPPoEReadContent({
   const valid = (r: PPResult) =>
     r.profile_id === profile && r.activation_id === activation;
   async function start(mode: string) {
+    requestedAt.current = performance.now();
+    setStatusLatency(undefined);
+    setFirstStatus(undefined);
     if (pendingOperation.current || activeJob.current) return;
     if (privateResultJob.current) {
       void readAPI
@@ -913,8 +1002,10 @@ function PPPoEReadContent({
     pendingOperation.current = operation;
     setPending(true);
     setScope(mode);
+    setStoppedTraffic(false);
     setStarting(true);
     setError('');
+    setFailureReason('');
     setResult(undefined);
     setNext('');
     setPageCursor('');
@@ -931,8 +1022,10 @@ function PPPoEReadContent({
         device.id,
         operation,
         mode,
-        mode === 'top' || mode === 'health' ? '' : observation,
-        mode === 'top' || mode === 'health'
+        mode === 'top' || mode === 'health' || mode === 'operations'
+          ? ''
+          : observation,
+        mode === 'top' || mode === 'health' || mode === 'operations'
           ? []
           : mode === 'log' || mode === 'secret'
             ? logRow
@@ -974,7 +1067,8 @@ function PPPoEReadContent({
       pendingOperation.current = '';
       setPending(false);
       activeJob.current = r.data.job.id;
-      if (mode === 'secret') privateResultJob.current = r.data.job.id;
+      if (mode === 'secret' || mode === 'traffic')
+        privateResultJob.current = r.data.job.id;
       setJob(r.data.job.id);
       setResultJob(r.data.job.id);
     } catch {
@@ -986,6 +1080,17 @@ function PPPoEReadContent({
       if (g === generation.current) setStarting(false);
     }
   }
+  const autoStartTraffic = useEffectEvent(() => {
+    if (!autoStarted.current) {
+      autoStarted.current = true;
+      void start('traffic');
+    }
+  });
+  useEffect(() => {
+    if (!traffic || blocked || !rows.length) return;
+    const timer = setTimeout(() => autoStartTraffic(), 0);
+    return () => clearTimeout(timer);
+  }, [traffic, blocked, rows.length]);
   useEffect(() => {
     if (!job) return;
     let alive = true;
@@ -993,8 +1098,14 @@ function PPPoEReadContent({
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
+        const beforeStatus = performance.now();
         const r = await readAPI.status(profile, activation, job);
         if (!alive || g !== generation.current) return;
+        setStatusLatency(performance.now() - beforeStatus);
+        if (r.code === 'OK' && r.data?.job)
+          setFirstStatus(
+            (known) => known ?? performance.now() - requestedAt.current,
+          );
         if (
           r.profile_id !== profile ||
           r.activation_id !== activation ||
@@ -1020,7 +1131,12 @@ function PPPoEReadContent({
         }
         activeJob.current = '';
         setJob('');
-        if (r.data.job.code !== 'OK') setError(ppReadMessage(r.data.job.code));
+        setDeadlineReached(false);
+        if (r.data.job.code === 'OK' && scope === 'operations') onRead?.();
+        if (r.data.job.code !== 'OK') {
+          setError(ppReadMessage(r.data.job.code));
+          setFailureReason(r.error?.reason || '');
+        }
       } catch {
         if (alive && g === generation.current)
           setError(
@@ -1033,13 +1149,14 @@ function PPPoEReadContent({
       alive = false;
       clearTimeout(timer);
     };
-  }, [job, profile, activation, pollRetry]);
+  }, [job, profile, activation, pollRetry, scope, onRead]);
   useEffect(() => {
-    if (!job || scope !== 'live') return;
+    if (scope !== 'live' && scope !== 'traffic') return;
+    if (!job && scope === 'live') return;
     const tick = () => {
       const now = performance.now();
       setSampleAge(Math.max(0, now - sampleClock.current));
-      if (now - liveStarted.current >= 60000) {
+      if (job && now - liveStarted.current >= 60000) {
         setDeadlineReached(true);
         clearInterval(timer);
       }
@@ -1059,7 +1176,11 @@ function PPPoEReadContent({
     setCancelling(true);
     try {
       const r = id
-        ? await readAPI.cancel(profile, activation, id)
+        ? await (traffic ? readAPI.stop : readAPI.cancel)(
+            profile,
+            activation,
+            id,
+          )
         : await readAPI.cancelOperation(
             profile,
             activation,
@@ -1074,6 +1195,10 @@ function PPPoEReadContent({
         setJob('');
         setStarting(false);
         setError('');
+        if (traffic) {
+          setStoppedTraffic(true);
+          setDeadlineReached(false);
+        }
       } else setError(ppReadMessage(r.code));
     } catch {
       if (g === generation.current)
@@ -1104,32 +1229,66 @@ function PPPoEReadContent({
       if (g === generation.current) setPageBusy(false);
     }
   }
-  if (!rows.length && !allowTop && !logRow && !health) return null;
+  if (!rows.length && !allowTop && !logRow && !health && !monitoring)
+    return null;
   const locked =
     blocked || starting || pending || Boolean(job) || cancelling || pageBusy;
   const calculated =
-    Boolean(job) && scope === 'live' && !error && !deadlineReached;
+    Boolean(job) &&
+    (scope === 'live' || scope === 'traffic') &&
+    !error &&
+    !deadlineReached;
   return (
     <section
       className="pppoe-diagnostics pppoe-read-panel"
-      aria-label={health ? 'Pools e interfaces estáticas' : 'Banda por sessão'}
+      aria-label={
+        traffic
+          ? 'Tráfego'
+          : monitoring
+            ? 'Leitura operacional'
+            : health
+              ? 'Pools e interfaces estáticas'
+              : 'Banda por sessão'
+      }
     >
-      <h3>{health ? 'Pools e interfaces estáticas' : 'Banda por sessão'}</h3>
+      <h3>
+        {traffic
+          ? 'Tráfego'
+          : monitoring
+            ? 'Leitura operacional'
+            : health
+              ? 'Pools e interfaces estáticas'
+              : 'Banda por sessão'}
+      </h3>
+      {monitoring && (
+        <button
+          className="primary"
+          disabled={locked}
+          onClick={() => void start('operations')}
+        >
+          Atualizar monitoramento
+        </button>
+      )}
       {health && (
         <button disabled={locked} onClick={() => void start('health')}>
           Consultar pools e interfaces
         </button>
       )}
-      {rows.length > 0 && (
+      {rows.length > 0 && !traffic && (
         <button disabled={locked} onClick={() => void start('bandwidth')}>
           {rows.length === 1
             ? 'Medir banda do assinante'
             : 'Medir banda da página'}
         </button>
       )}
-      {rows.length > 0 && (
+      {rows.length > 0 && !traffic && (
         <button disabled={locked} onClick={() => void start('live')}>
           Observar ao vivo por até 60 s
+        </button>
+      )}
+      {traffic && !locked && (error || result || stoppedTraffic) && (
+        <button onClick={() => void start('traffic')}>
+          Iniciar nova observação
         </button>
       )}
       {allowTop && (
@@ -1149,11 +1308,13 @@ function PPPoEReadContent({
       )}
       {(job || pending || starting) && (
         <button disabled={cancelling} onClick={() => void cancel()}>
-          {!job
-            ? 'Cancelar solicitação pendente'
-            : scope === 'live' && !deadlineReached
-              ? 'Encerrar ao vivo'
-              : 'Cancelar medição'}
+          {traffic && job
+            ? 'Parar'
+            : !job
+              ? 'Cancelar solicitação pendente'
+              : scope === 'live' && !deadlineReached
+                ? 'Encerrar ao vivo'
+                : 'Cancelar medição'}
         </button>
       )}
       {(error || deadlineReached) && job && (
@@ -1170,24 +1331,64 @@ function PPPoEReadContent({
         (starting || job) &&
         !error && (
           <p role="status">
-            {scope === 'live'
+            {scope === 'live' || scope === 'traffic'
               ? 'Observação limitada a 60 s; atualização aproximada a cada 2 s.'
-              : scope === 'log'
-                ? 'Consultando eventos PPP deste login…'
-                : scope === 'secret'
-                  ? 'Consultando evidência efêmera do secret…'
-                  : 'Aguardando duas amostras do concentrador…'}
+              : scope === 'operations'
+                ? 'Consultando projeções operacionais somente leitura…'
+                : scope === 'log'
+                  ? 'Consultando eventos PPP deste login…'
+                  : scope === 'secret'
+                    ? 'Consultando evidência efêmera do secret…'
+                    : 'Aguardando duas amostras do concentrador…'}
           </p>
         )
       )}
+      {traffic && (
+        <p>
+          {result
+            ? `Última atualização há ${Math.floor(sampleAge / 1000)} s.`
+            : job || starting
+              ? 'Aguardando primeira amostra.'
+              : 'Nenhuma amostra recebida.'}{' '}
+          Observação de até 60 s; gráfico retido em memória por 5 min.
+        </p>
+      )}
+      {stoppedTraffic && <p role="status">Observação parada.</p>}
       {error && <p role="alert">{error}</p>}
+      {monitoring && firstStatus !== undefined && (
+        <p>
+          Estado do job consultável após {formatMetric(firstStatus, 'ms')} ·
+          consulta de estado (UI → serviço): {formatMetric(statusLatency, 'ms')}
+          .
+        </p>
+      )}
+      {error && failureReason && (
+        <details>
+          <summary>Detalhe técnico</summary>
+          <p>Motivo: {failureReason}</p>
+        </details>
+      )}
       {result && (
         <>
           <p>
             {error || deadlineReached ? 'Último resultado de ' : 'Leitura de '}
-            {new Date(result.ended_at).toLocaleString('pt-BR')} · duração{' '}
-            {(result.duration_ns / 1e9).toFixed(2)} s
+            {formatDate(result.ended_at)} · duração{' '}
+            <span title={exactNumber(result.duration_ns / 1e9, 's')}>
+              {formatDuration(result.duration_ns / 1e9)}
+            </span>
           </p>
+          {result.scope === 'operations' && (
+            <dl className="pppoe-diagnostic-values">
+              <dt>Handshake SSH</dt>
+              <dd title={exactNumber(result.cost?.ssh_handshake_ns, 'ns')}>
+                {formatLatency(result.cost?.ssh_handshake_ns)}
+              </dd>
+              <dt>Coletores</dt>
+              <dd title={exactNumber(result.cost?.collector_ns, 'ns')}>
+                {formatLatency(result.cost?.collector_ns)}
+              </dd>
+            </dl>
+          )}
           {result.scope === 'top' && (
             <p>
               Consumo ordenado pelo limite inferior de download + upload.
@@ -1196,15 +1397,19 @@ function PPPoEReadContent({
           )}
           {result.scope !== 'log' &&
             result.scope !== 'secret' &&
+            result.scope !== 'operations' &&
             result.cost && (
               <p>
                 {result.cost.ssh_commands} comandos SSH ·{' '}
                 {result.cost.first_tunnels}/{result.cost.last_tunnels}{' '}
                 {result.scope === 'health' ? 'interfaces estáticas' : 'túneis'}{' '}
-                nas amostras · {result.cost.ssh_bytes} bytes
+                nas amostras ·{' '}
+                <span title={exactVolume(result.cost.ssh_bytes)}>
+                  {formatVolume(result.cost.ssh_bytes)}
+                </span>
                 {result.cost.cpu_start !== undefined &&
                 result.cost.cpu_end !== undefined
-                  ? ` · CPU observada: ${result.cost.cpu_start}% / ${result.cost.cpu_end}%`
+                  ? ` · CPU observada: ${formatMetric(result.cost.cpu_start, '%')} / ${formatMetric(result.cost.cpu_end, '%')}`
                   : ''}
               </p>
             )}
@@ -1214,15 +1419,27 @@ function PPPoEReadContent({
               equipamento; categorias não comprovam a causa da falha.
             </p>
           )}
-          {result.scope === 'secret' ? (
+          {result.scope === 'operations' ? (
+            summaryOnly ? null : (
+              <DeviceOperationalTables result={result} />
+            )
+          ) : result.scope === 'traffic' ? (
+            <>
+              {result.rows.map((row) => (
+                <PPTrafficChart key={row.row_id} row={row} />
+              ))}
+            </>
+          ) : result.scope === 'secret' ? (
             <PPSecretEvidence result={result} />
           ) : result.scope === 'health' ? (
             <PPHealthTables result={result} />
           ) : result.rows.length === 0 ? (
             <p>
-              {result.scope === 'log'
-                ? 'Nenhum evento PPP reconhecido para este login.'
-                : 'Nenhum túnel ativo na leitura concluída.'}
+              {result.scope === 'operations'
+                ? 'Consultando projeções operacionais somente leitura…'
+                : scope === 'log'
+                  ? 'Nenhum evento PPP reconhecido para este login.'
+                  : 'Nenhum túnel ativo na leitura concluída.'}
             </p>
           ) : result.scope === 'log' ? (
             <div className="table-scroll" tabIndex={0} aria-label="Eventos PPP">
@@ -1278,18 +1495,24 @@ function PPPoEReadContent({
                         {r.login || 'Indisponível'}
                         {r.name && <small className="cell-sub">{r.name}</small>}
                       </td>
-                      <td>{formatRate(r.download)}</td>
-                      <td>{formatRate(r.upload)}</td>
                       <td>
-                        {formatPPUptime(
-                          r.uptime.known && calculated
-                            ? {
-                                ...r.uptime,
-                                min: r.uptime.min + sampleAge * 1e6,
-                                max: r.uptime.max + sampleAge * 1e6,
-                              }
-                            : r.uptime,
-                        )}
+                        <RateValue rate={r.download} />
+                      </td>
+                      <td>
+                        <RateValue rate={r.upload} />
+                      </td>
+                      <td>
+                        <span title={uptimeTitle(r.uptime)}>
+                          {formatPPUptime(
+                            r.uptime.known && calculated
+                              ? {
+                                  ...r.uptime,
+                                  min: r.uptime.min + sampleAge * 1e6,
+                                  max: r.uptime.max + sampleAge * 1e6,
+                                }
+                              : r.uptime,
+                          )}
+                        </span>
                         {calculated ? ' (calculado)' : ''}
                       </td>
                     </tr>
@@ -1298,17 +1521,20 @@ function PPPoEReadContent({
               </table>
             </div>
           )}
-          {next && (
+          {next && !summaryOnly && (
             <button disabled={pageBusy} onClick={() => void page(next)}>
-              {result.scope === 'health'
-                ? 'Próxima página de pools e interfaces'
-                : result.scope === 'log'
-                  ? 'Próximos eventos PPP'
-                  : 'Próxima página de consumo'}
+              {result.scope === 'operations'
+                ? 'Próxima página do monitoramento'
+                : result.scope === 'health'
+                  ? 'Próxima página de pools e interfaces'
+                  : result.scope === 'log'
+                    ? 'Próximos eventos PPP'
+                    : 'Próxima página de consumo'}
             </button>
           )}
           {resultJob &&
             (result.scope === 'top' ||
+              result.scope === 'operations' ||
               result.scope === 'log' ||
               result.scope === 'health') &&
             pageCursor && (
@@ -1454,14 +1680,18 @@ function PPHealthTables({ result }: { result: PPReadResult }) {
               {interfaces.map((r, i) => (
                 <tr key={i}>
                   <td>{r.name}</td>
-                  <td>{formatRate(r.tx)}</td>
-                  <td>{formatRate(r.rx)}</td>
+                  <td>
+                    <RateValue rate={r.tx} />
+                  </td>
+                  <td>
+                    <RateValue rate={r.rx} />
+                  </td>
                   <td>{flag(r.running)}</td>
                   <td>{flag(r.disabled)}</td>
-                  <td>{r.rx_errors ?? 'Indisponível'}</td>
-                  <td>{r.tx_errors ?? 'Indisponível'}</td>
-                  <td>{r.rx_drops ?? 'Indisponível'}</td>
-                  <td>{r.tx_drops ?? 'Indisponível'}</td>
+                  <td>{exactNumber(r.rx_errors)}</td>
+                  <td>{exactNumber(r.tx_errors)}</td>
+                  <td>{exactNumber(r.rx_drops)}</td>
+                  <td>{exactNumber(r.tx_drops)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1469,5 +1699,703 @@ function PPHealthTables({ result }: { result: PPReadResult }) {
         </div>
       )}
     </>
+  );
+}
+
+export function DeviceMonitoring({
+  profile,
+  activation,
+  device,
+}: {
+  profile: string;
+  activation: string;
+  device: Device;
+}) {
+  return (
+    <DeviceMonitoringContent
+      key={[profile, activation, device.id, device.revision].join('|')}
+      profile={profile}
+      activation={activation}
+      device={device}
+    />
+  );
+}
+function DeviceMonitoringContent({
+  profile,
+  activation,
+  device,
+}: {
+  profile: string;
+  activation: string;
+  device: Device;
+}) {
+  const displayNow = useDisplayNow();
+  const [scope, setScope] = useState('series'),
+    [cursor, setCursor] = useState(''),
+    [next, setNext] = useState('');
+  const [rows, setRows] = useState<PPReadResult['rows']>([]),
+    [state, setState] = useState<'loading' | 'ready' | 'error'>('loading'),
+    [error, setError] = useState(''),
+    [refresh, bump] = useState(0);
+  const [comparison, setComparison] = useState<{
+    version?: boolean;
+    packages?: boolean;
+    count?: number;
+  }>({});
+  const completed = useCallback(() => {
+    setCursor('');
+    bump((n) => n + 1);
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const r = await monitoringAPI.current(
+        profile,
+        activation,
+        device.id,
+        scope,
+        cursor,
+      );
+      if (!alive) return;
+      if (
+        r.profile_id !== profile ||
+        r.activation_id !== activation ||
+        r.code !== 'OK' ||
+        !r.data?.read
+      ) {
+        setState('error');
+        setError(
+          r.code === 'CURSOR_INVALID'
+            ? 'Os dados mudaram ou a página expirou. Reabra a série local.'
+            : ppReadMessage(r.code),
+        );
+        return;
+      }
+      setComparison({
+        version: r.data.read.version_divergence,
+        packages: r.data.read.package_divergence,
+        count: r.data.read.compared_devices,
+      });
+      setRows(r.data.read.rows);
+      setNext(r.data.next_cursor || '');
+      setState('ready');
+      setError('');
+    })().catch(() => {
+      if (alive) {
+        setState('error');
+        setError('Série local indisponível.');
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [profile, activation, device.id, scope, cursor, refresh]);
+  function change(value: string) {
+    setScope(value);
+    setCursor('');
+    setNext('');
+    setRows([]);
+    setState('loading');
+  }
+
+  return (
+    <section
+      className="pppoe-diagnostics"
+      aria-label="Monitoramento operacional"
+    >
+      <h2>Monitoramento operacional</h2>
+      <p>
+        Atualização sob demanda. Ler a série armazenada não consulta o
+        equipamento. Dados ausentes continuam indisponíveis.
+      </p>
+      <PPPoEReadPanel
+        profile={profile}
+        activation={activation}
+        device={device}
+        observation=""
+        rows={[]}
+        monitoring
+        onRead={completed}
+      />
+      <nav role="tablist" aria-label="Dados locais do monitoramento">
+        {[
+          ['series', 'Curva de sessões'],
+          ['flapping', 'Oscilação'],
+          ['versions', 'Versões'],
+          ['hygiene', 'Higiene de secrets'],
+          ['duplicates', 'Entre concentradores'],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            role="tab"
+            aria-selected={scope === value}
+            onClick={() => change(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      {state === 'loading' && <p role="status">Lendo dados armazenados…</p>}
+      {state === 'error' && (
+        <>
+          <p role="alert">{error}</p>
+          <button
+            onClick={() => {
+              setCursor('');
+              setRows([]);
+              setNext('');
+              setState('loading');
+              bump((n) => n + 1);
+            }}
+          >
+            Reabrir série local
+          </button>
+        </>
+      )}
+      {state === 'ready' && (
+        <>
+          {scope === 'series' && (
+            <>
+              <p>
+                Pontos por minuto durante 24 h; depois, mínimo, máximo e último
+                por hora até 7 dias. Quebras de continuidade não comprovam
+                queda. Queda brusca: pelo menos 5 sessões e 20% entre leituras
+                compatíveis.
+              </p>
+              <SessionMonitoringCurve
+                points={rows.flatMap((r) => (r.point ? [r.point] : []))}
+              />
+            </>
+          )}
+          {scope === 'flapping' && (
+            <p>
+              Transições ONLINE ↔ OFFLINE observadas nas últimas 24 h. Leituras
+              duplicadas, falhas, reboot e contexto incompatível não contam como
+              oscilação.
+            </p>
+          )}
+          {scope === 'duplicates' && (
+            <>
+              <p>
+                Última leitura deste concentrador e dos demais da empresa: ambas
+                com idade de até 15 min e janelas de coleta sobrepostas. Sem
+                essas condições: não comparável (leituras distantes).
+              </p>
+              <div className="table-scroll" tabIndex={0}>
+                <table className="app-table">
+                  <thead>
+                    <tr>
+                      <th>Login</th>
+                      <th>Concentrador A · IP / caller-id / uptime / idade</th>
+                      <th>Concentrador B · IP / caller-id / uptime / idade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows
+                      .filter((r) => r.duplicate)
+                      .map((r, i) => (
+                        <tr key={i}>
+                          <td>{r.login}</td>
+                          {[r.duplicate!.a, r.duplicate!.b].map((peer, j) => (
+                            <td key={j} title={uptimeTitle(peer.uptime)}>
+                              {peer.name} ({peer.endpoint}) ·{' '}
+                              {peer.address || 'IP indisponível'} ·{' '}
+                              {peer.caller_id || 'Caller ID indisponível'} ·{' '}
+                              {formatPPUptime(peer.uptime)} · leitura há{' '}
+                              {formatDuration(
+                                (displayNow - Date.parse(peer.at)) / 1000,
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+          {scope === 'versions' && (
+            <p>
+              {comparison.version
+                ? 'Divergência de versões nas leituras armazenadas.'
+                : 'Versões das últimas leituras disponíveis.'}{' '}
+              Equipamentos sem leitura não participam da comparação.{' '}
+              {comparison.packages === undefined
+                ? 'Comparação de pacotes indisponível: menos de dois conjuntos completos.'
+                : comparison.packages
+                  ? 'Divergência de pacotes nos conjuntos completos.'
+                  : 'Pacotes iguais nos conjuntos completos comparados.'}{' '}
+              Comparação considera todos os {comparison.count ?? 0} equipamentos
+              com leitura, inclusive outras páginas.
+            </p>
+          )}
+          {!rows.length && (
+            <p>
+              {scope === 'series'
+                ? 'Nenhum ponto armazenado. Atualize as sessões ou o monitoramento.'
+                : scope === 'flapping'
+                  ? 'Nenhuma transição registrada na janela disponível.'
+                  : 'Nenhuma leitura disponível para este grupo.'}
+            </p>
+          )}
+          {rows
+            .filter((r) => !r.point && !r.duplicate)
+            .map((r, i) => (
+              <div key={i}>
+                {r.kind === 'flapping' ? (
+                  <p>
+                    {r.login}: {r.used} transições · primeira{' '}
+                    {r.at ? formatDate(r.at) : 'Indisponível'} · última{' '}
+                    {r.value ? formatDate(r.value) : 'Indisponível'}
+                  </p>
+                ) : r.kind === 'version' ? (
+                  <p>
+                    {r.name}: {r.value || 'Indisponível'} ·{' '}
+                    {r.at ? formatDate(r.at) : 'Data indisponível'} · pacotes{' '}
+                    {r.event === 'complete'
+                      ? (r.used ?? 'Indisponível')
+                      : 'Indisponível'}{' '}
+                    · origem{' '}
+                    {r.source_at ? formatDate(r.source_at) : 'Indisponível'}
+                  </p>
+                ) : r.kind === 'hygiene' ? (
+                  <p>
+                    {r.name}: {r.used ?? 'Indisponível'} ·{' '}
+                    {r.size ?? 'Indisponível'} ONLINE sem evidência disponível ·
+                    origem {r.at ? formatDate(r.at) : 'Indisponível'}
+                  </p>
+                ) : (
+                  <p>
+                    {r.name === 'retention'
+                      ? 'Parte da série foi removida pelo limite de armazenamento.'
+                      : scope === 'duplicates'
+                        ? `${r.name}: ${r.value || 'não comparável (leitura indisponível)'}`
+                        : `${r.name}: indisponível nesta fonte.`}
+                  </p>
+                )}
+              </div>
+            ))}
+          {next && (
+            <button
+              onClick={() => {
+                setCursor(next);
+                setRows([]);
+                setState('loading');
+              }}
+            >
+              Próxima página dos dados locais
+            </button>
+          )}
+          {cursor && (
+            <button
+              onClick={() => {
+                setCursor('');
+                setRows([]);
+                setState('loading');
+              }}
+            >
+              Início dos dados locais
+            </button>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+function SessionMonitoringCurve({
+  points,
+}: {
+  points: DeviceMonitoringPoint[];
+}) {
+  const ordered = [...points].reverse();
+  const maximum = Math.max(
+    1,
+    ...ordered.flatMap((p) =>
+      p.online_max === undefined ? [] : [p.online_max],
+    ),
+  );
+  const first = Math.min(...ordered.map((p) => Date.parse(p.at))),
+    last = Math.max(...ordered.map((p) => Date.parse(p.at)));
+  const x = (p: DeviceMonitoringPoint) =>
+    ((Date.parse(p.at) - first) / Math.max(1, last - first)) * 600;
+  const paths: string[] = [];
+  let path = '';
+  for (let i = 0; i < ordered.length; i++) {
+    const p = ordered[i],
+      previous = ordered[i - 1];
+    if (
+      p.gap ||
+      p.online === undefined ||
+      (previous &&
+        Date.parse(p.at) - Date.parse(previous.at) >
+          Math.max(p.resolution, previous.resolution) * 1000)
+    ) {
+      if (path) paths.push(path);
+      path = '';
+      continue;
+    }
+    path +=
+      (path ? ' L ' : 'M ') +
+      x(p).toFixed(1) +
+      ' ' +
+      (135 - (p.online / maximum) * 125).toFixed(1);
+  }
+  if (path) paths.push(path);
+  return (
+    <>
+      <svg
+        viewBox="0 0 600 150"
+        role="img"
+        aria-label="Curva de sessões online observadas"
+        style={{ width: '100%', maxHeight: 180 }}
+      >
+        <title>
+          Sessões online; lacunas não são zero. Página atual da série.
+        </title>
+        {paths.map((d, i) => (
+          <path
+            key={i}
+            d={d}
+            fill="none"
+            stroke="var(--accent, #466bd2)"
+            strokeWidth="2"
+          />
+        ))}
+        {ordered.map((p, i) =>
+          p.online === undefined ? null : (
+            <circle
+              key={i}
+              cx={x(p)}
+              cy={135 - (p.online / maximum) * 125}
+              r={3}
+              fill={
+                p.drop ? 'var(--danger, #b94b4b)' : 'var(--accent, #466bd2)'
+              }
+            />
+          ),
+        )}
+      </svg>
+      <div
+        className="table-scroll"
+        tabIndex={0}
+        aria-label="Pontos de sessões online"
+      >
+        <table className="app-table">
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th>Online mínimo / máximo / último</th>
+              <th>Origem das sessões</th>
+              <th>Qualidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {points.map((p, i) => (
+              <tr key={i}>
+                <td>
+                  {formatDate(p.at)} ·{' '}
+                  {p.resolution === 3600 ? 'hora' : 'minuto'}
+                </td>
+                <td>
+                  {p.online_min ?? 'Indisponível'} /{' '}
+                  {p.online_max ?? 'Indisponível'} /{' '}
+                  {p.online ?? 'Indisponível'}
+                </td>
+                <td>
+                  {p.session_at
+                    ? formatDate(p.session_at)
+                    : 'Sem leitura de sessões neste ponto'}
+                </td>
+                <td>
+                  {p.online === undefined
+                    ? 'Sem leitura de sessões'
+                    : [
+                        p.gap ? 'Lacuna de continuidade' : '',
+                        p.drop ? 'Queda brusca observada' : '',
+                        !p.gap && !p.drop ? 'Leitura compatível' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+function DeviceOperationalTables({ result }: { result: PPReadResult }) {
+  const health = result.rows.find((r) => r.kind === 'resource')?.health;
+  const authCount = result.rows.find(
+    (r) => r.kind === 'availability' && r.name === 'auth',
+  )?.used;
+  const labels: Record<string, string> = {
+    services: 'Serviços telnet/ftp/www',
+    packages: 'Pacotes RouterOS',
+    interfaces: 'Erros e quedas de interfaces',
+    pools: 'Uso de pools',
+    auth: 'Falhas de autenticação PPP',
+    fasttrack: 'Regras FastTrack',
+    ports: 'Negociação de portas físicas',
+  };
+  return (
+    <section className="pppoe-diagnostics" aria-label="Resultado operacional">
+      {health && (
+        <p>
+          Recurso observado entre{' '}
+          {health.started_at
+            ? formatDate(health.started_at)
+            : 'Instante indisponível'}{' '}
+          e {health.at ? formatDate(health.at) : 'Instante indisponível'}.
+        </p>
+      )}
+      {health && (
+        <dl className="pppoe-diagnostic-values pppoe-context-values">
+          <dt>Regras FastTrack habilitadas</dt>
+          <dd>{exactNumber(health.fasttrack_rules)}</dd>
+          <dt>CPU</dt>
+          <dd>{formatMetric(health.cpu, '%')}</dd>
+          <dt>Memória livre / total</dt>
+          <dd
+            title={`${exactVolume(health.free_memory)} / ${exactVolume(health.total_memory)}`}
+          >
+            {formatVolumePair(health.free_memory, health.total_memory)}
+          </dd>
+          <dt>Uptime do equipamento</dt>
+          <dd title={uptimeTitle(health.uptime)}>
+            {formatPPUptime(health.uptime)}
+          </dd>
+          <dt>RouterOS</dt>
+          <dd>{health.version || 'Indisponível'}</dd>
+          <dt>Temperatura</dt>
+          <dd>
+            {health.temperature === undefined
+              ? 'Indisponível'
+              : formatMetric(health.temperature, '°C')}
+          </dd>
+          <dt>Diferença relógio roteador × PC</dt>
+          <dd>
+            {health.clock_offset.known
+              ? formatClockOffset(health.clock_offset)
+              : 'Indisponível'}
+          </dd>
+          <dt>NTP</dt>
+          <dd>
+            {health.ntp_enabled === undefined
+              ? 'Indisponível'
+              : health.ntp_enabled
+                ? 'Ativado'
+                : 'Desativado'}{' '}
+            · {health.ntp_status || 'Estado indisponível'}
+          </dd>
+          <dt>Erros no buffer de log</dt>
+          <dd>{health.error_count ?? 'Indisponível'}</dd>
+        </dl>
+      )}
+      {health?.fasttrack_rules !== undefined && health.fasttrack_rules > 0 && (
+        <p role="status" className="inventory-notice">
+          Sem controle de banda: FastTrack ativo
+        </p>
+      )}
+      <p>
+        Somente leitura. A auditoria de serviços não verifica “Available From”
+        nem altera a configuração.
+      </p>
+      {Object.entries(labels).map(([group, label]) => (
+        <p key={group}>
+          {label}:{' '}
+          {result.availability?.[group] === 'complete'
+            ? 'leitura completa'
+            : result.availability?.[group] === 'partial'
+              ? 'leitura parcial; há formatos não reconhecidos'
+              : result.availability?.[group] === 'limited'
+                ? 'limite atingido'
+                : 'indisponível'}
+          .
+        </p>
+      ))}
+      <p>
+        Contadores de interfaces são acumulados; ausência não é zero. Pools em
+        80% ou mais são destacados apenas nesta leitura. Falhas de autenticação
+        representam o buffer examinado, com os horários informados pelo
+        roteador; não são uma janela de 24 h.
+      </p>
+      {authCount !== undefined && result.availability?.auth === 'complete' && (
+        <p>
+          {authCount === 0
+            ? 'Nenhuma falha de autenticação reconhecida no buffer examinado.'
+            : `${authCount} falhas de autenticação reconhecidas no buffer examinado.`}
+        </p>
+      )}
+      <div
+        className="table-scroll"
+        tabIndex={0}
+        aria-label="Tabela operacional"
+      >
+        <table className="app-table">
+          <thead>
+            <tr>
+              <th>Grupo</th>
+              <th>Nome / login</th>
+              <th>Leitura</th>
+              <th>Origem / estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.rows
+              .filter((r) => r.kind !== 'resource' && r.kind !== 'availability')
+              .map((r, i) => (
+                <tr key={i}>
+                  <td>
+                    {(
+                      {
+                        service: 'Serviço',
+                        package: 'Pacote',
+                        interface: 'Interface',
+                        port: 'Porta física',
+                        pool: 'Pool',
+                        auth_failure: 'Falha PPP',
+                      } as Record<string, string>
+                    )[r.kind] || r.kind}
+                  </td>
+                  <td>{r.name || r.login || 'Indisponível'}</td>
+                  <td>
+                    {r.kind === 'service'
+                      ? `porta ${r.used ?? 'Indisponível'}`
+                      : r.kind === 'port'
+                        ? portLabel(r.port)
+                        : r.kind === 'package'
+                          ? r.value || 'Indisponível'
+                          : r.kind === 'interface'
+                            ? `RX erros ${exactNumber(r.rx_errors)} · TX erros ${exactNumber(r.tx_errors)} · quedas ${exactNumber(r.link_downs)}`
+                            : r.kind === 'pool'
+                              ? `${exactNumber(r.used)} / ${exactNumber(r.size)}${r.used !== undefined && r.size !== undefined && r.size > 0 && r.used / r.size >= 0.8 ? ' · ocupação ≥80%' : ''}`
+                              : exactNumber(r.used)}
+                  </td>
+                  <td>
+                    {r.kind === 'service' || r.kind === 'package'
+                      ? r.disabled === undefined
+                        ? 'Estado indisponível'
+                        : r.disabled
+                          ? 'Desativado'
+                          : 'Ativo'
+                      : r.kind === 'port'
+                        ? `${exactNumber(r.port?.link_downs)} quedas acumuladas${r.port?.running && ((r.port.speed_bps !== undefined && r.port.speed_bps <= 100000000) || r.port.full_duplex === false) ? ' · atenção' : ''}`
+                        : r.kind === 'auth_failure'
+                          ? `${r.at || 'Horário indisponível'} a ${r.value || 'Horário indisponível'}`
+                          : r.value || 'Contador acumulado'}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function PPTrafficChart({ row }: { row: PPReadRow }) {
+  const t = row.traffic;
+  if (!t) return <p>Tráfego indisponível para esta sessão.</p>;
+  const max = Math.max(
+    1,
+    ...t.points.flatMap((p) => (p.gap ? [] : [p.d || 0, p.u || 0])),
+  );
+  const end = Math.max(5000, ...t.points.map((p) => p.t));
+  const scale = networkScale(max, 'rate');
+  const paths = (field: 'd' | 'u') => {
+    const paths: string[] = [];
+    let current = '';
+    for (const p of t.points) {
+      if (p.gap || p[field] === undefined) {
+        if (current) paths.push(current);
+        current = '';
+        continue;
+      }
+      current +=
+        (current ? ' L ' : 'M ') +
+        (78 + (p.t / end) * 522).toFixed(1) +
+        ' ' +
+        (135 - (p[field]! / max) * 125).toFixed(1);
+    }
+    if (current) paths.push(current);
+    return paths;
+  };
+  return (
+    <section aria-label={'Resumo de tráfego de ' + row.login}>
+      <h4>{row.login}</h4>
+      <p title={exactRate(max)}>
+        Escala: 0–{formatAtScale(max, scale)} · download / upload
+      </p>
+      <svg
+        viewBox="0 0 600 150"
+        role="img"
+        aria-label={'Gráfico de tráfego de ' + row.login}
+        style={{ width: '100%', maxHeight: 180 }}
+      >
+        <title>
+          Download TX e upload RX; interrupções são lacunas, sem interpolação.
+        </title>
+        {[1, 0.5, 0].map((part) => (
+          <text
+            key={part}
+            x="0"
+            y={part === 1 ? 12 : part === 0 ? 147 : 77}
+            fill="var(--muted)"
+            fontSize="11"
+          >
+            {formatAtScale(max * part, scale)}
+          </text>
+        ))}
+        {paths('d').map((d, i) => (
+          <path
+            key={'d' + i}
+            d={d}
+            fill="none"
+            stroke="var(--primary)"
+            strokeWidth="2"
+          />
+        ))}
+        {paths('u').map((d, i) => (
+          <path
+            key={'u' + i}
+            d={d}
+            fill="none"
+            stroke="var(--muted)"
+            strokeWidth="2"
+            strokeDasharray="5 3"
+          />
+        ))}
+      </svg>
+      <p>
+        Download (TX): <RateValue rate={row.download} /> · Upload (RX):{' '}
+        <RateValue rate={row.upload} />
+      </p>
+      <p>
+        Média da observação: download <RateValue rate={t.average_download} /> /
+        upload <RateValue rate={t.average_upload} /> · pico amostrado: download{' '}
+        <RateValue rate={t.peak_download} /> / upload{' '}
+        <RateValue rate={t.peak_upload} />
+      </p>
+      <p>
+        Total {t.gaps ? 'parcial ' : ''}da observação:{' '}
+        <span
+          title={`${exactVolume(t.download_bytes)} download / ${exactVolume(t.upload_bytes)} upload`}
+        >
+          {t.covered_ns > 0 && !t.overflow
+            ? `${formatVolume(t.download_bytes)} download / ${formatVolume(t.upload_bytes)} upload`
+            : 'Indisponível'}
+        </span>{' '}
+        · tempo coberto{' '}
+        <span title={exactNumber(t.covered_ns / 1e9, 's')}>
+          {formatDuration(t.covered_ns / 1e9)}
+        </span>
+        {t.gaps
+          ? ` · ${t.gaps} lacuna(s); sem estimar os intervalos ausentes.`
+          : ''}
+      </p>
+      {t.overflow && <p role="alert">Limite numérico: resumo indisponível.</p>}
+    </section>
   );
 }

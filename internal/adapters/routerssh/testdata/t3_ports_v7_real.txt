@@ -1,0 +1,14 @@
+T3E	1	7.14.3 (stable)
+E	X-port-1	no-link			0
+E	X-port-2	no-link			0
+E	X-port-3	no-link			0
+E	X-port-4	no-link			0
+E	X-port-5	no-link			0
+E	X-port-6	link-ok	1Gbps	true	24
+E	X-port-7	no-link			2
+E	X-port-8	link-ok	1Gbps	true	5
+E	X-port-9	link-ok	100Mbps	true	3
+E	X-port-10	no-link			0
+E	X-port-11	no-link			0
+D	00:00:00	4	4
+Z	11	complete

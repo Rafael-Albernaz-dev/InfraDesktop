@@ -217,7 +217,11 @@ func (s *Service) runPD(ctx context.Context, j *runningJob) {
 			o.Provenance.Company = target.Company
 		}
 		store := s.store.(PDDiagnosticStore)
+		s.decoratePingLocked(j, o)
 		code = store.FinishPPDiagnostic(persist, j.command.Scope.Profile, target, j.ppInput, j.view.ID, attempt, o)
+		if code == OK {
+			s.rememberPingLocked(j, o)
+		}
 		if code == Limit && o != nil {
 			attempt.Code = Limit
 			attempt.State = "FAILED"

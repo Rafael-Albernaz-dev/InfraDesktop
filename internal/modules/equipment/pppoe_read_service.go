@@ -35,10 +35,20 @@ func (s *Service) handlePPRead(ctx context.Context, q Command, in PPInput, v *PP
 	if !access.ValidCompanyID(in.JobID) {
 		return Invalid
 	}
+	if q.Op == "pppoe.read-stop" {
+		s.mu.Lock()
+		j := s.jobs[in.JobID]
+		if j == nil || !sameScope(q, j.command) || j.ppInput.Scope != "traffic" {
+			s.mu.Unlock()
+			return Invalid
+		}
+		j.retainTraffic = true
+		s.mu.Unlock()
+	}
 	q.JobID = in.JobID
 	op := q.Op
 	q.Op = "device.query-status"
-	if op == "pppoe.read-cancel" {
+	if op == "pppoe.read-cancel" || op == "pppoe.read-stop" {
 		q.Op = "device.query-cancel"
 	}
 	job, c := s.statusKind(ctx, q, "pppoe.read-start")
@@ -62,7 +72,7 @@ func (s *Service) handlePPRead(ctx context.Context, q Command, in PPInput, v *PP
 		j.cancel()
 		return c
 	}
-	if j.read == nil || j.view.State == "CANCELLED" {
+	if j.read == nil || (j.view.State == "CANCELLED" && !j.retainTraffic) {
 		return OK
 	}
 	source := j.read
@@ -80,7 +90,7 @@ func (s *Service) handlePPRead(ctx context.Context, q Command, in PPInput, v *PP
 }
 
 func (s *Service) preparePPRead(ctx context.Context, q Command, in PPInput, t PPTarget) (*PPReadTarget, Code) {
-	if in.Scope == "top" || in.Scope == "health" {
+	if in.Scope == "top" || in.Scope == "health" || in.Scope == "operations" {
 		if in.ObservationID != "" || len(in.RowIDs) != 0 {
 			return nil, Invalid
 		}
@@ -216,6 +226,15 @@ func (s *Service) publishPPRead(ctx context.Context, j *runningJob, result *PPRe
 		return c
 	}
 	return s.authorized(ctx, j.command, func(uint64) Code {
+		if j.ppInput.Scope == "operations" {
+			store, ok := s.store.(DeviceMonitoringStore)
+			if !ok {
+				return Unavailable
+			}
+			if c := store.SaveDeviceMonitoring(ctx, j.command.Scope.Profile, j.device, j.credentialRevision, result); c != OK {
+				return c
+			}
+		}
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		if ctx.Err() != nil || j.view.State != "RUNNING" {
@@ -258,10 +277,15 @@ func (s *Service) runPPRead(ctx context.Context, j *runningJob) {
 	j.view.State = "SUCCEEDED"
 	if c != OK {
 		j.view.State = "FAILED"
-		j.read = nil
+		if !(j.ppInput.Scope == "traffic" && ((c == Cancelled && j.retainTraffic) || c == Partial || c == "DEADLINE_EXCEEDED" || c == "SSH_CONNECTION_LOST" || c == "SSH_NEGOTIATION_FAILED" || c == "CONNECT_FAILED" || c == Limit || c == "REMOTE_PERMISSION_DENIED")) {
+			j.read = nil
+		}
 	}
 	if c == Cancelled {
 		j.view.State = "CANCELLED"
+	}
+	if result != nil && ValidCollectorReason(c, result.FailureReason) {
+		j.view.PPPoE = &PPAttempt{Epoch: s.epoch, JobID: j.view.ID, State: j.view.State, Code: c, At: PPTime(s.now()), Operation: j.command.Operation, Scope: j.ppInput.Scope, Quality: PPQuality{Status: "partial", Code: c, Reason: result.FailureReason}}
 	}
 	j.view.Code = c
 	j.finished = s.now()

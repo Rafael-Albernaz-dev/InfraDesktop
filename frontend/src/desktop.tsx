@@ -1,3 +1,4 @@
+import { formatDate, formatRouterDuration } from './network-format';
 import { Button, Logo } from './desktop-controls';
 import { Appearance } from './appearance';
 export { Button, Logo } from './desktop-controls';
@@ -874,7 +875,7 @@ function Dashboard({
                         <td>
                           {d.type === 'Concentrador'
                             ? d.pppoeAt
-                              ? `${d.sessions ?? 0} ONLINE · ${d.offline ?? 0} OFFLINE · ${new Date(d.pppoeAt).toLocaleString('pt-BR')}`
+                              ? `${d.sessions ?? 0} ONLINE · ${d.offline ?? 0} OFFLINE · ${formatDate(d.pppoeAt)}`
                               : 'Sem leitura PPPoE'
                             : '—'}
                         </td>
@@ -1358,7 +1359,11 @@ function Concentrator({
                           <span className="cell-name">{s.user}</span>
                         </td>
                         <td className="mono">{s.ip}</td>
-                        <td>{s.uptime}</td>
+                        <td>
+                          <span title={s.uptime}>
+                            {formatRouterDuration(s.uptime)}
+                          </span>
+                        </td>
                         <td>
                           <State kind="good">Ativa</State>
                         </td>
@@ -1380,7 +1385,9 @@ function Concentrator({
                 <h1>{d.name}</h1>
                 <p>{`${d.type} · ${d.os}`}</p>
               </div>
-              <KV label="Tempo ligado">{d.uptime || 'Indisponível'}</KV>
+              <KV label="Tempo ligado">
+                <span title={d.uptime}>{formatRouterDuration(d.uptime)}</span>
+              </KV>
               <KV label="Última consulta">{d.time}</KV>
               <KV label="Identidade">{d.detail}</KV>
               <KV label="Sessões PPPoE">{d.sessions ?? '—'}</KV>
@@ -1397,7 +1404,9 @@ function Concentrator({
               <KV label="Endereço" mono>
                 {s.ip}
               </KV>
-              <KV label="Tempo conectado">{s.uptime}</KV>
+              <KV label="Tempo conectado">
+                <span title={s.uptime}>{formatRouterDuration(s.uptime)}</span>
+              </KV>
               <div className="details-label">Rádio</div>
               {s.radio ? (
                 <>

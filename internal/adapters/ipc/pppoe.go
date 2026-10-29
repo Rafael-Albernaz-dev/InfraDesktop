@@ -17,8 +17,10 @@ import (
 )
 
 var ppFields = map[string][]string{
-	"pppoe.read-start":  {"device_id", "revision", "operation_id", "scope", "observation_id", "row_ids"},
-	"pppoe.read-status": {"job_id"}, "pppoe.read-cancel": {"job_id", "device_id", "operation_id"}, "pppoe.read-page": {"job_id", "cursor"},
+	"pppoe.monitor-current": {"device_id", "scope", "cursor"},
+	"pppoe.read-start":      {"device_id", "revision", "operation_id", "scope", "observation_id", "row_ids"},
+	"pppoe.read-status":     {"job_id"}, "pppoe.read-cancel": {"job_id", "device_id", "operation_id"}, "pppoe.read-page": {"job_id", "cursor"},
+	"pppoe.read-stop":         {"job_id"},
 	"pppoe.context-counts":    {"device_id", "observation_id", "cursor"},
 	"pppoe.diagnostic-start":  {"device_id", "revision", "operation_id", "scope", "observation_id", "row_id"},
 	"pppoe.diagnostic-status": {"job_id"}, "pppoe.diagnostic-cancel": {"job_id"},
@@ -77,6 +79,9 @@ func validatePPPoE(b []byte, q Request, fields map[string]json.RawMessage) (Requ
 	if strict(fields["pppoe"], &input) != nil {
 		return q, foundation.Invalid
 	}
+	if q.Op == "pppoe.monitor-current" && input.Scope != "series" && input.Scope != "flapping" && input.Scope != "versions" && input.Scope != "hygiene" && input.Scope != "equipment" && input.Scope != "port-history" && input.Scope != "duplicates" {
+		return q, foundation.Invalid
+	}
 	var raw map[string]json.RawMessage
 	_ = json.Unmarshal(fields["pppoe"], &raw)
 	if query, ok := raw["query"]; ok {
@@ -123,7 +128,7 @@ func validatePPPoE(b []byte, q Request, fields map[string]json.RawMessage) (Requ
 			if !equipment.PPReadScope(input.Scope) || input.Revision == 0 {
 				return q, foundation.Invalid
 			}
-			if input.Scope == "top" || input.Scope == "health" {
+			if input.Scope == "top" || input.Scope == "health" || input.Scope == "operations" {
 				r = []string{"device_id", "revision", "operation_id", "scope"}
 				if _, exists := raw["row_ids"]; exists {
 					return q, foundation.Invalid
@@ -220,6 +225,9 @@ func (s *Server) ppCursor(q Request, offset int) string {
 		return ""
 	}
 	payload := strconv.Itoa(offset) + ":" + ppDigest(q)
+	if q.Op == "pppoe.monitor-current" {
+		payload += ":" + q.PPPoE.MonitoringGeneration
+	}
 	m := hmac.New(sha256.New, s.ppKey[:])
 	m.Write([]byte(payload))
 	return base64.RawURLEncoding.EncodeToString([]byte(payload + ":" + hex.EncodeToString(m.Sum(nil))))
@@ -233,7 +241,25 @@ func (s *Server) ppOffset(q Request) (int, bool) {
 		return 0, false
 	}
 	f := strings.Split(string(b), ":")
-	if len(f) != 3 {
+	if q.Op == "pppoe.monitor-current" {
+		if len(f) != 4 {
+			return 0, false
+		}
+		snapshot := strings.Split(f[2], "~")
+		if len(snapshot) != 3 {
+			return 0, false
+		}
+		if _, e := strconv.ParseUint(snapshot[0], 10, 63); e != nil {
+			return 0, false
+		}
+		if _, e := strconv.ParseInt(snapshot[1], 10, 64); e != nil {
+			return 0, false
+		}
+		if digest, e := hex.DecodeString(snapshot[2]); e != nil || len(digest) != 32 {
+			return 0, false
+		}
+		q.PPPoE.MonitoringGeneration = f[2]
+	} else if len(f) != 3 {
 		return 0, false
 	}
 	n, e := strconv.Atoi(f[0])
@@ -332,6 +358,10 @@ func (s *Server) dispatchPPPoE(ctx context.Context, uid uint32, q Request, owner
 		v.DiagnosticRows = nil
 	}
 	if v.More {
+		if q.Op == "pppoe.monitor-current" {
+			input.MonitoringGeneration = v.MonitoringGeneration
+			q.PPPoE = &input
+		}
 		v.Next = s.ppCursor(q, v.NextOffset)
 		if v.Next == "" {
 			r.Code = foundation.Unavailable
@@ -339,6 +369,9 @@ func (s *Server) dispatchPPPoE(ctx context.Context, uid uint32, q Request, owner
 		}
 	}
 	d := &Data{ContractRevision: ProductRevision, ProductVersion: ProductVersion, Instance: s.identity.Instance, Profile: q.Profile, Activation: q.Activation, Authenticated: true, PPPoE: &v}
+	if v.Job != nil && v.Job.PPPoE != nil && equipment.ValidCollectorReason(v.Job.Code, v.Job.PPPoE.Quality.Reason) {
+		r.ErrorDetail = &ErrorDetail{Reason: v.Job.PPPoE.Quality.Reason}
+	}
 	r.Data = d
 	b, e := json.Marshal(r)
 	if e != nil || len(b) > 48*1024 {
@@ -358,6 +391,10 @@ func validErrorDetail(r Response) bool {
 		case "operation_receipts", "references_device", "references_company", "payload", "frame", "job_slots":
 			return true
 		}
+	}
+	if r.Code == foundation.OK && d.Entity == "" && r.Data != nil && r.Data.PPPoE != nil {
+		j := r.Data.PPPoE.Job
+		return j != nil && j.State == "FAILED" && j.PPPoE != nil && j.PPPoE.Quality.Reason == d.Reason && equipment.ValidCollectorReason(j.Code, d.Reason)
 	}
 	return r.Code == "JOB_INTERRUPTED" && d.Reason == "" && access.ValidCompanyID(d.Entity)
 }

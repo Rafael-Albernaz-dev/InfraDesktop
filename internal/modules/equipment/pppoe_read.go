@@ -2,7 +2,6 @@ package equipment
 
 import (
 	"context"
-	"math"
 	"sort"
 	"time"
 )
@@ -12,26 +11,35 @@ type PPRate struct {
 	Max float64 `json:"max"`
 }
 type PPReadRow struct {
-	Secret   *PPSecretEvidence `json:"secret,omitempty"`
-	RowID    string            `json:"row_id,omitempty"`
-	Kind     string            `json:"kind"`
-	Name     string            `json:"name,omitempty"`
-	Login    string            `json:"login,omitempty"`
-	TX       *PPRate           `json:"tx,omitempty"`
-	RX       *PPRate           `json:"rx,omitempty"`
-	Running  *bool             `json:"running,omitempty"`
-	Disabled *bool             `json:"disabled,omitempty"`
-	Download *PPRate           `json:"download,omitempty"`
-	Upload   *PPRate           `json:"upload,omitempty"`
-	Uptime   PPInterval        `json:"uptime"`
-	At       string            `json:"at,omitempty"`
-	Event    string            `json:"event,omitempty"`
-	Used     *uint64           `json:"used,omitempty"`
-	Size     *uint64           `json:"size,omitempty"`
-	RXErrors *string           `json:"rx_errors,omitempty"`
-	TXErrors *string           `json:"tx_errors,omitempty"`
-	RXDrops  *string           `json:"rx_drops,omitempty"`
-	TXDrops  *string           `json:"tx_drops,omitempty"`
+	Duplicate  *PPCrossDuplicate      `json:"duplicate,omitempty"`
+	Port       *DevicePort            `json:"port,omitempty"`
+	BeforePort *DevicePort            `json:"before_port,omitempty"`
+	Traffic    *PPTraffic             `json:"traffic,omitempty"`
+	SourceAt   string                 `json:"source_at,omitempty"`
+	Health     *DeviceHealth          `json:"health,omitempty"`
+	Point      *DeviceMonitoringPoint `json:"point,omitempty"`
+	Value      string                 `json:"value,omitempty"`
+	LinkDowns  *string                `json:"link_downs,omitempty"`
+	Secret     *PPSecretEvidence      `json:"secret,omitempty"`
+	RowID      string                 `json:"row_id,omitempty"`
+	Kind       string                 `json:"kind"`
+	Name       string                 `json:"name,omitempty"`
+	Login      string                 `json:"login,omitempty"`
+	TX         *PPRate                `json:"tx,omitempty"`
+	RX         *PPRate                `json:"rx,omitempty"`
+	Running    *bool                  `json:"running,omitempty"`
+	Disabled   *bool                  `json:"disabled,omitempty"`
+	Download   *PPRate                `json:"download,omitempty"`
+	Upload     *PPRate                `json:"upload,omitempty"`
+	Uptime     PPInterval             `json:"uptime"`
+	At         string                 `json:"at,omitempty"`
+	Event      string                 `json:"event,omitempty"`
+	Used       *uint64                `json:"used,omitempty"`
+	Size       *uint64                `json:"size,omitempty"`
+	RXErrors   *string                `json:"rx_errors,omitempty"`
+	TXErrors   *string                `json:"tx_errors,omitempty"`
+	RXDrops    *string                `json:"rx_drops,omitempty"`
+	TXDrops    *string                `json:"tx_drops,omitempty"`
 }
 
 // A selected secret's closed projection is transient and never part of PPRow.
@@ -45,6 +53,8 @@ type PPSecretEvidence struct {
 	Comment    *string `json:"comment,omitempty"`
 }
 type PPReadCost struct {
+	Handshake  *int64  `json:"ssh_handshake_ns,omitempty"`
+	Collector  *int64  `json:"collector_ns,omitempty"`
 	Commands   int     `json:"ssh_commands"`
 	Bytes      int     `json:"ssh_bytes"`
 	FirstCount int     `json:"first_tunnels"`
@@ -53,6 +63,11 @@ type PPReadCost struct {
 	CPUEnd     *uint64 `json:"cpu_end,omitempty"`
 }
 type PPReadResult struct {
+	FailureReason     string            `json:"-"` // Ephemeral closed failure metadata; never observation data.
+	VersionDivergence *bool             `json:"version_divergence,omitempty"`
+	PackageDivergence *bool             `json:"package_divergence,omitempty"`
+	ComparedDevices   int               `json:"compared_devices,omitempty"`
+	Availability      map[string]string `json:"availability,omitempty"`
 	// Serialization sizes are measured by the adapter, not the domain.
 	PayloadBytes     int         `json:"-"`
 	MaxRowBytes      int         `json:"-"`
@@ -80,10 +95,10 @@ type PPReadRemote interface {
 }
 
 func PPReadScope(scope string) bool {
-	return scope == "bandwidth" || scope == "live" || scope == "top" || scope == "log" || scope == "health" || scope == "secret"
+	return scope == "traffic" || scope == "operations" || scope == "bandwidth" || scope == "live" || scope == "top" || scope == "log" || scope == "health" || scope == "secret"
 }
 func PPReadBudget(scope string) time.Duration {
-	if scope == "live" {
+	if scope == "live" || scope == "traffic" {
 		return 60 * time.Second
 	}
 	return QueryBudget
@@ -106,20 +121,7 @@ func PPBandwidth(a, b PPTunnel) (download, upload *PPRate) {
 	if !intervalAdvance(a.Uptime, b.Uptime, age) || !intervalAdvance(a.RouterUptime, b.RouterUptime, age) {
 		return
 	}
-	rate := func(delta uint64) *PPRate {
-		if delta == 0 {
-			return &PPRate{}
-		}
-		down := func(v float64) float64 { return math.Nextafter(v, math.Inf(-1)) }
-		up := func(v float64) float64 { return math.Nextafter(v, math.Inf(1)) }
-		lo := down(down(down(float64(delta))*8000000000) / up(float64(age.Max)))
-		hi := up(up(up(float64(delta))*8000000000) / down(float64(age.Min)))
-		if math.IsInf(hi, 0) || math.IsNaN(hi) {
-			return nil
-		}
-		return &PPRate{Min: math.Max(0, lo), Max: hi}
-	}
-	return rate(*b.TX - *a.TX), rate(*b.RX - *a.RX)
+	return rateFromBytes(*b.TX-*a.TX, age), rateFromBytes(*b.RX-*a.RX, age)
 }
 
 // MatchPPRead requires router continuity as well as the unique session tuple.

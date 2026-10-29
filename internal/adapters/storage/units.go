@@ -38,6 +38,15 @@ var companySessionsOfflineSchema string
 //go:embed company_008_session_context.sql
 var companySessionContextSchema string
 
+//go:embed company_009_device_monitoring.sql
+var companyDeviceMonitoringSchema string
+
+//go:embed company_010_equipment_insights.sql
+var companyEquipmentInsightsSchema string
+
+//go:embed company_011_context_peaks.sql
+var companyContextPeaksSchema string
+
 func migrateGlobal(tx *sql.Tx) error {
 	rows, e := tx.Query("SELECT version,checksum FROM schema_migrations ORDER BY version")
 	if e != nil {
@@ -158,10 +167,10 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&n); e != nil {
 		return e
 	}
-	if n < 1 || n > 8 {
+	if n < 1 || n > 11 {
 		return errors.New("unknown company schema")
 	}
-	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema, companySessionsOfflineSchema, companySessionContextSchema} {
+	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema, companySessionsOfflineSchema, companySessionContextSchema, companyDeviceMonitoringSchema, companyEquipmentInsightsSchema, companyContextPeaksSchema} {
 		if v+1 > n {
 			break
 		}
@@ -177,8 +186,8 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT installation,company FROM identity WHERE singleton=1").Scan(&installation, &company); e != nil || installation != s.installation || company != id {
 		return errors.New("company identity mismatch")
 	}
-	for version := schemaCount + 1; version <= 8; version++ {
-		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema, 7: companySessionsOfflineSchema, 8: companySessionContextSchema}[version]
+	for version := schemaCount + 1; version <= 11; version++ {
+		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema, 7: companySessionsOfflineSchema, 8: companySessionContextSchema, 9: companyDeviceMonitoringSchema, 10: companyEquipmentInsightsSchema, 11: companyContextPeaksSchema}[version]
 		tx, e := db.Begin()
 		if e != nil {
 			return e

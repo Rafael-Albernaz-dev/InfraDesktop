@@ -123,6 +123,8 @@ function inspect(name, code) {
           "ComparePPPoE",
           "ExportPPPoE",
           "StartPPPoERead",
+          "GetDeviceMonitoring",
+          "StopPPPoETraffic",
           "PPPoEReadStatus",
           "CancelPPPoERead",
           "CancelPPPoEReadOperation",

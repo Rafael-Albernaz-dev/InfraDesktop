@@ -11,6 +11,7 @@ import (
 
 func TestL06DContextMigrationReopenAndBudget(t *testing.T) {
 	j, target := ppStoreSetup(t)
+	dropLaterMonitoringFixtureSchema(t, j)
 	ctx := context.Background()
 	var before int
 	j.st.unit.QueryRow("SELECT count(*) FROM equipment_operations").Scan(&before)

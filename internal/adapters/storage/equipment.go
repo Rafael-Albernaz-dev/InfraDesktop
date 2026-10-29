@@ -89,6 +89,17 @@ func (s *Store) loadEquipment(ctx context.Context, q queryer, id string) (equipm
 	}
 	for i := range st.Devices {
 		d := &st.Devices[i]
+		var healthRaw, healthAt string
+		if err := q.QueryRowContext(ctx, "SELECT health_json,stamp FROM device_equipment_snapshot WHERE device_id=? AND revision=?", d.ID, d.Revision).Scan(&healthRaw, &healthAt); err == nil {
+			var h equipment.DeviceHealth
+			if err = json.Unmarshal([]byte(healthRaw), &h); err != nil {
+				return st, err
+			}
+			d.Monitoring = &h
+			d.MonitoringAt = healthAt
+		} else if err != sql.ErrNoRows {
+			return st, err
+		}
 		if d.Role != "concentrator" {
 			continue
 		}

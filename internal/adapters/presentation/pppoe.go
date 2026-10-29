@@ -81,3 +81,11 @@ func (a *App) CancelPPPoEReadOperation(p, act, device, operation string) PPPoERe
 	// App's ppCall mutex serializes this behind an uncertain start call.
 	return a.ppCall("pppoe.read-cancel", p, act, equipment.PPInput{DeviceID: device, Operation: operation})
 }
+
+func (a *App) GetDeviceMonitoring(p, act, device, scope, cursor string) PPPoEResult {
+	return a.ppCall("pppoe.monitor-current", p, act, equipment.PPInput{DeviceID: device, Scope: scope, Cursor: cursor})
+}
+
+func (a *App) StopPPPoETraffic(p, act, job string) PPPoEResult {
+	return a.ppCall("pppoe.read-stop", p, act, equipment.PPInput{JobID: job})
+}

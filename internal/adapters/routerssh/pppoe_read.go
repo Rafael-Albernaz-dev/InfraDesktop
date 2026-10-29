@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"infradesktop/internal/modules/equipment"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -126,7 +127,24 @@ func ParsePPBand(text string) ([]equipment.PPTunnel, string, equipment.Code) {
 	return out, version, equipment.OK
 }
 
-func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, scope string, target *equipment.PPReadTarget, publish func(*equipment.PPReadResult) equipment.Code, check func() equipment.Code) (*equipment.PPReadResult, equipment.Code) {
+func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, scope string, target *equipment.PPReadTarget, publish func(*equipment.PPReadResult) equipment.Code, check func() equipment.Code) (returned *equipment.PPReadResult, code equipment.Code) {
+	defer func() {
+		if code != equipment.Partial && code != equipment.CollectorDefect {
+			return
+		}
+		reason := "READ:inconsistent"
+		if code == equipment.CollectorDefect {
+			reason = "READ:syntax"
+		}
+		if returned != nil && equipment.ValidCollectorReason(code, returned.FailureReason) {
+			reason = returned.FailureReason
+		}
+		returned = &equipment.PPReadResult{FailureReason: reason}
+		log.Printf("routerssh collector failure: code=%s reason=%s", code, reason)
+	}()
+	if scope == "operations" {
+		return readDeviceOperational(ctx, d, user, secret, check)
+	}
 	if scope == "health" {
 		return readPPHealth(ctx, d, user, secret, check)
 	}
@@ -136,7 +154,7 @@ func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, sco
 	if scope == "secret" {
 		return readPPSecret(ctx, d, user, secret, target, check)
 	}
-	if (scope != "bandwidth" && scope != "live" && scope != "top") || target == nil {
+	if (scope != "bandwidth" && scope != "live" && scope != "traffic" && scope != "top") || target == nil {
 		return nil, equipment.Invalid
 	}
 	origin := time.Now()
@@ -178,19 +196,25 @@ func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, sco
 			return rows, equipment.OK
 		}
 		selected := equipment.MatchPPRead(target, rows, age)
+		for i := range selected {
+			if selected[i].ID == "" {
+				selected[i].Sample = window
+			}
+		}
 		return selected, equipment.OK
 	}
 	first, c := sample()
 	if c != equipment.OK {
 		return nil, c
 	}
+	accumulators := make([]equipment.PPTrafficAccumulator, len(target.Rows))
 	var result *equipment.PPReadResult
 	interval := time.Second
-	if scope == "live" {
+	if scope == "live" || scope == "traffic" {
 		interval = 2 * time.Second
 	}
 	for {
-		if scope == "live" {
+		if scope == "live" || scope == "traffic" {
 			if deadline, ok := ctx.Deadline(); !ok {
 				return nil, equipment.Invalid
 			} else if time.Until(deadline) <= interval+time.Second {
@@ -209,6 +233,24 @@ func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, sco
 		}
 		second, c := sample()
 		if c != equipment.OK {
+			if scope == "traffic" && result != nil {
+				snapshot := *result
+				snapshot.Rows = append([]equipment.PPReadRow{}, result.Rows...)
+				for i := range snapshot.Rows {
+					gap := equipment.PPTunnel{Sample: equipment.PPInterval{Known: true, Max: time.Since(origin).Nanoseconds()}}
+					snapshot.Rows[i].Download = nil
+					snapshot.Rows[i].Upload = nil
+					snapshot.Rows[i].Traffic = accumulators[i].Add(first[i], gap)
+				}
+				snapshot.Ended = equipment.PPTime(time.Now())
+				snapshot.Duration = time.Since(origin).Nanoseconds()
+				measured, code := ppMeasureRead(&snapshot)
+				if code == equipment.OK {
+					if code = publish(measured); code != equipment.OK {
+						return nil, code
+					}
+				}
+			}
 			return nil, c
 		}
 		commands, bytes := connection.metrics()
@@ -232,14 +274,18 @@ func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, sco
 		} else {
 			for i, row := range target.Rows {
 				download, upload := equipment.PPBandwidth(first[i], second[i])
-				result.Rows = append(result.Rows, equipment.PPReadRow{Kind: "session", RowID: row.ID, Login: row.Login, Download: download, Upload: upload, Uptime: second[i].Uptime})
+				readRow := equipment.PPReadRow{Kind: "session", RowID: row.ID, Login: row.Login, Download: download, Upload: upload, Uptime: second[i].Uptime}
+				if scope == "traffic" {
+					readRow.Traffic = accumulators[i].Add(first[i], second[i])
+				}
+				result.Rows = append(result.Rows, readRow)
 			}
 		}
 		result, c = ppMeasureRead(result)
 		if c != equipment.OK {
 			return nil, c
 		}
-		if scope != "live" {
+		if scope != "live" && scope != "traffic" {
 			return result, equipment.OK
 		}
 		if c := publish(result); c != equipment.OK {

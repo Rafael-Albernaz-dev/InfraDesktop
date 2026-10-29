@@ -7,6 +7,15 @@ import {
 } from 'react';
 import { pppoeAPI as api } from './presentation';
 import { formatPPUptime } from './pppoe-format';
+import { useEquipmentSnapshot } from './equipment-snapshot';
+import {
+  formatMetric,
+  formatDuration,
+  formatDate,
+  exactRate,
+  formatRate,
+  uptimeTitle,
+} from './network-format';
 import type {
   PPResult,
   PPRow,
@@ -21,6 +30,7 @@ import { equipmentMessage } from './equipment-api';
 import './pppoe.css';
 import {
   PPPoEDiagnostics,
+  DeviceMonitoring,
   PPPoEPing,
   PPPoEReadPanel,
 } from './pppoe-diagnostics';
@@ -74,6 +84,9 @@ export function PPPoE({
   >('loading');
   const [statusFailed, setStatusFailed] = useState(false),
     [statusRetry, retryStatus] = useState(0);
+  const [detailTab, setDetailTab] = useState<'traffic' | 'information'>(
+    'traffic',
+  );
   const [pair, setPair] = useState<{ left?: PPRow; right?: PPRow }>();
   const detailTrigger = useRef<HTMLElement | null>(null);
   const detailHeading = useRef<HTMLHeadingElement>(null);
@@ -96,11 +109,17 @@ export function PPPoE({
   const [query, setQuery] = useState(freshQuery),
     [cursor, setCursor] = useState(''),
     [next, setNext] = useState('');
+  const [showPlan, setShowPlan] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [selected, select] = useState<PPRow>(),
     [base, setBase] = useState(''),
     [tab, setTab] = useState<
-      'sessions' | 'compare' | 'references' | 'catalog' | 'radius'
+      | 'sessions'
+      | 'compare'
+      | 'references'
+      | 'catalog'
+      | 'radius'
+      | 'monitoring'
     >('sessions');
   const [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
@@ -112,6 +131,15 @@ export function PPPoE({
     [refresh, bump] = useState(0);
   const life = useRef({ generation: 0 }),
     primary = useRef<HTMLButtonElement>(null);
+  const operationalSnapshot = useEquipmentSnapshot(
+    profile,
+    activation,
+    device.id,
+    device.revision,
+    `${tab}|${selected?.row_id || ''}|${refresh}`,
+  );
+  const fastTrack = operationalSnapshot?.rows.find((r) => r.kind === 'resource')
+    ?.health?.fasttrack_rules;
   useLayoutEffect(() => {
     if (
       removedFocus.current &&
@@ -591,6 +619,7 @@ export function PPPoE({
             ['references', 'Referências'],
             ['catalog', 'VLANs e serviços'],
             ['radius', 'RADIUS'],
+            ['monitoring', 'Monitoramento'],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -652,12 +681,19 @@ export function PPPoE({
             concentrador.
           </p>
         )}
-      {tab === 'sessions' && !loading && !initialFailed && (
+      {tab === 'monitoring' && (
+        <DeviceMonitoring
+          profile={profile}
+          activation={activation}
+          device={device}
+        />
+      )}
+      {tab === 'sessions' && !loading && !initialFailed && !selected && (
         <PPPoEReadPanel
           key={
             (current?.observation_id || 'none') +
             '|' +
-            (selected?.row_id || rows.map((r) => r.row_id).join(','))
+            rows.map((r) => r.row_id).join(',')
           }
           profile={profile}
           activation={activation}
@@ -665,21 +701,17 @@ export function PPPoE({
           observation={current?.observation_id || ''}
           rows={
             current
-              ? (selected ? [selected] : rows)
-                  .filter((r) => r.state !== 'OFFLINE')
-                  .map((r) => r.row_id)
+              ? rows.filter((r) => r.state !== 'OFFLINE').map((r) => r.row_id)
               : []
           }
           blocked={disabled}
           allowTop
-          logRow={selected?.row_id}
         />
       )}
       {current && (tab === 'sessions' || tab === 'compare') && (
         <>
           <p>
-            Leitura de{' '}
-            {new Date(current.provenance.ended_at).toLocaleString('pt-BR')} ·{' '}
+            Leitura de {formatDate(current.provenance.ended_at)} ·{' '}
             {current.count} registros
           </p>
           {current.context_omitted && (
@@ -843,6 +875,14 @@ export function PPPoE({
                   />
                   Somente logins duplicados
                 </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showPlan}
+                    onChange={(e) => setShowPlan(e.target.checked)}
+                  />
+                  Mostrar plano/limite
+                </label>
                 {(query.search || query.duplicates_only) && (
                   <button
                     onClick={() => {
@@ -872,6 +912,7 @@ export function PPPoE({
                       <th>Caller ID</th>
                       <th>Tempo conectado</th>
                       <th>Estado</th>
+                      {showPlan && <th>Plano · download / upload</th>}
                       <th>VLAN / serviço / interface</th>
                       <th>Duplicidade</th>
                       <th>Detalhe</th>
@@ -883,8 +924,28 @@ export function PPPoE({
                         <td>{row.login || 'Indisponível'}</td>
                         <td>{row.address || 'Indisponível'}</td>
                         <td>{row.caller_id || 'Indisponível'}</td>
-                        <td>{formatPPUptime(row.uptime)}</td>
+                        <td title={uptimeTitle(row.uptime)}>
+                          {formatPPUptime(row.uptime, true)}
+                          {row.state === 'OFFLINE' && (
+                            <small className="cell-sub">Última sessão</small>
+                          )}
+                        </td>
                         <td>{row.state || 'ONLINE'}</td>
+                        {showPlan && (
+                          <td
+                            title={`${exactRate(row.context?.download_limit)} download / ${exactRate(row.context?.upload_limit)} upload`}
+                          >
+                            {row.context?.download_limit !== undefined &&
+                            row.context?.upload_limit !== undefined
+                              ? `${formatRate(row.context.download_limit)} / ${formatRate(row.context.upload_limit)}`
+                              : 'Indisponível'}
+                            {fastTrack !== undefined && fastTrack > 0 && (
+                              <small className="cell-sub">
+                                limite lido, não garantido
+                              </small>
+                            )}
+                          </td>
+                        )}
                         <td>
                           {row.context?.association === 'associated'
                             ? `${row.context.vlan ?? 'VLAN indisponível'} / ${row.context.service || 'Serviço indisponível'} / ${row.context.interface || 'Interface indisponível'}`
@@ -915,6 +976,7 @@ export function PPPoE({
                                   ),
                                 (r) => {
                                   setPair(undefined);
+                                  setDetailTab('traffic');
                                   select(r.data?.rows?.[0]);
                                 },
                               );
@@ -940,42 +1002,82 @@ export function PPPoE({
                   <h2 tabIndex={-1} ref={detailHeading}>
                     {selected.login}
                   </h2>
-                  <p>IP: {selected.address || 'Indisponível'}</p>
-                  <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
-                  <p>Tempo conectado: {formatPPUptime(selected.uptime)}</p>
-                  <p>Estado: {selected.state || 'ONLINE'}</p>
-                  <SessionContext
-                    row={selected}
-                    omitted={current?.context_omitted}
-                  />
-                  <p>ID no roteador: {selected.remote_id || 'Indisponível'}</p>
-                  <p>Session ID: {selected.session_id || 'Indisponível'}</p>
-                  {selected.state === 'OFFLINE' && (
-                    <p>
-                      Deixou de ser vista entre{' '}
-                      {selected.absent_start
-                        ? new Date(selected.absent_start).toLocaleString(
-                            'pt-BR',
-                          )
-                        : 'instante desconhecido'}{' '}
-                      e{' '}
-                      {selected.absent_end
-                        ? new Date(selected.absent_end).toLocaleString('pt-BR')
-                        : 'instante desconhecido'}
-                      . Últimos dados observados.
-                    </p>
-                  )}
-                  <PPPoEPing
-                    key={current.observation_id + '|' + selected.row_id}
-                    profile={profile}
-                    activation={activation}
-                    device={device}
-                    observation={current.observation_id}
-                    row={selected.row_id}
-                    blocked={disabled || selected.state === 'OFFLINE'}
-                  />
-                  {selected.state === 'OFFLINE' && (
-                    <p>Ping indisponível: sessão OFFLINE.</p>
+                  <nav aria-label="Abas do detalhe PPPoE">
+                    <button
+                      aria-pressed={detailTab === 'traffic'}
+                      onClick={() => setDetailTab('traffic')}
+                    >
+                      Tráfego
+                    </button>
+                    <button
+                      aria-pressed={detailTab === 'information'}
+                      onClick={() => setDetailTab('information')}
+                    >
+                      Informações e ping
+                    </button>
+                  </nav>
+                  {detailTab === 'traffic' ? (
+                    selected.state === 'OFFLINE' ? (
+                      <p>Tráfego indisponível: sessão OFFLINE.</p>
+                    ) : (
+                      <PPPoEReadPanel
+                        profile={profile}
+                        activation={activation}
+                        device={device}
+                        observation={current.observation_id}
+                        rows={[selected.row_id]}
+                        traffic
+                        blocked={disabled}
+                      />
+                    )
+                  ) : (
+                    <>
+                      <p>IP: {selected.address || 'Indisponível'}</p>
+                      <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
+                      <p title={uptimeTitle(selected.uptime)}>
+                        {selected.state === 'OFFLINE'
+                          ? 'Duração da última sessão: '
+                          : 'Tempo conectado: '}
+                        {formatPPUptime(selected.uptime)}
+                      </p>
+                      <p>Estado: {selected.state || 'ONLINE'}</p>
+                      <SessionContext
+                        row={selected}
+                        omitted={current?.context_omitted}
+                        fastTrack={fastTrack}
+                      />
+                      <p>
+                        ID no roteador: {selected.remote_id || 'Indisponível'}
+                      </p>
+                      <p>Session ID: {selected.session_id || 'Indisponível'}</p>
+                      {selected.state === 'OFFLINE' && (
+                        <OfflineEvidence row={selected} />
+                      )}
+                      <PPPoEReadPanel
+                        profile={profile}
+                        activation={activation}
+                        device={device}
+                        observation={current.observation_id}
+                        rows={
+                          selected.state === 'OFFLINE' ? [] : [selected.row_id]
+                        }
+                        blocked={disabled}
+                        allowTop
+                        logRow={selected.row_id}
+                      />
+                      <PPPoEPing
+                        key={current.observation_id + '|' + selected.row_id}
+                        profile={profile}
+                        activation={activation}
+                        device={device}
+                        observation={current.observation_id}
+                        row={selected.row_id}
+                        blocked={disabled || selected.state === 'OFFLINE'}
+                      />
+                      {selected.state === 'OFFLINE' && (
+                        <p>Ping indisponível: sessão OFFLINE.</p>
+                      )}
+                    </>
                   )}
                   <button
                     onClick={() => {
@@ -1004,8 +1106,7 @@ export function PPPoE({
                   <option value="">Selecione uma referência</option>
                   {refs.map((ref) => (
                     <option key={ref.reference_id} value={ref.observation_id}>
-                      {new Date(ref.created_at).toLocaleString('pt-BR')} ·{' '}
-                      {ref.count} sessões
+                      {formatDate(ref.created_at)} · {ref.count} sessões
                     </option>
                   ))}
                 </select>
@@ -1034,7 +1135,9 @@ export function PPPoE({
               )}
               {deltas.map((d, i) => (
                 <div key={d.base_row + '|' + d.target_row + '|' + i}>
-                  <span>
+                  <span
+                    title={`${d.base ? uptimeTitle(d.base.uptime) : 'Ausente'} → ${d.target ? uptimeTitle(d.target.uptime) : 'Ausente'}`}
+                  >
                     {d.base
                       ? `${d.base.login} · ${d.base.address || 'IP indisponível'} · ${d.base.caller_id || 'Caller ID indisponível'} · ${formatPPUptime(d.base.uptime)} · ${d.base.state || 'ONLINE'}`
                       : 'Ausente na referência'}{' '}
@@ -1071,7 +1174,7 @@ export function PPPoE({
                       <p>
                         Caller ID: {pair[side]!.caller_id || 'Indisponível'}
                       </p>
-                      <p>
+                      <p title={uptimeTitle(pair[side]!.uptime)}>
                         Tempo conectado: {formatPPUptime(pair[side]!.uptime)}
                       </p>
                       <p>Estado: {pair[side]!.state || 'ONLINE'}</p>
@@ -1139,8 +1242,7 @@ export function PPPoE({
         <>
           {current && (
             <p>
-              Leitura atual:{' '}
-              {new Date(current.provenance.ended_at).toLocaleString('pt-BR')} ·{' '}
+              Leitura atual: {formatDate(current.provenance.ended_at)} ·{' '}
               {current.count} registros
             </p>
           )}
@@ -1171,8 +1273,7 @@ export function PPPoE({
           {refs.map((ref) => (
             <div key={ref.reference_id} className="pppoe-reference">
               <span>
-                {new Date(ref.created_at).toLocaleString('pt-BR')} · {ref.count}{' '}
-                sessões
+                {formatDate(ref.created_at)} · {ref.count} sessões
               </span>
               <button
                 disabled={disabled}
@@ -1191,7 +1292,41 @@ export function PPPoE({
   );
 }
 
-function SessionContext({ row, omitted }: { row: PPRow; omitted?: boolean }) {
+function OfflineEvidence({ row }: { row: PPRow }) {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const last = row.absent_end ? Date.parse(row.absent_end) : NaN;
+  return (
+    <dl className="pppoe-diagnostic-values pppoe-context-values">
+      <dt>Offline desde (intervalo)</dt>
+      <dd
+        title={`${row.absent_start || 'Indisponível'} → ${row.absent_end || 'Indisponível'}`}
+      >
+        {formatDate(row.absent_start, true)} →{' '}
+        {formatDate(row.absent_end, true)}. Última leitura ONLINE → primeira
+        leitura em que faltou.
+      </dd>
+      <dt>Há quanto tempo (pelo menos)</dt>
+      <dd>
+        {formatDuration((now - last) / 1000)}. Limite inferior calculado da
+        primeira ausência, sem estimar o instante da queda.
+      </dd>
+    </dl>
+  );
+}
+
+function SessionContext({
+  row,
+  omitted,
+  fastTrack,
+}: {
+  row: PPRow;
+  omitted?: boolean;
+  fastTrack?: number;
+}) {
   const c = row.context;
   if (!c && omitted)
     return (
@@ -1237,11 +1372,16 @@ function SessionContext({ row, omitted }: { row: PPRow; omitted?: boolean }) {
           <dd>{c.profile || 'Indisponível'}</dd>
         </>
       )}
-      <dt>Limite aplicado (fila dinâmica) — upload / download</dt>
-      <dd>
+      <dt>Limite de plano (fila dinâmica) — download / upload</dt>
+      <dd
+        title={`${exactRate(c.download_limit)} download / ${exactRate(c.upload_limit)} upload`}
+      >
         {c.upload_limit !== undefined && c.download_limit !== undefined
-          ? `${c.upload_limit} / ${c.download_limit} bit/s`
+          ? `${formatRate(c.download_limit)} / ${formatRate(c.upload_limit)}`
           : 'Indisponível'}
+        {fastTrack !== undefined && fastTrack > 0 && (
+          <small className="cell-sub">limite lido, não garantido</small>
+        )}
       </dd>
     </dl>
   );
@@ -1261,12 +1401,28 @@ function ContextCounts({
     [cursor, setCursor] = useState(''),
     [next, setNext] = useState(''),
     [error, setError] = useState('');
+  const key = [profile, activation, device, observation, cursor].join('|');
+  const [resolvedKey, setResolvedKey] = useState('');
+  const [dropThreshold, setDropThreshold] = useState('50'),
+    [minimumPeak, setMinimumPeak] = useState('5');
+  const threshold = Number(dropThreshold),
+    minimum = Number(minimumPeak);
+  const validPolicy =
+    dropThreshold.trim() !== '' &&
+    minimumPeak.trim() !== '' &&
+    Number.isFinite(threshold) &&
+    threshold > 0 &&
+    threshold <= 100 &&
+    Number.isInteger(minimum) &&
+    minimum >= 1 &&
+    minimum <= 2048;
   useEffect(() => {
     let current = true;
     void api
       .groups(profile, activation, device, observation, cursor)
       .then((r) => {
         if (!current) return;
+        setResolvedKey(key);
         if (
           r.profile_id !== profile ||
           r.activation_id !== activation ||
@@ -1280,28 +1436,77 @@ function ContextCounts({
         setError('');
       })
       .catch(() => {
-        if (current) setError('Contagem por VLAN e serviço indisponível.');
+        if (current) {
+          setResolvedKey(key);
+          setError('Contagem por VLAN e serviço indisponível.');
+        }
       });
     return () => {
       current = false;
     };
-  }, [profile, activation, device, observation, cursor]);
+  }, [profile, activation, device, observation, cursor, key]);
   return (
     <section aria-label="Sessões por VLAN e serviço">
       <h3>Sessões por VLAN e serviço</h3>
-      {error ? (
+      <p>
+        Pico dos últimos 7 dias até esta leitura, entre amostras salvas. Padrão
+        herdado do Atlas: queda de 50% com pico mínimo de 5 sessões.
+      </p>
+      <label>
+        Queda local (%)
+        <input
+          type="number"
+          min="1"
+          max="100"
+          value={dropThreshold}
+          onChange={(e) => setDropThreshold(e.target.value)}
+        />
+      </label>
+      <label>
+        Pico mínimo de sessões
+        <input
+          type="number"
+          min="1"
+          max="2048"
+          value={minimumPeak}
+          onChange={(e) => setMinimumPeak(e.target.value)}
+        />
+      </label>
+      {!validPolicy && (
+        <p role="status">
+          Informe queda entre 1 e 100% e pico mínimo entre 1 e 2048.
+        </p>
+      )}
+      {resolvedKey !== key ? (
+        <p role="status">Lendo contagens salvas…</p>
+      ) : error ? (
         <p role="status">{error}</p>
       ) : (
         <ul>
           {groups.map((g, i) => (
             <li key={i}>
               {g.vlan ?? 'VLAN indisponível'} ·{' '}
-              {g.service || 'Serviço indisponível'}: {g.count}
+              {g.service || 'Serviço indisponível'}: {g.count} / Pico 7 d:{' '}
+              {g.peak_7d ?? 'Indisponível'}
+              {g.peak_7d !== undefined && g.peak_7d > 0
+                ? ` (Δ ${g.count < g.peak_7d ? '−' : ''}${formatMetric((Math.abs(g.count - g.peak_7d) * 100) / g.peak_7d, '%')})`
+                : ''}
+              {validPolicy &&
+              g.peak_7d !== undefined &&
+              g.peak_7d >= minimum &&
+              ((g.peak_7d - g.count) * 100) / g.peak_7d >= threshold ? (
+                <strong> · Queda local detectada</strong>
+              ) : null}
+              {g.history_limited
+                ? ' · histórico podado; pico entre amostras retidas'
+                : ''}
             </li>
           ))}
         </ul>
       )}
-      {next && <button onClick={() => setCursor(next)}>Próximos grupos</button>}
+      {resolvedKey === key && next && (
+        <button onClick={() => setCursor(next)}>Próximos grupos</button>
+      )}
       {cursor && (
         <button onClick={() => setCursor('')}>Primeiros grupos</button>
       )}

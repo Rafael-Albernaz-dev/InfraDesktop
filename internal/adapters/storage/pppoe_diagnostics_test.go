@@ -12,6 +12,11 @@ import (
 
 func dropPPDiagnosticFixtureSchema(t *testing.T, j *journey) {
 	t.Helper()
+	for _, table := range []string{"device_context_samples", "device_equipment_snapshot", "device_equipment_events", "device_monitoring_points", "device_session_transitions", "device_monitoring_checkpoint", "device_monitoring_limits", "device_monitoring_generation", "device_monitoring_packages", "device_monitoring_package_status"} {
+		if _, err := j.st.unit.Exec("DROP TABLE " + table); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if _, e := j.st.unit.Exec("DROP TABLE equipment_read_receipt_migration; ALTER TABLE devices DROP COLUMN role; DROP INDEX pppoe_rows_service_vlan; DELETE FROM schema_migrations WHERE version>=7"); e != nil {
 		t.Fatal(e)
 	}
@@ -160,6 +165,12 @@ func TestPPDiagnosticSharedCompanyBudgetBothPublicationDirections(t *testing.T) 
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	// Include T2 disposable series already created by the initial base reading
+	// when constructing the same exact160MiB logical starting state.
+	monitoringFootprint, err := monitoringBytes(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
 	devices := []string{}
 	for i := 0; i < 107; i++ {
 		id := uuid.NewString()
@@ -173,7 +184,7 @@ func TestPPDiagnosticSharedCompanyBudgetBothPublicationDirections(t *testing.T) 
 		id, device, scope := uuid.NewString(), devices[i/3], scopes[i%3]
 		bytes := int64(equipment.PPObservationBytes)
 		if i == 319 {
-			bytes -= sessionBytes
+			bytes -= sessionBytes + monitoringFootprint
 		}
 		meta, _ := json.Marshal(equipment.PDDiagnostic{ID: id, DeviceID: device, Scope: scope})
 		if _, err = tx.Exec("INSERT INTO pppoe_diagnostic_observations VALUES(?,?,?,?,?,?)", id, device, scope, string(meta), 0, bytes); err != nil {

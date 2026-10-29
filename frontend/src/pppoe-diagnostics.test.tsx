@@ -9,12 +9,14 @@ import {
 import { beforeEach, expect, it, vi } from 'vitest';
 import {
   PPPoEDiagnostics,
+  DeviceMonitoring,
   PPPoEPing,
   PPPoEReadPanel,
 } from './pppoe-diagnostics';
 import { PPPoE } from './pppoe';
 import {
   pppoeDiagnosticAPI as api,
+  deviceMonitoringAPI as monitoringAPI,
   pppoeReadAPI as readAPI,
   pppoeAPI as sessions,
 } from './presentation';
@@ -23,7 +25,9 @@ import type { Device } from './equipment-api';
 import type { PDDiagnostic, PDRow, PPResult } from './presentation';
 
 vi.mock('./presentation', () => ({
+  deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
+    stop: vi.fn(),
     start: vi.fn(),
     status: vi.fn(),
     cancel: vi.fn(),
@@ -102,6 +106,7 @@ function panel(scope: 'catalog' | 'radius' = 'catalog') {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(readAPI.stop).mockResolvedValue(response());
   vi.mocked(readAPI.cancelOperation).mockResolvedValue(response());
   vi.mocked(sessions.groups).mockResolvedValue(response());
   pendingPPPoE.clear();
@@ -359,9 +364,9 @@ it('keeps no-response RTT unknown and preserves RADIUS decimal precision', async
       blocked={false}
     />,
   );
-  await screen.findByText(/Enviados: 3 · Recebidos: 0 · Perda: 100%/);
-  expect(screen.getByText(/RTT mínimo: Indisponível/)).toHaveTextContent(
-    'médio: Indisponível',
+  await screen.findByText(/Enviados: 3 · Recebidos: 0 · Perda: 100 %/);
+  expect(screen.getByText(/RTT mínimo:/)).toHaveTextContent(
+    'RTT mínimo: Indisponível · médio: Indisponível · máximo: Indisponível',
   );
   view.unmount();
   vi.mocked(api.current).mockResolvedValue(
@@ -390,7 +395,9 @@ it('keeps no-response RTT unknown and preserves RADIUS decimal precision', async
     }),
   );
   panel('radius');
-  expect(await screen.findByText('18446744073709551615')).toBeInTheDocument();
+  expect(
+    await screen.findByText('18.446.744.073.709.551.615'),
+  ).toBeInTheDocument();
   expect(
     screen.getByText(/não identificam motivo de rejeição/),
   ).toBeInTheDocument();
@@ -595,7 +602,7 @@ it('L06D-S2: one bandwidth action, explicit direction, unknown rate and legitima
   fireEvent.click(
     screen.getByRole('button', { name: 'Medir banda do assinante' }),
   );
-  expect(await screen.findByText('0 bit/s')).toBeInTheDocument();
+  expect(await screen.findByText('0 bps')).toBeInTheDocument();
   expect(
     screen.getByRole('columnheader', {
       name: 'Download do assinante (TX concentrador)',
@@ -1222,9 +1229,11 @@ it('L06D-S6: pools keep unknown separate from zero and interfaces have their own
   );
   expect(await screen.findByText('pool')).toBeInTheDocument();
   const int = screen.getByText('ether1').closest('tr')!;
-  expect(within(int).getByText('3,47–4 kbit/s')).toBeInTheDocument();
-  expect(within(int).getByText('0 bit/s')).toBeInTheDocument();
-  expect(within(int).getByText('18446744073709551615')).toBeInTheDocument();
+  expect(within(int).getByText('3,47–4 Kbps')).toBeInTheDocument();
+  expect(within(int).getByText('0 bps')).toBeInTheDocument();
+  expect(
+    within(int).getByText('18.446.744.073.709.551.615'),
+  ).toBeInTheDocument();
   expect(within(int).getAllByText('Indisponível').length).toBeGreaterThan(0);
   expect(
     screen.getByRole('columnheader', { name: 'TX da interface' }),
@@ -1280,3 +1289,708 @@ for (const stage of ['start', 'terminal'])
       ).toBeEnabled(),
     );
   });
+
+it('L06T2: local series has explicit unknowns; global package divergence survives pagination and remote refresh is deliberate', async () => {
+  const point = {
+    at: '2026-10-28T01:00:00Z',
+    resolution: 60,
+    online_min: 0,
+    online_max: 0,
+    online: 0,
+    session_at: '2026-10-28T01:00:05Z',
+    gap: false,
+    drop: false,
+    samples: 1,
+  };
+  vi.mocked(monitoringAPI.current).mockImplementation(
+    async (_p, _a, _d, scope) =>
+      response({
+        total: scope === 'versions' ? 17 : 1,
+        read: {
+          scope,
+          started_at: '',
+          ended_at: '2026-10-28T01:00:05Z',
+          duration_ns: 0,
+          compared_devices: 17,
+          version_divergence: false,
+          package_divergence: true,
+          rows:
+            scope === 'versions'
+              ? Array.from({ length: 16 }, (_, i) => ({
+                  kind: 'version',
+                  name: 'synthetic-' + i,
+                  value: '7.14.3',
+                  uptime: { known: false, min: 0, max: 0 },
+                }))
+              : [
+                  {
+                    kind: 'point',
+                    point,
+                    uptime: { known: false, min: 0, max: 0 },
+                  },
+                ],
+        },
+      }),
+  );
+  vi.mocked(readAPI.start).mockResolvedValue(
+    response({ total: 0, job: { id: 'op', state: 'RUNNING', code: 'OK' } }),
+  );
+  vi.mocked(readAPI.status).mockResolvedValue(
+    response({
+      total: 1,
+      job: { id: 'op', state: 'SUCCEEDED', code: 'OK' },
+      read: {
+        scope: 'operations',
+        started_at: '2026-10-28T01:00:00Z',
+        ended_at: '2026-10-28T01:00:05Z',
+        duration_ns: 5e9,
+        availability: {
+          services: 'unavailable',
+          packages: 'complete',
+          auth: 'partial',
+        },
+        rows: [
+          {
+            kind: 'resource',
+            health: {
+              cpu: 0,
+              uptime: { known: false, min: 0, max: 0 },
+              clock_offset: { known: false, min: 0, max: 0 },
+            },
+            uptime: { known: false, min: 0, max: 0 },
+          },
+        ],
+      },
+    }),
+  );
+  const view = render(
+    <DeviceMonitoring profile="company" activation="active" device={device} />,
+  );
+  await screen.findByRole('img', {
+    name: 'Curva de sessões online observadas',
+  });
+  expect(readAPI.start).not.toHaveBeenCalled();
+  expect(screen.getByText('0 / 0 / 0')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Versões' }));
+  await screen.findByText(/Divergência de pacotes nos conjuntos completos/);
+  expect(monitoringAPI.current).toHaveBeenCalledWith(
+    'company',
+    'active',
+    'device',
+    'versions',
+    '',
+  );
+  expect(
+    screen.queryByText(/Divergência de versões nas leituras/),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Atualizar monitoramento' }),
+  );
+  await screen.findByText('0 %');
+  expect(readAPI.start).toHaveBeenCalledWith(
+    'company',
+    'active',
+    'device',
+    expect.any(String),
+    'operations',
+    '',
+    [],
+    2,
+  );
+  expect(
+    screen.getByText('Serviços telnet/ftp/www: indisponível.'),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/Falhas de autenticação PPP: leitura parcial/),
+  ).toBeInTheDocument();
+  expect(readAPI.start).toHaveBeenCalledTimes(1);
+  view.unmount();
+});
+
+it('L06T2: reopening an expired local page returns to the first cursor', async () => {
+  vi.mocked(monitoringAPI.current).mockImplementation(
+    async (_p, _a, _d, scope, cursor) =>
+      cursor
+        ? { ...response(), code: 'CURSOR_INVALID' }
+        : response({
+            total: 17,
+            next_cursor: 'expired-page',
+            read: {
+              scope,
+              started_at: '',
+              ended_at: '2026-10-28T01:00:00Z',
+              duration_ns: 0,
+              rows: [],
+            },
+          }),
+  );
+  const view = render(
+    <DeviceMonitoring profile="company" activation="active" device={device} />,
+  );
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Próxima página dos dados locais',
+    }),
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Reabrir série local' }),
+  );
+  await waitFor(() =>
+    expect(vi.mocked(monitoringAPI.current).mock.calls.at(-1)?.[4]).toBe(''),
+  );
+  await screen.findByRole('button', {
+    name: 'Próxima página dos dados locais',
+  });
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  view.unmount();
+});
+
+it('L06T2: a minute can disclose both a gap and an observed drop', async () => {
+  vi.mocked(monitoringAPI.current).mockResolvedValue(
+    response({
+      total: 1,
+      read: {
+        scope: 'series',
+        started_at: '',
+        ended_at: '2026-10-28T01:00:05Z',
+        duration_ns: 0,
+        rows: [
+          {
+            kind: 'point',
+            uptime: { known: false, min: 0, max: 0 },
+            point: {
+              at: '2026-10-28T01:00:00Z',
+              resolution: 60,
+              online_min: 0,
+              online_max: 10,
+              online: 0,
+              gap: true,
+              drop: true,
+              samples: 2,
+            },
+          },
+        ],
+      },
+    }),
+  );
+  const view = render(
+    <DeviceMonitoring profile="company" activation="active" device={device} />,
+  );
+  await screen.findByText('Lacuna de continuidade · Queda brusca observada');
+  view.unmount();
+});
+
+it('L06T: entering traffic starts once with visible IDs; stop preserves graph and exit cancels retained job', async () => {
+  vi.mocked(readAPI.start).mockResolvedValue(
+    response({
+      total: 1,
+      job: { id: 'traffic-job', state: 'RUNNING', code: 'OK' },
+    }),
+  );
+  vi.mocked(readAPI.status).mockResolvedValue(
+    response({
+      total: 1,
+      job: { id: 'traffic-job', state: 'RUNNING', code: 'OK' },
+      read: {
+        scope: 'traffic',
+        started_at: '2026-10-28T01:00:00Z',
+        ended_at: '2026-10-28T01:00:05Z',
+        duration_ns: 5e9,
+        rows: [
+          {
+            kind: 'session',
+            row_id: 'visible-row',
+            login: 'synthetic',
+            uptime: { known: true, min: 1e9, max: 2e9 },
+            download: { min: 1600, max: 1601 },
+            upload: { min: 800, max: 801 },
+            traffic: {
+              points: [{ t: 5000, d: 1600, u: 800 }],
+              download_bytes: '1000',
+              upload_bytes: '500',
+              covered_ns: 5e9,
+              gaps: 0,
+              average_download: { min: 1600, max: 1601 },
+              average_upload: { min: 800, max: 801 },
+              peak_download: { min: 1600, max: 1601 },
+              peak_upload: { min: 800, max: 801 },
+            },
+          },
+        ],
+      },
+    }),
+  );
+  vi.mocked(readAPI.cancel).mockResolvedValue(response());
+  const { unmount } = render(
+    <PPPoEReadPanel
+      profile="company"
+      activation="active"
+      device={device}
+      observation="current"
+      rows={['visible-row']}
+      traffic
+    />,
+  );
+  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(1));
+  expect(vi.mocked(readAPI.start).mock.calls[0].slice(4, 8)).toEqual([
+    'traffic',
+    'current',
+    ['visible-row'],
+    2,
+  ]);
+  await screen.findByRole('img', { name: 'Gráfico de tráfego de synthetic' });
+  expect(screen.getByText(/pico amostrado/i)).toBeInTheDocument();
+  expect(
+    screen.getByText('Escala: 0–1,6 Kbps · download / upload'),
+  ).toHaveAttribute('title', '1.600 bit/s');
+  expect(screen.getAllByTitle('1.600–1.601 bit/s').length).toBeGreaterThan(0);
+  expect(
+    screen.getByTitle('1.000 bytes download / 500 bytes upload'),
+  ).toHaveTextContent('1.000 B download / 500 B upload');
+  fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+  await screen.findByText('Observação parada.');
+  expect(
+    screen.getByRole('img', { name: 'Gráfico de tráfego de synthetic' }),
+  ).toBeInTheDocument();
+  expect(readAPI.start).toHaveBeenCalledTimes(1);
+  unmount();
+  await waitFor(() =>
+    expect(readAPI.cancel).toHaveBeenCalledWith(
+      'company',
+      'active',
+      'traffic-job',
+    ),
+  );
+});
+
+it('L06T: uncertain auto-start is cancelled on context change and BUSY has only explicit retry', async () => {
+  const late = deferred();
+  vi.mocked(readAPI.start)
+    .mockReturnValueOnce(late.promise)
+    .mockResolvedValue({ ...response(), code: 'BUSY' });
+  vi.mocked(readAPI.cancel).mockResolvedValue(response());
+  const props = {
+    profile: 'company',
+    activation: 'active',
+    device,
+    observation: 'reading',
+    rows: ['row'],
+    traffic: true,
+  };
+  const view = render(<PPPoEReadPanel {...props} />);
+  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(1));
+  const operation = vi.mocked(readAPI.start).mock.calls[0][3];
+  view.rerender(<PPPoEReadPanel {...props} rows={['other-row']} />);
+  await waitFor(() =>
+    expect(readAPI.cancelOperation).toHaveBeenCalledWith(
+      'company',
+      'active',
+      'device',
+      operation,
+    ),
+  );
+  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(2));
+  await screen.findByRole('button', { name: 'Iniciar nova observação' });
+  await act(async () =>
+    late.resolve(
+      response({
+        total: 0,
+        job: { id: 'late-traffic', state: 'RUNNING', code: 'OK' },
+      }),
+    ),
+  );
+  expect(readAPI.cancel).toHaveBeenCalledWith(
+    'company',
+    'active',
+    'late-traffic',
+  );
+  expect(readAPI.start).toHaveBeenCalledTimes(2);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Iniciar nova observação' }),
+  );
+  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(3));
+  view.unmount();
+});
+it('L06T: stop has no deadline or silent renewal after sixty seconds', async () => {
+  vi.useFakeTimers();
+  vi.mocked(readAPI.cancel).mockResolvedValue(response());
+  vi.mocked(readAPI.start).mockResolvedValue(
+    response({
+      total: 0,
+      job: { id: 'traffic', state: 'RUNNING', code: 'OK' },
+    }),
+  );
+  vi.mocked(readAPI.status).mockResolvedValue(
+    response({
+      total: 0,
+      job: { id: 'traffic', state: 'RUNNING', code: 'OK' },
+    }),
+  );
+  const view = render(
+    <PPPoEReadPanel
+      profile="company"
+      activation="active"
+      device={device}
+      observation="reading"
+      rows={['row']}
+      traffic
+    />,
+  );
+  try {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(61000);
+    });
+    expect(screen.getByText('Observação parada.')).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Prazo da observação encerrado/),
+    ).not.toBeInTheDocument();
+    expect(readAPI.start).toHaveBeenCalledTimes(1);
+    expect(readAPI.stop).toHaveBeenCalledWith('company', 'active', 'traffic');
+  } finally {
+    view.unmount();
+    vi.useRealTimers();
+  }
+});
+
+for (const terminal of [false, true]) {
+  it(`L06T: ${terminal ? 'confirmed terminal clears deadline warning' : 'pending first sample has no invented freshness'}`, async () => {
+    vi.useFakeTimers();
+    let done = false;
+    vi.mocked(readAPI.start).mockResolvedValue(
+      response({
+        total: 0,
+        job: { id: 'pending-traffic', state: 'RUNNING', code: 'OK' },
+      }),
+    );
+    vi.mocked(readAPI.status).mockImplementation(async () =>
+      response({
+        total: 0,
+        job: {
+          id: 'pending-traffic',
+          state: done ? 'SUCCEEDED' : 'RUNNING',
+          code: 'OK',
+        },
+      }),
+    );
+    vi.mocked(readAPI.cancel).mockResolvedValue(response());
+    const view = render(
+      <PPPoEReadPanel
+        profile="company"
+        activation="active"
+        device={device}
+        observation="reading"
+        rows={['row']}
+        traffic
+      />,
+    );
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      if (!terminal) {
+        expect(
+          screen.getByText(/Aguardando primeira amostra\./),
+        ).toBeInTheDocument();
+        expect(
+          screen.queryByText(/Última atualização há/),
+        ).not.toBeInTheDocument();
+      } else {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(61000);
+        });
+        expect(
+          screen.getByText(/Prazo da observação encerrado/),
+        ).toBeInTheDocument();
+        done = true;
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Consultar estado da leitura' }),
+        );
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1);
+        });
+        expect(
+          screen.queryByText(/Prazo da observação encerrado/),
+        ).not.toBeInTheDocument();
+        expect(readAPI.start).toHaveBeenCalledTimes(1);
+      }
+    } finally {
+      view.unmount();
+      vi.useRealTimers();
+    }
+  });
+}
+
+it.each([
+  [
+    'COLLECTOR_DEFECT',
+    'O:syntax',
+    'Falha do coletor do InfraDesktop neste firmware.',
+  ],
+  [
+    'PARTIAL',
+    'P:echo-mismatch',
+    'Não foi possível concluir esta leitura. Tente novamente.',
+  ],
+])(
+  'L06V7: terminal %s exposes only the structural technical reason',
+  async (code, reason, message) => {
+    vi.mocked(readAPI.start).mockResolvedValue(
+      response({ total: 0, job: { id: 'op', state: 'RUNNING', code: 'OK' } }),
+    );
+    vi.mocked(readAPI.status).mockResolvedValue({
+      ...response({ total: 0, job: { id: 'op', state: 'FAILED', code } }),
+      error: { reason },
+    });
+    render(
+      <PPPoEReadPanel
+        profile="company"
+        activation="active"
+        device={device}
+        observation=""
+        rows={[]}
+        monitoring
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Atualizar monitoramento' }),
+    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    fireEvent.click(screen.getByText('Detalhe técnico'));
+    expect(screen.getByText(`Motivo: ${reason}`)).toBeVisible();
+    expect(screen.queryByText('Resultado operacional')).not.toBeInTheDocument();
+  },
+);
+
+it('L06V7: real zero auth count is explicit and never inferred from an empty page', async () => {
+  const result = {
+    scope: 'operations',
+    started_at: '',
+    ended_at: '2026-10-28T01:00:00Z',
+    duration_ns: 0,
+    availability: { auth: 'complete' },
+    rows: [
+      {
+        kind: 'availability',
+        name: 'auth',
+        value: 'complete',
+        used: 0,
+        size: 0,
+        uptime: { known: false, min: 0, max: 0 },
+      },
+    ],
+  };
+  vi.mocked(readAPI.start).mockResolvedValue(
+    response({ total: 0, job: { id: 'op', state: 'RUNNING', code: 'OK' } }),
+  );
+  vi.mocked(readAPI.status).mockResolvedValue(
+    response({
+      total: 1,
+      job: { id: 'op', state: 'SUCCEEDED', code: 'OK' },
+      read: result,
+    }),
+  );
+  render(
+    <PPPoEReadPanel
+      profile="company"
+      activation="active"
+      device={device}
+      observation=""
+      rows={[]}
+      monitoring
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Atualizar monitoramento' }),
+  );
+  expect(
+    await screen.findByText(
+      'Nenhuma falha de autenticação reconhecida no buffer examinado.',
+    ),
+  ).toBeVisible();
+});
+
+it('L06V7: empty page without an auth counter does not claim zero', async () => {
+  vi.mocked(readAPI.start).mockResolvedValue(
+    response({ total: 0, job: { id: 'op', state: 'RUNNING', code: 'OK' } }),
+  );
+  vi.mocked(readAPI.status).mockResolvedValue(
+    response({
+      total: 0,
+      job: { id: 'op', state: 'SUCCEEDED', code: 'OK' },
+      read: {
+        scope: 'operations',
+        started_at: '',
+        ended_at: '2026-10-28T01:00:00Z',
+        duration_ns: 0,
+        availability: { auth: 'complete' },
+        rows: [],
+      },
+    }),
+  );
+  render(
+    <PPPoEReadPanel
+      profile="company"
+      activation="active"
+      device={device}
+      observation=""
+      rows={[]}
+      monitoring
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Atualizar monitoramento' }),
+  );
+  await screen.findByRole('region', { name: 'Resultado operacional' });
+  expect(
+    screen.queryByText(
+      'Nenhuma falha de autenticação reconhecida no buffer examinado.',
+    ),
+  ).not.toBeInTheDocument();
+});
+
+it('L06T3: absent dynamic interfaces are separate and never presented as running', async () => {
+  vi.mocked(api.current).mockResolvedValue(
+    response({ diagnostic: meta('catalog'), total: 2 }),
+  );
+  vi.mocked(api.list).mockResolvedValue(
+    response({
+      total: 2,
+      diagnostic_rows: [
+        {
+          id: 'present',
+          kind: 'interface',
+          name: 'X-current',
+          type: 'pppoe-in',
+          dynamic: true,
+          running: true,
+        },
+        {
+          id: 'absent',
+          kind: 'interface',
+          name: 'X-absent',
+          type: 'pppoe-in',
+          dynamic: true,
+          running: true,
+          not_seen_since: '2026-10-28T17:00:00Z',
+        },
+      ],
+    }),
+  );
+  panel();
+  await screen.findByRole('heading', { name: 'X-absent' });
+  const absent = screen
+    .getByRole('heading', { name: 'X-absent' })
+    .closest('article')!;
+  expect(within(absent).getByText(/Não visto desde/)).toBeInTheDocument();
+  expect(
+    within(absent).queryByText(/Em execução: Sim/),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('region', {
+      name: 'Interfaces dinâmicas não vistas na leitura atual',
+    }),
+  ).toContainElement(absent);
+  const current = screen
+    .getByRole('heading', { name: 'X-current' })
+    .closest('article')!;
+  expect(within(current).getByText(/Em execução: Sim/)).toBeInTheDocument();
+});
+
+it('L06T3: cross concentrator data stays local and distant readings stay non comparable', async () => {
+  vi.mocked(monitoringAPI.current).mockImplementation(
+    async (_p, _a, _d, scope) =>
+      response({
+        total: scope === 'duplicates' ? 1 : 0,
+        read: {
+          scope,
+          started_at: '',
+          ended_at: '2026-10-28T17:00:00Z',
+          duration_ns: 0,
+          rows:
+            scope === 'duplicates'
+              ? [
+                  {
+                    kind: 'availability',
+                    name: 'X-peer',
+                    value: 'não comparável (leituras distantes)',
+                    uptime: { known: false, min: 0, max: 0 },
+                  },
+                ]
+              : [],
+        },
+      }),
+  );
+  render(
+    <DeviceMonitoring profile="company" activation="active" device={device} />,
+  );
+  fireEvent.click(screen.getByRole('tab', { name: 'Entre concentradores' }));
+  expect(
+    await screen.findByText(/X-peer: não comparável \(leituras distantes\)/),
+  ).toBeInTheDocument();
+  expect(readAPI.start).not.toHaveBeenCalled();
+});
+
+it('L06T3: ping shows jitter, previous10 baseline and the3 probe sample with exact titles', async () => {
+  vi.mocked(api.current).mockResolvedValue(
+    response({
+      diagnostic: {
+        ...meta('ping'),
+        source_observation: 'observation',
+        source_row: 'row',
+      },
+      total: 1,
+    }),
+  );
+  vi.mocked(api.list).mockResolvedValue(
+    response({
+      total: 1,
+      diagnostic_rows: [
+        {
+          id: 'ping',
+          kind: 'ping',
+          ping: {
+            sent: 3,
+            received: 3,
+            loss_percent: 0,
+            min_ns: 1e6,
+            avg_ns: 2e6,
+            max_ns: 3e6,
+            jitter_ns: 1e6,
+            baseline_median_ns: 1e6,
+            baseline_samples: 10,
+            context: 'main',
+            probes: [0, 1, 2].map((sequence) => ({
+              sequence,
+              status: '',
+              rtt_ns: (sequence + 1) * 1e6,
+            })),
+          },
+        },
+      ],
+    }),
+  );
+  render(
+    <PPPoEPing
+      profile="company"
+      activation="active"
+      device={device}
+      observation="observation"
+      row="row"
+      blocked={false}
+    />,
+  );
+  expect(await screen.findByText(/Amostra de 3 probes/)).toHaveTextContent(
+    'jitter: 1 ms',
+  );
+  expect(screen.getByText(/Mediana dos 10 pings/)).toHaveTextContent(
+    'RTT médio +100 %',
+  );
+  expect(screen.getAllByTitle('1.000.000 ns').length).toBeGreaterThan(0);
+});

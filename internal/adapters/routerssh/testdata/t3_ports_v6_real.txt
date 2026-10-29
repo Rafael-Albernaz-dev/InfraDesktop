@@ -1,0 +1,13 @@
+T3E	1	6.49.18 (long-term)
+E	X-port-1	link-ok	100Mbps	true	33
+E	X-port-2	link-ok	100Mbps	true	48
+E	X-port-3	link-ok	100Mbps	true	18
+E	X-port-4	link-ok	100Mbps	true	16
+E	X-port-5	link-ok	1Gbps	true	18
+E	X-port-6	no-link			0
+E	X-port-7	no-link			0
+E	X-port-8	no-link			0
+E	X-port-9	no-link			0
+E	X-port-10	no-link			0
+D	00:00:01	6	6
+Z	10	complete

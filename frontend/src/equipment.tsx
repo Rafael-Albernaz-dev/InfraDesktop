@@ -1,5 +1,16 @@
+import { useDisplayNow } from './equipment-snapshot';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
 import { PPPoE } from './pppoe';
+import { EquipmentInsights } from './equipment-insights';
+import {
+  uptimeTitle,
+  formatDuration,
+  formatDate,
+  exactVolume,
+  formatMetric,
+  formatRouterDuration,
+  formatVolumePair,
+} from './network-format';
 import {
   createContext,
   useContext,
@@ -35,9 +46,32 @@ import {
 } from './equipment-receipts';
 const id = () => crypto.randomUUID();
 const stamp = (d: Device) =>
-  d.result?.observed_at
-    ? new Date(d.result.observed_at).toLocaleString('pt-BR')
-    : 'Não consultado';
+  d.result?.observed_at ? formatDate(d.result.observed_at) : 'Não consultado';
+function latestSavedReading(d: Device) {
+  const monitorAt = Date.parse(d.monitoring_at || ''),
+    summaryAt = Date.parse(d.result?.observed_at || '');
+  if (
+    d.monitoring &&
+    Number.isFinite(monitorAt) &&
+    (!Number.isFinite(summaryAt) || monitorAt >= summaryAt)
+  )
+    return {
+      at: d.monitoring_at!,
+      version: d.monitoring.version,
+      cpu: d.monitoring.cpu,
+      uptime: d.monitoring.uptime.known
+        ? formatDuration(d.monitoring.uptime.min / 1e9)
+        : 'Indisponível',
+      exactUptime: uptimeTitle(d.monitoring.uptime),
+    };
+  return {
+    at: d.result?.observed_at || '',
+    version: d.result?.version,
+    cpu: d.result?.cpu_percent,
+    uptime: formatRouterDuration(d.result?.uptime),
+    exactUptime: d.result?.uptime,
+  };
+}
 type DraftState = { dirty: boolean; blocked: boolean };
 const DraftProtection = createContext<{
   register: (read: () => DraftState) => void;
@@ -178,6 +212,7 @@ export function Equipment({
   const [credentialError, setCredentialError] = useState('');
   const [ppOpen, setPPOpen] = useState(false);
   const detailSurface = useRef<HTMLElement>(null);
+  const displayNow = useDisplayNow();
   const [devices, setDevices] = useState<Device[]>([]);
   const [credentialCatalog, setCredentialCatalog] = useState<{
     key: string;
@@ -789,53 +824,77 @@ export function Equipment({
                     <th>Equipamento</th>
                     <th>Endereço</th>
                     <th className="os-cell">Sistema</th>
+                    <th>Papel</th>
+                    <th>Uptime</th>
+                    <th>CPU</th>
                     <th>Consulta</th>
                     <th>Última leitura</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {devices.map((d) => (
-                    <tr
-                      key={d.id}
-                      className={
-                        'selectable ' +
-                        (selected?.id === d.id ? 'selected' : '')
-                      }
-                      tabIndex={0}
-                      aria-selected={selected?.id === d.id}
-                      onClick={() => {
-                        openDevice(d);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          openDevice(d);
+                  {devices.map((d) => {
+                    const saved = latestSavedReading(d);
+                    return (
+                      <tr
+                        key={d.id}
+                        className={
+                          'selectable ' +
+                          (selected?.id === d.id ? 'selected' : '')
                         }
-                      }}
-                    >
-                      <td>
-                        <span className="cell-name">{d.name}</span>
-                      </td>
-                      <td className="mono">{d.address}</td>
-                      <td className="os-cell">
-                        {d.result?.version || 'Desconhecido'}
-                      </td>
-                      <td>
-                        <span
-                          className={
-                            'text-state ' + (d.result ? 'good' : 'muted')
+                        tabIndex={0}
+                        aria-selected={selected?.id === d.id}
+                        onClick={() => {
+                          openDevice(d);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openDevice(d);
                           }
-                        >
-                          {d.active
-                            ? d.result
-                              ? 'Leitura disponível'
-                              : 'Não consultado'
-                            : 'Inativo'}
-                        </span>
-                      </td>
-                      <td className="reading-time">{stamp(d)}</td>
-                    </tr>
-                  ))}
+                        }}
+                      >
+                        <td>
+                          <span className="cell-name">{d.name}</span>
+                        </td>
+                        <td className="mono">{d.address}</td>
+                        <td className="os-cell">
+                          {saved.version || 'Desconhecido'}
+                        </td>
+                        <td>
+                          {d.role === 'concentrator'
+                            ? 'Concentrador PPPoE'
+                            : d.role || 'Não definido'}
+                        </td>
+                        <td title={saved.exactUptime}>{saved.uptime}</td>
+                        <td>{formatMetric(saved.cpu, '%')}</td>
+                        <td>
+                          <span
+                            className={
+                              'text-state ' +
+                              (d.result || d.monitoring ? 'good' : 'muted')
+                            }
+                          >
+                            {d.active
+                              ? d.result || d.monitoring
+                                ? 'Leitura disponível'
+                                : 'Não consultado'
+                              : 'Inativo'}
+                          </span>
+                        </td>
+                        <td className="reading-time" title={saved.at}>
+                          {saved.at ? formatDate(saved.at) : 'Não consultado'}
+                          {saved.at && (
+                            <small className="cell-sub">
+                              Últimos dados conhecidos · há{' '}
+                              {formatDuration(
+                                (displayNow - Date.parse(saved.at)) / 1000,
+                              )}
+                            </small>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1037,9 +1096,7 @@ export function Equipment({
                 </div>
                 {selected.last_attempt && (
                   <p className="inventory-notice" role="status">
-                    Última tentativa:{' '}
-                    {new Date(selected.last_attempt.at).toLocaleString('pt-BR')}{' '}
-                    ·{' '}
+                    Última tentativa: {formatDate(selected.last_attempt.at)} ·{' '}
                     {selected.last_attempt.state === 'SUCCEEDED'
                       ? 'Leitura concluída'
                       : selected.last_attempt.state === 'STARTED'
@@ -1057,6 +1114,19 @@ export function Equipment({
                       selected.role === 'concentrator'
                         ? () => setPPOpen(true)
                         : undefined
+                    }
+                  />
+                )}
+                {detailOpen && selected.role === 'concentrator' && (
+                  <EquipmentInsights
+                    profile={profile}
+                    activation={activation}
+                    device={selected}
+                    blocked={
+                      locked ||
+                      !vault ||
+                      !selected.active ||
+                      !selected.fingerprint
                     }
                   />
                 )}
@@ -1879,10 +1949,6 @@ function EquipmentReading({
   const rows = separate
     ? allRows.filter((row) => category(row.kind) === tab)
     : allRows;
-  const memory = (v: number | undefined) =>
-    v === undefined
-      ? 'Não informado'
-      : `${(v / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MiB`;
   return (
     <section className="equipment-result" aria-label="Resultado da consulta">
       {separate && (
@@ -1948,21 +2014,31 @@ function EquipmentReading({
             {[
               ['RouterOS', r.version || 'Não informado'],
               ['Placa / modelo', r.board || 'Não informado'],
-              ['Tempo ligado', r.uptime || 'Não informado'],
+              ['Tempo ligado', formatRouterDuration(r.uptime)],
               [
                 'CPU',
                 r.cpu_percent === undefined
                   ? 'Não informada'
-                  : `${r.cpu_percent}%`,
+                  : formatMetric(r.cpu_percent, '%'),
               ],
               [
                 'Memória livre / total',
-                `${memory(r.free_memory_bytes)} / ${memory(r.total_memory_bytes)}`,
+                formatVolumePair(r.free_memory_bytes, r.total_memory_bytes),
               ],
             ].map(([label, value]) => (
               <div className="kv" key={label}>
                 <span className="key">{label}</span>
-                <span>{value}</span>
+                <span
+                  title={
+                    label === 'Memória livre / total'
+                      ? `${exactVolume(r.free_memory_bytes)} / ${exactVolume(r.total_memory_bytes)}`
+                      : label === 'Tempo ligado'
+                        ? r.uptime
+                        : undefined
+                  }
+                >
+                  {value}
+                </span>
               </div>
             ))}
           </div>
@@ -2000,9 +2076,7 @@ function EquipmentReading({
                   : part.status === 'failed'
                     ? 'Listagem indisponível'
                     : 'Interfaces estáticas'}
-                {part.observed_at
-                  ? ` · ${new Date(part.observed_at).toLocaleString('pt-BR')}`
-                  : ''}
+                {part.observed_at ? ` · ${formatDate(part.observed_at)}` : ''}
               </p>
               {['failed', 'stale'].includes(part.status) ? (
                 <p className="inventory-notice">

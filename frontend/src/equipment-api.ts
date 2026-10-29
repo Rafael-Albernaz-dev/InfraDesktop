@@ -24,6 +24,7 @@ export const equipmentMessage = (code: string) =>
     REMOTE_PERMISSION_DENIED: 'O acesso não tem permissão para esta leitura.',
     PARTIAL:
       'A resposta está incompleta ou inválida. A última leitura válida desta parte foi preservada.',
+    COLLECTOR_DEFECT: 'Falha do coletor do InfraDesktop neste firmware.',
     UNSUPPORTED: 'A resposta não identifica uma família RouterOS suportada.',
     CONNECT_FAILED:
       'Não foi possível alcançar a porta SSH. Confira destino, porta e a rede ou VPN disponível.',

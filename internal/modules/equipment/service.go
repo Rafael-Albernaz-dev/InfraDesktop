@@ -11,6 +11,7 @@ import (
 )
 
 type runningJob struct {
+	retainTraffic      bool
 	read               *PPReadResult
 	readTarget         *PPReadTarget
 	ppInput            PPInput
@@ -24,18 +25,20 @@ type runningJob struct {
 	cancel             context.CancelFunc
 }
 type Service struct {
-	auth   Authorizer
-	store  Store
-	vault  Vault
-	remote Remote
-	ids    IDs
-	now    func() time.Time
-	mu     sync.Mutex
-	jobs   map[string]*runningJob
-	closed bool
-	wg     sync.WaitGroup
-	epoch  string
-	origin time.Time
+	pingHistory map[string][]int64
+	pingOrder   []string
+	auth        Authorizer
+	store       Store
+	vault       Vault
+	remote      Remote
+	ids         IDs
+	now         func() time.Time
+	mu          sync.Mutex
+	jobs        map[string]*runningJob
+	closed      bool
+	wg          sync.WaitGroup
+	epoch       string
+	origin      time.Time
 }
 
 func New(auth Authorizer, store Store, vault Vault, remote Remote, ids IDs, now func() time.Time) *Service {
@@ -360,7 +363,11 @@ func sameScope(a, b Command) bool {
 }
 func (s *Service) prune() {
 	for id, j := range s.jobs {
-		if j.released && !j.finished.IsZero() && s.now().Sub(j.finished) >= JobRetention {
+		retention := JobRetention
+		if j.ppInput.Scope == "traffic" {
+			retention = TrafficRetention
+		}
+		if j.released && !j.finished.IsZero() && s.now().Sub(j.finished) >= retention {
 			delete(s.jobs, id)
 		}
 	}

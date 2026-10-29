@@ -1,0 +1,50 @@
+O	1	6.49.18 (long-term)	26w5d00:14:41
+R	cpu-load	=6
+R	free-memory	=33832960
+R	total-memory	=67108864
+R	uptime	=26w5d00:14:41
+R	version	=6.49.18 (long-term)
+R	temperature	=
+C	=oct/28/2026	=10:56:22	=4294956496	=true	?
+8
+R	error-count	=8
+S	telnet	23	false
+S	ftp	21	false
+S	www	80	false
+G	services	complete
+K	routeros-mipsbe	6.49.18	false
+K	system	6.49.18	false
+K	ipv6	6.49.18	false
+K	wireless	6.49.18	true
+K	hotspot	6.49.18	true
+K	mpls	6.49.18	true
+K	routing	6.49.18	false
+K	ppp	6.49.18	false
+K	dhcp	6.49.18	false
+K	security	6.49.18	false
+K	advanced-tools	6.49.18	false
+G	packages	complete
+I	lab-interface-001	ether	0	0	33
+I	lab-interface-002	ether	0	0	48
+I	lab-interface-003	ether	0	0	18
+I	lab-interface-004	ether	0	0	16
+I	lab-interface-005	ether	0	0	18
+I	lab-interface-006	ether	0	0	0
+I	lab-interface-007	ether	0	0	0
+I	lab-interface-008	ether	0	0	0
+I	lab-interface-009	ether	0	0	0
+I	lab-interface-010	ether	0	0	0
+I	lab-interface-011	bridge	0	0	0
+I	lab-l2tp	l2tp-out	0	0	317
+I	lab-interface-013	ovpn-out	0	0	0
+I	lab-interface-014	l2tp-out	0	0	0
+I	lab-interface-015	l2tp-out	0	0	0
+G	interfaces	complete
+0
+P	lab-pool-01	198.18.16.0-198.18.16.253	0
+8
+P	lab-pool-02	198.18.32.0/27	8
+0
+P	lab-pool-03	198.18.48.0/22	0
+G	pools	complete
+Z	32	complete	26w5d00:14:42

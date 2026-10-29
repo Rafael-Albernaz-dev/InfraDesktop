@@ -1,6 +1,8 @@
 import {
   StartPPPoECollection,
   StartPPPoERead,
+  GetDeviceMonitoring,
+  StopPPPoETraffic,
   PPPoEReadStatus,
   CancelPPPoERead,
   CancelPPPoEReadOperation,
@@ -99,8 +101,10 @@ export const access: {
 export type Observation = Omit<equipment.Observation, 'convertValues'>;
 export type Device = Omit<
   equipment.Device,
-  'convertValues' | 'result' | 'role'
+  'convertValues' | 'result' | 'role' | 'monitoring'
 > & {
+  monitoring?: DeviceHealth;
+  monitoring_at?: string;
   role?: string;
   result?: Observation;
 };
@@ -181,7 +185,13 @@ export type PPContext = {
   upload_limit?: string;
   download_limit?: string;
 };
-export type PPGroup = { service: string; vlan?: number; count: number };
+export type PPGroup = {
+  service: string;
+  vlan?: number;
+  count: number;
+  peak_7d?: number;
+  history_limited?: boolean;
+};
 export type PPRow = {
   context?: PPContext;
   state?: string;
@@ -222,7 +232,72 @@ export type PPDelta = {
   caller_changed: boolean;
 };
 export type PPRate = { min: number; max: number };
+export type PPTraffic = {
+  points: { t: number; d?: number; u?: number; gap?: boolean }[];
+  download_bytes: string;
+  upload_bytes: string;
+  covered_ns: number;
+  covered_min_ns?: number;
+  gaps: number;
+  overflow?: boolean;
+  average_download?: PPRate;
+  average_upload?: PPRate;
+  peak_download?: PPRate;
+  peak_upload?: PPRate;
+};
+export type DeviceHealth = {
+  fasttrack_rules?: number;
+  started_at?: string;
+  at?: string;
+  cpu?: number;
+  free_memory?: number;
+  total_memory?: number;
+  uptime: PPInterval;
+  version?: string;
+  temperature?: number;
+  clock_offset: PPInterval;
+  ntp_enabled?: boolean;
+  ntp_status?: string;
+  error_count?: number;
+};
+export type DeviceMonitoringPoint = {
+  at: string;
+  resolution: number;
+  session_at?: string;
+  online_min?: number;
+  online_max?: number;
+  online?: number;
+  health?: DeviceHealth;
+  health_at?: string;
+  gap: boolean;
+  drop: boolean;
+  samples: number;
+};
+export type DevicePort = {
+  running?: boolean;
+  speed_bps?: number;
+  full_duplex?: boolean;
+  link_downs?: string;
+};
+export type PPPeerSession = {
+  device_id: string;
+  name: string;
+  endpoint: string;
+  address: string;
+  caller_id: string;
+  uptime: PPInterval;
+  at: string;
+};
 export type PPReadRow = {
+  duplicate?: { a: PPPeerSession; b: PPPeerSession };
+  port?: DevicePort;
+  before_port?: DevicePort;
+  traffic?: PPTraffic;
+  source_at?: string;
+  health?: DeviceHealth;
+  point?: DeviceMonitoringPoint;
+  value?: string;
+  link_downs?: string;
   secret?: {
     disabled?: boolean;
     service?: string;
@@ -253,6 +328,10 @@ export type PPReadRow = {
   tx_drops?: string;
 };
 export type PPReadResult = {
+  version_divergence?: boolean;
+  package_divergence?: boolean;
+  compared_devices?: number;
+  availability?: Record<string, string>;
   pools_available?: boolean;
   uplinks_available?: boolean;
   pool_total?: number;
@@ -266,6 +345,8 @@ export type PPReadResult = {
   cost?: {
     ssh_commands: number;
     ssh_bytes: number;
+    ssh_handshake_ns?: number;
+    collector_ns?: number;
     first_tunnels: number;
     last_tunnels: number;
     cpu_start?: number;
@@ -307,6 +388,8 @@ export type PPResult = {
   };
 };
 export type PDDiagnostic = {
+  absent_interfaces?: number;
+  absences_limited?: boolean;
   diagnostic_id: string;
   device_id: string;
   scope: string;
@@ -317,6 +400,7 @@ export type PDDiagnostic = {
   count: number;
 };
 export type PDRow = {
+  not_seen_since?: string;
   id: string;
   kind: string;
   name?: string;
@@ -350,6 +434,9 @@ export type PDRow = {
     last_rtt: PPInterval;
   };
   ping?: {
+    jitter_ns?: number;
+    baseline_median_ns?: number;
+    baseline_samples?: number;
     sent: number;
     received: number;
     loss_percent: number;
@@ -442,6 +529,7 @@ export const pppoeAPI: {
 
 const readBindings = {
   start: StartPPPoERead,
+  stop: StopPPPoETraffic,
   status: PPPoEReadStatus,
   cancel: CancelPPPoERead,
   cancelOperation: CancelPPPoEReadOperation,
@@ -452,3 +540,9 @@ export const pppoeReadAPI: {
     ...args: Parameters<(typeof readBindings)[K]>
   ) => Promise<PPResult>;
 } = readBindings;
+
+export const deviceMonitoringAPI = {
+  current: GetDeviceMonitoring as (
+    ...args: Parameters<typeof GetDeviceMonitoring>
+  ) => Promise<PPResult>,
+};

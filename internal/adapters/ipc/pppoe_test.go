@@ -216,6 +216,9 @@ func TestPPPoERealClientPersistenceReplayAndQuota(t *testing.T) {
 func TestPPPoERecursiveSchemaAndCursor(t *testing.T) {
 	j := newPPJourney(t)
 	a := j.collect(uuid.NewString())
+	// The D baseline already collects active rows plus optional context. The
+	// property here is that schema/cursor evaluation adds no remote command.
+	commandsBeforeCursor := j.peer.Commands.Load()
 	q := Request{Version: 1, RequestID: "schema", ContractRevision: ProductRevision, Op: "pppoe.sessions-list", Capability: strings.Repeat("a", 64), Session: "s", Profile: j.client.profile, Activation: j.client.activation, ExpectedProfile: j.client.profile, ExpectedActivation: j.client.activation, PPPoE: &equipment.PPInput{DeviceID: j.device, ObservationID: a.ID, Query: &equipment.PPQuery{}}}
 	b, _ := json.Marshal(q)
 	if _, c := validate(b); c != foundation.OK {
@@ -241,7 +244,7 @@ func TestPPPoERecursiveSchemaAndCursor(t *testing.T) {
 	if _, ok := server.ppOffset(q); ok {
 		t.Fatal("cross-query cursor accepted")
 	}
-	if j.peer.Commands.Load() != 1 {
+	if j.peer.Commands.Load() != commandsBeforeCursor {
 		t.Fatal(fmt.Sprint(j.peer.Commands.Load()))
 	}
 }

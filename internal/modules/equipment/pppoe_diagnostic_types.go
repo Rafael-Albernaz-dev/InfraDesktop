@@ -60,19 +60,23 @@ type PDPingProbe struct {
 	RTT      *int64 `json:"rtt_ns,omitempty"`
 }
 type PDPingResult struct {
-	Sent     int           `json:"sent"`
-	Received int           `json:"received"`
-	Loss     float64       `json:"loss_percent"`
-	Min      *int64        `json:"min_ns,omitempty"`
-	Avg      *int64        `json:"avg_ns,omitempty"`
-	Max      *int64        `json:"max_ns,omitempty"`
-	Probes   []PDPingProbe `json:"probes"`
-	Context  string        `json:"context"`
+	Jitter          *int64        `json:"jitter_ns,omitempty"`
+	Baseline        *int64        `json:"baseline_median_ns,omitempty"`
+	BaselineSamples int           `json:"baseline_samples"`
+	Sent            int           `json:"sent"`
+	Received        int           `json:"received"`
+	Loss            float64       `json:"loss_percent"`
+	Min             *int64        `json:"min_ns,omitempty"`
+	Avg             *int64        `json:"avg_ns,omitempty"`
+	Max             *int64        `json:"max_ns,omitempty"`
+	Probes          []PDPingProbe `json:"probes"`
+	Context         string        `json:"context"`
 }
 
 // The discriminant Kind closes each row's projection. No arbitrary remote map
 // or technologies escape the adapter. Nil booleans/counters mean unknown.
 type PDRow struct {
+	NotSeenSince   string            `json:"not_seen_since,omitempty"`
 	ID             string            `json:"id"`
 	Kind           string            `json:"kind"`
 	RemoteID       string            `json:"remote_id,omitempty"`
@@ -100,6 +104,8 @@ type PDRow struct {
 	Ping           *PDPingResult     `json:"ping,omitempty"`
 }
 type PDDiagnostic struct {
+	AbsentInterfaces  int          `json:"absent_interfaces,omitempty"`
+	AbsencesLimited   bool         `json:"absences_limited,omitempty"`
 	ID                string       `json:"diagnostic_id"`
 	DeviceID          string       `json:"device_id"`
 	Scope             string       `json:"scope"`
