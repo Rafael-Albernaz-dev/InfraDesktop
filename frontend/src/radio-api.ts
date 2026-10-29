@@ -1,0 +1,123 @@
+export type RadioMetric = {
+  label?: string;
+  name: string;
+  value: number;
+  unit: string;
+  direction: string;
+  perspective: string;
+  device_id: string;
+  interface: string;
+  observed_at: string;
+  quality: string;
+  best?: number;
+  worst?: number;
+};
+export type RadioInterface = {
+  had_clients?: boolean;
+  power_metrics?: RadioMetric[];
+  name: string;
+  master?: string;
+  bssid: string;
+  band?: string;
+  configured_width?: string;
+  channel?: string;
+  power?: string;
+  clients?: number;
+  metrics: RadioMetric[];
+};
+export type RadioClient = {
+  mac: string;
+  name: string;
+  interface: string;
+  bssid: string;
+  wireless_uptime?: string;
+  last_activity?: string;
+  metrics: RadioMetric[];
+};
+export type RadioReading = {
+  device_name?: string;
+  address?: string;
+  id: string;
+  device_id: string;
+  family: string;
+  version: string;
+  perspective: string;
+  observed_at: string;
+  compatible: boolean;
+  revision: number;
+  credential_revision: number;
+  connection: string;
+  ssh_legacy?: string[];
+  interfaces: RadioInterface[];
+  clients: RadioClient[];
+  metrics: RadioMetric[];
+  wireless_uptime?: string;
+  device_uptime?: string;
+  ap_bssid?: string;
+  wireless_mac?: string;
+  seconds: number;
+  had_clients: boolean;
+};
+export type RadioProfile = {
+  device_id: string;
+  family: string;
+  confirmed: boolean;
+  warning: number;
+  critical: number;
+};
+export type RadioLinkChoice = {
+  cpe_id: string;
+  ap_id: string;
+  mac: string;
+  interface: string;
+  bssid: string;
+  evidence: string;
+  origin: string;
+};
+export type RadioLink = RadioLinkChoice & {
+  concentrator_id: string;
+  scope: string;
+  login: string;
+  confirmed_at: string;
+  confirmed_now: boolean;
+};
+export type RadioCost = {
+  ping_baseline_ms?: number;
+  ping_limit_ms?: number;
+  cpu_baseline?: number;
+  samples: number[];
+  p95_seconds: number;
+  interval_seconds: number;
+  enabled: boolean;
+  reason: string;
+};
+export type RadioView = {
+  reading?: RadioReading;
+  cpe_reading?: RadioReading;
+  profile?: RadioProfile;
+  link?: RadioLink;
+  suggestions?: RadioLink[];
+  cost?: RadioCost;
+  ap_code?: string;
+  cpe_code?: string;
+  job?: { id: string; state: string; code: string };
+  total: number;
+  more: boolean;
+  next_offset: number;
+};
+export type RadioResult = {
+  code: string;
+  profile_id: string;
+  activation_id: string;
+  data?: RadioView;
+};
+export type RadioInput = {
+  device_id: string;
+  revision: number;
+  operation_id: string;
+  family?: string;
+  mode: string;
+  observation_id?: string;
+  row_id?: string;
+};
+export { radioAPI } from './presentation';

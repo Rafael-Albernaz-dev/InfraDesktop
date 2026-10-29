@@ -190,7 +190,7 @@ func (s *Service) startPPRead(ctx context.Context, q Command, in PPInput) (*Job,
 		}
 		if !j.released {
 			active++
-			if Endpoint(j.device) == Endpoint(d) {
+			if jobUsesEndpoint(j, d) {
 				return nil, access.Busy
 			}
 		}

@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 13,
+  "product_revision": 14,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -569,5 +569,58 @@
         "ui": "collector defect message; generic PARTIAL with collapsible technical reason"
       }
     }
+  },
+  "radio_operations": {
+    "radio.current": [
+      "device_id",
+      "reading_id",
+      "offset"
+    ],
+    "radio.start": [
+      "device_id",
+      "revision",
+      "operation_id",
+      "observation_id",
+      "row_id",
+      "family",
+      "mode"
+    ],
+    "radio.status": [
+      "job_id",
+      "reading_id",
+      "offset"
+    ],
+    "radio.cancel": [
+      "job_id"
+    ],
+    "radio.confirm-family": [
+      "device_id",
+      "revision",
+      "family",
+      "warning",
+      "critical"
+    ],
+    "radio.link-current": [
+      "device_id",
+      "observation_id",
+      "row_id"
+    ],
+    "radio.link-confirm": [
+      "device_id",
+      "observation_id",
+      "row_id",
+      "operation_id",
+      "link"
+    ]
+  },
+  "radio_limits": {
+    "clients": 512,
+    "page_size": 8,
+    "live_seconds": 90,
+    "measurement_samples": 10,
+    "min_interval_seconds": 5,
+    "p95_multiplier": 3,
+    "max_read_seconds": 3,
+    "max_cpu_increase_points": 15
   }
 }

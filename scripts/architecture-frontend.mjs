@@ -103,6 +103,7 @@ function inspect(name, code) {
         n.moduleSpecifier.text === "../wailsjs/go/presentation/App"
       ) {
         const approved = new Set([
+          "GetRadio", "StartRadio", "RadioStatus", "CancelRadio", "CancelRadioOperation", "ConfirmRadioFamily", "GetRadioLink", "ConfirmRadioLink",
           "StartPPPoECollection",
           "StartPPPoECatalog",
           "StartPPPoERadius",

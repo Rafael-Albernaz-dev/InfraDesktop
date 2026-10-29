@@ -12,7 +12,7 @@ import (
 
 func ppTotalBytes(ctx context.Context, tx *sql.Tx) (int64, error) {
 	var bytes int64
-	err := tx.QueryRowContext(ctx, "SELECT (SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_observations)+(SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_diagnostic_observations)+"+monitoringBytesExpression).Scan(&bytes)
+	err := tx.QueryRowContext(ctx, "SELECT (SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_observations)+(SELECT COALESCE(sum(payload_bytes),0) FROM pppoe_diagnostic_observations)+(SELECT COALESCE(sum(payload_bytes),0) FROM radio_current)+"+monitoringBytesExpression).Scan(&bytes)
 	return bytes, err
 }
 func (s *Store) ReservePPDiagnostic(ctx context.Context, company string, in equipment.PPInput, stamp, job string) (string, bool, equipment.Code) {

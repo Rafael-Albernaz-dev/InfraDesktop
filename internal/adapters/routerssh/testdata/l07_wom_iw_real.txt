@@ -1,0 +1,40 @@
+phy#0
+	Interface wlan0
+		ifindex 9
+		wdev 0x2
+		addr 02:00:00:00:10:03
+		type managed
+		channel 43 (5215 MHz), width: 40 MHz, center1: 5205 MHz
+Connected to 02:00:00:00:10:05 (on wlan0)
+	SSID: LAB-AP02-SSID
+	freq: 5215
+	RX: 3358212272 bytes (5590745 packets)
+	TX: 209016482 bytes (1054946 packets)
+	CCQ: 100.0 %
+	signal: -55 dBm [-58, -58] 
+	signal avg: -53 dBm [-57, -56] 
+	tx bitrate: 60.0 MBit/s MCS 3 40MHz short GI
+
+	bss flags:	short-preamble short-slot-time
+	dtim period:	0
+	beacon int:	100
+Station 02:00:00:00:10:05 (on wlan0)
+	device name:	
+	inactive time:	8 ms
+	rx bytes:	3358212272
+	rx packets:	5590745
+	tx bytes:	209016980
+	tx packets:	1054947
+	tx retries:	105159
+	tx failed:	2
+	signal:  	-55 [-58, -58] dBm
+	signal avg:	-53 [-57, -56] dBm
+	tx bitrate:	60.0 MBit/s MCS 3 40MHz short GI
+	rx bitrate:	60.0 MBit/s MCS 3 40MHz short GI
+	authorized:	yes
+	authenticated:	yes
+	preamble:	long
+	WMM/WME:	yes
+	MFP:		no
+	TDLS peer:	no
+167261.26 160582.36

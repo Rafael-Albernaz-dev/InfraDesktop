@@ -28,6 +28,7 @@ import type {
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import './pppoe.css';
+import { RadioLinkPanel } from './radio';
 import {
   PPPoEDiagnostics,
   DeviceMonitoring,
@@ -1032,6 +1033,7 @@ export function PPPoE({
                     )
                   ) : (
                     <>
+                      <h3>Autenticação PPPoE</h3>
                       <p>IP: {selected.address || 'Indisponível'}</p>
                       <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
                       <p title={uptimeTitle(selected.uptime)}>
@@ -1065,6 +1067,24 @@ export function PPPoE({
                         allowTop
                         logRow={selected.row_id}
                       />
+                      {selected.state !== 'OFFLINE' && (
+                        <RadioLinkPanel
+                          key={[
+                            profile,
+                            activation,
+                            current.observation_id,
+                            selected.row_id,
+                          ].join('|')}
+                          profile={profile}
+                          activation={activation}
+                          device={device}
+                          observation={current.observation_id}
+                          row={selected.row_id}
+                          pppoeUptime={formatPPUptime(selected.uptime)}
+                          blocked={disabled}
+                        />
+                      )}
+                      <h3>Conectividade</h3>
                       <PPPoEPing
                         key={current.observation_id + '|' + selected.row_id}
                         profile={profile}

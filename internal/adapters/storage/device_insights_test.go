@@ -56,7 +56,7 @@ func TestL06T3SavedPortsRestartReplayAndReopen(t *testing.T) {
 		t.Fatal("port delta/replay", c, v.Read)
 	}
 	var version int
-	if e := j.st.unit.QueryRow("SELECT max(version) FROM schema_migrations").Scan(&version); e != nil || version != 11 {
+	if e := j.st.unit.QueryRow("SELECT max(version) FROM schema_migrations").Scan(&version); e != nil || version != 12 {
 		t.Fatal("additive migration", version, e)
 	}
 	if e := j.st.validateUnit(j.st.unit, companyX); e != nil {
@@ -72,6 +72,7 @@ func TestL06T3SavedPortsRestartReplayAndReopen(t *testing.T) {
 
 func dropLaterMonitoringFixtureSchema(t *testing.T, j *journey) {
 	t.Helper()
+	dropRadioFixtureSchema(t, j)
 	for _, table := range []string{"device_context_samples", "device_equipment_snapshot", "device_equipment_events", "device_monitoring_points", "device_session_transitions", "device_monitoring_checkpoint", "device_monitoring_limits", "device_monitoring_generation", "device_monitoring_packages", "device_monitoring_package_status"} {
 		if _, e := j.st.unit.Exec("DROP TABLE " + table); e != nil {
 			t.Fatal(e)
@@ -83,6 +84,7 @@ func dropLaterMonitoringFixtureSchema(t *testing.T, j *journey) {
 }
 func TestL06T3MigrationTenAtomicPreservesAppliedNine(t *testing.T) {
 	j, _ := ppStoreSetup(t)
+	dropRadioFixtureSchema(t, j)
 	var before, after string
 	if e := j.st.unit.QueryRow("SELECT group_concat(checksum,'|') FROM (SELECT checksum FROM schema_migrations WHERE version<=9 ORDER BY version)").Scan(&before); e != nil {
 		t.Fatal(e)

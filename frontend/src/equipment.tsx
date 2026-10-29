@@ -2,6 +2,7 @@ import { useDisplayNow } from './equipment-snapshot';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
 import { PPPoE } from './pppoe';
 import { EquipmentInsights } from './equipment-insights';
+import { RadioEquipment } from './radio';
 import {
   uptimeTitle,
   formatDuration,
@@ -984,6 +985,7 @@ export function Equipment({
                         concentrator: 'Concentrador',
                         ap: 'AP',
                         cpe: 'CPE',
+                        ptp: 'PTP',
                         other: 'Outro',
                       } as Record<string, string>
                     )[selected.role || 'other']
@@ -1013,36 +1015,49 @@ export function Equipment({
                         Abrir sessões PPPoE
                       </Button>
                     )}
-                  <Button
-                    kind={
-                      detailOpen && selected.role !== 'concentrator'
-                        ? 'primary'
-                        : undefined
-                    }
-                    disabled={
-                      locked ||
-                      !vault ||
-                      !selected.active ||
-                      !selected.credential_id ||
-                      job?.state === 'RUNNING'
-                    }
-                    onClick={() => {
-                      setDetailOpen(true);
-                      void startOperation(
-                        selected.fingerprint ? 'query' : 'inspect',
-                        selected,
-                      );
-                    }}
-                  >
-                    {detailOpen
-                      ? selected.result
-                        ? 'Atualizar resumo'
-                        : 'Consultar resumo'
-                      : selected.result
-                        ? 'Atualizar'
-                        : 'Conectar'}
-                  </Button>
-                  {!detailOpen && (
+                  {selected.role === 'ptp' ? null : (selected.role === 'ap' ||
+                      selected.role === 'cpe') &&
+                    selected.fingerprint ? (
+                    !detailOpen && (
+                      <Button
+                        kind="primary"
+                        onClick={() => setDetailOpen(true)}
+                      >
+                        Abrir rádio
+                      </Button>
+                    )
+                  ) : (
+                    <Button
+                      kind={
+                        detailOpen && selected.role !== 'concentrator'
+                          ? 'primary'
+                          : undefined
+                      }
+                      disabled={
+                        locked ||
+                        !vault ||
+                        !selected.active ||
+                        !selected.credential_id ||
+                        job?.state === 'RUNNING'
+                      }
+                      onClick={() => {
+                        setDetailOpen(true);
+                        void startOperation(
+                          selected.fingerprint ? 'query' : 'inspect',
+                          selected,
+                        );
+                      }}
+                    >
+                      {detailOpen
+                        ? selected.result
+                          ? 'Atualizar resumo'
+                          : 'Consultar resumo'
+                        : selected.result
+                          ? 'Atualizar'
+                          : 'Conectar'}
+                    </Button>
+                  )}
+                  {!detailOpen && selected.role !== 'ptp' && (
                     <Button
                       disabled={
                         locked || !selected.active || job?.state === 'RUNNING'
@@ -1146,6 +1161,22 @@ export function Equipment({
                     }
                   />
                 )}
+                {detailOpen &&
+                  (selected.role === 'ap' || selected.role === 'cpe') &&
+                  selected.fingerprint && (
+                    <RadioEquipment
+                      key={[
+                        profile,
+                        activation,
+                        selected.id,
+                        selected.revision,
+                      ].join('|')}
+                      profile={profile}
+                      activation={activation}
+                      device={selected}
+                      blocked={locked || !vault || !selected.active}
+                    />
+                  )}
                 {detailOpen && (
                   <details className="equipment-access">
                     <summary>Acesso e identidade</summary>
@@ -1573,6 +1604,7 @@ function DeviceForm({
                 <option value="concentrator">Concentrador</option>
                 <option value="ap">AP</option>
                 <option value="cpe">CPE</option>
+                <option value="ptp">PTP (somente cadastro)</option>
               </select>
             </label>
             <label className="field">

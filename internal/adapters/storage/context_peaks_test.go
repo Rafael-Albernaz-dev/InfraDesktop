@@ -79,6 +79,7 @@ func TestL06T3ContextPeakSevenDaysZeroUnknownAndQuota(t *testing.T) {
 }
 func TestL06T3MigrationElevenAtomicPreservesTen(t *testing.T) {
 	j, _ := ppStoreSetup(t)
+	dropRadioFixtureSchema(t, j)
 	var before, after string
 	j.st.unit.QueryRow("SELECT group_concat(checksum,'|') FROM (SELECT checksum FROM schema_migrations WHERE version<=10 ORDER BY version)").Scan(&before)
 	if _, e := j.st.unit.Exec("DROP TABLE device_context_samples;DELETE FROM schema_migrations WHERE version=11"); e != nil {

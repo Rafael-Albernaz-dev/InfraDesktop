@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 )
 
-const ProductRevision = 13
+const ProductRevision = 14
 const ProductVersion = "0.6.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104
@@ -23,28 +23,29 @@ const Budget = 3 * time.Second
 var errProtocol = errors.New("invalid frame")
 
 type Request struct {
-	PPPoE              *equipment.PPInput `json:"pppoe,omitempty"`
-	Equipment          *EquipmentInput    `json:"equipment,omitempty"`
-	ContractRevision   int                `json:"contract_revision,omitempty"`
-	Version            int                `json:"version"`
-	RequestID          string             `json:"request_id"`
-	Op                 string             `json:"op"`
-	Capability         string             `json:"capability,omitempty"`
-	Session            string             `json:"session,omitempty"`
-	Profile            string             `json:"profile_id,omitempty"`
-	Activation         string             `json:"activation_id,omitempty"`
-	Label              string             `json:"label,omitempty"`
-	Name               string             `json:"name,omitempty"`
-	Password           string             `json:"password,omitempty"`
-	Recovery           string             `json:"recovery,omitempty"`
-	Grant              string             `json:"grant,omitempty"`
-	Theme              string             `json:"theme,omitempty"`
-	Operation          string             `json:"operation_id,omitempty"`
-	Replace            bool               `json:"replace_pending,omitempty"`
-	Remember           bool               `json:"remember,omitempty"`
-	ExpectedProfile    string             `json:"expected_profile,omitempty"`
-	ExpectedActivation string             `json:"expected_activation,omitempty"`
-	Brand              *Branding          `json:"brand,omitempty"`
+	Radio              *equipment.RadioInput `json:"radio,omitempty"`
+	PPPoE              *equipment.PPInput    `json:"pppoe,omitempty"`
+	Equipment          *EquipmentInput       `json:"equipment,omitempty"`
+	ContractRevision   int                   `json:"contract_revision,omitempty"`
+	Version            int                   `json:"version"`
+	RequestID          string                `json:"request_id"`
+	Op                 string                `json:"op"`
+	Capability         string                `json:"capability,omitempty"`
+	Session            string                `json:"session,omitempty"`
+	Profile            string                `json:"profile_id,omitempty"`
+	Activation         string                `json:"activation_id,omitempty"`
+	Label              string                `json:"label,omitempty"`
+	Name               string                `json:"name,omitempty"`
+	Password           string                `json:"password,omitempty"`
+	Recovery           string                `json:"recovery,omitempty"`
+	Grant              string                `json:"grant,omitempty"`
+	Theme              string                `json:"theme,omitempty"`
+	Operation          string                `json:"operation_id,omitempty"`
+	Replace            bool                  `json:"replace_pending,omitempty"`
+	Remember           bool                  `json:"remember,omitempty"`
+	ExpectedProfile    string                `json:"expected_profile,omitempty"`
+	ExpectedActivation string                `json:"expected_activation,omitempty"`
+	Brand              *Branding             `json:"brand,omitempty"`
 }
 type Branding struct {
 	Name   string `json:"name"`
@@ -56,31 +57,32 @@ type Company struct {
 	Name string `json:"name"`
 }
 type Data struct {
-	VaultAvailable   bool              `json:"vault_available"`
-	PPPoE            *equipment.PPView `json:"pppoe,omitempty"`
-	Equipment        *equipment.View   `json:"equipment,omitempty"`
-	ContractRevision int               `json:"contract_revision,omitempty"`
-	ProductVersion   string            `json:"product_version,omitempty"`
-	Brand            *Branding         `json:"brand,omitempty"`
-	Setup            bool              `json:"setup"`
-	Authenticated    bool              `json:"authenticated"`
-	Name             string            `json:"name,omitempty"`
-	Theme            string            `json:"theme,omitempty"`
-	Recovery         string            `json:"recovery,omitempty"`
-	Grant            string            `json:"grant,omitempty"`
-	Companies        []Company         `json:"companies,omitempty"`
-	Session          string            `json:"session,omitempty"`
-	Expires          string            `json:"expires_at,omitempty"`
-	Instance         string            `json:"instance_id"`
-	Activation       string            `json:"activation_id"`
-	Profile          string            `json:"profile_id"`
-	Heartbeat        int64             `json:"heartbeat"`
-	Observations     uint64            `json:"observations"`
-	Label            string            `json:"label,omitempty"`
-	Value            *int              `json:"value,omitempty"`
-	At               string            `json:"observed_at,omitempty"`
-	Source           string            `json:"source,omitempty"`
-	Quality          string            `json:"quality,omitempty"`
+	Radio            *equipment.RadioView `json:"radio,omitempty"`
+	VaultAvailable   bool                 `json:"vault_available"`
+	PPPoE            *equipment.PPView    `json:"pppoe,omitempty"`
+	Equipment        *equipment.View      `json:"equipment,omitempty"`
+	ContractRevision int                  `json:"contract_revision,omitempty"`
+	ProductVersion   string               `json:"product_version,omitempty"`
+	Brand            *Branding            `json:"brand,omitempty"`
+	Setup            bool                 `json:"setup"`
+	Authenticated    bool                 `json:"authenticated"`
+	Name             string               `json:"name,omitempty"`
+	Theme            string               `json:"theme,omitempty"`
+	Recovery         string               `json:"recovery,omitempty"`
+	Grant            string               `json:"grant,omitempty"`
+	Companies        []Company            `json:"companies,omitempty"`
+	Session          string               `json:"session,omitempty"`
+	Expires          string               `json:"expires_at,omitempty"`
+	Instance         string               `json:"instance_id"`
+	Activation       string               `json:"activation_id"`
+	Profile          string               `json:"profile_id"`
+	Heartbeat        int64                `json:"heartbeat"`
+	Observations     uint64               `json:"observations"`
+	Label            string               `json:"label,omitempty"`
+	Value            *int                 `json:"value,omitempty"`
+	At               string               `json:"observed_at,omitempty"`
+	Source           string               `json:"source,omitempty"`
+	Quality          string               `json:"quality,omitempty"`
 }
 type ErrorDetail struct {
 	Reason string `json:"reason,omitempty"`
@@ -277,6 +279,9 @@ func validate(b []byte) (Request, foundation.Code) {
 			}
 		}
 	default:
+		if isRadio(q.Op) {
+			return validateRadio(b, q, fields)
+		}
 		if isPPPoE(q.Op) {
 			return validatePPPoE(b, q, fields)
 		}

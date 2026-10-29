@@ -1,0 +1,170 @@
+L07-CPU-BEFORE
+                   uptime: 5w6d6h10m16s
+                  version: 6.49.10 (long-term)
+               build-time: Sep/15/2023 05:06:15
+         factory-software: 6.7
+              free-memory: 34.3MiB
+             total-memory: 64.0MiB
+                      cpu: MIPS 74Kc V4.12
+                cpu-count: 1
+            cpu-frequency: 600MHz
+                 cpu-load: 6%
+           free-hdd-space: 108.0MiB
+          total-hdd-space: 128.0MiB
+  write-sect-since-reboot: 159985
+         write-sect-total: 350820
+               bad-blocks: 0.6%
+        architecture-name: mipsbe
+               board-name: BaseBox 5
+                 platform: MikroTik
+
+L07-INTERFACES
+Flags: X - disabled, R - running 
+ 0  R name="Virtual-p03" mtu=1500 l2mtu=1600 mac-address=02:00:00:00:10:06 
+      arp=enabled interface-type=virtual master-interface=wlan1 
+      mode=ap-bridge ssid="LAB-AP03-SSID" vlan-mode=no-tag vlan-id=1 
+      wds-mode=dynamic wds-default-bridge=bridge1 wds-ignore-ssid=no 
+      bridge-mode=enabled default-authentication=yes default-forwarding=yes 
+      default-ap-tx-limit=0 default-client-tx-limit=0 hide-ssid=no 
+      security-profile=default 
+
+ 1  R name="wlan1" mtu=1500 l2mtu=1600 mac-address=02:00:00:00:10:05 
+      arp=enabled interface-type=Atheros AR9300 mode=ap-bridge 
+      ssid="LAB-AP02-SSID" frequency=5215 band=5ghz-a/n 
+      channel-width=20/40mhz-eC secondary-frequency="" scan-list=5200-5400 
+      wireless-protocol=802.11 vlan-mode=no-tag vlan-id=1 wds-mode=dynamic 
+      wds-default-bridge=bridge1 wds-ignore-ssid=no bridge-mode=enabled 
+      default-authentication=yes default-forwarding=yes default-ap-tx-limit=0 
+      default-client-tx-limit=0 hide-ssid=no security-profile=default 
+      compression=no 
+
+L07-MONITORS
+L07-INTERFACE=Virtual-p03
+                 status: running-ap
+      wireless-protocol: 802.11
+     registered-clients: 1
+  authenticated-clients: 1
+            wmm-enabled: yes
+    notify-external-fdb: no
+
+L07-INTERFACE=wlan1
+                 status: running-ap
+                channel: 5215/20-eC/an
+      wireless-protocol: 802.11
+            noise-floor: -107dBm
+         overall-tx-ccq: 100%
+     registered-clients: 5
+  authenticated-clients: 5
+       current-distance: 11
+            wmm-enabled: yes
+      current-tx-powers: 6Mbps:27(27/30),9Mbps:27(27/30),12Mbps:27(27/30),
+                         18Mbps:27(27/30),24Mbps:27(27/30),36Mbps:27(27/30),
+                         48Mbps:25(25/28),54Mbps:24(24/27),HT20-0:27(27/30),
+                         HT20-1:27(27/30),HT20-2:27(27/30),HT20-3:27(27/30),
+                         HT20-4:27(27/30),HT20-5:27(27/30),HT20-6:25(25/28),
+                         HT20-7:23(23/26),HT40-0:27(27/30),HT40-1:27(27/30),
+                         HT40-2:27(27/30),HT40-3:27(27/30),HT40-4:27(27/30),
+                         HT40-5:27(27/30),HT40-6:25(25/28),HT40-7:23(23/26)
+    notify-external-fdb: no
+
+L07-CPU-DURING
+cpu-load=6
+L07-CLIENTS
+ 0 interface=Virtual-p03 radio-name=CPE-I2 mac-address=02:00:00:00:10:04 ap=no 
+   wds=no bridge=no rx-rate="60Mbps-40MHz/1S/SGI" 
+   tx-rate="60Mbps-40MHz/1S/SGI" packets=129523166,68103830 
+   bytes=150499137781,24459036253 frames=129523166,68109347 
+   frame-bytes=150758327335,24051003631 hw-frames=133917627,68712367 
+   hw-frame-bytes=158875000298,27163815522 tx-frames-timed-out=0 
+   uptime=2w5d3h31m43s last-activity=3s50ms signal-strength=-66dBm@6Mbps 
+   signal-to-noise=41dB signal-strength-ch0=-70dBm signal-strength-ch1=-69dBm 
+   strength-at-rates=-66dBm@6Mbps 1w4d1h48m18s610ms,-69dBm@12Mbps 3s640ms,-
+                  71dBm@HT20-2 2h17m28s800ms,-69dBm@HT20-3 40m39s390ms,-
+                  73dBm@HT40-2 5m6s410ms,-74dBm@HT40-3 3s50ms 
+   tx-ccq=100% p-throughput=56327 distance=8 nstreme=no framing-mode=none 
+   routeros-version="2.9.31" 802.1x-port-enabled=yes 
+   authentication-type=wpa2-psk encryption=aes-ccm group-encryption=aes-ccm 
+   management-protection=no compression=no wmm-enabled=yes 
+   tx-rate-set="OFDM:12,24 BW:1x-2x SGI:1x-2x HT:2-3" 
+
+ 1 interface=wlan1 radio-name=X mac-address=02:00:00:00:10:08 ap=no 
+   wds=yes bridge=no rx-rate="45Mbps-40MHz/1S/SGI" 
+   tx-rate="60Mbps-40MHz/1S/SGI" packets=89128280,38303564 
+   bytes=109096792012,8835997069 frames=89128280,38308699 
+   frame-bytes=109275187216,8606725152 hw-frames=94175639,38329084 
+   hw-frame-bytes=118194218164,10143069492 tx-frames-timed-out=0 
+   uptime=2w3d19h45m57s last-activity=90ms signal-strength=-59dBm@6Mbps 
+   signal-to-noise=48dB signal-strength-ch0=-59dBm signal-strength-ch1=-75dBm 
+   strength-at-rates=-59dBm@6Mbps 560ms,-62dBm@HT40-2 1s780ms 
+   tx-signal-strength=-54dBm tx-ccq=100% rx-ccq=99% p-throughput=56327 
+   distance=7 nstreme=no framing-mode=none routeros-version="2.9.31" 
+   802.1x-port-enabled=yes authentication-type=wpa2-psk encryption=aes-ccm 
+   group-encryption=aes-ccm management-protection=no compression=no 
+   wmm-enabled=yes tx-rate-set="OFDM:12,24 BW:1x-2x SGI:2x HT:2-3" 
+
+ 2 interface=wlan1 radio-name=X mac-address=02:00:00:00:10:02 
+   ap=no wds=yes bridge=no rx-rate="45Mbps-40MHz/1S/SGI" 
+   tx-rate="60Mbps-40MHz/1S/SGI" packets=799697,307156 
+   bytes=330311396,36349425 frames=799697,308586 
+   frame-bytes=331995740,34659521 hw-frames=806662,321306 
+   hw-frame-bytes=356399553,47702635 tx-frames-timed-out=0 uptime=4d23h1m49s 
+   last-activity=90ms signal-strength=-63dBm@6Mbps signal-to-noise=44dB 
+   signal-strength-ch0=-63dBm signal-strength-ch1=-87dBm 
+   strength-at-rates=-63dBm@6Mbps 800ms,-69dBm@HT40-2 4s320ms 
+   tx-signal-strength=-57dBm tx-ccq=100% rx-ccq=99% p-throughput=56327 
+   distance=8 nstreme=no framing-mode=none routeros-version="2.9.31" 
+   802.1x-port-enabled=yes authentication-type=wpa2-psk encryption=aes-ccm 
+   group-encryption=aes-ccm management-protection=no compression=no 
+   wmm-enabled=yes tx-rate-set="OFDM:12,24 BW:1x-2x SGI:1x-2x HT:2-3" 
+
+ 3 interface=wlan1 radio-name=X mac-address=02:00:00:00:10:07 
+   ap=no wds=yes bridge=no rx-rate="45Mbps-40MHz/1S/SGI" 
+   tx-rate="60Mbps-40MHz/1S/SGI" packets=50899831,21684288 
+   bytes=61247745988,6836298721 frames=50899831,21685718 
+   frame-bytes=61349630598,6706346025 hw-frames=53049917,21703564 
+   hw-frame-bytes=65406466339,7577516706 tx-frames-timed-out=0 
+   uptime=4d23h1m48s last-activity=40ms signal-strength=-63dBm@6Mbps 
+   signal-to-noise=44dB signal-strength-ch0=-63dBm signal-strength-ch1=-73dBm 
+   strength-at-rates=-63dBm@6Mbps 750ms,-69dBm@HT40-2 40ms 
+   tx-signal-strength=-59dBm tx-ccq=100% rx-ccq=99% p-throughput=56327 
+   distance=8 nstreme=no framing-mode=none routeros-version="2.9.31" 
+   802.1x-port-enabled=yes authentication-type=wpa2-psk encryption=aes-ccm 
+   group-encryption=aes-ccm management-protection=no compression=no 
+   wmm-enabled=yes tx-rate-set="OFDM:12,24 BW:1x-2x SGI:1x-2x HT:2-3" 
+
+ 4 interface=wlan1 radio-name=X mac-address=02:00:00:00:10:03 
+   ap=no wds=no bridge=no rx-rate="60Mbps-40MHz/1S/SGI" 
+   tx-rate="60Mbps-40MHz/1S/SGI" packets=2192572,1035612 
+   bytes=2760261351,178650430 frames=2192572,1036171 
+   frame-bytes=2764653967,172496593 hw-frames=2259295,1055666 
+   hw-frame-bytes=2910705472,224034234 tx-frames-timed-out=0 
+   uptime=1d22h27m58s last-activity=970ms signal-strength=-70dBm@HT40-3 
+   signal-to-noise=37dB signal-strength-ch0=-72dBm signal-strength-ch1=-71dBm 
+   strength-at-rates=-64dBm@6Mbps 1d22h27m57s690ms,-64dBm@12Mbps 1s480ms,-
+                  66dBm@HT20-2 1h31m38s380ms,-66dBm@HT20-3 55m5s70ms,-
+                  70dBm@HT40-2 5m41s400ms,-70dBm@HT40-3 970ms 
+   tx-ccq=100% p-throughput=56327 distance=11 nstreme=no framing-mode=none 
+   routeros-version="2.9.31" 802.1x-port-enabled=yes 
+   authentication-type=wpa2-psk encryption=aes-ccm group-encryption=aes-ccm 
+   management-protection=no compression=no wmm-enabled=yes 
+   tx-rate-set="OFDM:12,24 BW:1x-2x SGI:1x-2x HT:2-3" 
+
+ 5 interface=wlan1 radio-name=X mac-address=02:00:00:00:10:01 
+   ap=no wds=yes bridge=no rx-rate="45Mbps-40MHz/1S/SGI" 
+   tx-rate="60Mbps-40MHz/1S/SGI" packets=1908600,536207 
+   bytes=2321483153,139259679 frames=1908600,536251 
+   frame-bytes=2325301003,136047167 hw-frames=2012473,537812 
+   hw-frame-bytes=2506561900,158100470 tx-frames-timed-out=0 uptime=3h33m42s 
+   last-activity=90ms signal-strength=-66dBm@HT20-1 signal-to-noise=41dB 
+   signal-strength-ch0=-68dBm signal-strength-ch1=-69dBm 
+   strength-at-rates=-67dBm@6Mbps 4m24s740ms,-66dBm@HT20-1 370ms,-71dBm@HT40-2 
+                  1s730ms 
+   tx-signal-strength=-62dBm tx-ccq=100% rx-ccq=99% p-throughput=56327 
+   distance=9 nstreme=no framing-mode=none routeros-version="2.9.31" 
+   802.1x-port-enabled=yes authentication-type=wpa2-psk encryption=aes-ccm 
+   group-encryption=aes-ccm management-protection=no compression=no 
+   wmm-enabled=yes tx-rate-set="OFDM:12,24 BW:1x-2x SGI:2x HT:2-3" 
+
+L07-CPU-AFTER
+cpu-load=6
+L07-DONE

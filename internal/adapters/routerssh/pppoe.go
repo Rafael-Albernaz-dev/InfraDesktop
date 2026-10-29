@@ -22,6 +22,7 @@ const ppEscapeScript = `:local esc do={:local v [:tostr $1]; :local out ""; :if 
 const PPPoECommand = ppEscapeScript + `; :local count [/ppp active print count-only where service=pppoe]; :local up [/system resource get uptime]; :put ("H\t1\t".$count."\t".[/system resource get version]."\t".$up); :if ($count>2048) do={:put "Z\t0\trows"} else={:local ids [/ppp active find where service=pppoe]; :local n 0; :local bytes 0; :local reason "complete"; :if ([:len $ids]>2048) do={:set reason "rows"}; :foreach i in=$ids do={:if ($reason="complete") do={:local present true; :local sid ""; :local after ""; :local u; :local name; :local address; :local caller; :do {:do {:set sid [/ppp active get $i session-id]} on-error={}; :set u [/ppp active get $i uptime]; :set name [/ppp active get $i name]; :set address [/ppp active get $i address]; :set caller [/ppp active get $i caller-id]; :do {:set after [/ppp active get $i session-id]} on-error={}; :if (($sid!=$after)||([/ppp active get $i uptime]<$u)) do={:set reason "item_changed"}} on-error={:set present false; :foreach remaining in=[/ppp active find where service=pppoe] do={:if ($remaining=$i) do={:set reason "item_error"}}}; :if (($present=true)&&($reason="complete")) do={:local line ("R\t".[$esc $i]."\t".[$esc $sid]."\t".[$esc $name]."\t".[$esc $address]."\t".[$esc $caller]."\t".$u); :if (($bytes+[:len $line]+2)>458752) do={:set reason "wire_bytes"}; :if ($reason="complete") do={:put $line; :set bytes ($bytes+[:len $line]+2); :set n ($n+1)}}}}; :if ([/system resource get uptime]<$up) do={:set reason "reboot"}; :put ("Z\t".$n."\t".$reason."\t".[/system resource get uptime])}`
 
 type ppConnection struct {
+	legacy  []string
 	run     func(string) (string, equipment.Code)
 	close   func()
 	tighten func(int)
@@ -133,7 +134,7 @@ func openPPConnection(ctx context.Context, d equipment.Device, user, secret stri
 		}
 		return text, equipment.OK
 	}
-	return &ppConnection{run: run, metrics: func() (int, int) { budget.mu.Lock(); defer budget.mu.Unlock(); return commands, budget.n }, close: func() { _ = client.Close(); done() }, tighten: func(bytes int) {
+	return &ppConnection{legacy: legacyNegotiated(cc), run: run, metrics: func() (int, int) { budget.mu.Lock(); defer budget.mu.Unlock(); return commands, budget.n }, close: func() { _ = client.Close(); done() }, tighten: func(bytes int) {
 		budget.mu.Lock()
 		defer budget.mu.Unlock()
 		next := budget.n + bytes

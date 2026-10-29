@@ -352,7 +352,7 @@ func (s *Service) startPP(ctx context.Context, q Command, in PPInput) (*Job, Cod
 	for _, j := range s.jobs {
 		if !j.released {
 			active++
-			if Endpoint(j.device) == Endpoint(d) {
+			if jobUsesEndpoint(j, d) {
 				return nil, access.Busy
 			}
 		}

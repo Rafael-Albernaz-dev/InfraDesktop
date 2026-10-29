@@ -99,7 +99,36 @@ func dialBudget(ctx context.Context, d equipment.Device, budget time.Duration) (
 }
 func config(user string) *ssh.ClientConfig {
 	a := ssh.SupportedAlgorithms()
+	// User-authorized global fallback, L07 dispatch P2.4 and Grill decision 19:
+	// append only algorithms required by observed pilots, modern algorithms first.
+	legacy := ssh.InsecureAlgorithms()
+	for _, candidate := range legacy.KeyExchanges {
+		if candidate == ssh.InsecureKeyExchangeDH14SHA1 {
+			a.KeyExchanges = append(a.KeyExchanges, candidate)
+		}
+	}
+	for _, candidate := range legacy.HostKeys {
+		if candidate == ssh.KeyAlgoRSA {
+			a.HostKeys = append(a.HostKeys, candidate)
+		}
+	}
 	return &ssh.ClientConfig{User: user, Config: ssh.Config{KeyExchanges: a.KeyExchanges, Ciphers: a.Ciphers, MACs: a.MACs}, HostKeyAlgorithms: a.HostKeys, Timeout: 5 * time.Second}
+}
+
+func legacyNegotiated(conn ssh.Conn) []string {
+	a, ok := conn.(ssh.AlgorithmsConnMetadata)
+	if !ok {
+		return nil
+	}
+	negotiated := a.Algorithms()
+	var legacy []string
+	if negotiated.KeyExchange == ssh.InsecureKeyExchangeDH14SHA1 {
+		legacy = append(legacy, negotiated.KeyExchange)
+	}
+	if negotiated.HostKey == ssh.KeyAlgoRSA {
+		legacy = append(legacy, negotiated.HostKey)
+	}
+	return legacy
 }
 func permissionDiagnostic(output string) bool {
 	for _, line := range lines(output) {

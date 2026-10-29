@@ -48,7 +48,7 @@ func (s *Store) loadEquipment(ctx context.Context, q queryer, id string) (equipm
 	if e != nil {
 		return st, e
 	}
-	rows, e = q.QueryContext(ctx, "SELECT id,name,address,port,transport,COALESCE(credential_id,''),revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,role FROM devices ORDER BY rowid")
+	rows, e = q.QueryContext(ctx, "SELECT id,name,address,port,transport,COALESCE(credential_id,''),revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,COALESCE((SELECT role FROM device_radio_roles WHERE device_id=devices.id),role) FROM devices ORDER BY rowid")
 	if e != nil {
 		return st, e
 	}
@@ -225,8 +225,21 @@ func (s *Store) UpdateEquipment(ctx context.Context, id string, fn func(*equipme
 			}
 			attempt = string(b)
 		}
-		if _, e = tx.ExecContext(ctx, "INSERT INTO devices(id,name,address,port,transport,credential_id,revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,role) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,address=excluded.address,port=excluded.port,transport=excluded.transport,credential_id=excluded.credential_id,revision=excluded.revision,active=excluded.active,fingerprint=excluded.fingerprint,trust_origin=excluded.trust_origin,observation=excluded.observation,trust_acceptance=excluded.trust_acceptance,last_attempt=excluded.last_attempt,role=excluded.role", d.ID, d.Name, d.Address, d.Port, d.Transport, credentialID, d.Revision, d.Active, d.Fingerprint, d.TrustOrigin, observation, acceptance, attempt, d.Role); e != nil {
+		databaseRole := d.Role
+		if databaseRole == "ptp" {
+			databaseRole = "other"
+		}
+		if _, e = tx.ExecContext(ctx, "INSERT INTO devices(id,name,address,port,transport,credential_id,revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,role) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,address=excluded.address,port=excluded.port,transport=excluded.transport,credential_id=excluded.credential_id,revision=excluded.revision,active=excluded.active,fingerprint=excluded.fingerprint,trust_origin=excluded.trust_origin,observation=excluded.observation,trust_acceptance=excluded.trust_acceptance,last_attempt=excluded.last_attempt,role=excluded.role", d.ID, d.Name, d.Address, d.Port, d.Transport, credentialID, d.Revision, d.Active, d.Fingerprint, d.TrustOrigin, observation, acceptance, attempt, databaseRole); e != nil {
 			return equipment.Unavailable
+		}
+		if d.Role == "ptp" {
+			if _, e = tx.ExecContext(ctx, "INSERT INTO device_radio_roles VALUES(?,?) ON CONFLICT(device_id) DO UPDATE SET role=excluded.role", d.ID, d.Role); e != nil {
+				return equipment.Unavailable
+			}
+		} else {
+			if _, e = tx.ExecContext(ctx, "DELETE FROM device_radio_roles WHERE device_id=?", d.ID); e != nil {
+				return equipment.Unavailable
+			}
 		}
 	}
 	for _, op := range st.Operations {

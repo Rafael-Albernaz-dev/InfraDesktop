@@ -41,7 +41,7 @@ func (s *Store) ppWrite(ctx context.Context, company string, fn ppTx) equipment.
 func ppTarget(ctx context.Context, q queryer, installation, company, id string, reveal bool) (equipment.PPTarget, equipment.Code) {
 	t := equipment.PPTarget{Installation: installation, Company: company}
 	d := &t.Device
-	e := q.QueryRowContext(ctx, "SELECT id,address,port,transport,COALESCE(credential_id,''),revision,active,fingerprint,role FROM devices WHERE id=?", id).Scan(&d.ID, &d.Address, &d.Port, &d.Transport, &d.CredentialID, &d.Revision, &d.Active, &d.Fingerprint, &d.Role)
+	e := q.QueryRowContext(ctx, "SELECT id,name,address,port,transport,COALESCE(credential_id,''),revision,active,fingerprint,COALESCE((SELECT role FROM device_radio_roles WHERE device_id=devices.id),role) FROM devices WHERE id=?", id).Scan(&d.ID, &d.Name, &d.Address, &d.Port, &d.Transport, &d.CredentialID, &d.Revision, &d.Active, &d.Fingerprint, &d.Role)
 	if e == sql.ErrNoRows {
 		return t, equipment.Invalid
 	}

@@ -11,6 +11,9 @@ import (
 )
 
 type runningJob struct {
+	radio              *RadioView
+	radioInput         RadioInput
+	radioDevices       []Device
 	retainTraffic      bool
 	read               *PPReadResult
 	readTarget         *PPReadTarget
@@ -25,6 +28,7 @@ type runningJob struct {
 	cancel             context.CancelFunc
 }
 type Service struct {
+	radioCosts  map[string]RadioCost
 	pingHistory map[string][]int64
 	pingOrder   []string
 	auth        Authorizer
@@ -167,7 +171,7 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 		if q.Role == "" {
 			q.Role = "other"
 		}
-		if q.Role != "concentrator" && q.Role != "ap" && q.Role != "cpe" && q.Role != "other" {
+		if q.Role != "concentrator" && q.Role != "ap" && q.Role != "cpe" && q.Role != "ptp" && q.Role != "other" {
 			return Invalid
 		}
 		q.Address = strings.TrimSpace(q.Address)
@@ -393,6 +397,9 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 	if !d.Active {
 		return nil, Inactive
 	}
+	if d.Role == "ptp" {
+		return nil, "UNSUPPORTED"
+	}
 	credentialRevision := uint64(0)
 	if q.Op == "device.query-start" {
 		if d.Fingerprint == "" {
@@ -424,7 +431,7 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 	active := 0
 	for _, j := range s.jobs {
 		if !j.released {
-			if Endpoint(j.device) == Endpoint(*d) {
+			if jobUsesEndpoint(j, *d) {
 				return nil, access.Busy
 			}
 			active++
@@ -463,7 +470,7 @@ func (s *Service) start(ctx context.Context, q Command) (*Job, Code) {
 func (s *Service) check(ctx context.Context, j *runningJob, reveal bool) (string, string, Code) {
 	var user, secret string
 	c := s.authorized(ctx, j.command, func(uint64) Code {
-		if j.command.Op == "pppoe.collect-start" || j.command.Op == "pppoe.diagnostic-start" || j.command.Op == "pppoe.read-start" {
+		if j.command.Op == "pppoe.collect-start" || j.command.Op == "pppoe.diagnostic-start" || j.command.Op == "pppoe.read-start" || strings.HasPrefix(j.command.Op, "radio.") {
 			return s.checkPP(ctx, j, reveal, &user, &secret)
 		}
 		st, c := s.store.ReadEquipment(ctx, j.command.Scope.Profile)
@@ -750,8 +757,42 @@ func (s *Service) invalidate(profile, id string, cred bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, j := range s.jobs {
-		if j.command.Scope.Profile == profile && (j.device.ID == id || cred && j.device.CredentialID == id) {
+		affected := j.device.ID == id || cred && j.device.CredentialID == id
+		for _, d := range j.radioDevices {
+			affected = affected || d.ID == id || cred && d.CredentialID == id
+		}
+		if j.command.Scope.Profile == profile && affected {
 			j.cancel()
+			if j.radio != nil {
+				view := *j.radio
+				matches := func(deviceID string) bool {
+					for _, d := range j.radioDevices {
+						if d.ID == deviceID && (d.ID == id || cred && d.CredentialID == id) {
+							return true
+						}
+					}
+					return false
+				}
+				if view.Reading != nil && matches(view.Reading.DeviceID) {
+					copy := *view.Reading
+					copy.Compatible = false
+					view.Reading = &copy
+					view.APCode = Cancelled
+				}
+				if view.CPEReading != nil && matches(view.CPEReading.DeviceID) {
+					copy := *view.CPEReading
+					copy.Compatible = false
+					view.CPEReading = &copy
+					view.CPECode = Cancelled
+				}
+				if view.Cost != nil {
+					copy := *view.Cost
+					copy.Enabled = false
+					copy.Reason = "O cadastro ou a credencial mudou. Meça novamente."
+					view.Cost = &copy
+				}
+				j.radio = &view
+			}
 			j.view.Result = nil
 			j.view.Fingerprint = ""
 			j.view.Code = Cancelled

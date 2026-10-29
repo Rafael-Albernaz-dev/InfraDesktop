@@ -1,4 +1,12 @@
 import {
+  GetRadio,
+  StartRadio,
+  RadioStatus,
+  CancelRadio,
+  CancelRadioOperation,
+  ConfirmRadioFamily,
+  GetRadioLink,
+  ConfirmRadioLink,
   StartPPPoECollection,
   StartPPPoERead,
   GetDeviceMonitoring,
@@ -545,4 +553,66 @@ export const deviceMonitoringAPI = {
   current: GetDeviceMonitoring as (
     ...args: Parameters<typeof GetDeviceMonitoring>
   ) => Promise<PPResult>,
+};
+
+import type { RadioResult, RadioInput, RadioLinkChoice } from './radio-api';
+export const radioAPI = {
+  current: (
+    p: string,
+    a: string,
+    d: string,
+    r = '',
+    offset = 0,
+  ): Promise<RadioResult> => GetRadio(p, a, d, r, offset),
+  start: (p: string, a: string, input: RadioInput): Promise<RadioResult> =>
+    StartRadio(p, a, input as equipment.RadioInput),
+  status: (
+    p: string,
+    a: string,
+    j: string,
+    r = '',
+    offset = 0,
+  ): Promise<RadioResult> => RadioStatus(p, a, j, r, offset),
+  cancel: (p: string, a: string, j: string): Promise<RadioResult> =>
+    CancelRadio(p, a, j),
+  cancelOperation: (
+    p: string,
+    a: string,
+    d: string,
+    o: string,
+  ): Promise<RadioResult> => CancelRadioOperation(p, a, d, o),
+  confirmFamily: (
+    p: string,
+    a: string,
+    d: string,
+    f: string,
+    r: number,
+    w: number,
+    c: number,
+  ): Promise<RadioResult> => ConfirmRadioFamily(p, a, d, f, r, w, c),
+  link: (
+    p: string,
+    a: string,
+    d: string,
+    o: string,
+    row: string,
+  ): Promise<RadioResult> => GetRadioLink(p, a, d, o, row),
+  confirmLink: (
+    p: string,
+    a: string,
+    d: string,
+    o: string,
+    row: string,
+    operation: string,
+    choice: RadioLinkChoice,
+  ): Promise<RadioResult> =>
+    ConfirmRadioLink(
+      p,
+      a,
+      d,
+      o,
+      row,
+      operation,
+      choice as equipment.RadioLinkChoice,
+    ),
 };
