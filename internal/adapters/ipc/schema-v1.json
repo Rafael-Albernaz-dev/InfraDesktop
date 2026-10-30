@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 14,
+  "product_revision": 15,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -620,7 +620,11 @@
     "measurement_samples": 10,
     "min_interval_seconds": 5,
     "p95_multiplier": 3,
-    "max_read_seconds": 3,
-    "max_cpu_increase_points": 15
+    "max_command_seconds_per_destination": 3,
+    "load_ceiling_seconds": 12,
+    "load_min_cpu": 3,
+    "load_min_ping_sent": 3,
+    "timing": "reading.command_seconds after SSH establishment; seconds is full path; cost.measurements contains ap/cpe command_seconds and path_seconds; interval uses full path p95",
+    "max_cpu_percent": 90
   }
 }

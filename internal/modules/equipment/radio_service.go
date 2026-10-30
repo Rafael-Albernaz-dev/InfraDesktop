@@ -396,6 +396,7 @@ func (s *Service) startRadio(ctx context.Context, q Command, in RadioInput) (*Jo
 }
 
 func (s *Service) readRadioSide(ctx context.Context, j *runningJob, d Device, credential uint64, family string) (*RadioReading, Code) {
+	pathStarted := time.Now()
 	ctx, cancel := context.WithTimeout(ctx, QueryBudget)
 	defer cancel()
 	copy := runningJob{command: j.command, device: d, credentialRevision: credential}
@@ -421,7 +422,6 @@ func (s *Service) readRadioSide(ctx context.Context, j *runningJob, d Device, cr
 	if c != OK {
 		return nil, c
 	}
-	started := time.Now()
 	r, c := s.remote.(RadioRemote).ReadRadio(ctx, d, user, secret, family, check)
 	secret = ""
 	if c != OK || r == nil {
@@ -438,7 +438,8 @@ func (s *Service) readRadioSide(ctx context.Context, j *runningJob, d Device, cr
 		return nil, c
 	}
 	StampRadio(r, d, credential, s.now())
-	r.Seconds = time.Since(started).Seconds()
+
+	r.Seconds = time.Since(pathStarted).Seconds()
 	c = s.authorized(ctx, j.command, func(uint64) Code {
 		if _, c := s.radioRow(ctx, j.command, j.radioInput); c != OK {
 			return c
@@ -448,6 +449,7 @@ func (s *Service) readRadioSide(ctx context.Context, j *runningJob, d Device, cr
 	if c != OK {
 		return nil, c
 	}
+	r.Seconds = time.Since(pathStarted).Seconds()
 	return r, OK
 }
 func (s *Service) runRadio(ctx context.Context, j *runningJob, link *RadioLink, revisions []uint64, key string) {
@@ -504,8 +506,10 @@ func (s *Service) runRadio(ctx context.Context, j *runningJob, link *RadioLink, 
 			code  Code
 		}
 		var loadDone chan loadResult
+		var sampleDone chan struct{}
 		if j.radioInput.Mode == "measure" {
 			loadDone = make(chan loadResult, 1)
+			sampleDone = make(chan struct{})
 			ready := make(chan struct{})
 			probe, ok := s.remote.(RadioLoadRemote)
 			if !ok {
@@ -519,7 +523,7 @@ func (s *Service) runRadio(ctx context.Context, j *runningJob, link *RadioLink, 
 					return
 				}
 				copy := runningJob{command: j.command, device: j.device, credentialRevision: j.credentialRevision}
-				value, c := probe.ObserveRadioLoad(ctx, j.device, user, secret, func() Code { _, _, c := s.check(ctx, &copy, false); return c }, func() { close(ready) })
+				value, c := probe.ObserveRadioLoad(ctx, j.device, user, secret, func() Code { _, _, c := s.check(ctx, &copy, false); return c }, func() { close(ready) }, sampleDone)
 				secret = ""
 				loadDone <- loadResult{value, c}
 			}()
@@ -589,15 +593,24 @@ func (s *Service) runRadio(ctx context.Context, j *runningJob, link *RadioLink, 
 				}
 			}
 		}
-		seconds := time.Since(started).Seconds()
+		ended := time.Now()
+		seconds := ended.Sub(started).Seconds()
 		if j.radioInput.Mode == "measure" {
+			close(sampleDone)
 			var measured loadResult
 			select {
 			case <-ctx.Done():
 				measured.code = Cancelled
 			case measured = <-loadDone:
 			}
-			measurements = append(measurements, RadioMeasurement{Seconds: seconds, Started: started, Ended: started.Add(time.Duration(seconds * float64(time.Second))), Complete: view.APCode == OK && view.CPECode == OK && measured.code == OK, Load: measured.value})
+			measurement := RadioMeasurement{Seconds: seconds, Started: started, Ended: ended, Complete: view.APCode == OK && view.CPECode == OK, Load: measured.value}
+			if view.APCode == OK && r != nil {
+				measurement.AP = RadioTiming{CommandSeconds: r.CommandSeconds, PathSeconds: r.Seconds}
+			}
+			if view.CPECode == OK && view.CPEReading != nil {
+				measurement.CPE = RadioTiming{CommandSeconds: view.CPEReading.CommandSeconds, PathSeconds: view.CPEReading.Seconds}
+			}
+			measurements = append(measurements, measurement)
 			cost := AssessRadioMeasurements(measurements)
 			view.Cost = &cost
 			if sample == 9 {
@@ -621,7 +634,7 @@ func (s *Service) runRadio(ctx context.Context, j *runningJob, link *RadioLink, 
 				code = view.APCode
 			}
 		}
-		if view.APCode != OK || view.CPECode != OK || seconds > 3 || j.radioInput.Mode == "live" && RadioLiveLimit(r, liveCost) {
+		if view.APCode != OK || view.CPECode != OK || j.radioInput.Mode == "live" && RadioLiveTickViolation(r, view.CPEReading, liveCost) {
 			failures++
 		} else {
 			failures = 0

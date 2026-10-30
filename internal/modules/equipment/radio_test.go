@@ -16,15 +16,13 @@ func TestL07RadioCostAndProvenance(t *testing.T) {
 	if !c.Enabled || c.P95 != 2 || c.Interval != 6 {
 		t.Fatal(c)
 	}
-	for _, change := range []string{"slow", "cpu", "missing", "nan"} {
+	for _, change := range []string{"cpu", "missing", "nan"} {
 		s := append([]float64{}, samples...)
 		p := make([][]int, 10)
 		copy(p, cpu)
 		switch change {
-		case "slow":
-			s[0] = 3.01
 		case "cpu":
-			p[4] = []int{6, 22, 7}
+			p[4] = []int{6, 91, 7}
 		case "missing":
 			p[1] = nil
 		case "nan":
@@ -70,7 +68,7 @@ func TestL07AllMeasurementSamplesAndCoverageRequired(t *testing.T) {
 	at := time.Now()
 	samples := make([]RadioMeasurement, 10)
 	for i := range samples {
-		samples[i] = RadioMeasurement{Seconds: 1, Started: at, Ended: at.Add(time.Second), Complete: true, Load: RadioLoad{CPU: []int{6, 7, 6}, PingSent: 6, PingReceived: 6, PingRTT: []float64{1, 1, 1, 1, 1, 1}, Started: at.Add(-time.Second), Ended: at.Add(2 * time.Second)}}
+		samples[i] = RadioMeasurement{AP: RadioTiming{CommandSeconds: .4, PathSeconds: 1}, CPE: RadioTiming{CommandSeconds: .4, PathSeconds: 1}, Seconds: 1, Started: at, Ended: at.Add(time.Second), Complete: true, Load: RadioLoad{CPU: []int{6, 7, 6}, PingSent: 6, PingReceived: 6, PingRTT: []float64{1, 1, 1, 1, 1, 1}, Started: at.Add(-time.Second), Ended: at.Add(2 * time.Second)}}
 	}
 	if !AssessRadioMeasurements(samples).Enabled {
 		t.Fatal("complete safe measurement rejected")
@@ -130,7 +128,7 @@ func TestL07RadioChainExtremaAndLiveLimits(t *testing.T) {
 		t.Fatal("different connection contaminated extrema")
 	}
 	rtt := float64(50)
-	safe := &RadioReading{Seconds: 1, CPU: []int{6, 7, 6}, PingRTT: &rtt}
+	safe := &RadioReading{CommandSeconds: .4, Seconds: 1, CPU: []int{6, 7, 6}, PingRTT: &rtt}
 	cost := RadioCost{Enabled: true, PingBaseline: 45, PingLimit: 90, CPUBaseline: 6}
 	if RadioLiveLimit(safe, cost) {
 		t.Fatal("healthy read aborted")
@@ -140,8 +138,8 @@ func TestL07RadioChainExtremaAndLiveLimits(t *testing.T) {
 		t.Fatal("latency increase ignored")
 	}
 	rtt = 50
-	safe.CPU = []int{6, 22, 7}
+	safe.CPU = []int{6, 91, 7}
 	if !RadioLiveLimit(safe, cost) {
-		t.Fatal("CPU increase ignored")
+		t.Fatal("CPU above90 ignored")
 	}
 }

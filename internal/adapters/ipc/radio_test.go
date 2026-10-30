@@ -130,8 +130,12 @@ func TestL07RadioIPCIndependentSidesAndCPERevocation(t *testing.T) {
 	}
 	for _, target := range []struct{ id, family string }{{ap, "routeros-wireless-v6"}, {cpe, "intelbras-wom"}} {
 		v := finish(equipment.RadioInput{DeviceID: target.id, Revision: 2, Family: target.family, Mode: "once", Operation: uuid.NewString()})
-		if v.Job.Code != equipment.OK || v.Reading == nil {
+		if v.Job.Code != equipment.OK || v.Reading == nil || v.Reading.CommandSeconds <= 0 || v.Reading.Seconds < v.Reading.CommandSeconds {
 			t.Fatal("initial radio", v)
+		}
+		saved := call("radio.current", equipment.RadioInput{DeviceID: target.id}, foundation.OK)
+		if saved.Reading == nil || saved.Reading.CommandSeconds != v.Reading.CommandSeconds || saved.Reading.Seconds < saved.Reading.CommandSeconds {
+			t.Fatal("timing lost across SSH/store/IPC", saved)
 		}
 		call("radio.confirm-family", equipment.RadioInput{DeviceID: target.id, Revision: 2, Family: target.family, Warning: 15, Critical: 20}, foundation.OK)
 	}
@@ -199,5 +203,45 @@ func TestL07RadioWireRejectsCommandsAndUnknownFields(t *testing.T) {
 			t.Fatal("UI supplied unmanaged field", key, c)
 		}
 		delete(nested, key)
+	}
+}
+
+func TestL07LiveContractRevisionAndTiming(t *testing.T) {
+	if ProductRevision != 15 {
+		t.Fatal("timing addition requires IPC15")
+	}
+	raw, e := json.Marshal(equipment.RadioCost{Measurements: []equipment.RadioMeasurement{{AP: equipment.RadioTiming{CommandSeconds: .4, PathSeconds: 2}, CPE: equipment.RadioTiming{CommandSeconds: .5, PathSeconds: 3}, Seconds: 5}}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	var wire map[string]json.RawMessage
+	if e = json.Unmarshal(raw, &wire); e != nil {
+		t.Fatal(e)
+	}
+	var rows []struct {
+		AP, CPE struct {
+			Command float64 `json:"command_seconds"`
+			Path    float64 `json:"path_seconds"`
+		}
+		Seconds float64 `json:"seconds"`
+	}
+	if e = json.Unmarshal(wire["measurements"], &rows); e != nil || len(rows) != 1 || rows[0].AP.Command != .4 || rows[0].CPE.Command != .5 || rows[0].AP.Path != 2 || rows[0].CPE.Path != 3 || rows[0].Seconds != 5 {
+		t.Fatal("additive timing contract", string(raw), e)
+	}
+}
+
+func TestL07CPU90Contract(t *testing.T) {
+	raw, e := os.ReadFile("schema-v1.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	var schema struct {
+		Limits map[string]json.RawMessage `json:"radio_limits"`
+	}
+	if e = json.Unmarshal(raw, &schema); e != nil {
+		t.Fatal(e)
+	}
+	if string(schema.Limits["max_cpu_percent"]) != "90" || schema.Limits["max_cpu_increase_points"] != nil {
+		t.Fatal("CPU policy does not match approved absolute90", schema.Limits)
 	}
 }

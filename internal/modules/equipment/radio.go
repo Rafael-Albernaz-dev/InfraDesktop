@@ -2,6 +2,7 @@ package equipment
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -9,6 +10,7 @@ import (
 )
 
 const RadioMaxClients = 512
+const RadioMaxCPU = 90
 const RadioPageSize = 8
 
 type RadioMetric struct {
@@ -71,6 +73,7 @@ type RadioReading struct {
 	WirelessMAC        string           `json:"wireless_mac,omitempty"`
 	CPU                []int            `json:"cpu_before_during_after,omitempty"`
 	Seconds            float64          `json:"seconds"`
+	CommandSeconds     float64          `json:"command_seconds"`
 	HadClients         bool             `json:"had_clients"`
 }
 type RadioProfile struct {
@@ -121,17 +124,22 @@ type RadioLinkChoice struct {
 	Evidence  string `json:"evidence"`
 	Origin    string `json:"origin"`
 }
+type RadioTiming struct {
+	CommandSeconds float64 `json:"command_seconds"`
+	PathSeconds    float64 `json:"path_seconds"`
+}
 type RadioCost struct {
-	PingBaseline float64     `json:"ping_baseline_ms"`
-	PingLimit    float64     `json:"ping_limit_ms"`
-	CPUBaseline  float64     `json:"cpu_baseline"`
-	Samples      []float64   `json:"samples"`
-	P95          float64     `json:"p95_seconds"`
-	Interval     float64     `json:"interval_seconds"`
-	Enabled      bool        `json:"enabled"`
-	Reason       string      `json:"reason"`
-	Context      string      `json:"-"`
-	Load         []RadioLoad `json:"load,omitempty"`
+	Measurements []RadioMeasurement `json:"measurements,omitempty"`
+	PingBaseline float64            `json:"ping_baseline_ms"`
+	PingLimit    float64            `json:"ping_limit_ms"`
+	CPUBaseline  float64            `json:"cpu_baseline"`
+	Samples      []float64          `json:"samples"`
+	P95          float64            `json:"p95_seconds"`
+	Interval     float64            `json:"interval_seconds"`
+	Enabled      bool               `json:"enabled"`
+	Reason       string             `json:"reason"`
+	Context      string             `json:"-"`
+	Load         []RadioLoad        `json:"load,omitempty"`
 }
 type RadioLoad struct {
 	CPU          []int     `json:"cpu"`
@@ -142,87 +150,148 @@ type RadioLoad struct {
 	Ended        time.Time `json:"ended_at"`
 }
 type RadioLoadRemote interface {
-	ObserveRadioLoad(context.Context, Device, string, string, func() Code, func()) (RadioLoad, Code)
+	ObserveRadioLoad(context.Context, Device, string, string, func() Code, func(), <-chan struct{}) (RadioLoad, Code)
 }
 type RadioMeasurement struct {
-	Seconds        float64
-	Started, Ended time.Time
-	Complete       bool
-	Load           RadioLoad
+	Seconds  float64     `json:"seconds"`
+	AP       RadioTiming `json:"ap"`
+	CPE      RadioTiming `json:"cpe"`
+	Started  time.Time   `json:"started_at"`
+	Ended    time.Time   `json:"ended_at"`
+	Complete bool        `json:"complete"`
+	Load     RadioLoad   `json:"load"`
 }
 
+func radioFinite(n float64) bool    { return !math.IsNaN(n) && !math.IsInf(n, 0) && n >= 0 }
+func radioSeconds(n float64) string { return strings.ReplaceAll(fmt.Sprintf("%.2f", n), ".", ",") }
 func AssessRadioMeasurements(samples []RadioMeasurement) RadioCost {
-	var times []float64
-	var cpu [][]int
-	var loads []RadioLoad
-	complete := len(samples) == 10
+	cost := RadioCost{Interval: 5, Reason: "Custo ainda não medido em dez leituras.", Measurements: append([]RadioMeasurement{}, samples...)}
+	var times, bases, cpus []float64
 	for _, sample := range samples {
-		times = append(times, sample.Seconds)
-		cpu = append(cpu, sample.Load.CPU)
-		loads = append(loads, sample.Load)
-		load := sample.Load
-		complete = complete && sample.Complete && !load.Started.After(sample.Started) && !load.Ended.Before(sample.Ended) && load.PingSent == 6 && load.PingReceived == 6 && len(load.PingRTT) == 6 && len(load.CPU) >= 3
-		for _, rtt := range load.PingRTT {
-			if math.IsNaN(rtt) || math.IsInf(rtt, 0) || rtt < 0 {
-				complete = false
-			}
+		cost.Samples = append(cost.Samples, sample.Seconds)
+		cost.Load = append(cost.Load, sample.Load)
+		if radioFinite(sample.Seconds) && sample.Seconds > 0 {
+			times = append(times, sample.Seconds)
 		}
-		for _, cpu := range load.CPU {
-			if cpu < 0 || cpu > 100 {
-				complete = false
-			}
+		if len(sample.Load.PingRTT) > 0 && radioFinite(sample.Load.PingRTT[0]) {
+			bases = append(bases, sample.Load.PingRTT[0])
 		}
-	}
-	cost := RadioCostGate(times, cpu)
-	cost.Load = loads
-	if len(samples) == 10 && !complete {
-		cost.Enabled = false
-		cost.Reason = "Leitura, CPU ou ping incompletos durante a medição; live desligado."
-	}
-	if len(samples) == 10 && complete {
-		var pings, cpus []float64
-		for _, sample := range samples {
-			pings = append(pings, sample.Load.PingRTT[0])
+		if len(sample.Load.CPU) > 0 && sample.Load.CPU[0] >= 0 && sample.Load.CPU[0] <= 100 {
 			cpus = append(cpus, float64(sample.Load.CPU[0]))
 		}
-		sort.Float64s(pings)
+	}
+	if len(times) > 0 {
+		sort.Float64s(times)
+		cost.P95 = times[int(math.Ceil(.95*float64(len(times))))-1]
+		cost.Interval = math.Max(5, 3*cost.P95)
+	}
+	if len(samples) != 10 {
+		return cost
+	}
+	cost.Reason = ""
+	refuse := func(reason string) {
+		if cost.Reason == "" {
+			cost.Reason = reason
+		}
+	}
+	for _, sample := range samples {
+		if !sample.Complete {
+			refuse("Amostra de leitura falhou; live desligado.")
+		}
+	}
+	for _, side := range []struct {
+		name string
+		get  func(RadioMeasurement) RadioTiming
+	}{
+		{"AP", func(s RadioMeasurement) RadioTiming { return s.AP }}, {"CPE", func(s RadioMeasurement) RadioTiming { return s.CPE }},
+	} {
+		for _, sample := range samples {
+			timing := side.get(sample)
+			if timing.CommandSeconds > 3 {
+				article := "do AP"
+				if side.name == "CPE" {
+					article = "da CPE"
+				}
+				refuse("Comando " + article + " levou " + radioSeconds(timing.CommandSeconds) + " s (limite 3 s); live desligado.")
+			}
+		}
+	}
+	if len(cpus) == 10 {
 		sort.Float64s(cpus)
-		cost.PingBaseline = (pings[4] + pings[5]) / 2
-		cost.PingLimit = 2 * cost.PingBaseline
 		cost.CPUBaseline = (cpus[4] + cpus[5]) / 2
+	}
+	for _, sample := range samples {
+		for _, cpu := range sample.Load.CPU {
+			if cpu <= 100 && cpu > RadioMaxCPU {
+				refuse(fmt.Sprintf("CPU do AP chegou a %d%% (limite %d%%); live desligado.", cpu, RadioMaxCPU))
+			}
+		}
+	}
+	if len(bases) == 10 {
+		sort.Float64s(bases)
+		cost.PingBaseline = (bases[4] + bases[5]) / 2
+		cost.PingLimit = 2 * cost.PingBaseline
 		consecutive := 0
 		for _, sample := range samples {
+			if len(sample.Load.PingRTT) == 0 {
+				continue
+			}
 			for _, rtt := range sample.Load.PingRTT[1:] {
-				if math.IsNaN(rtt) || math.IsInf(rtt, 0) || rtt < 0 {
-					cost.Enabled = false
-					cost.Reason = "Ping inválido na medição."
-					return cost
-				}
-				if rtt > cost.PingLimit {
+				if radioFinite(rtt) && rtt > cost.PingLimit {
 					consecutive++
 				} else {
 					consecutive = 0
 				}
 				if consecutive >= 2 {
-					cost.Enabled = false
-					cost.Reason = "Dois pings consecutivos acima do dobro da mediana de base; live desligado."
-					return cost
+					refuse("Ping degradou: " + radioSeconds(rtt) + " ms, duas latências consecutivas acima de " + radioSeconds(cost.PingLimit) + " ms (2× a mediana); live desligado.")
 				}
 			}
 		}
 	}
+	for _, sample := range samples {
+		load := sample.Load
+		if load.PingSent > 0 && load.PingReceived >= 0 && load.PingReceived < load.PingSent {
+			refuse(fmt.Sprintf("Ping perdido: %d de %d respostas; live desligado.", load.PingReceived, load.PingSent))
+		}
+	}
+	for _, sample := range samples {
+		load := sample.Load
+		valid := radioFinite(sample.Seconds) && sample.Seconds > 0 && !load.Started.IsZero() && !load.Started.After(sample.Started) && !load.Ended.Before(sample.Ended) && len(load.CPU) >= 3 && load.PingSent >= 3 && load.PingReceived == load.PingSent && len(load.PingRTT) == load.PingReceived
+		for _, timing := range []RadioTiming{sample.AP, sample.CPE} {
+			valid = valid && radioFinite(timing.CommandSeconds) && timing.CommandSeconds > 0 && radioFinite(timing.PathSeconds) && timing.PathSeconds >= timing.CommandSeconds
+		}
+		for _, rtt := range load.PingRTT {
+			valid = valid && radioFinite(rtt)
+		}
+		for _, cpu := range load.CPU {
+			valid = valid && cpu >= 0 && cpu <= 100
+		}
+		if !valid {
+			refuse("Carga incompleta: CPU, ping ou janela não cobrem a leitura; live desligado.")
+		}
+	}
+	if cost.Reason == "" {
+		cost.Enabled = true
+		cost.Reason = "Custo medido em dez leituras; comandos AP/CPE até 3 s e CPU do AP até 90%."
+	}
 	return cost
 }
 func RadioLiveLimit(reading *RadioReading, cost RadioCost) bool {
-	if reading == nil || reading.Seconds > 3 || reading.PingRTT == nil || *reading.PingRTT > cost.PingLimit {
+	if reading == nil || !radioFinite(reading.CommandSeconds) || reading.CommandSeconds <= 0 || reading.CommandSeconds > 3 || reading.PingRTT == nil || !radioFinite(*reading.PingRTT) || *reading.PingRTT > cost.PingLimit || len(reading.CPU) < 3 {
 		return true
 	}
 	for _, cpu := range reading.CPU {
-		if float64(cpu)-cost.CPUBaseline > 15 {
+		if cpu < 0 || cpu > RadioMaxCPU {
 			return true
 		}
 	}
 	return false
+}
+
+// A full path may exceed three seconds; only each established-session command
+// is limited. The caller retains the two-consecutive-violations state machine.
+func RadioLiveTickViolation(ap, cpe *RadioReading, cost RadioCost) bool {
+	return RadioLiveLimit(ap, cost) || cpe == nil || !radioFinite(cpe.CommandSeconds) || cpe.CommandSeconds <= 0 || cpe.CommandSeconds > 3
 }
 
 type RadioView struct {
@@ -303,14 +372,10 @@ func RadioCostGate(samples []float64, cpu [][]int) RadioCost {
 	sort.Float64s(times)
 	c.P95 = times[int(math.Ceil(.95*float64(len(times))))-1]
 	c.Interval = math.Max(5, 3*c.P95)
-	for i, seconds := range samples {
-		if seconds > 3 {
-			c.Reason = "Leitura passou de 3 s; use consulta pontual."
-			return c
-		}
-		for _, n := range cpu[i][1:] {
-			if n-cpu[i][0] > 15 {
-				c.Reason = "CPU do AP subiu mais de 15 pontos; use consulta pontual."
+	for i := range samples {
+		for _, n := range cpu[i] {
+			if n > RadioMaxCPU {
+				c.Reason = "CPU do AP passou de 90%; use consulta pontual."
 				return c
 			}
 		}

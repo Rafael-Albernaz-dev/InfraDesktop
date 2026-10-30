@@ -16,7 +16,7 @@ import (
 const RadioAPCommand = `:put "L07-CPU-BEFORE"; /system resource print; :put "L07-INTERFACES"; /interface wireless print detail without-paging; :put "L07-MONITORS"; :foreach w in=[/interface wireless find] do={:put ("L07-INTERFACE=" . [/interface wireless get $w name]); /interface wireless monitor $w once}; :put "L07-CPU-DURING"; :put ("cpu-load=" . [/system resource get cpu-load]); :put "L07-CLIENTS"; /interface wireless registration-table print stats detail without-paging; :put "L07-CPU-AFTER"; :put ("cpu-load=" . [/system resource get cpu-load]); :put "L07-DONE"`
 const RadioAirOSCommand = `mca-status; cat /proc/uptime`
 const RadioWOMCommand = `iw dev; iw dev wlan0 link; iw dev wlan0 station dump; cat /proc/uptime`
-const RadioLoadCommand = `:put "L07-LOAD"; :for n from=0 to=5 do={:put ("cpu=" . [/system resource get cpu-load]); :if ($n<5) do={:delay 1s}}; :put "L07-LOAD-DONE"`
+const RadioLoadCommand = `:put "L07-LOAD"; :put ("cpu=" . [/system resource get cpu-load]); :put "L07-LOAD-DONE"`
 
 var radioAssignment = regexp.MustCompile(`([A-Za-z0-9_-]+)=("(?:\\.|[^"\\])*"|[^\s]+)`)
 
@@ -409,7 +409,9 @@ func (Adapter) ReadRadio(ctx context.Context, d equipment.Device, user, secret, 
 		return nil, c
 	}
 	defer connection.close()
+	commandStarted := time.Now()
 	text, c := connection.run(command)
+	commandSeconds := time.Since(commandStarted).Seconds()
 	if c != equipment.OK {
 		return nil, c
 	}
@@ -417,6 +419,7 @@ func (Adapter) ReadRadio(ctx context.Context, d equipment.Device, user, secret, 
 	if c != equipment.OK {
 		return nil, c
 	}
+	r.CommandSeconds = commandSeconds
 	r.Legacy = append([]string{}, connection.legacy...)
 	if family == "routeros-wireless-v6" {
 		ping := exec.CommandContext(ctx, "/usr/bin/ping", "-n", "-c", "1", "-W", "1", d.Address)
@@ -433,10 +436,10 @@ func (Adapter) ReadRadio(ctx context.Context, d equipment.Device, user, secret, 
 	return r, equipment.OK
 }
 
-// A separate fixed CPU/ping probe surrounds the measured normal read path.
-// The callback releases the read after one baseline second. Probe latency is
-// reported separately, never substituted for the normal path's duration.
-func (Adapter) ObserveRadioLoad(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code, ready func()) (equipment.RadioLoad, equipment.Code) {
+// The observer reuses its extra AP session only for fixed, closed one-shot
+// CPU frames. There is no remote loop to outlive cancellation. The local loop
+// has a hard 12-second ceiling, independent of the normal read's QueryBudget.
+func (Adapter) ObserveRadioLoad(ctx context.Context, d equipment.Device, user, secret string, check func() equipment.Code, ready func(), sampleDone <-chan struct{}) (equipment.RadioLoad, equipment.Code) {
 	load := equipment.RadioLoad{}
 	connection, c := openPPConnection(ctx, d, user, secret, check, equipment.QueryBudget)
 	secret = ""
@@ -444,67 +447,94 @@ func (Adapter) ObserveRadioLoad(ctx context.Context, d equipment.Device, user, s
 		return load, c
 	}
 	defer connection.close()
+	probeCtx, cancel := context.WithTimeout(ctx, 12*time.Second)
+	defer cancel()
+	stopped := make(chan struct{})
+	go func() {
+		select {
+		case <-probeCtx.Done():
+			connection.close()
+		case <-stopped:
+		}
+	}()
+	defer close(stopped)
 	load.Started = time.Now()
-	type result struct {
-		text string
-		code equipment.Code
-	}
-	data := make(chan result, 1)
-	go func() { text, code := connection.run(RadioLoadCommand); data <- result{text, code} }()
-	ping := exec.CommandContext(ctx, "/usr/bin/ping", "-n", "-c", "6", "-i", "1", "-W", "1", d.Address)
-	ping.Env = append(os.Environ(), "LC_ALL=C")
-	pingData := make(chan []byte, 1)
-	go func() { b, _ := ping.Output(); pingData <- b }()
-	timer := time.NewTimer(time.Second)
-	select {
-	case <-ctx.Done():
-		timer.Stop()
-		return load, equipment.Cancelled
-	case <-timer.C:
-		ready()
-	}
-	var observed result
-	select {
-	case <-ctx.Done():
-		return load, equipment.Cancelled
-	case observed = <-data:
-	}
-	if observed.code != equipment.OK {
-		return load, observed.code
-	}
-	lines := strings.Fields(observed.text)
-	if len(lines) != 8 || lines[0] != "L07-LOAD" || lines[7] != "L07-LOAD-DONE" {
-		return load, equipment.Partial
-	}
-	for _, line := range lines[1:7] {
-		if !strings.HasPrefix(line, "cpu=") {
-			return load, equipment.Partial
+	collect := func() equipment.Code {
+		if probeCtx.Err() != nil {
+			return equipment.Cancelled
 		}
-		n, err := strconv.Atoi(strings.TrimPrefix(line, "cpu="))
-		if err != nil || n < 0 || n > 100 {
-			return load, equipment.Partial
+		type pingResult struct {
+			sent, received int
+			rtt            []float64
+			valid          bool
 		}
-		load.CPU = append(load.CPU, n)
+		pingDone := make(chan pingResult, 1)
+		go func() {
+			ping := exec.CommandContext(probeCtx, "/usr/bin/ping", "-n", "-c", "1", "-W", "1", d.Address)
+			ping.Env = append(os.Environ(), "LC_ALL=C")
+			output, _ := ping.Output()
+			counts := regexp.MustCompile(`([0-9]+) packets transmitted, ([0-9]+) received`).FindSubmatch(output)
+			result := pingResult{valid: len(counts) == 3}
+			if result.valid {
+				result.sent, _ = strconv.Atoi(string(counts[1]))
+				result.received, _ = strconv.Atoi(string(counts[2]))
+			}
+			for _, match := range regexp.MustCompile(`time[=<]([0-9.]+) ms`).FindAllSubmatch(output, -1) {
+				value, e := strconv.ParseFloat(string(match[1]), 64)
+				if e != nil {
+					result.valid = false
+				}
+				result.rtt = append(result.rtt, value)
+			}
+			pingDone <- result
+		}()
+		text, c := connection.run(RadioLoadCommand)
+		ping := <-pingDone
+		if c != equipment.OK {
+			return c
+		}
+		lines := strings.Fields(text)
+		if len(lines) != 3 || lines[0] != "L07-LOAD" || lines[2] != "L07-LOAD-DONE" || !strings.HasPrefix(lines[1], "cpu=") {
+			return equipment.Partial
+		}
+		cpu, e := strconv.Atoi(strings.TrimPrefix(lines[1], "cpu="))
+		if e != nil || cpu < 0 || cpu > 100 || !ping.valid || ping.sent != 1 || ping.received < 0 || ping.received > 1 || len(ping.rtt) != ping.received {
+			return equipment.Partial
+		}
+		load.CPU = append(load.CPU, cpu)
+		load.PingSent += ping.sent
+		load.PingReceived += ping.received
+		load.PingRTT = append(load.PingRTT, ping.rtt...)
+		return equipment.OK
 	}
-	var pingText []byte
+	if c := collect(); c != equipment.OK {
+		return load, c
+	}
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 	select {
-	case <-ctx.Done():
+	case <-probeCtx.Done():
 		return load, equipment.Cancelled
-	case pingText = <-pingData:
+	case <-ticker.C:
 	}
-	load.Ended = time.Now()
-	counts := regexp.MustCompile(`([0-9]+) packets transmitted, ([0-9]+) received`).FindSubmatch(pingText)
-	if len(counts) != 3 {
-		return load, equipment.Partial
+	if c := collect(); c != equipment.OK {
+		return load, c
 	}
-	load.PingSent, _ = strconv.Atoi(string(counts[1]))
-	load.PingReceived, _ = strconv.Atoi(string(counts[2]))
-	for _, match := range regexp.MustCompile(`time[=<]([0-9.]+) ms`).FindAllSubmatch(pingText, -1) {
-		value, err := strconv.ParseFloat(string(match[1]), 64)
-		if err != nil {
-			return load, equipment.Partial
+	ready()
+	for {
+		select {
+		case <-probeCtx.Done():
+			return load, equipment.Cancelled
+		case <-sampleDone:
+			if c := collect(); c != equipment.OK {
+				return load, c
+			}
+			load.Ended = time.Now()
+			return load, equipment.OK
+		case <-ticker.C:
+			if c := collect(); c != equipment.OK {
+				return load, c
+			}
 		}
-		load.PingRTT = append(load.PingRTT, value)
 	}
-	return load, equipment.OK
 }
