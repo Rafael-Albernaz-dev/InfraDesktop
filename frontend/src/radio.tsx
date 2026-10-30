@@ -1014,6 +1014,17 @@ export function RadioLinkPanel({
                 : 'Live desligado: custo do caminho completo ainda não medido nesta execução.'}
             </p>
           )}
+          {link && !editing && cost?.measurements?.length === 10 && (
+            <p>
+              Última amostra — AP: comando{' '}
+              {formatMetric(cost.measurements[9].ap.command_seconds, 's')},
+              percurso {formatMetric(cost.measurements[9].ap.path_seconds, 's')}
+              ; CPE: comando{' '}
+              {formatMetric(cost.measurements[9].cpe.command_seconds, 's')},
+              percurso{' '}
+              {formatMetric(cost.measurements[9].cpe.path_seconds, 's')}.
+            </p>
+          )}
           {radio.busy && (
             <p role="status">
               Consulta em curso; um enlace por vez. A janela do live termina em

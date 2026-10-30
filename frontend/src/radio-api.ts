@@ -56,6 +56,7 @@ export type RadioReading = {
   ap_bssid?: string;
   wireless_mac?: string;
   seconds: number;
+  command_seconds?: number;
   had_clients: boolean;
 };
 export type RadioProfile = {
@@ -81,7 +82,9 @@ export type RadioLink = RadioLinkChoice & {
   confirmed_at: string;
   confirmed_now: boolean;
 };
+export type RadioTiming = { command_seconds: number; path_seconds: number };
 export type RadioCost = {
+  measurements?: { ap: RadioTiming; cpe: RadioTiming; seconds: number }[];
   ping_baseline_ms?: number;
   ping_limit_ms?: number;
   cpu_baseline?: number;

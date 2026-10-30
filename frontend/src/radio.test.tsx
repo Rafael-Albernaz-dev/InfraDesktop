@@ -465,3 +465,41 @@ it('a saved-radio failure recovers locally without reusing a retired reading ID 
   expect(api.start).not.toHaveBeenCalled();
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
+
+it('shows the first measured refusal and separate command/path times in pt-BR', async () => {
+  vi.mocked(api.link).mockResolvedValue(
+    response({
+      link,
+      cost: {
+        samples: Array(10).fill(5),
+        enabled: false,
+        reason: 'Comando da CPE levou 3,20 s (limite 3 s); live desligado.',
+        p95_seconds: 5,
+        interval_seconds: 15,
+        measurements: Array(10).fill({
+          ap: { command_seconds: 0.4, path_seconds: 2 },
+          cpe: { command_seconds: 3.2, path_seconds: 3.5 },
+          seconds: 5,
+        }),
+      },
+    }),
+  );
+  render(
+    <RadioLinkPanel
+      profile="company"
+      activation="active"
+      device={{ ...device, id: 'concentrator' }}
+      observation="observation"
+      row="row"
+      pppoeUptime="1 h"
+      blocked={false}
+    />,
+  );
+  expect(
+    await screen.findByText(/Comando da CPE levou 3,20 s/),
+  ).toHaveTextContent('Intervalo: 15 s · p95 5 s');
+  expect(screen.getByText(/Última amostra/)).toHaveTextContent(
+    'AP: comando 0,4 s, percurso 2 s; CPE: comando 3,2 s, percurso 3,5 s',
+  );
+  expect(screen.getByRole('button', { name: 'Live curto' })).toBeDisabled();
+});
