@@ -1889,3 +1889,58 @@ it('L06T3: equipment list projects saved health with role and explicit reading a
     within(row).getByText(/Últimos dados conhecidos · há 1 min/),
   ).toBeInTheDocument();
 });
+
+it.each(['cpe', 'ap', 'concentrator'])(
+  'queued pin confirmation routes %s without a foreign collector',
+  async (role) => {
+    const target = { ...device, role, fingerprint: '' };
+    vi.mocked(api.list).mockResolvedValue(data([target]));
+    vi.mocked(api.get).mockResolvedValue({
+      ...data([target]),
+      data: { ...data([target]).data!, device: target },
+    });
+    vi.mocked(api.inspect).mockResolvedValue({
+      ...data(),
+      data: {
+        ...data().data!,
+        job: {
+          id: 'j',
+          device_id: device.id,
+          kind: 'trust.inspect',
+          state: 'SUCCEEDED',
+          code: 'OK',
+          fingerprint: 'SHA256:fixture',
+        },
+      },
+    } as EquipmentResult);
+    vi.mocked(api.confirm).mockResolvedValue({
+      ...data(),
+      data: {
+        ...data().data!,
+        device: { ...target, fingerprint: 'SHA256:fixture', revision: 2 },
+      },
+    });
+    render(
+      <Equipment profile="X" activation="a" connected createRequest={0} />,
+    );
+    await screen.findByRole('heading', { name: 'Router X' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Verificar identidade' }),
+    );
+    await screen.findByRole('dialog', { name: 'Primeira conexão' });
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Confiar neste equipamento e conectar',
+      }),
+    );
+    await waitFor(() => expect(api.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Primeira conexão' }),
+      ).not.toBeInTheDocument(),
+    );
+    if (role === 'concentrator')
+      await waitFor(() => expect(api.start).toHaveBeenCalledTimes(1));
+    else expect(api.start).not.toHaveBeenCalled();
+  },
+);

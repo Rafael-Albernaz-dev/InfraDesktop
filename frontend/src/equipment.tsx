@@ -567,6 +567,8 @@ export function Equipment({
   ]);
   const queuedConnect = useEffectEvent((device: Device) => {
     setConnectRequest(undefined);
+    if (device.fingerprint && (device.role === 'ap' || device.role === 'cpe'))
+      return;
     void startOperation(device.fingerprint ? 'query' : 'inspect', device);
   });
   useEffect(() => {
