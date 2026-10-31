@@ -19,12 +19,20 @@ __pycache__/
 .runtime/
 .local/
 
+# Default native-picker exports; they may contain real customer data
+/pppoe-operacional.csv
+/pppoe-sanitizado.json
+/codigo-recuperacao.txt
+*.csv
+
 # Local preparation workspace; not the future official product docs
 /docs/
 
 # Local agent governance; excluded from future commits
 /AGENTS.md
 /.agents/
+/CLAUDE.md
+/.claude/
 
 # Real Wails generated bindings/runtime (regenerate with make bindings)
 frontend/wailsjs/
