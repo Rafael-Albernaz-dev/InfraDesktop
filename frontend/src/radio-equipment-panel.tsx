@@ -5,7 +5,7 @@ import {
   RadioRoles,
 } from './radio-contract';
 import type { RadioInterface, RadioReading } from './radio-api';
-import { exactNumber } from './network-format';
+import { exactNumber, formatRadioFamily } from './network-format';
 import { radioMessage } from './radio-messages';
 import { Reading, Metrics } from './radio-reading';
 import { RadioCredentialRecovery } from './radio-credential-recovery';
@@ -149,7 +149,7 @@ function RadioEquipmentLimits({ state }: { state: ReadyEquipment }) {
     <fieldset disabled={radio.busy || blocked}>
       <legend>Família e painel lotado</legend>
       <p>
-        Detectada: {reading.family} ·{' '}
+        Detectada: {formatRadioFamily(reading.family)} ·{' '}
         {limits?.confirmed ? 'confirmada' : 'aguarda confirmação'}
       </p>
       {device.role === RadioRoles.ap && <RadioThresholdFields state={state} />}

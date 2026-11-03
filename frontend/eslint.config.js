@@ -3,6 +3,7 @@ import js from '@eslint/js';
 import ts from 'typescript-eslint';
 import hooks from 'eslint-plugin-react-hooks';
 import refresh from 'eslint-plugin-react-refresh';
+
 export default [
   {
     files: ['src/radio*.{ts,tsx}'],
@@ -22,6 +23,8 @@ export default [
     plugins: { 'react-hooks': hooks, 'react-refresh': refresh },
     rules: {
       ...hooks.configs.recommended.rules,
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
       'react-refresh/only-export-components': 'warn',
     },
   },

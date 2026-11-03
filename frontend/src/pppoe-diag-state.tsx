@@ -1,0 +1,477 @@
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import type { Device } from './equipment-api';
+import { equipmentMessage } from './equipment-api';
+import { pendingPPPoE as pending } from './equipment-receipts';
+import type { PDDiagnostic, PDRow, PPResult } from './presentation';
+import { pppoeDiagnosticAPI as api } from './presentation';
+
+export type Scope = 'catalog' | 'radius' | 'ping';
+export type Source = { observation: string; row: string };
+
+export const diagnosticMessage = (code: string) =>
+  (
+    ({
+      PING_CONTEXT_UNAVAILABLE:
+        'O contexto main contém VRF, regras ou mangle ativos incompatíveis com a sondagem.',
+      PING_SESSION_CHANGED:
+        'A sessão mudou no concentrador. Atualize as sessões antes de sondar.',
+      PING_READING_STALE:
+        'A leitura pertence a um contexto anterior do serviço. Atualize as sessões.',
+      PING_OFFLINE: 'Ping indisponível: sessão OFFLINE.',
+    }) as Record<string, string>
+  )[code] ||
+  (code === 'PARTIAL'
+    ? 'O concentrador não devolveu uma leitura completa.'
+    : code === 'OBSERVATION_INCOMPATIBLE'
+      ? 'A leitura não permite uma sondagem segura. Confira a identidade da sessão.'
+      : code === 'OBSERVATION_UNAVAILABLE'
+        ? 'A leitura foi substituída. Reabra os dados armazenados.'
+        : code === 'JOB_INTERRUPTED'
+          ? 'A ação anterior foi interrompida. Ela não será reenviada automaticamente.'
+          : equipmentMessage(code));
+
+function useDiagnosticStateVars(context: string, readKey: string) {
+  const [storedContext, setStoredContext] = useState(context);
+  const [meta, setMeta] = useState<PDDiagnostic>();
+  const [rows, setRows] = useState<PDRow[]>([]);
+  const [attempt, setAttempt] =
+    useState<NonNullable<PPResult['data']>['attempt']>();
+  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [pageError, setPageError] = useState('');
+  const [cursor, setCursor] = useState('');
+  const [next, setNext] = useState('');
+  const [job, setJob] = useState('');
+  const [starting, setStarting] = useState(false);
+  const [statusFailed, setStatusFailed] = useState(false);
+  const [statusRetry, retryStatus] = useState(0);
+  const [refresh, reload] = useState(0);
+  const [uncertain, setUncertain] = useState(false);
+  const [metaReadKey, setMetaReadKey] = useState('');
+  const [storedReadKey, setStoredReadKey] = useState(readKey);
+  if (storedContext !== context) {
+    setStoredContext(context);
+    setMeta(undefined);
+    setRows([]);
+    setJob('');
+    setCursor('');
+    setNext('');
+    setError('');
+    setPageError('');
+    setStarting(false);
+    setStatusFailed(false);
+    setUncertain(false);
+    setAttempt(undefined);
+    setLoading(true);
+  }
+  if (storedReadKey !== readKey) {
+    setStoredReadKey(readKey);
+    setLoading(true);
+  }
+  return {
+    storedContext,
+    meta,
+    setMeta,
+    rows,
+    setRows,
+    attempt,
+    setAttempt,
+    loading,
+    setLoading,
+    pageLoading,
+    setPageLoading,
+    error,
+    setError,
+    pageError,
+    setPageError,
+    cursor,
+    setCursor,
+    next,
+    setNext,
+    job,
+    setJob,
+    starting,
+    setStarting,
+    statusFailed,
+    setStatusFailed,
+    statusRetry,
+    retryStatus,
+    refresh,
+    reload,
+    uncertain,
+    setUncertain,
+    metaReadKey,
+    setMetaReadKey,
+  };
+}
+
+type DiagState = ReturnType<typeof useDiagnosticStateVars>;
+
+function useDiagLoadEffect(p: {
+  s: DiagState;
+  context: string;
+  readKey: string;
+  profile: string;
+  activation: string;
+  deviceId: string;
+  scope: Scope;
+  sourceObservation?: string;
+  sourceRow?: string;
+  life: React.MutableRefObject<{ generation: number }>;
+  readSequence: React.MutableRefObject<number>;
+  active: (generation: number, result?: PPResult) => boolean;
+  acknowledge: (op?: string) => void;
+}) {
+  const {
+    s,
+    context,
+    readKey,
+    profile,
+    activation,
+    deviceId,
+    scope,
+    sourceObservation,
+    sourceRow,
+    life,
+    readSequence,
+    active,
+    acknowledge,
+  } = p;
+  useEffect(() => {
+    const generation = life.current.generation;
+    const request = ++readSequence.current;
+    let stopped = false;
+    void api
+      .current(profile, activation, deviceId, scope)
+      .then((result) => {
+        if (
+          stopped ||
+          request !== readSequence.current ||
+          !active(generation, result)
+        )
+          return;
+        if (result.code !== 'OK') {
+          s.setError(diagnosticMessage(result.code));
+          return;
+        }
+        s.setMeta(result.data?.diagnostic);
+        s.setMetaReadKey(readKey);
+        const cand = result.data?.attempt;
+        const latest =
+          !sourceObservation ||
+          (cand?.source_observation === sourceObservation &&
+            cand?.source_row === sourceRow)
+            ? cand
+            : undefined;
+        s.setAttempt(latest);
+        if (latest?.state === 'RUNNING' && latest.job_id)
+          s.setJob(latest.job_id);
+        else acknowledge(latest?.operation_id);
+      })
+      .catch(() => {
+        if (!stopped && active(generation))
+          s.setError('Não foi possível abrir os dados armazenados.');
+      })
+      .finally(() => {
+        if (!stopped && active(generation)) s.setLoading(false);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [
+    context,
+    s.refresh,
+    profile,
+    activation,
+    deviceId,
+    scope,
+    active,
+    acknowledge,
+    sourceObservation,
+    sourceRow,
+    readKey,
+  ]);
+}
+
+function useDiagPageEffect(p: {
+  s: DiagState;
+  context: string;
+  diagnosticID?: string;
+  kind: string;
+  profile: string;
+  activation: string;
+  deviceId: string;
+  scope: Scope;
+  readKey: string;
+  life: React.MutableRefObject<{ generation: number }>;
+  active: (generation: number, result?: PPResult) => boolean;
+}) {
+  const {
+    s,
+    context,
+    diagnosticID,
+    kind,
+    profile,
+    activation,
+    deviceId,
+    scope,
+    readKey,
+    life,
+    active,
+  } = p;
+  const pageKey = [context, diagnosticID, s.cursor, s.refresh, kind].join('|');
+  const [storedPageKey, setStoredPageKey] = useState(pageKey);
+  if (storedPageKey !== pageKey) {
+    setStoredPageKey(pageKey);
+    s.setRows([]);
+    s.setNext('');
+    s.setPageError('');
+    s.setPageLoading(!!diagnosticID);
+  }
+  useEffect(() => {
+    let stopped = false;
+    const generation = life.current.generation;
+    if (!diagnosticID || s.metaReadKey !== readKey) return;
+    void api
+      .list(profile, activation, deviceId, scope, diagnosticID, s.cursor, kind)
+      .then((result) => {
+        if (stopped || !active(generation, result)) return;
+        if (result.code !== 'OK') {
+          s.setPageError(diagnosticMessage(result.code));
+          return;
+        }
+        s.setRows(result.data?.diagnostic_rows || []);
+        s.setNext(result.data?.next_cursor || '');
+      })
+      .catch(() => {
+        if (!stopped && active(generation))
+          s.setPageError('Não foi possível carregar a página.');
+      })
+      .finally(() => {
+        if (!stopped && active(generation)) s.setPageLoading(false);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [
+    context,
+    diagnosticID,
+    kind,
+    s.cursor,
+    s.refresh,
+    profile,
+    activation,
+    deviceId,
+    scope,
+    active,
+    s.metaReadKey,
+    readKey,
+  ]);
+}
+
+function useDiagPollEffect(p: {
+  s: DiagState;
+  context: string;
+  profile: string;
+  activation: string;
+  life: React.MutableRefObject<{ generation: number }>;
+  active: (generation: number, result?: PPResult) => boolean;
+  acknowledge: (op?: string) => void;
+}) {
+  const { s, context, profile, activation, life, active, acknowledge } = p;
+  useEffect(() => {
+    if (!s.job) return;
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const generation = life.current.generation;
+    const poll = async () => {
+      s.setStatusFailed(false);
+      try {
+        const result = await api.status(profile, activation, s.job);
+        if (stopped || !active(generation, result)) return;
+        if (result.code !== 'OK' || !result.data?.job) {
+          s.setStatusFailed(true);
+          s.setError(diagnosticMessage(result.code));
+          return;
+        }
+        const current = result.data.job;
+        if (current.state === 'RUNNING')
+          timer = setTimeout(() => void poll(), 150);
+        else {
+          acknowledge(current.pppoe?.operation_id);
+          s.setUncertain(false);
+          s.setJob('');
+          s.setCursor('');
+          s.setError(
+            current.code === 'OK' || current.code === 'CANCELLED'
+              ? ''
+              : diagnosticMessage(current.code),
+          );
+          s.reload((n) => n + 1);
+        }
+      } catch {
+        if (!stopped && active(generation)) {
+          s.setStatusFailed(true);
+          s.setError(
+            'Não foi possível consultar o estado. A ação não será reenviada.',
+          );
+        }
+      }
+    };
+    void poll();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [context, s.job, s.statusRetry, profile, activation, active, acknowledge]);
+}
+
+import { useDiagActions } from './pppoe-diag-actions';
+
+export function useDiagnostic(
+  profile: string,
+  activation: string,
+  device: Device,
+  scope: Scope,
+  source?: Source,
+  kind = '',
+) {
+  const context = [
+    profile,
+    activation,
+    device.id,
+    device.revision,
+    scope,
+    source?.observation,
+    source?.row,
+  ].join('|');
+  const key = [
+    profile,
+    activation,
+    device.id,
+    'diag',
+    scope,
+    device.revision,
+    source?.observation || '',
+    source?.row || '',
+  ].join('|');
+  const life = useRef({ generation: 0 });
+  const readSequence = useRef(0);
+  const readKey = context + '|' + 0;
+  const s = useDiagnosticStateVars(context, readKey);
+  const active = useCallback(
+    (gen: number, res?: PPResult) =>
+      gen === life.current.generation &&
+      (!res ||
+        (res.profile_id === profile && res.activation_id === activation)),
+    [profile, activation],
+  );
+  const acknowledge = useCallback(
+    (operation?: string) => {
+      if (!operation) return;
+      const prefix =
+        [profile, activation, device.id, 'diag', scope].join('|') + '|';
+      for (const [receiptKey, receipt] of pending) {
+        if (receiptKey.startsWith(prefix) && receipt.operation === operation)
+          pending.delete(receiptKey);
+      }
+    },
+    [profile, activation, device.id, scope],
+  );
+  useLayoutEffect(() => {
+    const lifecycle = life.current;
+    ++lifecycle.generation;
+    return () => {
+      ++lifecycle.generation;
+    };
+  }, [context]);
+  useDiagLoadEffect({
+    s,
+    context,
+    readKey: context + '|' + s.refresh,
+    profile,
+    activation,
+    deviceId: device.id,
+    scope,
+    sourceObservation: source?.observation,
+    sourceRow: source?.row,
+    life,
+    readSequence,
+    active,
+    acknowledge,
+  });
+  const visibleMeta =
+    s.storedContext === context &&
+    (!source ||
+      (s.meta?.source_observation === source.observation &&
+        s.meta?.source_row === source.row))
+      ? s.meta
+      : undefined;
+  useDiagPageEffect({
+    s,
+    context,
+    diagnosticID: visibleMeta?.diagnostic_id,
+    kind,
+    profile,
+    activation,
+    deviceId: device.id,
+    scope,
+    readKey: context + '|' + s.refresh,
+    life,
+    active,
+  });
+  useDiagPollEffect({
+    s,
+    context,
+    profile,
+    activation,
+    life,
+    active,
+    acknowledge,
+  });
+  const { start, cancel } = useDiagActions({
+    s,
+    key,
+    profile,
+    activation,
+    device,
+    scope,
+    source,
+    life,
+    active,
+    acknowledge,
+  });
+  return {
+    meta: visibleMeta,
+    rows: visibleMeta ? s.rows : [],
+    attempt: s.attempt,
+    loading: s.loading,
+    pageLoading: s.pageLoading,
+    error: s.error,
+    pageError: s.pageError,
+    job: s.job,
+    starting: s.starting,
+    statusFailed: s.statusFailed,
+    uncertain: s.uncertain || pending.has(key),
+    cursor: s.cursor,
+    next: s.next,
+    start,
+    cancel,
+    retryStatus: () => s.retryStatus((n) => n + 1),
+    reopen: () => {
+      s.setError('');
+      s.setPageError('');
+      s.setCursor('');
+      s.reload((n) => n + 1);
+    },
+    first: () => s.setCursor(''),
+    more: () => s.setCursor(s.next),
+  };
+}

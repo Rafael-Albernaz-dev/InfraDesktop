@@ -1,8 +1,4 @@
-import {
-  RadioCodes,
-  RadioFamilies,
-  RadioRoles,
-} from './radio-contract';
+import { RadioCodes, RadioFamilies, RadioRoles } from './radio-contract';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioEquipment, RadioLinkPanel } from './radio';
@@ -364,6 +360,45 @@ it('consults a standalone PTP automatically and shows local-only peer and unavai
       }),
     ),
   );
+});
+
+it('renders WOM collection scope and does not infer model for Intelbras WOM', async () => {
+  vi.mocked(api.current).mockResolvedValue(
+    response({
+      reading: {
+        ...reading,
+        family: RadioFamilies.intelbrasWOM,
+        model: '',
+      },
+      total: 1,
+      profile: {
+        device_id: fixtureAPID,
+        family: RadioFamilies.intelbrasWOM,
+        confirmed: true,
+        warning: 15,
+        critical: 20,
+      },
+    }),
+  );
+  render(
+    <RadioEquipment
+      profile="company"
+      activation="active"
+      device={device}
+      blocked={false}
+    />,
+  );
+  const scope = await screen.findByTestId('wom-collection-scope');
+  expect(scope).toHaveTextContent('Coletado nesta versão (Intelbras WOM)');
+  expect(scope).toHaveTextContent('sinal (dBm)');
+  expect(scope).toHaveTextContent('Não coletado nesta versão');
+  expect(scope).toHaveTextContent('SSID');
+  expect(scope).toHaveTextContent('largura de canal');
+  expect(scope).toHaveTextContent('porta Ethernet');
+  expect(scope).toHaveTextContent('DHCP/QoS');
+  expect(
+    screen.getByText(/Modelo não coletado nesta versão \(sem inferir\)/),
+  ).toBeInTheDocument();
 });
 
 function prepareTickFailureDisplayTarget() {

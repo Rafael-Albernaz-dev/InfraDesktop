@@ -349,5 +349,12 @@ export function useRadio(
 }
 
 function cancelLateRadioStart(state: RadioState, operation: string) {
-  void api.cancelOperation(state.profile, state.activation, state.device.id, operation).catch(() => {});
+  void api
+    .cancelOperation(
+      state.profile,
+      state.activation,
+      state.device.id,
+      operation,
+    )
+    .catch(() => {});
 }

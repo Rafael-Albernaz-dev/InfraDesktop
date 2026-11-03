@@ -2,25 +2,16 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { vi, describe, it, expect, afterEach, beforeEach } from 'vitest';
 import App from './App';
 import { access, equipmentAPI, type Result } from './presentation';
+
+const accessMethods = (
+  'status,register,login,recover,logout,createCompany,selectCompany,' +
+  'setTheme,renewRecovery,copyRecovery,ackRecovery,getBrand,saveBrand,saveRecovery'
+).split(',');
 vi.mock('./presentation', () => ({
   equipmentAPI: { list: vi.fn() },
-  access: {
-    status: vi.fn(),
-    register: vi.fn(),
-    login: vi.fn(),
-    recover: vi.fn(),
-    logout: vi.fn(),
-    createCompany: vi.fn(),
-    selectCompany: vi.fn(),
-    setTheme: vi.fn(),
-    renewRecovery: vi.fn(),
-    copyRecovery: vi.fn(),
-    ackRecovery: vi.fn(),
-    getBrand: vi.fn(),
-    saveBrand: vi.fn(),
-    saveRecovery: vi.fn(),
-  },
+  access: Object.fromEntries(accessMethods.map((m) => [m, vi.fn()])),
 }));
+
 const snapshot = (authenticated = false): Result => ({
   code: 'OK',
   request_id: 'test',
@@ -37,6 +28,7 @@ const snapshot = (authenticated = false): Result => ({
     ? [{ id: 'company-one', name: 'Fixture Alpha' }]
     : [],
 });
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(equipmentAPI.list).mockResolvedValue({
@@ -58,6 +50,18 @@ beforeEach(() => {
   vi.mocked(access.ackRecovery).mockResolvedValue(snapshot());
 });
 afterEach(() => vi.useRealTimers());
+const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+const statusMock = (code = 'OK', extra: Partial<Result> = {}) =>
+  vi.mocked(access.status).mockResolvedValue({ ...snapshot(), code, ...extra });
+function defer<T>() {
+  let resolve!: (v: T) => void, reject!: (e: unknown) => void;
+  const p = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { p, resolve, reject };
+}
+
 async function enterCredentials() {
   fireEvent.change(screen.getByLabelText('Usuário'), {
     target: { value: 'technical' },
@@ -66,19 +70,19 @@ async function enterCredentials() {
     target: { value: 'isolated test password' },
   });
 }
+
+const emptyHeading = 'Nenhum equipamento cadastrado';
+
 describe('BF01 real-use presentation', () => {
   it('shows service status and prevents login while disconnected without synthetic controls', async () => {
-    vi.mocked(access.status).mockResolvedValue({
-      ...snapshot(),
-      code: 'SERVICE_UNAVAILABLE',
-    });
+    statusMock('SERVICE_UNAVAILABLE');
     render(<App />);
     expect(screen.getByText('Aguardando serviço local')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeDisabled();
     expect(screen.queryByText('Consultar')).not.toBeInTheDocument();
   });
   it('registers, clears password, shows recovery once and returns to login', async () => {
-    vi.mocked(access.status).mockResolvedValue(snapshot());
+    statusMock();
     vi.mocked(access.register).mockResolvedValue({
       ...snapshot(),
       setup: false,
@@ -105,9 +109,7 @@ describe('BF01 real-use presentation', () => {
   it('enters a real company and shows unavailable readings instead of invented traffic', async () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     render(<App />);
-    await screen.findByRole('heading', {
-      name: 'Nenhum equipamento cadastrado',
-    });
+    await screen.findByRole('heading', { name: emptyHeading });
     expect(
       screen.getByRole('button', { name: 'Adicionar equipamento' }),
     ).toBeVisible();
@@ -127,29 +129,25 @@ describe('BF01 real-use presentation', () => {
     await enterCredentials();
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
     await act(async () => {});
-    expect(screen.getByRole('alert')).toHaveTextContent('não conferem');
+    const expectAlert = () =>
+      expect(screen.getByRole('alert')).toHaveTextContent('não conferem');
+    expectAlert();
     expect(screen.getByLabelText('Senha', { exact: true })).toHaveValue('');
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3000);
-    });
-    expect(screen.getByRole('alert')).toHaveTextContent('não conferem');
+    await advance(3000);
+    expectAlert();
     vi.mocked(access.status).mockResolvedValue({
       ...snapshot(),
       code: 'SERVICE_UNAVAILABLE',
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-    });
-    expect(screen.getByRole('alert')).toHaveTextContent('não conferem');
+    await advance(1000);
+    expectAlert();
     vi.mocked(access.status).mockResolvedValue({
       ...snapshot(),
       setup: false,
       instance_id: 'reconnected',
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3000);
-    });
-    expect(screen.getByRole('alert')).toHaveTextContent('não conferem');
+    await advance(3000);
+    expectAlert();
   });
   it('does not claim logout when durable revocation fails', async () => {
     vi.useFakeTimers();
@@ -168,9 +166,7 @@ describe('BF01 real-use presentation', () => {
       ...snapshot(true),
       code: 'SERVICE_UNAVAILABLE',
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3000);
-    });
+    await advance(3000);
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent('serviço local');
     expect(
       screen.getByRole('heading', {
@@ -184,12 +180,8 @@ describe('BF01 real-use presentation', () => {
   it('stops polling on unmount and ignores a late operation from the old component', async () => {
     vi.useFakeTimers();
     vi.mocked(access.status).mockResolvedValue(snapshot());
-    let complete!: (r: Result) => void;
-    vi.mocked(access.login).mockReturnValue(
-      new Promise((r) => {
-        complete = r;
-      }),
-    );
+    const deferred = defer<Result>();
+    vi.mocked(access.login).mockReturnValue(deferred.p);
     const old = render(<App />);
     await act(async () => {});
     await enterCredentials();
@@ -197,32 +189,26 @@ describe('BF01 real-use presentation', () => {
     old.unmount();
     render(<App />);
     await act(async () => {});
-    await act(async () => complete(snapshot(true)));
+    await act(async () => deferred.resolve(snapshot(true)));
     expect(screen.getByRole('heading', { name: 'Entrar' })).toBeVisible();
     expect(
-      screen.queryByRole('heading', {
-        name: 'Nenhum equipamento cadastrado',
-      }),
+      screen.queryByRole('heading', { name: 'Nenhum equipamento cadastrado' }),
     ).not.toBeInTheDocument();
   });
   it('shows loading, prevents double submission and persists theme through daemon binding', async () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
-    let complete!: (r: Result) => void;
-    vi.mocked(access.setTheme).mockReturnValue(
-      new Promise((r) => {
-        complete = r;
-      }),
-    );
+    const deferred = defer<Result>();
+    vi.mocked(access.setTheme).mockReturnValue(deferred.p);
     render(<App />);
-    await screen.findByRole('heading', {
-      name: 'Nenhum equipamento cadastrado',
-    });
+    await screen.findByRole('heading', { name: emptyHeading });
     fireEvent.click(
       screen.getByRole('button', { name: 'Abrir configurações' }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Escuro' }));
     expect(screen.getByRole('button', { name: 'Escuro' })).toBeDisabled();
-    await act(async () => complete({ ...snapshot(true), theme: 'dark' }));
+    await act(async () =>
+      deferred.resolve({ ...snapshot(true), theme: 'dark' }),
+    );
     expect(screen.getByRole('button', { name: 'Escuro' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -231,18 +217,14 @@ describe('BF01 real-use presentation', () => {
   });
   it('discards a rejected login after switching to recovery context', async () => {
     vi.mocked(access.status).mockResolvedValue({ ...snapshot(), setup: false });
-    let reject!: (reason: Error) => void;
-    vi.mocked(access.login).mockReturnValue(
-      new Promise((_, r) => {
-        reject = r;
-      }),
-    );
+    const deferred = defer<Result>();
+    vi.mocked(access.login).mockReturnValue(deferred.p);
     render(<App />);
     await screen.findByText('Serviço ativo');
     await enterCredentials();
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Recuperar acesso' }));
-    await act(async () => reject(new Error('old request')));
+    await act(async () => deferred.reject(new Error('old request')));
     expect(
       screen.getByRole('heading', { name: 'Recuperar acesso' }),
     ).toBeVisible();
@@ -252,15 +234,12 @@ describe('BF01 real-use presentation', () => {
   it('keeps branding draft local until confirmed save, cancel restores saved values', async () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     render(<App />);
-    await screen.findByRole('heading', {
-      name: 'Nenhum equipamento cadastrado',
-    });
+    await screen.findByRole('heading', { name: emptyHeading });
     fireEvent.click(
       screen.getByRole('button', { name: 'Abrir configurações' }),
     );
-    fireEvent.change(screen.getByLabelText('Nome visual', { exact: true }), {
-      target: { value: 'Draft only' },
-    });
+    const visual = screen.getByLabelText('Nome visual', { exact: true });
+    fireEvent.change(visual, { target: { value: 'Draft only' } });
     fireEvent.click(screen.getByRole('button', { name: 'Violeta' }));
     expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled();
     expect(access.saveBrand).not.toHaveBeenCalled();
@@ -269,9 +248,7 @@ describe('BF01 real-use presentation', () => {
     );
     expect(screen.queryByText('412')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(screen.getByLabelText('Nome visual', { exact: true })).toHaveValue(
-      '',
-    );
+    expect(visual).toHaveValue('');
     expect(screen.getByRole('button', { name: 'Turquesa' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -292,30 +269,23 @@ describe('BF01 real-use presentation', () => {
     await enterCredentials();
     fireEvent.click(screen.getByRole('button', { name: 'Criar conta local' }));
     await act(async () => {});
-    expect(screen.getByLabelText('Código de recuperação')).toBeVisible();
+    const recoveryCode = () => screen.queryByLabelText('Código de recuperação');
+    expect(recoveryCode()).toBeVisible();
     vi.mocked(access.status).mockResolvedValue({
       ...snapshot(),
       code: 'SERVICE_UNAVAILABLE',
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-    });
+    await advance(1000);
     vi.mocked(access.status).mockResolvedValue({
       ...snapshot(),
       setup: false,
       instance_id: 'new-daemon',
     });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3000);
-    });
-    expect(screen.getByLabelText('Código de recuperação')).toHaveValue(
-      Array(8).fill('bbbbbbbb').join('-'),
-    );
+    await advance(3000);
+    expect(recoveryCode()).toHaveValue(Array(8).fill('bbbbbbbb').join('-'));
     fireEvent.click(screen.getByRole('button', { name: 'Guardei meu código' }));
     await act(async () => {});
-    expect(
-      screen.queryByLabelText('Código de recuperação'),
-    ).not.toBeInTheDocument();
+    expect(recoveryCode()).not.toBeInTheDocument();
   });
 });
 
@@ -327,25 +297,54 @@ it('C01b confirmed unauthentication clears expired receipts; transport failure r
   await act(async () => {});
   for (let i = 0; i < 128; i++)
     pendingStarts.set('expired-' + i, 'operation-' + i);
-  vi.mocked(access.status).mockResolvedValue({
-    ...snapshot(),
-    code: 'SERVICE_UNAVAILABLE',
-  });
-  await act(async () => vi.advanceTimersByTimeAsync(1000));
+  const setStatus = (code: string, setup = true) =>
+    vi.mocked(access.status).mockResolvedValue({ ...snapshot(), code, setup });
+  setStatus('SERVICE_UNAVAILABLE');
+  await advance(1000);
   expect(pendingStarts.size).toBe(128);
-  vi.mocked(access.status).mockResolvedValue({
-    ...snapshot(),
-    code: 'UNAUTHENTICATED',
-    setup: false,
-  });
-  await act(async () => vi.advanceTimersByTimeAsync(2000));
+  setStatus('UNAUTHENTICATED', false);
+  await advance(2000);
   expect(pendingStarts.size).toBe(0);
-  vi.mocked(access.status).mockResolvedValue({ ...snapshot(), setup: false });
-  await act(async () => vi.advanceTimersByTimeAsync(4000));
+  setStatus('OK', false);
+  await advance(4000);
   vi.mocked(access.login).mockResolvedValue(snapshot(true));
   await enterCredentials();
   fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
   await act(async () => {});
   expect(access.login).toHaveBeenCalledOnce();
   expect(pendingStarts.size).toBe(0);
+});
+
+it('supports named route navigation across companies, overview, equipment, pppoe, topology, settings and back navigation', async () => {
+  vi.mocked(access.status).mockResolvedValue(snapshot(true));
+  render(<App />);
+  await screen.findByRole('button', { name: 'Selecionar empresa' });
+  const nav = () => screen.getByRole('navigation', { name: 'Caminho da tela' });
+  const back = () =>
+    screen.getByRole('button', { name: 'Voltar à tela anterior' });
+  const click = (name: string) =>
+    fireEvent.click(screen.getByRole('button', { name }));
+  const step = (target: string, exp: string, bk = false) => {
+    click(target);
+    expect(nav()).toHaveTextContent(exp);
+    if (bk) expect(back()).toBeInTheDocument();
+  };
+
+  expect(nav()).toHaveTextContent('Visão geral');
+  step('Equipamentos', 'Equipamentos', true);
+  step('Voltar à tela anterior', 'Visão geral');
+  step('Sessões PPPoE', 'Sessões PPPoE', true);
+  step('Voltar à tela anterior', 'Equipamentos', true);
+  step('Voltar à tela anterior', 'Visão geral');
+  step('Topologia', 'Topologia', true);
+  step('Voltar à tela anterior', 'Visão geral');
+  click('Configurações');
+  click('Aparência');
+  expect(nav()).toHaveTextContent('Configurações');
+  expect(back()).toBeInTheDocument();
+  step('Voltar à tela anterior', 'Visão geral');
+  step('Selecionar empresa', 'Empresas');
+  expect(
+    screen.queryByRole('button', { name: 'Voltar à tela anterior' }),
+  ).not.toBeInTheDocument();
 });

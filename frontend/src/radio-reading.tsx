@@ -2,10 +2,13 @@ import type { RadioMetric, RadioReading } from './radio-api';
 import {
   formatDate,
   formatDuration,
+  formatMacAddress,
   formatMetric,
+  formatRadioFamily,
   formatRouterDuration as duration,
 } from './network-format';
 import { useDisplayNow } from './equipment-snapshot';
+import { RadioFamilies } from './radio-contract';
 import { radioMessage } from './radio-messages';
 
 const metricNames: Record<string, string> = {
@@ -87,7 +90,15 @@ export function Metrics({ metrics }: { metrics: RadioMetric[] }) {
         <div key={m.name + '|' + m.direction + '|' + m.interface}>
           <dt>{m.label || metricNames[m.name] || m.name}</dt>
           <dd
-            title={`${m.perspective} · ${m.device_id} · ${m.interface} · ${m.direction} · ${m.unit} · ${m.observed_at} · ${m.quality}`}
+            title={[
+              m.perspective,
+              m.device_id,
+              m.interface,
+              m.direction,
+              m.unit,
+              m.observed_at,
+              m.quality,
+            ].join(' · ')}
           >
             {m.quality === 'unavailable'
               ? 'não disponível nesta família'
@@ -163,6 +174,12 @@ function ReadingIdentity({
   age,
   standalone,
 }: ReadingIdentityProps) {
+  const isWOM = reading.family === RadioFamilies.intelbrasWOM;
+  const modelLabel =
+    reading.model ||
+    (isWOM
+      ? 'Modelo não coletado nesta versão (sem inferir)'
+      : 'Modelo não disponível');
   return (
     <>
       {code && code !== 'OK' && (
@@ -181,9 +198,9 @@ function ReadingIdentity({
         {formatDate(reading.observed_at)} · há {formatDuration(age / 1000)}
       </p>
       <p>
-        {reading.manufacturer || 'Fabricante não identificado'} ·{' '}
-        {reading.model || 'Modelo não disponível'} ·{' '}
-        {reading.version || 'Firmware não disponível'} · {reading.family}
+        {reading.manufacturer || 'Fabricante não identificado'} · {modelLabel} ·{' '}
+        {reading.version || 'Firmware não disponível'} ·{' '}
+        {formatRadioFamily(reading.family)}
       </p>
       {standalone && (
         <p>
@@ -191,7 +208,25 @@ function ReadingIdentity({
           {reading.wireless_protocol || 'não disponível nesta família'}
         </p>
       )}
+      {isWOM && <WOMCollectionScope />}
     </>
+  );
+}
+
+function WOMCollectionScope() {
+  return (
+    <div className="radio-wom-scope" data-testid="wom-collection-scope">
+      <p>
+        <strong>Coletado nesta versão (Intelbras WOM):</strong> sinal (dBm),
+        chains, ruído, CCQ/qualidade, taxa PHY (Mbps), MAC/BSSID e tempo de
+        enlace.
+      </p>
+      <p>
+        <strong>Não coletado nesta versão:</strong> SSID (não coletado nesta
+        versão), largura de canal (não coletado nesta versão), porta Ethernet
+        (não coletado nesta versão) e DHCP/QoS (não coletado nesta versão).
+      </p>
+    </div>
   );
 }
 
@@ -233,8 +268,12 @@ function ReadingConnectionIdentity({ reading }: ReadingDataProps) {
       {!!reading.ssh_negotiated?.length && (
         <p>SSH negociado: {reading.ssh_negotiated.join(', ')}</p>
       )}
-      {reading.ap_bssid && <p>BSSID do AP: {reading.ap_bssid}</p>}
-      {reading.wireless_mac && <p>MAC wireless: {reading.wireless_mac}</p>}
+      {reading.ap_bssid && (
+        <p>BSSID do AP: {formatMacAddress(reading.ap_bssid)}</p>
+      )}
+      {reading.wireless_mac && (
+        <p>MAC wireless: {formatMacAddress(reading.wireless_mac)}</p>
+      )}
     </>
   );
 }
@@ -299,9 +338,9 @@ function ReadingClients({
           <h5>{client.name || client.mac}</h5>
           {standalone && <p>visto pelo lado local, não cadastrado</p>}
           <p>
-            {client.mac} · {client.interface}
+            {formatMacAddress(client.mac)} · {client.interface}
             {(!standalone || client.bssid !== client.mac) && (
-              <> · BSSID {client.bssid}</>
+              <> · BSSID {formatMacAddress(client.bssid)}</>
             )}
           </p>
           {!(standalone && perspective === 'CPE') && (

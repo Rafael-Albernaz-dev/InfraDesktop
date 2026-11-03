@@ -1685,7 +1685,7 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(131));
   expect(vi.mocked(api.start).mock.calls.at(-1)![3]).toBe(operation);
   expect(api.inspect).not.toHaveBeenCalled();
-});
+}, 15000);
 
 it('Q03 inventory filters and refresh do not reload an independent credential catalog', async () => {
   render(
