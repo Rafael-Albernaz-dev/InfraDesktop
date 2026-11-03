@@ -1,4 +1,4 @@
-import { emptyOperations } from '../src/desktop-model';
+import { emptyOperations, routeLegacyPageNumber } from '../src/desktop-model';
 // Separate test entry. Never imported by src/main.tsx or the production bundle.
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -76,7 +76,7 @@ export function Fixture() {
   return (
     <Desktop
       page={page as Page}
-      navigate={navigate}
+      navigate={(next) => navigate(routeLegacyPageNumber(next))}
       brand={brand}
       account="Operador"
       theme={theme}

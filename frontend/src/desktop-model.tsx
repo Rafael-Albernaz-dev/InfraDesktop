@@ -160,8 +160,7 @@ export const emptyOperations: Operations = {
 
 export type DesktopProps = {
   page: Page;
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  navigate: (page: any) => void;
+  navigate: (page: Page) => void;
   brand: Branding;
   account: string;
   theme: string;
