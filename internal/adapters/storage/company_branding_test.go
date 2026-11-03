@@ -169,8 +169,8 @@ func TestCompanyBrandEnterpriseV1MigrationAtomicAndChecksum(t *testing.T) {
 				if e := j.st.validateUnit(j.st.unit, companyX); e != nil {
 					t.Fatal(e)
 				}
-			} else if err != nil || count != 6 {
-				t.Fatal("migration failed", err)
+			} else if err != nil || count != latestCompanySchema {
+				t.Fatal("migration failed", err, count)
 			}
 			var old string
 			j.st.unit.QueryRow("SELECT value FROM preserve").Scan(&old)

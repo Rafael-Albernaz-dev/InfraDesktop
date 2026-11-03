@@ -1,0 +1,2 @@
+# Real RouterOS captures keep their CRLF line endings; tests count them.
+internal/adapters/routerssh/testdata/*_real_sanitized.txt -text

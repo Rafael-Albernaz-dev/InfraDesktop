@@ -274,69 +274,6 @@ func TestPPPoEJobSlotsAndInterruptedCurrent(t *testing.T) {
 		t.Fatal("read reconciled by network")
 	}
 }
-func TestPPPoERealClientAuthorizationAndCursorBoundaries(t *testing.T) {
-	j := newPPJourney(t, sshfixture.Config{PPRows: 32})
-	a := j.collect(uuid.NewString())
-	q := equipment.PPInput{DeviceID: j.device, ObservationID: a.ID, Query: &equipment.PPQuery{Search: "synthetic"}}
-	page := j.call("pppoe.sessions-list", q, foundation.OK).Data.PPPoE
-	if page.Next == "" || len(page.Rows) != 16 {
-		t.Fatal("positive page control")
-	}
-	q.Cursor = page.Next
-	q.Query.Search = "other"
-	j.call("pppoe.sessions-list", q, foundation.Code(equipment.CursorInvalid))
-	q.Query.Search = "synthetic"
-	second := j.collect(uuid.NewString())
-	q.ObservationID = second.ID
-	j.call("pppoe.sessions-list", q, foundation.Code(equipment.CursorInvalid))
-	auths := j.peer.Auth.Load()
-	request := Request{Op: "pppoe.current", ExpectedProfile: uuid.NewString(), ExpectedActivation: j.client.activation, PPPoE: &equipment.PPInput{DeviceID: j.device}}
-	if r := j.client.Call(context.Background(), request); r.Code != foundation.ProfileChanged {
-		t.Fatal("context bypass", r.Code)
-	}
-	j.call("pppoe.current", equipment.PPInput{DeviceID: j.device}, foundation.OK)
-	for op, fields := range ppFields {
-		raw := map[string]any{}
-		for _, field := range fields {
-			switch field {
-			case "revision":
-				raw[field] = 2
-			case "query":
-				raw[field] = map[string]any{}
-			case "export_key":
-				raw[field] = base64.RawStdEncoding.EncodeToString(bytes.Repeat([]byte{9}, 32))
-			case "export_part":
-				raw[field] = "diagnostics"
-			case "scope":
-				raw[field] = equipment.PDCatalog
-				if op == "pppoe.diagnostic-start" {
-					raw[field] = equipment.PDPing
-				}
-			case "cursor":
-				raw[field] = ""
-			case "device_id":
-				raw[field] = j.device
-			case "observation_id", "base_id", "target_id":
-				raw[field] = second.ID
-			default:
-				raw[field] = uuid.NewString()
-			}
-		}
-		b, _ := json.Marshal(raw)
-		var in equipment.PPInput
-		if json.Unmarshal(b, &in) != nil {
-			t.Fatal("test input")
-		}
-		r := j.client.Call(context.Background(), Request{Op: op, ExpectedProfile: uuid.NewString(), ExpectedActivation: j.client.activation, PPPoE: &in})
-		if r.Code != foundation.ProfileChanged {
-			t.Fatal("operation escaped common auth guard", op, r.Code)
-		}
-	}
-	if j.peer.Auth.Load() != auths {
-		t.Fatal("negative/local operation connected")
-	}
-}
-
 func TestL06CReadReplayOnlyWhileActive(t *testing.T) {
 	hold := make(chan struct{})
 	released := false

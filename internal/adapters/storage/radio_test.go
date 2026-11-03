@@ -8,17 +8,6 @@ import (
 	"time"
 )
 
-func dropRadioFixtureSchema(t *testing.T, j *journey) {
-	t.Helper()
-	for _, table := range []string{"radio_credential_defaults", "radio_links", "radio_current", "radio_profiles", "device_radio_roles"} {
-		if _, err := j.st.unit.Exec("DROP TABLE " + table); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if _, err := j.st.unit.Exec("DELETE FROM schema_migrations WHERE version>=12"); err != nil {
-		t.Fatal(err)
-	}
-}
 func TestRadioMigrationCurrentContextAndPTP(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	ctx := context.Background()

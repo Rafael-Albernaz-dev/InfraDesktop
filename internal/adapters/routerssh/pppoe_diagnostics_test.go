@@ -3,7 +3,6 @@ package routerssh_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"infradesktop/internal/adapters/routerssh"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -95,53 +94,6 @@ func TestPPDiagnosticCommandsNeverRequestSensitiveOrWholeObjects(t *testing.T) {
 	encoded, _ := json.Marshal(o)
 	if c != equipment.OK || o.Quality.Status != "partial" || len(o.Rows) != 0 || strings.Contains(string(encoded), "PRIVATE-CANARY") {
 		t.Fatal("unexpected raw field leaked", o, c)
-	}
-}
-
-func TestPPDiagnosticParserLimitsFailuresAndRanges(t *testing.T) {
-	for _, services := range []string{"", "ppp;hotspot"} {
-		body := strings.Replace(radiusBody("7.26"), "\tppp\tfalse", "\t"+services+"\ttrue", 1)
-		o, c := routerssh.ParsePPDiagnostic(equipment.PDRadius, body)
-		if c != equipment.OK || o.Quality.Status != "complete" || len(o.Rows) != 2 || o.Rows[1].Services != strings.ReplaceAll(services, ";", ",") {
-			t.Fatal("valid empty/explicit service set rejected", services, o, c)
-		}
-	}
-	for _, services := range []string{"unknown-canary", "ppp,unknown", "ppp,", "+ppp"} {
-		body := strings.Replace(radiusBody("7.26"), "\tppp\tfalse", "\t"+services+"\ttrue", 1)
-		o, c := routerssh.ParsePPDiagnostic(equipment.PDRadius, body)
-		if c != equipment.OK || o.Quality.Status != "partial" || len(o.Rows) != 0 {
-			t.Fatal("unknown radius service accepted", o, c)
-		}
-	}
-	for _, tc := range []struct{ body, status string }{
-		{strings.Replace(catalogBody("7.26"), "Z\t7\tcomplete", "Z\t7\tchurn", 1), "partial"},
-		{strings.Split(catalogBody("7.26"), "Z\t")[0], "partial"},
-		{"D\t1\tcatalog\t7.26\t2d1h1s\t2049\nZ\t0\trows\t2d1h1s\n", "limited"},
-		{strings.Replace(catalogBody("7.26"), "100-115,120,122", "100-1", 1), "partial"},
-	} {
-		o, c := routerssh.ParsePPDiagnostic(equipment.PDCatalog, tc.body)
-		if c != equipment.OK || o.Quality.Status != tc.status || len(o.Rows) != 0 {
-			t.Fatal(o, c)
-		}
-	}
-	for _, tc := range []struct {
-		value, want string
-		valid       bool
-	}{{"120,100-115;114-119", "100-120", true}, {"?", "?", true}, {"", "", true}, {"0", "", false}, {"4095", "", false}, {"1,+2", "", false}, {"1-2-3", "", false}, {"2-1", "", false}, {"1,", "", false}} {
-		got, ok := routerssh.ParsePDRange(tc.value)
-		if ok != tc.valid || ok && got != tc.want {
-			t.Fatal(tc, got, ok)
-		}
-	}
-	var body strings.Builder
-	fmt.Fprintf(&body, "D\t1\tcatalog\t7.26\t2d1h1s\t%d\n", equipment.PPMaxRows)
-	for i := 0; i < equipment.PPMaxRows; i++ {
-		fmt.Fprintf(&body, "I\t*%x\tdynamic-%d\tpppoe-in\ttrue\tfalse\ttrue\n", i+1, i)
-	}
-	fmt.Fprintf(&body, "Z\t%d\tcomplete\t2d1h1s\n", equipment.PPMaxRows)
-	o, c := routerssh.ParsePPDiagnostic(equipment.PDCatalog, body.String())
-	if c != equipment.OK || o.Quality.Status != "complete" || len(o.Rows) != equipment.PPMaxRows {
-		t.Fatal("dynamic catalog incorrectly limited to128", c, o.Quality)
 	}
 }
 

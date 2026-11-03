@@ -14,8 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -43,28 +41,9 @@ func equipmentCall(t *testing.T, s *equipment.Service, q equipment.Command, want
 	}
 	return v
 }
-func setupEquipment(t *testing.T, j *journey, s *equipment.Service, port int) (equipment.Command, equipment.Command) {
-	t.Helper()
-	q := equipmentScope(j)
-	q.Op = "credential.put"
-	q.ID = uuid.NewString()
-	q.Operation = uuid.NewString()
-	q.Alias = "Shared read"
-	q.User = "reader"
-	q.Secret = sshfixture.Password
-	equipmentCall(t, s, q, equipment.OK)
-	d := equipmentScope(j)
-	d.Op = "inventory.create"
-	d.ID = uuid.NewString()
-	d.Operation = uuid.NewString()
-	d.Name = "Router fixture"
-	d.Address = "127.0.0.1"
-	d.Port = port
-	d.Transport = "ssh"
-	d.CredentialID = q.ID
-	equipmentCall(t, s, d, equipment.OK)
-	return q, d
-}
+
+// setupEquipment moved to equipment_vault_deadline_test.go.
+
 func TestEquipmentPersistenceIsolationConflictAndRollback(t *testing.T) {
 	j := newJourney(t)
 	j.create(companyX, "X", access.OK)
@@ -202,43 +181,11 @@ func TestEquipmentPersistenceIsolationConflictAndRollback(t *testing.T) {
 		t.Fatal(e)
 	}
 }
-func awaitJob(t *testing.T, s *equipment.Service, q equipment.Command, id string) equipment.Job {
-	t.Helper()
-	deadline := time.Now().Add(3 * time.Second)
-	q.Op = "device.query-status"
-	q.JobID = id
-	for time.Now().Before(deadline) {
-		v := equipmentCall(t, s, q, equipment.OK)
-		if v.Job.State != "RUNNING" {
-			return *v.Job
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	t.Fatal("job did not finish")
-	return equipment.Job{}
-}
-func trustEquipment(t *testing.T, s *equipment.Service, q equipment.Command, d equipment.Command) equipment.Command {
-	t.Helper()
-	q.Op = "trust.inspect"
-	q.ID = d.ID
-	q.Revision = 1
-	q.Operation = uuid.NewString()
-	v := equipmentCall(t, s, q, equipment.OK)
-	job := awaitJob(t, s, q, v.Job.ID)
-	if job.Code != equipment.OK {
-		t.Fatal(job.Code)
-	}
-	q.Op = "trust.confirm"
-	q.Operation = uuid.NewString()
-	q.JobID = job.ID
-	q.Fingerprint = job.Fingerprint
-	equipmentCall(t, s, q, equipment.OK)
-	equipmentCall(t, s, q, equipment.OK)
-	q.Op = "device.query-start"
-	q.Revision = 2
-	q.Operation = uuid.NewString()
-	return q
-}
+
+// awaitJob moved to equipment_vault_deadline_test.go.
+
+// trustEquipment moved to equipment_vault_deadline_test.go.
+
 func TestEquipmentActivationPreservesObservation(t *testing.T) {
 	for _, scenario := range []string{"completed", "query-in-flight"} {
 		t.Run(scenario, func(t *testing.T) {
@@ -362,243 +309,27 @@ func TestEquipmentActivationPreservesObservation(t *testing.T) {
 		})
 	}
 }
-func TestEquipmentQueriesRevocationSaturationAndRestart(t *testing.T) {
-	for _, change := range []string{"success", "company", "logout", "reset", "renew", "credential", "inactive", "device", "cancel", "owner", "saturation"} {
-		t.Run(change, func(t *testing.T) {
-			j := newJourney(t)
-			j.create(companyX, "X", access.OK)
-			j.create(companyY, "Y", access.OK)
-			j.selectCompany(companyX, access.OK)
-			s := newEquipment(t, j)
-			hold := make(chan struct{})
-			server, e := sshfixture.Start(sshfixture.Config{Family: "v7", Hold: hold})
-			if e != nil {
-				t.Fatal(e)
-			}
-			defer server.Close()
-			credential, d := setupEquipment(t, j, s, server.Port())
-			q := trustEquipment(t, s, equipmentScope(j), d)
-			extra := []equipment.Command{}
-			if change == "saturation" {
-				for range 2 {
-					peer, e := sshfixture.Start(sshfixture.Config{Family: "v7", Hold: hold})
-					if e != nil {
-						t.Fatal(e)
-					}
-					defer peer.Close()
-					second := d
-					second.Port = peer.Port()
-					second.ID = uuid.NewString()
-					second.Operation = uuid.NewString()
-					equipmentCall(t, s, second, equipment.OK)
-					extra = append(extra, trustEquipment(t, s, equipmentScope(j), second))
-				}
-			}
-			v := equipmentCall(t, s, q, equipment.OK)
-			same := equipmentCall(t, s, q, equipment.OK)
-			if v.Job.ID != same.Job.ID {
-				t.Fatal("retry duplicated job")
-			}
-			deadline := time.Now().Add(time.Second)
-			for server.Commands.Load() == 0 && time.Now().Before(deadline) {
-				time.Sleep(time.Millisecond)
-			}
-			if server.Commands.Load() == 0 {
-				t.Fatal("query did not reach controlled peer")
-			}
-			switch change {
-			case "company":
-				j.selectCompany(companyY, access.OK)
-			case "logout":
-				x := j.q
-				x.Op = "access.logout"
-				j.call(x, access.OK)
-			case "reset":
-				j.call(access.Command{Op: "access.recover", Owner: "owner", Name: "technical", Password: password, Recovery: j.recovery}, access.OK)
-			case "renew":
-				x := j.q
-				x.Op = "access.renew-recovery"
-				x.Password = password
-				j.recovery = j.call(x, access.OK).Recovery
-				x.Op = "access.ack-recovery"
-				j.call(x, access.OK)
-			case "credential":
-				credential.Operation = uuid.NewString()
-				credential.Revision = 1
-				credential.Affected = 1
-				equipmentCall(t, s, credential, equipment.OK)
-			case "inactive":
-				x := equipmentScope(j)
-				x.Op = "inventory.set-active"
-				x.ID = d.ID
-				x.Revision = 2
-				x.Operation = uuid.NewString()
-				equipmentCall(t, s, x, equipment.OK)
-			case "device":
-				d.Op = "inventory.update"
-				d.Operation = uuid.NewString()
-				d.Revision = 2
-				d.Name = "Changed"
-				equipmentCall(t, s, d, equipment.OK)
-			case "cancel":
-				x := q
-				x.Op = "device.query-cancel"
-				x.JobID = v.Job.ID
-				equipmentCall(t, s, x, equipment.OK)
-			case "owner":
-				sAuth := j.svc
-				sAuth.Reap(func(string) bool { return false })
-			case "saturation":
-				q2 := extra[0]
-				equipmentCall(t, s, q2, equipment.OK)
-				q2 = extra[1]
-				equipmentCall(t, s, q2, access.Busy)
-			}
-			if change != "success" && change != "saturation" {
-				time.Sleep(90 * time.Millisecond)
-			}
-			close(hold)
-			if change == "company" || change == "logout" || change == "reset" || change == "owner" || change == "renew" {
-				time.Sleep(60 * time.Millisecond)
-				x := q
-				x.Op = "device.query-status"
-				x.JobID = v.Job.ID
-				_, c := s.Handle(context.Background(), x)
-				if c == equipment.OK {
-					t.Fatal("revoked scope can read job")
-				}
-			} else {
-				job := awaitJob(t, s, q, v.Job.ID)
-				if change == "success" || change == "saturation" {
-					if job.Code != equipment.OK || job.Result == nil {
-						t.Fatal("valid query failed", job.Code)
-					}
-				} else if job.Result != nil || job.Code == equipment.OK {
-					t.Fatal("stale query published", change)
-				}
-			}
-			// Inspect persisted result only in X, after all workers stop.
-			s.Close()
-			if change == "company" {
-				j.selectCompany(companyX, access.OK)
-			}
-			st, c := j.st.ReadEquipment(context.Background(), companyX)
-			if c != equipment.OK {
-				t.Fatal(c)
-			}
-			if change != "success" && change != "saturation" && st.Devices[0].Result != nil {
-				t.Fatal("stale observation persisted", change)
-			}
-			if len(st.Credentials) != 1 {
-				t.Fatal("authorization change destroyed vault")
-			}
-			if change == "success" {
-				restarted := newEquipment(t, j)
-				equipmentCall(t, restarted, q, "JOB_INTERRUPTED")
-				if server.Auth.Load() != 1 {
-					t.Fatal("restart retried authentication")
-				}
-			}
-		})
-	}
-}
-func TestEquipmentConcurrentOptimisticUpdateAndMissingVault(t *testing.T) {
-	j := newJourney(t)
-	j.create(companyX, "X", access.OK)
-	j.selectCompany(companyX, access.OK)
-	s := newEquipment(t, j)
-	_, d := setupEquipment(t, j, s, 22)
-	d.Op = "inventory.update"
-	d.Revision = 1
-	var wg sync.WaitGroup
-	codes := make(chan equipment.Code, 2)
-	for range 2 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			q := d
-			q.Operation = uuid.NewString()
-			_, c := s.Handle(context.Background(), q)
-			codes <- c
-		}()
-	}
-	wg.Wait()
-	close(codes)
-	success, conflict := 0, 0
-	for c := range codes {
-		if c == equipment.OK {
-			success++
-		}
-		if c == equipment.Revision {
-			conflict++
-		}
-	}
-	if success != 1 || conflict != 1 {
-		t.Fatal("optimistic revision did not serialize")
-	}
-	missing := equipment.New(j.svc, j.st, vault.New(func() ([]byte, error) { return nil, fmt.Errorf("missing") }), routerssh.Adapter{}, equipmentIDs{}, time.Now)
-	defer missing.Close()
-	q := equipmentScope(j)
-	q.Op = "inventory.list"
-	v := equipmentCall(t, missing, q, equipment.OK)
-	if v.VaultAvailable || len(v.Devices) != 1 {
-		t.Fatal("missing vault blocked inventory")
-	}
-}
+
+// TestEquipmentQueriesRevocationSaturationAndRestart moved to equipment_job_replay_test.go.
+
+// TestEquipmentConcurrentOptimisticUpdateAndMissingVault moved to equipment_vault_deadline_test.go.
 
 func TestEquipmentCoherentRestoreAndSchemaThree(t *testing.T) {
 	j := newJourney(t)
 	j.create(companyX, "X", access.OK)
 	j.selectCompany(companyX, access.OK)
 	s := newEquipment(t, j)
-	credential, _ := setupEquipment(t, j, s, 22)
+	setupEquipment(t, j, s, 22)
 	st, _ := j.st.ReadEquipment(context.Background(), companyX)
 	installation := st.Installation
-	// Simulate an exact V2 unit, then exercise additive V3 rollback and upgrade.
-	dropPPPoEFixtureSchema(t, j)
-	if _, e := j.st.unit.Exec("DROP TABLE devices;DROP TABLE credentials;DROP TABLE vault_key;DROP TABLE equipment_operations;DELETE FROM schema_migrations WHERE version>=3;CREATE TABLE devices(conflict TEXT)"); e != nil {
-		t.Fatal(e)
-	}
-	if j.st.validateUnit(j.st.unit, companyX) == nil {
-		t.Fatal("conflicting schema accepted")
-	}
-	var count int
-	j.st.unit.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count)
-	if count != 2 {
-		t.Fatal("failed migration advanced ledger")
-	}
-	j.st.unit.Exec("DROP TABLE devices")
-	if e := j.st.validateUnit(j.st.unit, companyX); e != nil {
-		t.Fatal(e)
-	}
-	credential, _ = setupEquipment(t, j, s, 22)
+	assertSchemaThreeRollbackAndUpgrade(t, j)
+	credential, _ := setupEquipment(t, j, s, 22)
 	s.Close()
 	source := j.st.dir
 	j.st.Close()
 	// Copy only after clean close: no omitted active WAL is presented as backup.
 	restored := privateDir(t)
-	e := filepath.WalkDir(source, func(path string, d os.DirEntry, e error) error {
-		if e != nil {
-			return e
-		}
-		relative, _ := filepath.Rel(source, path)
-		if relative == "." {
-			return nil
-		}
-		target := filepath.Join(restored, relative)
-		if d.IsDir() {
-			return os.Mkdir(target, 0700)
-		}
-		if filepath.Base(path) == "database.lock" {
-			return nil
-		}
-		b, e := os.ReadFile(path)
-		if e != nil {
-			return e
-		}
-		return os.WriteFile(target, b, 0600)
-	})
-	if e != nil {
+	if e := copyUnitWithoutLock(source, restored); e != nil {
 		t.Fatal(e)
 	}
 	restoredStore, e := Open(restored)
@@ -624,142 +355,62 @@ func TestEquipmentCoherentRestoreAndSchemaThree(t *testing.T) {
 		t.Fatal("wrong master reported ready")
 	}
 }
-func TestEquipmentInspectNonblockingAndRealTotalDeadline(t *testing.T) {
-	j := newJourney(t)
-	j.create(companyX, "X", access.OK)
-	j.selectCompany(companyX, access.OK)
-	s := newEquipment(t, j)
-	peer, e := sshfixture.Start(sshfixture.Config{Mode: "handshake"})
-	if e != nil {
-		t.Fatal(e)
-	}
-	defer peer.Close()
-	_, d := setupEquipment(t, j, s, peer.Port())
-	q := equipmentScope(j)
-	q.Op = "trust.inspect"
-	q.ID = d.ID
-	q.Revision = 1
-	q.Operation = uuid.NewString()
-	began := time.Now()
-	v := equipmentCall(t, s, q, equipment.OK)
-	if time.Since(began) > time.Second {
-		t.Fatal("inspect blocked the caller")
-	}
-	snapshot := j.q
-	snapshot.Op = "access.snapshot"
-	j.call(snapshot, access.OK)
-	// The actual 20s budget is exercised once per run without changing production limits.
-	until := time.Now().Add(equipment.QueryBudget + 2*time.Second)
-	q.Op = "device.query-status"
-	q.JobID = v.Job.ID
-	for time.Now().Before(until) {
-		r := equipmentCall(t, s, q, equipment.OK)
-		if r.Job.State != "RUNNING" {
-			if r.Job.Code != "DEADLINE_EXCEEDED" {
-				t.Fatal("wrong terminal deadline", r.Job.Code)
-			}
-			if elapsed := time.Since(began); elapsed < equipment.QueryBudget || elapsed > equipment.QueryBudget+time.Second {
-				t.Fatal("unbounded total deadline", elapsed)
-			}
-			return
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	t.Fatal("job exceeded total deadline")
-}
 
-func TestEquipmentJobRetentionAndRecordLimit(t *testing.T) {
-	j := newJourney(t)
-	j.create(companyX, "X", access.OK)
-	j.selectCompany(companyX, access.OK)
-	var clock atomic.Value
-	clock.Store(time.Now())
-	s := equipment.New(j.svc, j.st, vault.New(func() ([]byte, error) { return bytes.Repeat([]byte{37}, 32), nil }), routerssh.Adapter{}, equipmentIDs{}, func() time.Time { return clock.Load().(time.Time) })
-	defer s.Close()
-	peer, e := sshfixture.Start(sshfixture.Config{})
-	if e != nil {
+// assertSchemaThreeRollbackAndUpgrade simulates an exact V2 unit, then exercises
+// the additive V3 rollback and upgrade.
+func assertSchemaThreeRollbackAndUpgrade(t *testing.T, j *journey) {
+	t.Helper()
+	dropPPPoEFixtureSchema(t, j)
+	stmt := "DROP TABLE devices;DROP TABLE credentials;DROP TABLE vault_key;DROP TABLE equipment_operations;" +
+		"DELETE FROM schema_migrations WHERE version>=3;CREATE TABLE devices(conflict TEXT)"
+	if _, e := j.st.unit.Exec(stmt); e != nil {
 		t.Fatal(e)
 	}
-	defer peer.Close()
-	_, d := setupEquipment(t, j, s, peer.Port())
-	q := equipmentScope(j)
-	q.Op = "trust.inspect"
-	q.ID = d.ID
-	q.Revision = 1
-	firstOperation, firstJob := "", ""
-	// Terminal metadata precedes worker exit. Wait on the same deliberate
-	// operation for admission release; BUSY does not reserve/repeat network.
-	admit := func(want equipment.Code) equipment.View {
-		deadline := time.Now().Add(3 * time.Second) // Same existing awaitJob budget.
-		for {
-			v, c := s.Handle(context.Background(), q)
-			if c != access.Busy {
-				if c != want {
-					t.Fatalf("retention admission got %s want %s", c, want)
-				}
-				return v
-			}
-			if !time.Now().Before(deadline) {
-				t.Fatal("worker admission did not release")
-			}
-			time.Sleep(time.Millisecond)
-		}
+	if j.st.validateUnit(j.st.unit, companyX) == nil {
+		t.Fatal("conflicting schema accepted")
 	}
-	for i := 0; i < equipment.MaxJobs; i++ {
-		q.Operation = uuid.NewString()
-		v := admit(equipment.OK)
-		if i == 0 {
-			firstOperation = q.Operation
-			firstJob = v.Job.ID
-		}
-		job := awaitJob(t, s, q, v.Job.ID)
-		if job.Code != equipment.OK {
-			t.Fatal(job.Code)
-		}
+	var count int
+	j.st.unit.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&count)
+	if count != 2 {
+		t.Fatal("failed migration advanced ledger")
 	}
-	q.Operation = uuid.NewString()
-	admit(equipment.Limit)
-	clock.Store(clock.Load().(time.Time).Add(equipment.JobRetention + time.Second))
-	expired := q
-	expired.Op = "device.query-status"
-	expired.JobID = firstJob
-	equipmentCall(t, s, expired, equipment.Changed)
-	equipmentCall(t, s, q, equipment.OK)
-	q.Operation = firstOperation
-	equipmentCall(t, s, q, "JOB_INTERRUPTED")
-	if peer.Auth.Load() != 0 {
-		t.Fatal("inspection/retention authenticated")
+	j.st.unit.Exec("DROP TABLE devices")
+	if e := j.st.validateUnit(j.st.unit, companyX); e != nil {
+		t.Fatal(e)
 	}
 }
 
-func TestFocalMissingCompanyKeyPreservesInventory(t *testing.T) {
-	for _, sql := range []string{"DELETE FROM vault_key", "UPDATE vault_key SET envelope=x''"} {
-		t.Run(sql, func(t *testing.T) {
-			j := newJourney(t)
-			j.create(companyX, "X", access.OK)
-			j.selectCompany(companyX, access.OK)
-			s := newEquipment(t, j)
-			cr, _ := setupEquipment(t, j, s, 2222)
-			before, _ := j.st.ReadEquipment(context.Background(), companyX)
-			if _, e := j.st.unit.Exec(sql); e != nil {
-				t.Fatal(e)
-			}
-			q := equipmentScope(j)
-			q.Op = "inventory.list"
-			v := equipmentCall(t, s, q, equipment.OK)
-			if v.VaultAvailable || len(v.Devices) != 1 {
-				t.Fatal("missing company key advertised ready or inventory lost")
-			}
-			cr.ID = uuid.NewString()
-			cr.Operation = uuid.NewString()
-			equipmentCall(t, s, cr, equipment.VaultUnavailable)
-			after, _ := j.st.ReadEquipment(context.Background(), companyX)
-			if len(after.WrappedKey) != 0 || len(after.Credentials) != 1 || !bytes.Equal(before.Credentials[0].Envelope, after.Credentials[0].Envelope) || len(before.Operations) != len(after.Operations) {
-				t.Fatal("missing key caused destructive write")
-			}
-		})
-	}
+// copyUnitWithoutLock copies a closed unit directory, skipping the process lock.
+func copyUnitWithoutLock(source, restored string) error {
+	return filepath.WalkDir(source, func(path string, d os.DirEntry, e error) error {
+		if e != nil {
+			return e
+		}
+		relative, _ := filepath.Rel(source, path)
+		if relative == "." {
+			return nil
+		}
+		target := filepath.Join(restored, relative)
+		if d.IsDir() {
+			return os.Mkdir(target, 0700)
+		}
+		if filepath.Base(path) == "database.lock" {
+			return nil
+		}
+		b, e := os.ReadFile(path)
+		if e != nil {
+			return e
+		}
+		return os.WriteFile(target, b, 0600)
+	})
 }
+
+// TestEquipmentInspectNonblockingAndRealTotalDeadline moved to equipment_vault_deadline_test.go.
+
+// TestEquipmentJobRetentionAndRecordLimit moved to equipment_job_replay_test.go.
+
+// TestFocalMissingCompanyKeyPreservesInventory moved to equipment_vault_deadline_test.go.
+
 func TestFocalWriteReplayPreservesJobs(t *testing.T) {
 	for _, kind := range []string{"device", "credential"} {
 		t.Run(kind, func(t *testing.T) {

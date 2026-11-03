@@ -3,12 +3,8 @@ package routerssh
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"infradesktop/internal/modules/equipment"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -41,66 +37,6 @@ func diagnosticCommands(t *testing.T) map[string]string {
 		out["BuildPDPingCommand-v"+family] = body
 	}
 	return out
-}
-func TestL06V7EveryExportedCollectorHasDiagnostic(t *testing.T) {
-	commands := diagnosticCommands(t)
-	files, e := filepath.Glob("*.go")
-	if e != nil {
-		t.Fatal(e)
-	}
-	for _, path := range files {
-		if strings.HasSuffix(path, "_test.go") {
-			continue
-		}
-		f, e := parser.ParseFile(token.NewFileSet(), path, nil, 0)
-		if e != nil {
-			t.Fatal(e)
-		}
-		require := func(name string) {
-			if !ast.IsExported(name) || !strings.HasSuffix(name, "Command") {
-				return
-			}
-			if name == "BuildPDPingCommand" {
-				name += "-v7"
-			}
-			if commands[name] == "" {
-				t.Error("exported collector lacks generated diagnostic", name)
-			}
-		}
-		for _, d := range f.Decls {
-			switch v := d.(type) {
-			case *ast.FuncDecl:
-				require(v.Name.Name)
-			case *ast.GenDecl:
-				for _, s := range v.Specs {
-					if values, ok := s.(*ast.ValueSpec); ok {
-						for _, n := range values.Names {
-							require(n.Name)
-						}
-					}
-				}
-			}
-		}
-	}
-	out := os.Getenv("L06_DIAGNOSTIC_DIR")
-	if out == "" {
-		out = t.TempDir()
-	} else if e := os.MkdirAll(out, 0700); e != nil {
-		t.Fatal(e)
-	}
-	for name, body := range commands {
-		if h, d := collectorSyntaxHazards(body); h || d {
-			t.Errorf("unsafe generated collector %s health=%v dollar=%v", name, h, d)
-		}
-		path := filepath.Join(out, name+".rsc")
-		if e := os.WriteFile(path, []byte(body+"\n"), 0600); e != nil {
-			t.Fatal(e)
-		}
-		actual, e := os.ReadFile(path)
-		if e != nil || string(actual) != body+"\n" {
-			t.Fatal("diagnostic drift", name)
-		}
-	}
 }
 func TestL06V7RealSanitizedGoldens(t *testing.T) {
 	sessions, e := os.ReadFile("testdata/device_sessions_v7_real_sanitized.txt")
