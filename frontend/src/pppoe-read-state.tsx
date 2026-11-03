@@ -109,29 +109,29 @@ function usePPReadCleanup(p: {
   profile: string;
   activation: string;
   deviceId: string;
-  generation: React.MutableRefObject<number>;
-  activeJob: React.MutableRefObject<string>;
-  privateResultJob: React.MutableRefObject<string>;
-  pendingOperation: React.MutableRefObject<string>;
+  generationRef: React.MutableRefObject<number>;
+  activeJobRef: React.MutableRefObject<string>;
+  privateResultJobRef: React.MutableRefObject<string>;
+  pendingOperationRef: React.MutableRefObject<string>;
 }) {
   const {
     profile,
     activation,
     deviceId,
-    generation,
-    activeJob,
-    privateResultJob,
-    pendingOperation,
+    generationRef,
+    activeJobRef,
+    privateResultJobRef,
+    pendingOperationRef,
   } = p;
   useEffect(() => {
-    generation.current += 1;
+    generationRef.current += 1;
     return () => {
-      generation.current += 1;
-      const id = activeJob.current || privateResultJob.current;
-      const op = pendingOperation.current;
-      activeJob.current = '';
-      privateResultJob.current = '';
-      pendingOperation.current = '';
+      generationRef.current += 1;
+      const id = activeJobRef.current || privateResultJobRef.current;
+      const op = pendingOperationRef.current;
+      activeJobRef.current = '';
+      privateResultJobRef.current = '';
+      pendingOperationRef.current = '';
       if (id) void readAPI.cancel(profile, activation, id).catch(() => {});
       else if (op)
         void readAPI
@@ -142,10 +142,10 @@ function usePPReadCleanup(p: {
     profile,
     activation,
     deviceId,
-    generation,
-    activeJob,
-    privateResultJob,
-    pendingOperation,
+    generationRef,
+    activeJobRef,
+    privateResultJobRef,
+    pendingOperationRef,
   ]);
 }
 
@@ -481,10 +481,10 @@ export function usePPReadState(pProps: PPReadPanelProps) {
     profile: pProps.profile,
     activation: pProps.activation,
     deviceId: pProps.device.id,
-    generation,
-    activeJob,
-    privateResultJob,
-    pendingOperation,
+    generationRef: generation,
+    activeJobRef: activeJob,
+    privateResultJobRef: privateResultJob,
+    pendingOperationRef: pendingOperation,
   });
   const valid = (r: PPResult) =>
     r.profile_id === pProps.profile && r.activation_id === pProps.activation;

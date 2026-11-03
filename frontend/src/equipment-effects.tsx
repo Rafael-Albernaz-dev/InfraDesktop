@@ -32,7 +32,7 @@ export function useDeviceListEffect(p: {
   refresh: number;
   detailOpen: boolean;
   onTotal?: (context: string, total: number) => void;
-  generation: React.MutableRefObject<number>;
+  generationRef: React.MutableRefObject<number>;
   setListError: (v: string) => void;
   setDevices: (v: Device[]) => void;
   setTotal: (v: number) => void;
@@ -41,9 +41,10 @@ export function useDeviceListEffect(p: {
   setReady: (v: boolean) => void;
   setSelected: React.Dispatch<React.SetStateAction<Device | undefined>>;
 }) {
+  const { generationRef } = p;
   useEffect(() => {
     let stopped = false;
-    const read = ++p.generation.current;
+    const read = ++generationRef.current;
     if (!p.profile || !p.connected) return;
     void (async () => {
       try {
@@ -54,7 +55,7 @@ export function useDeviceListEffect(p: {
           p.cursor,
           p.inactive,
         );
-        if (stopped || read !== p.generation.current) return;
+        if (stopped || read !== generationRef.current) return;
         if (r.code !== 'OK' || !r.data)
           return p.setListError(equipmentMessage(r.code));
         p.setListError('');
@@ -70,7 +71,7 @@ export function useDeviceListEffect(p: {
           reconcileListedSelection(old, list, p.detailOpen),
         );
       } catch {
-        if (!stopped && read === p.generation.current)
+        if (!stopped && read === generationRef.current)
           p.setListError(equipmentMessage('SERVICE_UNAVAILABLE'));
       }
     })();
@@ -87,7 +88,7 @@ export function useDeviceListEffect(p: {
     p.refresh,
     p.detailOpen,
     p.onTotal,
-    p.generation,
+    generationRef,
     p.setListError,
     p.setDevices,
     p.setTotal,
@@ -165,7 +166,7 @@ export function useJobPollEffect(p: {
   job?: Job;
   profile: string;
   activation: string;
-  surface: React.MutableRefObject<number>;
+  surfaceRef: React.MutableRefObject<number>;
   setError: (v: string) => void;
   setJob: (v: Job | undefined) => void;
   reload: React.Dispatch<React.SetStateAction<number>>;
@@ -176,9 +177,9 @@ export function useJobPollEffect(p: {
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
     let failures = 0;
-    const intent = p.surface.current;
+    const intent = p.surfaceRef.current;
     const failed = (code: string) => {
-      if (intent === p.surface.current)
+      if (intent === p.surfaceRef.current)
         p.setError(
           equipmentMessage(code) +
             ' Estado da consulta ainda não confirmado; retome pelo mesmo botão, sem nova autenticação automática.',
@@ -192,12 +193,12 @@ export function useJobPollEffect(p: {
         if (stopped) return;
         if (r.code !== 'OK' || !r.data?.job) return failed(r.code);
         const current = r.data.job;
-        if (failures && intent === p.surface.current) p.setError('');
+        if (failures && intent === p.surfaceRef.current) p.setError('');
         failures = 0;
         if (current.state !== 'RUNNING') {
           clearPendingStartsForJob(p.profile, p.activation, current);
-          p.setJob(intent === p.surface.current ? current : undefined);
-          if (current.code !== 'OK' && intent === p.surface.current)
+          p.setJob(intent === p.surfaceRef.current ? current : undefined);
+          if (current.code !== 'OK' && intent === p.surfaceRef.current)
             p.setError(equipmentMessage(current.code));
           if (current.kind === 'device.query-start') p.reload((n) => n + 1);
         } else {
@@ -216,7 +217,7 @@ export function useJobPollEffect(p: {
     p.job,
     p.profile,
     p.activation,
-    p.surface,
+    p.surfaceRef,
     p.setError,
     p.setJob,
     p.reload,
@@ -228,22 +229,22 @@ function fetchTargetDetail(
   activation: string,
   requested: string,
   openOnSuccess: boolean,
-  detailRead: React.MutableRefObject<number>,
-  surface: React.MutableRefObject<number>,
+  detailReadRef: React.MutableRefObject<number>,
+  surfaceRef: React.MutableRefObject<number>,
   setSelected: (d: Device | undefined) => void,
   setDetailOpen: (v: boolean) => void,
   setError: (v: string) => void,
 ) {
   let cancelled = false;
-  const read = ++detailRead.current;
-  const intent = surface.current;
+  const read = ++detailReadRef.current;
+  const intent = surfaceRef.current;
   void api
     .get(profile, activation, requested)
     .then((r) => {
       if (
         cancelled ||
-        read !== detailRead.current ||
-        intent !== surface.current
+        read !== detailReadRef.current ||
+        intent !== surfaceRef.current
       )
         return;
       if (r.code === 'OK' && r.data?.device?.id === requested) {
@@ -257,8 +258,8 @@ function fetchTargetDetail(
     .catch(() => {
       if (
         !cancelled &&
-        read === detailRead.current &&
-        intent === surface.current
+        read === detailReadRef.current &&
+        intent === surfaceRef.current
       )
         setError(equipmentMessage('SERVICE_UNAVAILABLE'));
     });
@@ -272,7 +273,7 @@ function useJobCompletionSyncEffect(p: {
   profile: string;
   activation: string;
   onSelect?: (id: string) => void;
-  surface: React.MutableRefObject<number>;
+  surfaceRef: React.MutableRefObject<number>;
   setSelected: (d: Device | undefined) => void;
   setDetailOpen: (v: boolean) => void;
   setError: (v: string) => void;
@@ -286,11 +287,11 @@ function useJobCompletionSyncEffect(p: {
       return;
     const jobDeviceId = p.job.device_id;
     let cancelled = false;
-    const intent = p.surface.current;
+    const intent = p.surfaceRef.current;
     void api
       .get(p.profile, p.activation, jobDeviceId)
       .then((r) => {
-        if (cancelled || intent !== p.surface.current) return;
+        if (cancelled || intent !== p.surfaceRef.current) return;
         if (r.code === 'OK' && r.data?.device?.id === jobDeviceId) {
           p.setSelected(r.data.device);
           p.setDetailOpen(true);
@@ -298,7 +299,7 @@ function useJobCompletionSyncEffect(p: {
         } else p.setError(equipmentMessage(r.code));
       })
       .catch(() => {
-        if (!cancelled && intent === p.surface.current)
+        if (!cancelled && intent === p.surfaceRef.current)
           p.setError(equipmentMessage('SERVICE_UNAVAILABLE'));
       });
     return () => {
@@ -309,7 +310,7 @@ function useJobCompletionSyncEffect(p: {
     p.profile,
     p.activation,
     p.onSelect,
-    p.surface,
+    p.surfaceRef,
     p.setSelected,
     p.setDetailOpen,
     p.setError,
@@ -325,8 +326,8 @@ export function useDetailDeviceSyncEffects(p: {
   selected?: Device;
   job?: Job;
   onSelect?: (id: string) => void;
-  detailRead: React.MutableRefObject<number>;
-  surface: React.MutableRefObject<number>;
+  detailReadRef: React.MutableRefObject<number>;
+  surfaceRef: React.MutableRefObject<number>;
   setSelected: (d: Device | undefined) => void;
   setDetailOpen: (v: boolean) => void;
   setError: (v: string) => void;
@@ -338,8 +339,8 @@ export function useDetailDeviceSyncEffects(p: {
       p.activation,
       p.targetID,
       true,
-      p.detailRead,
-      p.surface,
+      p.detailReadRef,
+      p.surfaceRef,
       p.setSelected,
       p.setDetailOpen,
       p.setError,
@@ -349,8 +350,8 @@ export function useDetailDeviceSyncEffects(p: {
     p.profile,
     p.activation,
     p.connected,
-    p.detailRead,
-    p.surface,
+    p.detailReadRef,
+    p.surfaceRef,
     p.setSelected,
     p.setDetailOpen,
     p.setError,
@@ -362,8 +363,8 @@ export function useDetailDeviceSyncEffects(p: {
       p.activation,
       p.selected.id,
       false,
-      p.detailRead,
-      p.surface,
+      p.detailReadRef,
+      p.surfaceRef,
       p.setSelected,
       p.setDetailOpen,
       p.setError,
@@ -375,8 +376,8 @@ export function useDetailDeviceSyncEffects(p: {
     p.profile,
     p.activation,
     p.connected,
-    p.detailRead,
-    p.surface,
+    p.detailReadRef,
+    p.surfaceRef,
     p.setSelected,
     p.setDetailOpen,
     p.setError,

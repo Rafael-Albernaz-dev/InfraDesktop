@@ -34,7 +34,7 @@ export function DefaultCredentialDetails(props: {
   setDefaultBusy: (v: boolean) => void;
   credentialDefaults: Record<string, string>;
   credentials: Credential[];
-  defaultContext: React.MutableRefObject<string>;
+  defaultContextRef: React.MutableRefObject<string>;
   reloadCredentials: React.Dispatch<React.SetStateAction<number>>;
   setCredentialError: (v: string) => void;
 }) {
@@ -46,7 +46,7 @@ export function DefaultCredentialDetails(props: {
     setDefaultBusy,
     credentialDefaults,
     credentials,
-    defaultContext,
+    defaultContextRef,
     reloadCredentials,
     setCredentialError,
   } = props;
@@ -68,12 +68,12 @@ export function DefaultCredentialDetails(props: {
               void api
                 .setDefault(profile, activation, role, selected, id())
                 .then((r) => {
-                  if (defaultContext.current !== context) return;
+                  if (defaultContextRef.current !== context) return;
                   if (r.code === 'OK') reloadCredentials((n) => n + 1);
                   else setCredentialError(equipmentMessage(r.code));
                 })
                 .catch(() => {
-                  if (defaultContext.current === context)
+                  if (defaultContextRef.current === context)
                     setCredentialError(equipmentMessage('SERVICE_UNAVAILABLE'));
                 })
                 .finally(() => setDefaultBusy(false));

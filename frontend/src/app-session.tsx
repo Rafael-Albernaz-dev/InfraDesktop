@@ -144,8 +144,8 @@ function SecurityDialogBody(props: {
   busy: boolean;
   error: string;
   recoveryUncertain: boolean;
-  securityLocked: React.MutableRefObject<boolean>;
-  working: React.MutableRefObject<boolean>;
+  securityLockedRef: React.MutableRefObject<boolean>;
+  workingRef: React.MutableRefObject<boolean>;
   perform: PerformFn;
   setRecovery: (v: string) => void;
   setRecoveryUncertain: (v: boolean) => void;
@@ -157,8 +157,8 @@ function SecurityDialogBody(props: {
     busy,
     error,
     recoveryUncertain,
-    securityLocked,
-    working,
+    securityLockedRef,
+    workingRef,
     perform,
     setRecovery,
     setRecoveryUncertain,
@@ -173,12 +173,12 @@ function SecurityDialogBody(props: {
       error={error}
       uncertain={recoveryUncertain}
       lock={(locked) => {
-        securityLocked.current = locked;
+        securityLockedRef.current = locked;
       }}
       renew={(password) => {
-        if (working.current) return;
+        if (workingRef.current) return;
         const replace = recoveryUncertain;
-        securityLocked.current = true;
+        securityLockedRef.current = true;
         void perform(
           () => access.renewRecovery(password, replace),
           undefined,
@@ -192,7 +192,7 @@ function SecurityDialogBody(props: {
           () => {
             setRecovery('');
             setRecoveryUncertain(false);
-            securityLocked.current = false;
+            securityLockedRef.current = false;
             close();
           },
         )
@@ -209,8 +209,8 @@ export function AppOverlays(props: {
   busy: boolean;
   error: string;
   recoveryUncertain: boolean;
-  securityLocked: React.MutableRefObject<boolean>;
-  working: React.MutableRefObject<boolean>;
+  securityLockedRef: React.MutableRefObject<boolean>;
+  workingRef: React.MutableRefObject<boolean>;
   perform: PerformFn;
   setRecovery: (v: string) => void;
   setRecoveryUncertain: (v: boolean) => void;
@@ -319,12 +319,12 @@ function hasScopeChanged(previous: Result, r: Result): boolean {
 }
 
 type SessionRefs = {
-  securityLocked: React.MutableRefObject<boolean>;
-  epoch: React.MutableRefObject<number>;
-  hadAuth: React.MutableRefObject<boolean>;
-  contextKey: React.MutableRefObject<string>;
-  surface: React.MutableRefObject<number>;
-  previousView: React.MutableRefObject<Result>;
+  securityLockedRef: React.MutableRefObject<boolean>;
+  epochRef: React.MutableRefObject<number>;
+  hadAuthRef: React.MutableRefObject<boolean>;
+  contextKeyRef: React.MutableRefObject<string>;
+  surfaceRef: React.MutableRefObject<number>;
+  previousViewRef: React.MutableRefObject<Result>;
   setError: (v: string) => void;
   setRecovery: (v: string) => void;
   setDialog: (v: string) => void;
@@ -347,31 +347,32 @@ function applySessionResult(
     r.activation_id,
     r.name,
   ].join('|');
-  const previous = refs.previousView.current;
-  if (refs.contextKey.current && refs.contextKey.current !== key)
-    refs.epoch.current++;
+  const previous = refs.previousViewRef.current;
+  if (refs.contextKeyRef.current && refs.contextKeyRef.current !== key)
+    refs.epochRef.current++;
   if (hasScopeChanged(previous, r)) {
     refs.setError('');
-    refs.surface.current++;
+    refs.surfaceRef.current++;
     if (!r.authenticated && previous.authenticated) {
-      refs.securityLocked.current = false;
+      refs.securityLockedRef.current = false;
       refs.setRecoveryUncertain(false);
       refs.setRecovery('');
     }
-    if (!refs.securityLocked.current) {
+    if (!refs.securityLockedRef.current) {
       refs.setDialog('');
       if (previous.authenticated || r.authenticated) refs.setRecovery('');
     }
   }
-  refs.previousView.current = r;
-  refs.contextKey.current = key;
+  refs.previousViewRef.current = r;
+  refs.contextKeyRef.current = key;
   refs.setView({ ...r, recovery: '' });
   refs.setConnected(r.code === 'OK');
   if (r.authenticated) {
     setTheme(r.theme);
-    if (!refs.hadAuth.current) setPage(r.profile_id ? 'overview' : 'companies');
+    if (!refs.hadAuthRef.current)
+      setPage(r.profile_id ? 'overview' : 'companies');
   }
-  refs.hadAuth.current = r.authenticated;
+  refs.hadAuthRef.current = r.authenticated;
 }
 
 export function useAccessSession(
@@ -385,24 +386,27 @@ export function useAccessSession(
   const [recovery, setRecovery] = useState('');
   const [dialog, setDialog] = useState('');
   const [recoveryUncertain, setRecoveryUncertain] = useState(false);
-  const securityLocked = useRef(false);
-  const epoch = useRef(0);
-  const working = useRef(false);
-  const hadAuth = useRef(false);
-  const contextKey = useRef('');
-  const surface = useRef(0);
-  const previousView = useRef(initial);
+  const securityLockedRef = useRef(false);
+  const epochRef = useRef(0);
+  const workingRef = useRef(false);
+  const hadAuthRef = useRef(false);
+  const contextKeyRef = useRef('');
+  const surfaceRef = useRef(0);
+  const previousViewRef = useRef(initial);
+  const bumpSurface = useCallback(() => {
+    surfaceRef.current++;
+  }, []);
   const accept = useCallback(
     (r: Result) => {
       applySessionResult(
         r,
         {
-          securityLocked,
-          epoch,
-          hadAuth,
-          contextKey,
-          surface,
-          previousView,
+          securityLockedRef,
+          epochRef,
+          hadAuthRef,
+          contextKeyRef,
+          surfaceRef,
+          previousViewRef,
           setError,
           setRecovery,
           setDialog,
@@ -417,9 +421,9 @@ export function useAccessSession(
     [setPage, setTheme],
   );
   const invalidate = useCallback(() => {
-    epoch.current++;
+    epochRef.current++;
   }, []);
-  useStatusPoll(working, epoch, accept, setConnected, invalidate);
+  useStatusPoll(workingRef, epochRef, accept, setConnected, invalidate);
   return {
     view,
     connected,
@@ -433,10 +437,11 @@ export function useAccessSession(
     setDialog,
     recoveryUncertain,
     setRecoveryUncertain,
-    securityLocked,
-    epoch,
-    working,
-    surface,
+    securityLockedRef,
+    epochRef,
+    workingRef,
+    surfaceRef,
+    bumpSurface,
     accept,
     invalidate,
   };
@@ -451,15 +456,15 @@ export function createPerformAction(
     applyResult = true,
     intent: Intent = 'general',
   ) {
-    if (session.working.current) return false;
-    session.working.current = true;
+    if (session.workingRef.current) return false;
+    session.workingRef.current = true;
     session.setBusy(true);
     session.setError('');
-    const generation = ++session.epoch.current;
-    const operationSurface = session.surface.current;
+    const generation = ++session.epochRef.current;
+    const operationSurface = session.surfaceRef.current;
     try {
       const r = await call();
-      if (generation !== session.epoch.current) return false;
+      if (generation !== session.epochRef.current) return false;
       if (intent === 'renew') {
         session.setRecoveryUncertain((prev) =>
           r.code === 'OK'
@@ -467,14 +472,14 @@ export function createPerformAction(
             : prev ||
               ['DEADLINE_EXCEEDED', 'SERVICE_UNAVAILABLE'].includes(r.code),
         );
-        if (r.code !== 'OK') session.securityLocked.current = false;
+        if (r.code !== 'OK') session.securityLockedRef.current = false;
       }
       if (r.code !== 'OK') {
-        if (operationSurface === session.surface.current)
+        if (operationSurface === session.surfaceRef.current)
           session.setError(message(r.code, intent));
         return false;
       }
-      const ownsSurface = operationSurface === session.surface.current;
+      const ownsSurface = operationSurface === session.surfaceRef.current;
       if (applyResult) session.accept(r);
       if (r.recovery)
         session.setRecovery(
@@ -485,16 +490,16 @@ export function createPerformAction(
     } catch {
       if (intent === 'renew') {
         session.setRecoveryUncertain(true);
-        session.securityLocked.current = false;
+        session.securityLockedRef.current = false;
       }
       if (
-        generation === session.epoch.current &&
-        operationSurface === session.surface.current
+        generation === session.epochRef.current &&
+        operationSurface === session.surfaceRef.current
       )
         session.setError(message('SERVICE_UNAVAILABLE', intent));
       return false;
     } finally {
-      session.working.current = false;
+      session.workingRef.current = false;
       session.setBusy(false);
     }
   };

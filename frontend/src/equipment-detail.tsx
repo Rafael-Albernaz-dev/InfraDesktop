@@ -21,10 +21,10 @@ function SSHKeyDetails(p: {
   selected: Device;
   locked: boolean;
   job?: Job;
-  resetOperation: React.MutableRefObject<string>;
+  resetOperationRef: React.MutableRefObject<string>;
   setResetTrust: (v: boolean) => void;
 }) {
-  const { selected, locked, job } = p;
+  const { selected, locked, job, resetOperationRef, setResetTrust } = p;
   if (!selected.fingerprint) return null;
   return (
     <details className="equipment-help">
@@ -42,8 +42,8 @@ function SSHKeyDetails(p: {
       <Button
         disabled={locked || job?.state === 'RUNNING'}
         onClick={() => {
-          p.resetOperation.current = id();
-          p.setResetTrust(true);
+          resetOperationRef.current = id();
+          setResetTrust(true);
         }}
       >
         Redefinir confiança
@@ -58,7 +58,7 @@ export function EquipmentAccessDetails(p: {
   locked: boolean;
   job?: Job;
   detailOpen: boolean;
-  resetOperation: React.MutableRefObject<string>;
+  resetOperationRef: React.MutableRefObject<string>;
   setResetTrust: (v: boolean) => void;
   startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
 }) {
@@ -330,22 +330,29 @@ function EquipmentExtendedPanels(p: {
 function EquipmentDetailHeader(p: {
   selected: Device;
   detailOpen: boolean;
-  surface: React.MutableRefObject<number>;
-  detailRead: React.MutableRefObject<number>;
+  surfaceRef: React.MutableRefObject<number>;
+  detailReadRef: React.MutableRefObject<number>;
   setDetailOpen: (v: boolean) => void;
   setJob: (j: Job | undefined) => void;
 }) {
-  const { selected, detailOpen } = p;
+  const {
+    selected,
+    detailOpen,
+    surfaceRef,
+    detailReadRef,
+    setDetailOpen,
+    setJob,
+  } = p;
   return (
     <>
       {detailOpen && (
         <Button
           kind="flat"
           onClick={() => {
-            p.surface.current++;
-            p.detailRead.current++;
-            p.setDetailOpen(false);
-            p.setJob(undefined);
+            surfaceRef.current++;
+            detailReadRef.current++;
+            setDetailOpen(false);
+            setJob(undefined);
           }}
         >
           Voltar aos equipamentos
@@ -370,9 +377,9 @@ function EquipmentDetailHeader(p: {
 export function EquipmentDetailPane(p: {
   selected: Device;
   detailOpen: boolean;
-  detailSurface: React.RefObject<HTMLElement | null>;
-  surface: React.MutableRefObject<number>;
-  detailRead: React.MutableRefObject<number>;
+  detailSurfaceRef: React.RefObject<HTMLElement | null>;
+  surfaceRef: React.MutableRefObject<number>;
+  detailReadRef: React.MutableRefObject<number>;
   setDetailOpen: (v: boolean) => void;
   setJob: (j: Job | undefined) => void;
   setPPOpen: (v: boolean) => void;
@@ -383,7 +390,7 @@ export function EquipmentDetailPane(p: {
   job?: Job;
   profile: string;
   activation: string;
-  resetOperation: React.MutableRefObject<string>;
+  resetOperationRef: React.MutableRefObject<string>;
   setResetTrust: (v: boolean) => void;
   startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
   openDevice: (d: Device) => void;
@@ -392,17 +399,30 @@ export function EquipmentDetailPane(p: {
   setSelected: (d: Device | undefined) => void;
   perform: EquipmentPerformFn;
 }) {
-  const { selected, detailOpen } = p;
-  const accessDetails = <EquipmentAccessDetails {...p} />;
+  const {
+    detailSurfaceRef,
+    surfaceRef,
+    detailReadRef,
+    resetOperationRef,
+    ...rest
+  } = p;
+  const { selected, detailOpen } = rest;
+  const accessDetails = (
+    <EquipmentAccessDetails {...rest} resetOperationRef={resetOperationRef} />
+  );
   return (
     <aside
-      ref={p.detailSurface}
+      ref={detailSurfaceRef}
       tabIndex={-1}
       className={detailOpen ? 'equipment-detail' : 'inspector'}
     >
-      <EquipmentDetailHeader {...p} />
+      <EquipmentDetailHeader
+        {...rest}
+        surfaceRef={surfaceRef}
+        detailReadRef={detailReadRef}
+      />
       {!detailOpen && accessDetails}
-      <EquipmentActionsBar {...p} />
+      <EquipmentActionsBar {...rest} />
       {selected.last_attempt && (
         <p className="inventory-notice" role="status">
           Última tentativa: {formatDate(selected.last_attempt.at)} ·{' '}
@@ -413,7 +433,7 @@ export function EquipmentDetailPane(p: {
               : equipmentMessage(selected.last_attempt.code)}
         </p>
       )}
-      <EquipmentExtendedPanels {...p} />
+      <EquipmentExtendedPanels {...rest} />
       {detailOpen && (
         <details className="equipment-access">
           <summary>Acesso e identidade</summary>

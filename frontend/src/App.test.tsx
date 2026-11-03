@@ -3,13 +3,15 @@ import { vi, describe, it, expect, afterEach, beforeEach } from 'vitest';
 import App from './App';
 import { access, equipmentAPI, type Result } from './presentation';
 
-const accessMethods = (
-  'status,register,login,recover,logout,createCompany,selectCompany,' +
-  'setTheme,renewRecovery,copyRecovery,ackRecovery,getBrand,saveBrand,saveRecovery'
-).split(',');
+const accessMock = vi.hoisted(() => {
+  const s =
+    'status,register,login,recover,logout,createCompany,selectCompany,' +
+    'setTheme,renewRecovery,copyRecovery,ackRecovery,getBrand,saveBrand,saveRecovery';
+  return Object.fromEntries(s.split(',').map((m) => [m, vi.fn()]));
+});
 vi.mock('./presentation', () => ({
   equipmentAPI: { list: vi.fn() },
-  access: Object.fromEntries(accessMethods.map((m) => [m, vi.fn()])),
+  access: accessMock,
 }));
 
 const snapshot = (authenticated = false): Result => ({
@@ -320,14 +322,11 @@ it('supports named route navigation across companies, overview, equipment, pppoe
   render(<App />);
   await screen.findByRole('button', { name: 'Selecionar empresa' });
   const nav = () => screen.getByRole('navigation', { name: 'Caminho da tela' });
-  const back = () =>
-    screen.getByRole('button', { name: 'Voltar à tela anterior' });
-  const click = (name: string) =>
-    fireEvent.click(screen.getByRole('button', { name }));
+  const btn = (name: string) => screen.getByRole('button', { name });
   const step = (target: string, exp: string, bk = false) => {
-    click(target);
+    fireEvent.click(btn(target));
     expect(nav()).toHaveTextContent(exp);
-    if (bk) expect(back()).toBeInTheDocument();
+    if (bk) expect(btn('Voltar à tela anterior')).toBeInTheDocument();
   };
 
   expect(nav()).toHaveTextContent('Visão geral');
@@ -338,10 +337,10 @@ it('supports named route navigation across companies, overview, equipment, pppoe
   step('Voltar à tela anterior', 'Visão geral');
   step('Topologia', 'Topologia', true);
   step('Voltar à tela anterior', 'Visão geral');
-  click('Configurações');
-  click('Aparência');
+  fireEvent.click(btn('Configurações'));
+  fireEvent.click(btn('Aparência'));
   expect(nav()).toHaveTextContent('Configurações');
-  expect(back()).toBeInTheDocument();
+  expect(btn('Voltar à tela anterior')).toBeInTheDocument();
   step('Voltar à tela anterior', 'Visão geral');
   step('Selecionar empresa', 'Empresas');
   expect(

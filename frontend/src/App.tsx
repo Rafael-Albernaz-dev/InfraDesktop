@@ -2,8 +2,7 @@ import { useCallback, useState } from 'react';
 import { access } from './presentation';
 import { Desktop } from './desktop';
 import type { Page } from './desktop';
-import { normalizeRoute } from './desktop-model';
-import type { RouteName } from './desktop-model';
+import { normalizeRoute, type RouteName } from './desktop-model';
 import './style.css';
 import { Equipment } from './equipment';
 import { useEquipmentOperations } from './equipment-operations';
@@ -89,8 +88,8 @@ function AuthenticatedOverlays(props: {
       busy={session.busy}
       error={session.error}
       recoveryUncertain={session.recoveryUncertain}
-      securityLocked={session.securityLocked}
-      working={session.working}
+      securityLockedRef={session.securityLockedRef}
+      workingRef={session.workingRef}
       perform={perform}
       setRecovery={session.setRecovery}
       setRecoveryUncertain={session.setRecoveryUncertain}
@@ -114,8 +113,8 @@ function AuthenticatedShell(props: {
   const { view, connected, busy, error, dialog } = session;
   const company = (view.companies || []).find((c) => c.id === view.profile_id);
   const open = (title: string) => {
-    if (session.securityLocked.current) return;
-    session.surface.current++;
+    if (session.securityLockedRef.current) return;
+    session.bumpSurface();
     session.setError('');
     session.setDialog(title);
   };
@@ -144,7 +143,7 @@ function AuthenticatedShell(props: {
       }}
       page={route}
       navigate={(next: Page) => {
-        if (session.securityLocked.current) return;
+        if (session.securityLockedRef.current) return;
         session.invalidate();
         inv.addInventory(0);
         setPage(normalizeRoute(next));

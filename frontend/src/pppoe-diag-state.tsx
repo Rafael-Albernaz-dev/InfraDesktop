@@ -124,8 +124,8 @@ function useDiagLoadEffect(p: {
   scope: Scope;
   sourceObservation?: string;
   sourceRow?: string;
-  life: React.MutableRefObject<{ generation: number }>;
-  readSequence: React.MutableRefObject<number>;
+  lifeRef: React.MutableRefObject<{ generation: number }>;
+  readSequenceRef: React.MutableRefObject<number>;
   active: (generation: number, result?: PPResult) => boolean;
   acknowledge: (op?: string) => void;
 }) {
@@ -139,21 +139,21 @@ function useDiagLoadEffect(p: {
     scope,
     sourceObservation,
     sourceRow,
-    life,
-    readSequence,
+    lifeRef,
+    readSequenceRef,
     active,
     acknowledge,
   } = p;
   useEffect(() => {
-    const generation = life.current.generation;
-    const request = ++readSequence.current;
+    const generation = lifeRef.current.generation;
+    const request = ++readSequenceRef.current;
     let stopped = false;
     void api
       .current(profile, activation, deviceId, scope)
       .then((result) => {
         if (
           stopped ||
-          request !== readSequence.current ||
+          request !== readSequenceRef.current ||
           !active(generation, result)
         )
           return;
@@ -210,7 +210,7 @@ function useDiagPageEffect(p: {
   deviceId: string;
   scope: Scope;
   readKey: string;
-  life: React.MutableRefObject<{ generation: number }>;
+  lifeRef: React.MutableRefObject<{ generation: number }>;
   active: (generation: number, result?: PPResult) => boolean;
 }) {
   const {
@@ -223,7 +223,7 @@ function useDiagPageEffect(p: {
     deviceId,
     scope,
     readKey,
-    life,
+    lifeRef,
     active,
   } = p;
   const pageKey = [context, diagnosticID, s.cursor, s.refresh, kind].join('|');
@@ -237,7 +237,7 @@ function useDiagPageEffect(p: {
   }
   useEffect(() => {
     let stopped = false;
-    const generation = life.current.generation;
+    const generation = lifeRef.current.generation;
     if (!diagnosticID || s.metaReadKey !== readKey) return;
     void api
       .list(profile, activation, deviceId, scope, diagnosticID, s.cursor, kind)
@@ -281,16 +281,16 @@ function useDiagPollEffect(p: {
   context: string;
   profile: string;
   activation: string;
-  life: React.MutableRefObject<{ generation: number }>;
+  lifeRef: React.MutableRefObject<{ generation: number }>;
   active: (generation: number, result?: PPResult) => boolean;
   acknowledge: (op?: string) => void;
 }) {
-  const { s, context, profile, activation, life, active, acknowledge } = p;
+  const { s, context, profile, activation, lifeRef, active, acknowledge } = p;
   useEffect(() => {
     if (!s.job) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
-    const generation = life.current.generation;
+    const generation = lifeRef.current.generation;
     const poll = async () => {
       s.setStatusFailed(false);
       try {
@@ -362,13 +362,13 @@ export function useDiagnostic(
     source?.observation || '',
     source?.row || '',
   ].join('|');
-  const life = useRef({ generation: 0 });
-  const readSequence = useRef(0);
+  const lifeRef = useRef({ generation: 0 });
+  const readSequenceRef = useRef(0);
   const readKey = context + '|' + 0;
   const s = useDiagnosticStateVars(context, readKey);
   const active = useCallback(
     (gen: number, res?: PPResult) =>
-      gen === life.current.generation &&
+      gen === lifeRef.current.generation &&
       (!res ||
         (res.profile_id === profile && res.activation_id === activation)),
     [profile, activation],
@@ -386,7 +386,7 @@ export function useDiagnostic(
     [profile, activation, device.id, scope],
   );
   useLayoutEffect(() => {
-    const lifecycle = life.current;
+    const lifecycle = lifeRef.current;
     ++lifecycle.generation;
     return () => {
       ++lifecycle.generation;
@@ -402,8 +402,8 @@ export function useDiagnostic(
     scope,
     sourceObservation: source?.observation,
     sourceRow: source?.row,
-    life,
-    readSequence,
+    lifeRef,
+    readSequenceRef,
     active,
     acknowledge,
   });
@@ -424,7 +424,7 @@ export function useDiagnostic(
     deviceId: device.id,
     scope,
     readKey: context + '|' + s.refresh,
-    life,
+    lifeRef,
     active,
   });
   useDiagPollEffect({
@@ -432,7 +432,7 @@ export function useDiagnostic(
     context,
     profile,
     activation,
-    life,
+    lifeRef,
     active,
     acknowledge,
   });
@@ -444,7 +444,7 @@ export function useDiagnostic(
     device,
     scope,
     source,
-    life,
+    lifeRef,
     active,
     acknowledge,
   });

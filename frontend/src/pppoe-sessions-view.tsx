@@ -22,14 +22,14 @@ function runPPExport(
     setBusy: (b: boolean) => void;
     setNotice: (s: string) => void;
     setError: (s: string) => void;
-    life: React.MutableRefObject<{ generation: number }>;
-    exportFocus: React.MutableRefObject<'sanitized' | 'operational' | ''>;
+    lifeRef: React.MutableRefObject<{ generation: number }>;
+    exportFocusRef: React.MutableRefObject<'sanitized' | 'operational' | ''>;
   },
 ) {
-  p.exportFocus.current = kind;
+  p.exportFocusRef.current = kind;
   p.setNotice('');
   p.setError('');
-  const g = p.life.current.generation;
+  const g = p.lifeRef.current.generation;
   p.setBusy(true);
   const task =
     kind === 'sanitized'
@@ -52,7 +52,7 @@ function runPPExport(
       : 'Arquivo CSV operacional salvo.';
   void task
     .then((code) => {
-      if (g === p.life.current.generation) {
+      if (g === p.lifeRef.current.generation) {
         p.setNotice(
           code === 'OK'
             ? okMsg
@@ -63,10 +63,11 @@ function runPPExport(
       }
     })
     .catch(() => {
-      if (g === p.life.current.generation) p.setError('Falha na exportação.');
+      if (g === p.lifeRef.current.generation)
+        p.setError('Falha na exportação.');
     })
     .finally(() => {
-      if (g === p.life.current.generation) p.setBusy(false);
+      if (g === p.lifeRef.current.generation) p.setBusy(false);
     });
 }
 
@@ -82,13 +83,20 @@ export function PPPoEObsActions(p: {
   setBusy: (b: boolean) => void;
   setNotice: (s: string) => void;
   setError: (s: string) => void;
-  life: React.MutableRefObject<{ generation: number }>;
-  exportFocus: React.MutableRefObject<'sanitized' | 'operational' | ''>;
-  exportControl: React.RefObject<HTMLButtonElement | null>;
-  csvExportControl: React.RefObject<HTMLButtonElement | null>;
+  lifeRef: React.MutableRefObject<{ generation: number }>;
+  exportFocusRef: React.MutableRefObject<'sanitized' | 'operational' | ''>;
+  exportControlRef: React.RefObject<HTMLButtonElement | null>;
+  csvExportControlRef: React.RefObject<HTMLButtonElement | null>;
   save: () => void;
 }) {
-  const { current, tab, disabled, busy } = p;
+  const {
+    current,
+    tab,
+    disabled,
+    busy,
+    exportControlRef,
+    csvExportControlRef,
+  } = p;
   const onExport = (kind: 'sanitized' | 'operational') =>
     runPPExport(kind, {
       profile: p.profile,
@@ -100,8 +108,8 @@ export function PPPoEObsActions(p: {
       setBusy: p.setBusy,
       setNotice: p.setNotice,
       setError: p.setError,
-      life: p.life,
-      exportFocus: p.exportFocus,
+      lifeRef: p.lifeRef,
+      exportFocusRef: p.exportFocusRef,
     });
   return (
     <>
@@ -129,14 +137,14 @@ export function PPPoEObsActions(p: {
           Salvar referência desta leitura
         </button>
         <button
-          ref={p.exportControl}
+          ref={exportControlRef}
           disabled={busy}
           onClick={() => onExport('sanitized')}
         >
           Exportar JSON sanitizado
         </button>
         <button
-          ref={p.csvExportControl}
+          ref={csvExportControlRef}
           disabled={busy}
           onClick={() => onExport('operational')}
         >
@@ -204,15 +212,15 @@ export function PPPoESessionFilters(p: {
   setQuery: (q: PPQuery) => void;
   setCursor: (c: string) => void;
   setHistory: (h: string[]) => void;
-  searchControl: React.RefObject<HTMLInputElement | null>;
+  searchControlRef: React.RefObject<HTMLInputElement | null>;
 }) {
-  const { query, change, showPlan, setShowPlan } = p;
+  const { query, change, showPlan, setShowPlan, searchControlRef } = p;
   return (
     <div className="pppoe-filters">
       <label>
         Buscar sessões
         <input
-          ref={p.searchControl}
+          ref={searchControlRef}
           value={query.search}
           onChange={(e) => change({ search: e.target.value })}
         />
@@ -229,7 +237,7 @@ export function PPPoESessionFilters(p: {
             p.setQuery(FRESH_QUERY());
             p.setCursor('');
             p.setHistory([]);
-            p.searchControl.current?.focus();
+            p.searchControlRef.current?.focus();
           }}
         >
           Limpar filtros
@@ -358,7 +366,7 @@ export function PPPoEPaginationActions(p: {
   pageState: string;
   total: number;
   select: (r: PPRow | undefined) => void;
-  searchControl: React.RefObject<HTMLInputElement | null>;
+  searchControlRef: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
     <div className="pppoe-actions">
@@ -367,7 +375,7 @@ export function PPPoEPaginationActions(p: {
           onClick={() => {
             p.setCursor(p.history[p.history.length - 1]);
             p.setHistory(p.history.slice(0, -1));
-            p.searchControl.current?.focus();
+            p.searchControlRef.current?.focus();
           }}
         >
           Página anterior
@@ -383,7 +391,7 @@ export function PPPoEPaginationActions(p: {
           onClick={() => {
             p.setCursor('');
             p.setHistory([]);
-            p.searchControl.current?.focus();
+            p.searchControlRef.current?.focus();
           }}
         >
           Início da lista
@@ -395,7 +403,7 @@ export function PPPoEPaginationActions(p: {
             p.setHistory((v) => [...v, p.cursor]);
             p.setCursor(p.next);
             p.select(undefined);
-            p.searchControl.current?.focus();
+            p.searchControlRef.current?.focus();
           }}
         >
           Próxima página

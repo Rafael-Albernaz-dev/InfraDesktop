@@ -38,7 +38,7 @@ export function routeLegacyPageNumber(page: Page): LegacyPage {
 export function routeTitle(route: RouteName): string {
   const titles: Record<RouteName, string> = {
     companies: 'Empresas',
-    overview: 'Dashboard',
+    overview: 'Visão geral',
     equipment: 'Equipamentos',
     pppoe: 'Sessões PPPoE',
     topology: 'Topologia',

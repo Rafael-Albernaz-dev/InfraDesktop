@@ -160,7 +160,7 @@ function SessionDetailNav({
 export function PPPoESessionDetail(p: {
   selected: PPRow;
   current: PPObservation;
-  detailHeading: React.RefObject<HTMLHeadingElement | null>;
+  detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   detailTab: 'traffic' | 'information';
   setDetailTab: (t: 'traffic' | 'information') => void;
   profile: string;
@@ -168,15 +168,30 @@ export function PPPoESessionDetail(p: {
   device: Device;
   disabled: boolean;
   fastTrack?: number;
-  detailIntent: React.MutableRefObject<number>;
+  detailIntentRef: React.MutableRefObject<number>;
   select: (r: PPRow | undefined) => void;
-  detailTrigger: React.MutableRefObject<HTMLElement | null>;
+  detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
   openEquipment?: (id: string) => void;
 }) {
-  const { selected, current, detailTab, setDetailTab } = p;
+  const {
+    selected,
+    current,
+    detailHeadingRef,
+    detailTab,
+    setDetailTab,
+    profile,
+    activation,
+    device,
+    disabled,
+    fastTrack,
+    detailIntentRef,
+    select,
+    detailTriggerRef,
+    openEquipment,
+  } = p;
   return (
     <aside aria-label="Detalhes da sessão">
-      <h2 tabIndex={-1} ref={p.detailHeading}>
+      <h2 tabIndex={-1} ref={detailHeadingRef}>
         {selected.login}
       </h2>
       <SessionDetailNav detailTab={detailTab} setDetailTab={setDetailTab} />
@@ -185,23 +200,32 @@ export function PPPoESessionDetail(p: {
           <p>Tráfego indisponível: sessão OFFLINE.</p>
         ) : (
           <PPPoEReadPanel
-            profile={p.profile}
-            activation={p.activation}
-            device={p.device}
+            profile={profile}
+            activation={activation}
+            device={device}
             observation={current.observation_id}
             rows={[selected.row_id]}
             traffic
-            blocked={p.disabled}
+            blocked={disabled}
           />
         )
       ) : (
-        <SessionInformationTab {...p} />
+        <SessionInformationTab
+          selected={selected}
+          current={current}
+          profile={profile}
+          activation={activation}
+          device={device}
+          disabled={disabled}
+          fastTrack={fastTrack}
+          openEquipment={openEquipment}
+        />
       )}
       <button
         onClick={() => {
-          ++p.detailIntent.current;
-          p.select(undefined);
-          p.detailTrigger.current?.focus();
+          ++detailIntentRef.current;
+          select(undefined);
+          detailTriggerRef.current?.focus();
         }}
       >
         Fechar detalhe
@@ -212,15 +236,16 @@ export function PPPoESessionDetail(p: {
 
 export function PPPoEPairDetail(p: {
   pair: { left?: PPRow; right?: PPRow };
-  pairHeading: React.RefObject<HTMLHeadingElement | null>;
-  detailIntent: React.MutableRefObject<number>;
+  pairHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  detailIntentRef: React.MutableRefObject<number>;
   setPair: (v: { left?: PPRow; right?: PPRow } | undefined) => void;
-  detailTrigger: React.MutableRefObject<HTMLElement | null>;
+  detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
 }) {
-  const { pair } = p;
+  const { pair, pairHeadingRef, detailIntentRef, setPair, detailTriggerRef } =
+    p;
   return (
     <aside aria-label="Detalhes da comparação">
-      <h2 tabIndex={-1} ref={p.pairHeading}>
+      <h2 tabIndex={-1} ref={pairHeadingRef}>
         Sessões do par
       </h2>
       {(['left', 'right'] as const).map((side) => (
@@ -243,9 +268,9 @@ export function PPPoEPairDetail(p: {
       ))}
       <button
         onClick={() => {
-          ++p.detailIntent.current;
-          p.setPair(undefined);
-          p.detailTrigger.current?.focus();
+          ++detailIntentRef.current;
+          setPair(undefined);
+          detailTriggerRef.current?.focus();
         }}
       >
         Fechar par
@@ -404,52 +429,64 @@ export function PPPoEReferencesView(p: {
   current?: PPObservation;
   disabled: boolean;
   save: () => void;
-  referencesHeading: React.RefObject<HTMLHeadingElement | null>;
+  referencesHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   referencesState: 'loading' | 'ready' | 'error';
   initialFailed: boolean;
   setError: (v: string) => void;
   bump: React.Dispatch<React.SetStateAction<number>>;
-  refs: PPReference[];
+  savedReferences: PPReference[];
   remove: (ref: PPReference) => void;
 }) {
+  const {
+    current,
+    disabled,
+    save,
+    referencesHeadingRef,
+    referencesState,
+    initialFailed,
+    setError,
+    bump,
+    savedReferences,
+    remove,
+  } = p;
   return (
     <>
-      {p.current && (
+      {current && (
         <>
           <p>
-            Leitura atual: {formatDate(p.current.provenance.ended_at)} ·{' '}
-            {p.current.count} registros
+            Leitura atual: {formatDate(current.provenance.ended_at)} ·{' '}
+            {current.count} registros
           </p>
-          <button className="primary" disabled={p.disabled} onClick={p.save}>
+          <button className="primary" disabled={disabled} onClick={save}>
             Salvar referência desta leitura
           </button>
         </>
       )}
-      <h2 tabIndex={-1} ref={p.referencesHeading}>
+      <h2 tabIndex={-1} ref={referencesHeadingRef}>
         Referências preservadas
       </h2>
-      {p.referencesState === 'loading' && (
+      {referencesState === 'loading' && (
         <p role="status">Carregando referências…</p>
       )}
-      {p.referencesState === 'error' && !p.initialFailed && (
+      {referencesState === 'error' && !initialFailed && (
         <button
           onClick={() => {
-            p.setError('');
-            p.bump((n) => n + 1);
+            setError('');
+            bump((n) => n + 1);
           }}
         >
           Recarregar referências
         </button>
       )}
-      {p.referencesState === 'ready' && !p.refs.length && (
+      {referencesState === 'ready' && !savedReferences.length && (
         <p>Nenhuma referência salva.</p>
       )}
-      {p.refs.map((ref) => (
+      {savedReferences.map((ref) => (
         <ReferenceItem
           key={ref.reference_id}
           refItem={ref}
-          disabled={p.disabled}
-          remove={p.remove}
+          disabled={disabled}
+          remove={remove}
         />
       ))}
     </>

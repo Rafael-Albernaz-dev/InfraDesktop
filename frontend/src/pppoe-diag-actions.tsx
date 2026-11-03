@@ -37,7 +37,7 @@ export function useDiagActions(p: {
   device: Device;
   scope: Scope;
   source?: Source;
-  life: React.MutableRefObject<{ generation: number }>;
+  lifeRef: React.MutableRefObject<{ generation: number }>;
   active: (generation: number, result?: PPResult) => boolean;
   acknowledge: (op?: string) => void;
 }) {
@@ -49,7 +49,7 @@ export function useDiagActions(p: {
     device,
     scope,
     source,
-    life,
+    lifeRef,
     active,
     acknowledge,
   } = p;
@@ -77,7 +77,7 @@ export function useDiagActions(p: {
     }
   }
   async function start() {
-    const generation = life.current.generation;
+    const generation = lifeRef.current.generation;
     s.setStarting(true);
     s.setError('');
     if (pending.has(key)) {
@@ -146,7 +146,7 @@ export function useDiagActions(p: {
     }
   }
   async function cancel() {
-    const generation = life.current.generation;
+    const generation = lifeRef.current.generation;
     try {
       const result = await api.cancel(profile, activation, s.job);
       if (active(generation, result) && result.code !== 'OK')

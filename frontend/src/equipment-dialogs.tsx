@@ -252,7 +252,7 @@ export function CredentialFormDialog(p: {
   setDefaultBusy: (v: boolean) => void;
   credentialDefaults: Record<string, string>;
   credentials: Credential[];
-  defaultContext: React.MutableRefObject<string>;
+  defaultContextRef: React.MutableRefObject<string>;
   reloadCredentials: React.Dispatch<React.SetStateAction<number>>;
   setCredentialError: (v: string) => void;
   perform: EquipmentPerformFn;

@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import {
@@ -53,42 +47,26 @@ function formatAttemptStatus(r: PPResult): string {
   return `Tentativa ${kind}: ${eligible}${equipmentMessage(a.code || 'SERVICE_UNAVAILABLE')} ${suffix}`;
 }
 
-function usePPPoERefs() {
-  const detailTrigger = useRef<HTMLElement | null>(null);
-  const detailHeading = useRef<HTMLHeadingElement>(null);
-  const pairHeading = useRef<HTMLHeadingElement>(null);
-  const focusedControl = useRef<HTMLElement | null>(null);
-  const searchControl = useRef<HTMLInputElement>(null);
-  const referencesHeading = useRef<HTMLHeadingElement>(null);
-  const exportControl = useRef<HTMLButtonElement>(null);
-  const csvExportControl = useRef<HTMLButtonElement>(null);
-  const removedFocus = useRef('');
-  const exportFocus = useRef<'sanitized' | 'operational' | ''>('');
-  const life = useRef({ generation: 0 });
-  const primary = useRef<HTMLButtonElement>(null);
-  const detailIntent = useRef(0);
-  return {
-    detailTrigger,
-    detailHeading,
-    pairHeading,
-    focusedControl,
-    searchControl,
-    referencesHeading,
-    exportControl,
-    csvExportControl,
-    removedFocus,
-    exportFocus,
-    life,
-    primary,
-    detailIntent,
-  };
-}
+export type PPPoERefs = {
+  detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
+  detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  pairHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  focusedControlRef: React.MutableRefObject<HTMLElement | null>;
+  searchControlRef: React.RefObject<HTMLInputElement | null>;
+  referencesHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  exportControlRef: React.RefObject<HTMLButtonElement | null>;
+  csvExportControlRef: React.RefObject<HTMLButtonElement | null>;
+  removedFocusRef: React.MutableRefObject<string>;
+  exportFocusRef: React.MutableRefObject<'sanitized' | 'operational' | ''>;
+  lifeRef: React.MutableRefObject<{ generation: number }>;
+  primaryRef: React.RefObject<HTMLButtonElement | null>;
+  detailIntentRef: React.MutableRefObject<number>;
+};
 
 function usePPPoEViewState(profile: string, activation: string) {
   useLayoutEffect(() => {
     acceptEquipmentAuthority(profile, activation);
   }, [profile, activation]);
-  const r = usePPPoERefs();
   const [pageState, setPageState] = useState<
     'idle' | 'loading' | 'ready' | 'error'
   >('loading');
@@ -104,7 +82,7 @@ function usePPPoEViewState(profile: string, activation: string) {
   const [initialFailed, setInitialFailed] = useState(false);
   const [current, setCurrent] = useState<PPObservation>();
   const [rows, setRows] = useState<PPRow[]>([]);
-  const [refs, setRefs] = useState<PPReference[]>([]);
+  const [savedReferences, setSavedReferences] = useState<PPReference[]>([]);
   const [deltas, setDeltas] = useState<PPDelta[]>([]);
   const [query, setQuery] = useState(FRESH_QUERY);
   const [cursor, setCursor] = useState('');
@@ -123,7 +101,6 @@ function usePPPoEViewState(profile: string, activation: string) {
   const [total, setTotal] = useState(0);
   const [refresh, bump] = useState(0);
   return {
-    ...r,
     pageState,
     setPageState,
     statusFailed,
@@ -142,8 +119,8 @@ function usePPPoEViewState(profile: string, activation: string) {
     setCurrent,
     rows,
     setRows,
-    refs,
-    setRefs,
+    savedReferences,
+    setSavedReferences,
     deltas,
     setDeltas,
     query,
@@ -182,18 +159,28 @@ function usePPPoEViewState(profile: string, activation: string) {
 }
 
 type ViewState = ReturnType<typeof usePPPoEViewState>;
-type SharedCtx = ViewState & {
-  context: string;
-  profile: string;
-  activation: string;
-  device: Device;
-  valid: (g: number, r: PPResult) => boolean;
-};
+type SharedCtx = ViewState &
+  PPPoERefs & {
+    context: string;
+    profile: string;
+    activation: string;
+    device: Device;
+    valid: (g: number, r: PPResult) => boolean;
+    // Legacy shim aliases for action creators:
+    primary: React.RefObject<HTMLButtonElement | null>;
+    removedFocus: React.MutableRefObject<string>;
+    exportFocus: React.MutableRefObject<'sanitized' | 'operational' | ''>;
+    life: React.MutableRefObject<{ generation: number }>;
+    focusedControl: React.MutableRefObject<HTMLElement | null>;
+    detailTrigger: React.MutableRefObject<HTMLElement | null>;
+    detailIntent: React.MutableRefObject<number>;
+    refs: PPReference[];
+  };
 
 function usePPPoEInitialLoad(p: SharedCtx) {
-  const { context, refresh, profile, activation, device, valid } = p;
+  const { context, refresh, profile, activation, device, valid, lifeRef } = p;
   useEffect(() => {
-    const generation = p.life.current.generation;
+    const generation = lifeRef.current.generation;
     let stopped = false;
     void (async () => {
       p.setLoading(true);
@@ -213,7 +200,7 @@ function usePPPoEInitialLoad(p: SharedCtx) {
       const rr = await api.references(profile, activation, device.id, '');
       if (stopped || !valid(generation, rr)) return;
       if (rr.code === 'OK') {
-        p.setRefs(rr.data?.references || []);
+        p.setSavedReferences(rr.data?.references || []);
         p.setReferencesState('ready');
       } else {
         p.setError(pppoeErrorMessage(rr));
@@ -231,13 +218,23 @@ function usePPPoEInitialLoad(p: SharedCtx) {
     return () => {
       stopped = true;
     };
-  }, [context, refresh, profile, activation, device.id, valid]);
+  }, [context, refresh, profile, activation, device.id, valid, lifeRef]);
 }
 
 function usePPPoEPageLoad(p: SharedCtx) {
-  const { context, current, query, cursor, tab, base, profile, activation } = p;
+  const {
+    context,
+    current,
+    query,
+    cursor,
+    tab,
+    base,
+    profile,
+    activation,
+    lifeRef,
+  } = p;
   useEffect(() => {
-    const generation = p.life.current.generation;
+    const generation = lifeRef.current.generation;
     let stopped = false;
     void (async () => {
       p.setRows([]);
@@ -307,17 +304,27 @@ function usePPPoEPageLoad(p: SharedCtx) {
 }
 
 function usePPPoEJobPoll(p: SharedCtx) {
-  const { job, context, statusRetry, profile, activation, device } = p;
+  const {
+    job,
+    context,
+    statusRetry,
+    profile,
+    activation,
+    device,
+    lifeRef,
+    primaryRef,
+    valid,
+  } = p;
   useEffect(() => {
     if (!job) return;
     let stopped = false;
-    const generation = p.life.current.generation;
+    const generation = lifeRef.current.generation;
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       p.setStatusFailed(false);
       try {
         const r = await api.status(profile, activation, job);
-        if (stopped || !p.valid(generation, r)) return;
+        if (stopped || !valid(generation, r)) return;
         if (r.code !== 'OK') {
           p.setError(pppoeErrorMessage(r));
           p.setStatusFailed(true);
@@ -337,7 +344,7 @@ function usePPPoEJobPoll(p: SharedCtx) {
           p.setHistory([]);
           p.select(undefined);
           p.bump((n) => n + 1);
-          p.primary.current?.focus();
+          primaryRef.current?.focus();
         }
       } catch {
         if (!stopped) {
@@ -360,81 +367,109 @@ function usePPPoEJobPoll(p: SharedCtx) {
     profile,
     activation,
     device.revision,
-    p.valid,
+    valid,
+    lifeRef,
+    primaryRef,
   ]);
 }
 
 function usePPPoEFocusAndSurface(p: SharedCtx) {
+  const {
+    removedFocusRef,
+    exportFocusRef,
+    detailIntentRef,
+    lifeRef,
+    referencesHeadingRef,
+    csvExportControlRef,
+    exportControlRef,
+    detailHeadingRef,
+    pairHeadingRef,
+    savedReferences,
+    busy,
+    selected,
+    pair,
+    base,
+    setCursor,
+    setHistory,
+    select,
+    setPair,
+    context,
+    current,
+    tab,
+    query,
+    cursor,
+  } = p;
   useLayoutEffect(() => {
     if (
-      p.removedFocus.current &&
-      !p.refs.some((r) => r.reference_id === p.removedFocus.current)
+      removedFocusRef.current &&
+      !savedReferences.some((r) => r.reference_id === removedFocusRef.current)
     ) {
-      p.removedFocus.current = '';
-      p.referencesHeading.current?.focus();
+      removedFocusRef.current = '';
+      referencesHeadingRef.current?.focus();
     }
-  }, [p.refs]);
+  }, [savedReferences, removedFocusRef, referencesHeadingRef]);
   useLayoutEffect(() => {
-    if (!p.busy && p.exportFocus.current) {
+    if (!busy && exportFocusRef.current) {
       const control =
-        p.exportFocus.current === 'operational'
-          ? p.csvExportControl
-          : p.exportControl;
-      p.exportFocus.current = '';
+        exportFocusRef.current === 'operational'
+          ? csvExportControlRef
+          : exportControlRef;
+      exportFocusRef.current = '';
       control.current?.focus();
     }
-  }, [p.busy]);
+  }, [busy, exportFocusRef, csvExportControlRef, exportControlRef]);
   useLayoutEffect(() => {
-    if (p.selected) p.detailHeading.current?.focus();
-  }, [p.selected]);
+    if (selected) detailHeadingRef.current?.focus();
+  }, [selected, detailHeadingRef]);
   useLayoutEffect(() => {
-    if (p.pair) p.pairHeading.current?.focus();
-  }, [p.pair]);
-  const [cursorBase, setCursorBase] = useState(p.base);
-  if (cursorBase !== p.base) {
-    setCursorBase(p.base);
-    p.setCursor('');
-    p.setHistory([]);
+    if (pair) pairHeadingRef.current?.focus();
+  }, [pair, pairHeadingRef]);
+  const [cursorBase, setCursorBase] = useState(base);
+  if (cursorBase !== base) {
+    setCursorBase(base);
+    setCursor('');
+    setHistory([]);
   }
   const surface = [
-    p.context,
-    p.current?.observation_id,
-    p.tab,
-    p.base,
-    JSON.stringify(p.query),
-    p.cursor,
+    context,
+    current?.observation_id,
+    tab,
+    base,
+    JSON.stringify(query),
+    cursor,
   ].join('|');
   const [acceptedSurface, setAcceptedSurface] = useState(surface);
   if (acceptedSurface !== surface) {
     setAcceptedSurface(surface);
-    p.select(undefined);
-    p.setPair(undefined);
+    select(undefined);
+    setPair(undefined);
   }
   useLayoutEffect(() => {
-    ++p.detailIntent.current;
-  }, [surface]);
+    ++detailIntentRef.current;
+  }, [surface, detailIntentRef]);
   useEffect(() => {
-    const lifecycle = p.life.current;
+    const lifecycle = lifeRef.current;
     ++lifecycle.generation;
     return () => {
       ++lifecycle.generation;
     };
-  }, [p.context]);
+  }, [context, lifeRef]);
 }
 
 function usePPPoERunners(p: SharedCtx) {
+  const { lifeRef, focusedControlRef, detailIntentRef, valid } = p;
   async function run(
     action: () => Promise<PPResult>,
     done?: (r: PPResult) => void,
   ) {
-    const generation = p.life.current.generation;
-    const trigger = p.focusedControl.current;
+    const generation = lifeRef.current.generation;
+    const trigger = focusedControlRef.current;
     p.setBusy(true);
     p.setError('');
     p.setNotice('');
     try {
       const r = await action();
-      if (!p.valid(generation, r)) return;
+      if (!valid(generation, r)) return;
       if (r.code !== 'OK') {
         p.setError(pppoeErrorMessage(r));
         if (
@@ -448,12 +483,12 @@ function usePPPoERunners(p: SharedCtx) {
           pending.delete(p.context + '|collect|' + p.device.revision);
       } else done?.(r);
     } catch {
-      if (generation === p.life.current.generation)
+      if (generation === lifeRef.current.generation)
         p.setError(
           'Resposta incerta. A ação mantém o mesmo identificador para reconciliação.',
         );
     } finally {
-      if (generation === p.life.current.generation) {
+      if (generation === lifeRef.current.generation) {
         p.setBusy(false);
         trigger?.focus();
       }
@@ -463,15 +498,15 @@ function usePPPoERunners(p: SharedCtx) {
     action: (accept: () => boolean) => Promise<PPResult>,
     done: (r: PPResult) => void,
   ) {
-    const generation = p.life.current.generation;
-    const intent = ++p.detailIntent.current;
+    const generation = lifeRef.current.generation;
+    const intent = ++detailIntentRef.current;
     const accept = () =>
-      generation === p.life.current.generation &&
-      intent === p.detailIntent.current;
+      generation === lifeRef.current.generation &&
+      intent === detailIntentRef.current;
     p.setError('');
     try {
       const r = await action(accept);
-      if (!accept() || !p.valid(generation, r)) return;
+      if (!accept() || !valid(generation, r)) return;
       if (r.code !== 'OK') p.setError(pppoeErrorMessage(r));
       else done(r);
     } catch {
@@ -486,17 +521,34 @@ export function usePPPoEState(
   profile: string,
   activation: string,
   device: Device,
+  refs: PPPoERefs,
 ) {
   const s = usePPPoEViewState(profile, activation);
   const context = [profile, activation, device.id].join('|');
   const valid = useCallback(
     (generation: number, r: PPResult) =>
-      generation === s.life.current.generation &&
+      generation === refs.lifeRef.current.generation &&
       r.profile_id === profile &&
       r.activation_id === activation,
-    [profile, activation, s.life],
+    [profile, activation, refs.lifeRef],
   );
-  const ctx: SharedCtx = { ...s, context, profile, activation, device, valid };
+  const ctx: SharedCtx = {
+    ...s,
+    ...refs,
+    primary: refs.primaryRef,
+    removedFocus: refs.removedFocusRef,
+    exportFocus: refs.exportFocusRef,
+    life: refs.lifeRef,
+    focusedControl: refs.focusedControlRef,
+    detailTrigger: refs.detailTriggerRef,
+    detailIntent: refs.detailIntentRef,
+    refs: s.savedReferences,
+    context,
+    profile,
+    activation,
+    device,
+    valid,
+  };
   const operationalSnapshot = useEquipmentSnapshot(
     profile,
     activation,
@@ -519,7 +571,12 @@ export function usePPPoEState(
     s.setPair(undefined);
   }
   return {
-    ...ctx,
+    ...s,
+    context,
+    profile,
+    activation,
+    device,
+    refs: s.savedReferences,
     fastTrack,
     run,
     runDetail,
