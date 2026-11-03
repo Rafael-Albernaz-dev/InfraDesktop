@@ -50,6 +50,9 @@ var companyContextPeaksSchema string
 //go:embed company_012_radio.sql
 var companyRadioSchema string
 
+//go:embed company_013_radio_journey.sql
+var companyRadioJourneySchema string
+
 func migrateGlobal(tx *sql.Tx) error {
 	rows, e := tx.Query("SELECT version,checksum FROM schema_migrations ORDER BY version")
 	if e != nil {
@@ -170,10 +173,10 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&n); e != nil {
 		return e
 	}
-	if n < 1 || n > 12 {
+	if n < 1 || n > 13 {
 		return errors.New("unknown company schema")
 	}
-	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema, companySessionsOfflineSchema, companySessionContextSchema, companyDeviceMonitoringSchema, companyEquipmentInsightsSchema, companyContextPeaksSchema, companyRadioSchema} {
+	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema, companySessionsOfflineSchema, companySessionContextSchema, companyDeviceMonitoringSchema, companyEquipmentInsightsSchema, companyContextPeaksSchema, companyRadioSchema, companyRadioJourneySchema} {
 		if v+1 > n {
 			break
 		}
@@ -189,8 +192,8 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT installation,company FROM identity WHERE singleton=1").Scan(&installation, &company); e != nil || installation != s.installation || company != id {
 		return errors.New("company identity mismatch")
 	}
-	for version := schemaCount + 1; version <= 12; version++ {
-		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema, 7: companySessionsOfflineSchema, 8: companySessionContextSchema, 9: companyDeviceMonitoringSchema, 10: companyEquipmentInsightsSchema, 11: companyContextPeaksSchema, 12: companyRadioSchema}[version]
+	for version := schemaCount + 1; version <= 13; version++ {
+		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema, 7: companySessionsOfflineSchema, 8: companySessionContextSchema, 9: companyDeviceMonitoringSchema, 10: companyEquipmentInsightsSchema, 11: companyContextPeaksSchema, 12: companyRadioSchema, 13: companyRadioJourneySchema}[version]
 		tx, e := db.Begin()
 		if e != nil {
 			return e

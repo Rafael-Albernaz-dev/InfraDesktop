@@ -104,7 +104,7 @@ type Observation struct {
 type Device struct {
 	Monitoring      *DeviceHealth    `json:"monitoring,omitempty"`
 	MonitoringAt    string           `json:"monitoring_at,omitempty"`
-	Role            string           `json:"role"`
+	Role            Role             `json:"role"`
 	PPPoE           *PPSummary       `json:"pppoe,omitempty"`
 	TrustAcceptance *TrustAcceptance `json:"trust_acceptance,omitempty"`
 	LastAttempt     *Attempt         `json:"last_attempt,omitempty"`
@@ -112,7 +112,7 @@ type Device struct {
 	Name            string           `json:"name"`
 	Address         string           `json:"address"`
 	Port            int              `json:"port"`
-	Transport       string           `json:"transport"`
+	Transport       Transport        `json:"transport"`
 	CredentialID    string           `json:"credential_id"`
 	Revision        uint64           `json:"revision"`
 	Active          bool             `json:"active"`
@@ -131,6 +131,7 @@ type SealedCredential struct {
 }
 type Operation struct{ ID, Stamp, Entity string }
 type State struct {
+	CredentialDefaults    map[string]string
 	Installation, Company string
 	WrappedKey            []byte
 	Credentials           []SealedCredential
@@ -156,41 +157,28 @@ type Remote interface {
 	Query(context.Context, Device, string, string, func() Code) (*Observation, Code)
 }
 type IDs interface{ ID() (string, Code) }
-type Command struct {
-	Authority                                                                        uint64
-	Op                                                                               string
-	Scope                                                                            access.Command
-	UID                                                                              uint32
-	Operation, ID, Name, Address, Transport, CredentialID, Alias, User, Secret, Role string
-	Revision                                                                         uint64
-	Port                                                                             int
-	Active                                                                           bool
-	Inactive                                                                         bool
-	Cursor                                                                           int
-	Search                                                                           string
-	Affected                                                                         int
-	JobID, Fingerprint                                                               string
-}
 type Job struct {
-	PPPoE       *PPAttempt   `json:"pppoe,omitempty"`
-	ID          string       `json:"id"`
-	DeviceID    string       `json:"device_id"`
-	Kind        string       `json:"kind"`
-	State       string       `json:"state"`
-	Code        Code         `json:"code"`
-	Fingerprint string       `json:"fingerprint,omitempty"`
-	Result      *Observation `json:"result,omitempty"`
+	Failure     *RadioFailure `json:"failure,omitempty"`
+	PPPoE       *PPAttempt    `json:"pppoe,omitempty"`
+	ID          string        `json:"id"`
+	DeviceID    string        `json:"device_id"`
+	Kind        string        `json:"kind"`
+	State       string        `json:"state"`
+	Code        Code          `json:"code"`
+	Fingerprint string        `json:"fingerprint,omitempty"`
+	Result      *Observation  `json:"result,omitempty"`
 }
 type View struct {
-	Total          int          `json:"total_devices"`
-	OperationState string       `json:"operation_state,omitempty"`
-	Devices        []Device     `json:"devices"`
-	Credentials    []Credential `json:"credentials"`
-	Device         *Device      `json:"device,omitempty"`
-	Credential     *Credential  `json:"credential,omitempty"`
-	Job            *Job         `json:"job,omitempty"`
-	Next           int          `json:"next_cursor"`
-	VaultAvailable bool         `json:"vault_available"`
+	CredentialDefaults map[string]string `json:"credential_defaults,omitempty"`
+	Total              int               `json:"total_devices"`
+	OperationState     string            `json:"operation_state,omitempty"`
+	Devices            []Device          `json:"devices"`
+	Credentials        []Credential      `json:"credentials"`
+	Device             *Device           `json:"device,omitempty"`
+	Credential         *Credential       `json:"credential,omitempty"`
+	Job                *Job              `json:"job,omitempty"`
+	Next               int               `json:"next_cursor"`
+	VaultAvailable     bool              `json:"vault_available"`
 }
 
 func ValidText(s string, max int) bool {

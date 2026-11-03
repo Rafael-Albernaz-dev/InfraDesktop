@@ -48,6 +48,24 @@ func (s *Store) loadEquipment(ctx context.Context, q queryer, id string) (equipm
 	if e != nil {
 		return st, e
 	}
+	st.CredentialDefaults = map[string]string{}
+	defaults, err := q.QueryContext(ctx, "SELECT class,credential_id FROM radio_credential_defaults")
+	if err != nil {
+		return st, err
+	}
+	for defaults.Next() {
+		var class, id string
+		if err = defaults.Scan(&class, &id); err != nil {
+			defaults.Close()
+			return st, err
+		}
+		st.CredentialDefaults[class] = id
+	}
+	err = defaults.Err()
+	defaults.Close()
+	if err != nil {
+		return st, err
+	}
 	rows, e = q.QueryContext(ctx, "SELECT id,name,address,port,transport,COALESCE(credential_id,''),revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,COALESCE((SELECT role FROM device_radio_roles WHERE device_id=devices.id),role) FROM devices ORDER BY rowid")
 	if e != nil {
 		return st, e
@@ -190,6 +208,15 @@ func (s *Store) UpdateEquipment(ctx context.Context, id string, fn func(*equipme
 			return equipment.Unavailable
 		}
 	}
+	for class, id := range st.CredentialDefaults {
+		if old.CredentialDefaults[class] == id {
+			continue
+		}
+		if _, e = tx.ExecContext(ctx, "INSERT INTO radio_credential_defaults VALUES(?,?) ON CONFLICT(class) DO UPDATE SET credential_id=excluded.credential_id", class, id); e != nil {
+			return equipment.Unavailable
+		}
+	}
+
 	for _, d := range st.Devices {
 		b, _ := json.Marshal(d)
 		if bytes.Equal(b, oldDevices[d.ID]) {

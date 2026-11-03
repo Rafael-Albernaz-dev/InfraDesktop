@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestL07RadioCostAndProvenance(t *testing.T) {
+func TestRadioCostAndProvenance(t *testing.T) {
 	samples := []float64{1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2}
 	cpu := make([][]int, 10)
 	for i := range cpu {
@@ -32,17 +32,17 @@ func TestL07RadioCostAndProvenance(t *testing.T) {
 			t.Fatal("unsafe live gate", change)
 		}
 	}
-	d := Device{ID: "target", Address: "192.0.2.1", Port: 22, Transport: "ssh", Revision: 7, CredentialID: "credential", Fingerprint: "pin"}
-	r := &RadioReading{Perspective: "AP", Clients: []RadioClient{{Interface: "wlan1", Metrics: []RadioMetric{{Name: "chain0", Value: -61, Unit: "dBm", Direction: "CPE → AP"}}}}}
-	StampRadio(r, d, 3, time.Date(2026, 10, 29, 0, 0, 0, 0, time.UTC))
-	m := r.Clients[0].Metrics[0]
-	if m.Perspective != "AP" || m.DeviceID != d.ID || m.Interface != "wlan1" || m.At != r.At || m.Quality != "observed" || m.Best == nil || *m.Best != -61 || m.Worst == nil || *m.Worst != -61 {
-		t.Fatal(m)
-	}
+	assertRadioMetricProvenance(t)
 }
-func TestL07LinkRequiresExactInterfaceBSSIDAndMAC(t *testing.T) {
+
+func TestRadioLinkRequiresExactInterfaceBSSIDAndMAC(t *testing.T) {
 	l := RadioLink{AP: "ap", MAC: "02:00:00:00:10:03", Interface: "virtual", BSSID: "02:00:00:00:10:06"}
-	r := &RadioReading{Compatible: true, DeviceID: "ap", Clients: []RadioClient{{MAC: l.MAC, Interface: l.Interface, BSSID: l.BSSID, Name: "same SSID or name is irrelevant"}}}
+	r := &RadioReading{Compatible: true,
+		DeviceID: "ap",
+		Clients: []RadioClient{{MAC: l.MAC,
+			Interface: l.Interface,
+			BSSID:     l.BSSID,
+			Name:      "same SSID or name is irrelevant"}}}
 	if !RadioLinkPresent(l, r) {
 		t.Fatal("exact association missing")
 	}
@@ -64,48 +64,10 @@ func TestL07LinkRequiresExactInterfaceBSSIDAndMAC(t *testing.T) {
 		}
 	}
 }
-func TestL07AllMeasurementSamplesAndCoverageRequired(t *testing.T) {
+
+func TestRadioChainExtremaAndLiveLimits(t *testing.T) {
 	at := time.Now()
-	samples := make([]RadioMeasurement, 10)
-	for i := range samples {
-		samples[i] = RadioMeasurement{AP: RadioTiming{CommandSeconds: .4, PathSeconds: 1}, CPE: RadioTiming{CommandSeconds: .4, PathSeconds: 1}, Seconds: 1, Started: at, Ended: at.Add(time.Second), Complete: true, Load: RadioLoad{CPU: []int{6, 7, 6}, PingSent: 6, PingReceived: 6, PingRTT: []float64{1, 1, 1, 1, 1, 1}, Started: at.Add(-time.Second), Ended: at.Add(2 * time.Second)}}
-	}
-	if !AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("complete safe measurement rejected")
-	}
-	samples[0].Complete = false
-	if AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("earlier failed side hidden by healthy tenth sample")
-	}
-	samples[0].Complete = true
-	samples[3].Load.Ended = at
-	if AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("CPU probe ended before CPE read")
-	}
-	samples[3].Load.Ended = at.Add(2 * time.Second)
-	samples[8].Load.PingReceived = 5
-	if AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("ping loss hidden")
-	}
-	samples[8].Load.PingReceived = 6
-	samples[2].Load.CPU = nil
-	if AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("missing CPU accepted")
-	}
-	samples[2].Load.CPU = []int{6, 7, 6}
-	samples[4].Load.PingRTT[0] = math.NaN()
-	if AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("invalid baseline accepted")
-	}
-	samples[4].Load.PingRTT[0] = 1
-	samples[5].Load.PingRTT = []float64{1, 3, 3, 1, 1, 1}
-	if AssessRadioMeasurements(samples).Enabled {
-		t.Fatal("two pings over twice baseline accepted")
-	}
-}
-func TestL07RadioChainExtremaAndLiveLimits(t *testing.T) {
-	at := time.Now()
-	d := Device{ID: "ap", Revision: 2, Address: "192.0.2.1", Port: 22, Transport: "ssh", CredentialID: "credential", Fingerprint: "pin"}
+	d := Device{ID: "ap", Revision: 2, Address: "192.0.2.1", Port: 22, Transport: TransportSSH, CredentialID: "credential", Fingerprint: "pin"}
 	makeReading := func(value float64) *RadioReading {
 		r := &RadioReading{Perspective: "AP", Metrics: []RadioMetric{{Name: "chain0", Unit: "dBm", Value: value, Direction: "CPE → AP"}}}
 		StampRadio(r, d, 1, at)

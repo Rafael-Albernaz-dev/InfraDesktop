@@ -1,0 +1,61 @@
+L07-AVULSO-RESOURCE
+                   uptime: 1d14h46m42s
+                  version: 6.49.13 (long-term)
+               build-time: Apr/04/2024 [IPv6 omitido]
+         factory-software: 6.39.2
+              free-memory: 37.7MiB
+             total-memory: 64.0MiB
+                      cpu: MIPS 74Kc V4.12
+                cpu-count: 1
+            cpu-frequency: 600MHz
+                 cpu-load: 9%
+           free-hdd-space: 3024.0KiB
+          total-hdd-space: 16.0MiB
+  write-sect-since-reboot: 30239
+         write-sect-total: 33617
+               bad-blocks: 0%
+        architecture-name: mipsbe
+               board-name: LHG XL HP5
+                 platform: MikroTik
+
+L07-AVULSO-PACKAGES
+Flags: X - disabled 
+ #   NAME                    VERSION                    SCHEDULED              
+ 0   routeros-mipsbe         6.49.13                                           
+ 1   system                  6.49.13                                           
+ 2   ipv6                    6.49.13                                           
+ 3   wireless                6.49.13                                           
+ 4 X hotspot                 6.49.13                                           
+ 5 X mpls                    6.49.13                                           
+ 6   routing                 6.49.13                                           
+ 7 X ppp                     6.49.13                                           
+ 8   dhcp                    6.49.13                                           
+ 9   security                6.49.13                                           
+10   advanced-tools          6.49.13                                           
+
+L07-AVULSO-BOARD
+       routerboard: yes
+        board-name: LHG XL HP5
+             model: RouterBOARD LHG 5HPnD-XL
+     firmware-type: ar9344L
+  factory-firmware: 3.41
+  current-firmware: 6.49.13
+  upgrade-firmware: 6.49.13
+
+L07-AVULSO-HEALTH
+
+L07-AVULSO-WIRELESS
+Flags: X - disabled, R - running 
+ 0    name="wlan1" mtu=1500 l2mtu=1600 mac-address=02:00:00:00:10:10 
+      arp=enabled interface-type=Atheros AR9300 mode=bridge 
+      ssid="[omitido]" frequency=5200 band=5ghz-onlyn 
+      channel-width=20/40mhz-Ce secondary-frequency="" scan-list=5200,5180 
+      wireless-protocol=nv2 vlan-mode=no-tag vlan-id=1 wds-mode=dynamic 
+      wds-default-bridge=Br_Lan wds-ignore-ssid="[omitido]" bridge-mode=enabled 
+      default-authentication=yes default-forwarding=yes default-ap-tx-limit=0 
+      default-client-tx-limit=0 hide-ssid="[omitido]" security-profile=default 
+      compression=no 
+
+L07-AVULSO-REGISTRATION
+
+L07-AVULSO-DONE

@@ -240,7 +240,7 @@ type PPStore interface {
 }
 
 func PPConnection(d Device) string {
-	return strings.Join([]string{d.Transport, d.Address, fmtPort(d.Port), d.Fingerprint, d.CredentialID}, "\x00")
+	return strings.Join([]string{string(d.Transport), d.Address, fmtPort(d.Port), d.Fingerprint, d.CredentialID}, "\x00")
 }
 func fmtPort(p int) string { return strconv.Itoa(p) }
 func Endpoint(d Device) string {
@@ -248,7 +248,7 @@ func Endpoint(d Device) string {
 	if e != nil {
 		return ""
 	}
-	return d.Transport + "/" + ip.Unmap().String() + "/" + fmtPort(d.Port)
+	return string(d.Transport) + "/" + ip.Unmap().String() + "/" + fmtPort(d.Port)
 }
 func PPValidQuery(q *PPQuery) bool {
 	if q == nil {

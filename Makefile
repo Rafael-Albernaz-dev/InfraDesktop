@@ -93,3 +93,8 @@ test-baseline-tooling:
 
 test-equipment-smoke:
 	node scripts/test-part1-visual.mjs --smoke
+
+.PHONY: quality
+quality:
+	go run ./scripts/quality.go
+	cd frontend && ./node_modules/.bin/eslint src/radio*.{ts,tsx}

@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 15,
+  "product_revision": 19,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -288,6 +288,12 @@
       "operation_id",
       "id",
       "revision"
+    ],
+    "credential.default-set": [
+      "id",
+      "operation_id",
+      "role",
+      "credential_id"
     ]
   },
   "equipment": {
@@ -611,6 +617,12 @@
       "row_id",
       "operation_id",
       "link"
+    ],
+    "radio.index-current": [
+      "device_id",
+      "observation_id",
+      "row_id",
+      "offset"
     ]
   },
   "radio_limits": {
@@ -618,13 +630,42 @@
     "page_size": 8,
     "live_seconds": 90,
     "measurement_samples": 10,
-    "min_interval_seconds": 5,
+    "min_interval_seconds": 1,
     "p95_multiplier": 3,
     "max_command_seconds_per_destination": 3,
-    "load_ceiling_seconds": 12,
-    "load_min_cpu": 3,
-    "load_min_ping_sent": 3,
-    "timing": "reading.command_seconds after SSH establishment; seconds is full path; cost.measurements contains ap/cpe command_seconds and path_seconds; interval uses full path p95",
-    "max_cpu_percent": 90
+    "load_min_cpu": 1,
+    "load_min_ping_sent": 1,
+    "timing": "One pinned SSH connection per destination/window; rich initial read once; model A filtered ticks; p95=max(AP command,CPE command), interval=max(1s,3*p95); ICMP local1/s with real timestamps; no SSH global requests; filtered ticks ephemeral, full inventory preserved",
+    "max_cpu_percent": 90,
+    "cpu_peak": "two consecutive valid AP CPU readings above90; isolated spike resets on next valid <=90",
+    "tick_recovery": "Wait the normal interval before one new handshake; no Initial on reopen. The next observed tick revalidates MAC/interface/BSSID and sets its counter baseline, participates in CPU/ping/3s limits, and consumes its normal series entry. Second consecutive violation aborts; no failed tick replay.",
+    "ap_only": "Only an observed compatible unsupported CPE model/version permits AP-only measure/live. No unidentified default profile bypass; provenance and perspective are explicit.",
+    "remote_loop": "B NOT ENABLED without real channel-close proof",
+    "receipt": "series observed_at,cpu,ap/cpe_command_seconds,icmp_rtt_ms,reason; counters decimal uint64 strings; metric quality baseline/reset/unavailable/observed; failure={reason,bytes}, also on job; no remote text"
+  },
+  "radio_standalone_contract": {
+    "revision": 19,
+    "mode": "once only for enrolled ap, cpe or ptp; auto-avulso identifies before selecting a driver",
+    "fields": "manufacturer, model, version, mode, wireless_protocol and driver_reason are additive; unavailable metrics are omitted",
+    "trust": "selected credential and active device required; TOFU persists first pin; changed pin fails before authentication"
+  },
+  "radio_journey_contract": {
+    "revision": 18,
+    "schema": 13,
+    "credential_default_fields": [
+      "id",
+      "operation_id",
+      "role",
+      "credential_id"
+    ],
+    "index": "explicit known APs sequential; one cheap command/AP <=3s; cache 5 minutes; no periodic refresh; ambiguous/incomplete/stale means manual",
+    "trust": "automatic first pin registered; changed pin blocks before password",
+    "partial": "closed failure.reason and bytes; no remote text",
+    "index_metadata_page": 8,
+    "link_choice_optional_fields": [
+      "credential_id"
+    ],
+    "credential_confirmation": "The proposal pins its displayed credential_id; a concurrent default change is REVISION_CONFLICT; durable replay returns the original association.",
+    "family_order": "User decision 2026-10-30: associate first, detect new CPE family in the next explicit query; compatible prior identity may be proposed."
   }
 }

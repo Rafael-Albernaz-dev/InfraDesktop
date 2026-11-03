@@ -1,0 +1,40 @@
+phy#0
+	Interface wlan0
+		ifindex 9
+		wdev 0x2
+		addr 02:00:00:00:10:21
+		type managed
+		channel 43 (5215 MHz), width: 40 MHz, center1: 5205 MHz
+Connected to 02:00:00:00:10:22 (on wlan0)
+	SSID: [omitido]
+	freq: 5215
+	RX: 3112401532 bytes (17355795 packets)
+	TX: 1204135093 bytes (4688209 packets)
+	CCQ: 88.46 %
+	signal: -55 dBm [-58, -58] 
+	signal avg: -54 dBm [-58, -57] 
+	tx bitrate: 60.0 MBit/s MCS 3 40MHz short GI
+
+	bss flags:	short-preamble short-slot-time
+	dtim period:	0
+	beacon int:	100
+Station 02:00:00:00:10:22 (on wlan0)
+	device name:	
+	inactive time:	4 ms
+	rx bytes:	3112401532
+	rx packets:	17355795
+	tx bytes:	1204135591
+	tx packets:	4688210
+	tx retries:	944229
+	tx failed:	41
+	signal:  	-55 [-58, -58] dBm
+	signal avg:	-54 [-58, -57] dBm
+	tx bitrate:	60.0 MBit/s MCS 3 40MHz short GI
+	rx bitrate:	60.0 MBit/s MCS 3 40MHz short GI
+	authorized:	yes
+	authenticated:	yes
+	preamble:	long
+	WMM/WME:	yes
+	MFP:		no
+	TDLS peer:	no
+258381.40 245595.70

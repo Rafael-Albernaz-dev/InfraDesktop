@@ -1,0 +1,8688 @@
+{
+  "cmd/infradesktopd/main.go": {
+    "Lines": 40,
+    "LongLines": 0,
+    "MaxFunction": 27,
+    "MaxComplexity": 5,
+    "Functions": [
+      {
+        "Name": "main",
+        "Start": 14,
+        "End": 40,
+        "Lines": 27,
+        "Complexity": 5
+      }
+    ]
+  },
+  "frontend/src/App.test.tsx": {
+    "Lines": 351,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/App.tsx": {
+    "Lines": 538,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/access-screen.tsx": {
+    "Lines": 250,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/appearance.tsx": {
+    "Lines": 288,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/bf04.test.tsx": {
+    "Lines": 269,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/desktop-controls.tsx": {
+    "Lines": 42,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/desktop.tsx": {
+    "Lines": 1556,
+    "LongLines": 1,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-insights.test.tsx": {
+    "Lines": 197,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-insights.tsx": {
+    "Lines": 273,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment.test.tsx": {
+    "Lines": 2030,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment.tsx": {
+    "Lines": 2285,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/focal.test.tsx": {
+    "Lines": 584,
+    "LongLines": 1,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/icons.tsx": {
+    "Lines": 301,
+    "LongLines": 17,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/main.tsx": {
+    "Lines": 9,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/operational.test.tsx": {
+    "Lines": 456,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-diagnostics.test.tsx": {
+    "Lines": 2044,
+    "LongLines": 1,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-diagnostics.tsx": {
+    "Lines": 2415,
+    "LongLines": 4,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe.test.tsx": {
+    "Lines": 1226,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe.tsx": {
+    "Lines": 1535,
+    "LongLines": 5,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio.test.tsx": {
+    "Lines": 978,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio.tsx": {
+    "Lines": 1547,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/receipt-review.test.tsx": {
+    "Lines": 154,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/recovery-actions.tsx": {
+    "Lines": 55,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/security.test.tsx": {
+    "Lines": 226,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/security.tsx": {
+    "Lines": 116,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/validation-modal.test.tsx": {
+    "Lines": 423,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/visual/equipment.tsx": {
+    "Lines": 148,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/visual/main.tsx": {
+    "Lines": 130,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/visual/pppoe.tsx": {
+    "Lines": 290,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/visual/radio.tsx": {
+    "Lines": 332,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "internal/adapters/ipc/access_linux.go": {
+    "Lines": 273,
+    "LongLines": 3,
+    "MaxFunction": 84,
+    "MaxComplexity": 33,
+    "Functions": [
+      {
+        "Name": "ListenAccess",
+        "Start": 16,
+        "End": 24,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "dispatchAccess",
+        "Start": 25,
+        "End": 65,
+        "Lines": 41,
+        "Complexity": 13
+      },
+      {
+        "Name": "NewAccountClient",
+        "Start": 74,
+        "End": 76,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "exchange",
+        "Start": 77,
+        "End": 98,
+        "Lines": 22,
+        "Complexity": 8
+      },
+      {
+        "Name": "Call",
+        "Start": 99,
+        "End": 182,
+        "Lines": 84,
+        "Complexity": 33
+      },
+      {
+        "Name": "accept",
+        "Start": 183,
+        "End": 194,
+        "Lines": 12,
+        "Complexity": 4
+      },
+      {
+        "Name": "readPrivateToken",
+        "Start": 195,
+        "End": 219,
+        "Lines": 25,
+        "Complexity": 9
+      },
+      {
+        "Name": "saveGrant",
+        "Start": 220,
+        "End": 249,
+        "Lines": 30,
+        "Complexity": 9
+      },
+      {
+        "Name": "syncDirectory",
+        "Start": 250,
+        "End": 257,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "removeGrant",
+        "Start": 258,
+        "End": 273,
+        "Lines": 16,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/ipc/access_test.go": {
+    "Lines": 149,
+    "LongLines": 9,
+    "MaxFunction": 49,
+    "MaxComplexity": 17,
+    "Functions": [
+      {
+        "Name": "TestProductSchemaSnapshot",
+        "Start": 13,
+        "End": 61,
+        "Lines": 49,
+        "Complexity": 17
+      },
+      {
+        "Name": "TestAccessSchema",
+        "Start": 63,
+        "End": 79,
+        "Lines": 17,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestBF03RevisionAndNarrowFields",
+        "Start": 81,
+        "End": 102,
+        "Lines": 22,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestBF04BrandFramesAndNarrowFields",
+        "Start": 104,
+        "End": 149,
+        "Lines": 46,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/adapters/ipc/account_integration_test.go": {
+    "Lines": 232,
+    "LongLines": 6,
+    "MaxFunction": 148,
+    "MaxComplexity": 37,
+    "Functions": [
+      {
+        "Name": "TestIntegrationAccountClient",
+        "Start": 21,
+        "End": 168,
+        "Lines": 148,
+        "Complexity": 37
+      },
+      {
+        "Name": "TestIntegrationOwnerChild",
+        "Start": 171,
+        "End": 191,
+        "Lines": 21,
+        "Complexity": 8
+      },
+      {
+        "Name": "startOwnedChild",
+        "Start": 194,
+        "End": 204,
+        "Lines": 11,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestIntegrationCleanupAfterFatal",
+        "Start": 206,
+        "End": 232,
+        "Lines": 27,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/adapters/ipc/client_linux.go": {
+    "Lines": 150,
+    "LongLines": 1,
+    "MaxFunction": 69,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "NewClient",
+        "Start": 22,
+        "End": 24,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "reset",
+        "Start": 25,
+        "End": 31,
+        "Lines": 7,
+        "Complexity": 1
+      },
+      {
+        "Name": "Call",
+        "Start": 32,
+        "End": 81,
+        "Lines": 50,
+        "Complexity": 14
+      },
+      {
+        "Name": "exchange",
+        "Start": 82,
+        "End": 150,
+        "Lines": 69,
+        "Complexity": 21
+      }
+    ]
+  },
+  "internal/adapters/ipc/collector_failure_test.go": {
+    "Lines": 45,
+    "LongLines": 3,
+    "MaxFunction": 33,
+    "MaxComplexity": 15,
+    "Functions": [
+      {
+        "Name": "TestL06V7CollectorFailureThroughRealClient",
+        "Start": 13,
+        "End": 45,
+        "Lines": 33,
+        "Complexity": 15
+      }
+    ]
+  },
+  "internal/adapters/ipc/device_monitoring_test.go": {
+    "Lines": 139,
+    "LongLines": 4,
+    "MaxFunction": 96,
+    "MaxComplexity": 40,
+    "Functions": [
+      {
+        "Name": "TestL06T2OperationalScopeThroughIPC",
+        "Start": 17,
+        "End": 112,
+        "Lines": 96,
+        "Complexity": 40
+      },
+      {
+        "Name": "TestL06T2CursorRejectsChangedSeries",
+        "Start": 114,
+        "End": 139,
+        "Lines": 26,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/ipc/equipment.go": {
+    "Lines": 110,
+    "LongLines": 4,
+    "MaxFunction": 30,
+    "MaxComplexity": 13,
+    "Functions": [
+      {
+        "Name": "isEquipment",
+        "Start": 55,
+        "End": 55,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "validateEquipment",
+        "Start": 56,
+        "End": 85,
+        "Lines": 30,
+        "Complexity": 13
+      },
+      {
+        "Name": "AttachEquipment",
+        "Start": 86,
+        "End": 86,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "dispatchEquipment",
+        "Start": 87,
+        "End": 110,
+        "Lines": 24,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/ipc/equipment_test.go": {
+    "Lines": 224,
+    "LongLines": 11,
+    "MaxFunction": 140,
+    "MaxComplexity": 38,
+    "Functions": [
+      {
+        "Name": "ID",
+        "Start": 27,
+        "End": 27,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestEquipmentStrictSchema",
+        "Start": 28,
+        "End": 59,
+        "Lines": 32,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestIntegrationEquipmentSQLiteVaultSSH",
+        "Start": 60,
+        "End": 199,
+        "Lines": 140,
+        "Complexity": 38
+      },
+      {
+        "Name": "TestEquipmentSchemaSnapshotAndBounds",
+        "Start": 201,
+        "End": 224,
+        "Lines": 24,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/ipc/focal_client_test.go": {
+    "Lines": 78,
+    "LongLines": 0,
+    "MaxFunction": 64,
+    "MaxComplexity": 15,
+    "Functions": [
+      {
+        "Name": "TestFocalAccountClientEquipmentCodes",
+        "Start": 15,
+        "End": 78,
+        "Lines": 64,
+        "Complexity": 15
+      }
+    ]
+  },
+  "internal/adapters/ipc/integration_test.go": {
+    "Lines": 470,
+    "LongLines": 6,
+    "MaxFunction": 78,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "start",
+        "Start": 27,
+        "End": 45,
+        "Lines": 19,
+        "Complexity": 4
+      },
+      {
+        "Name": "stop",
+        "Start": 46,
+        "End": 61,
+        "Lines": 16,
+        "Complexity": 5
+      },
+      {
+        "Name": "dial",
+        "Start": 62,
+        "End": 71,
+        "Lines": 10,
+        "Complexity": 2
+      },
+      {
+        "Name": "raw",
+        "Start": 72,
+        "End": 89,
+        "Lines": 18,
+        "Complexity": 4
+      },
+      {
+        "Name": "req",
+        "Start": 90,
+        "End": 97,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "handshake",
+        "Start": 98,
+        "End": 109,
+        "Lines": 12,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestIntegrationRoundtripAuthAndRestart",
+        "Start": 110,
+        "End": 184,
+        "Lines": 75,
+        "Complexity": 28
+      },
+      {
+        "Name": "TestIntegrationStrictFraming",
+        "Start": 185,
+        "End": 227,
+        "Lines": 43,
+        "Complexity": 11
+      },
+      {
+        "Name": "Read",
+        "Start": 234,
+        "End": 242,
+        "Lines": 9,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestIntegrationConcurrencyAndDeadline",
+        "Start": 243,
+        "End": 320,
+        "Lines": 78,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestIntegrationSaturationShutdownAndUnsafePaths",
+        "Start": 321,
+        "End": 392,
+        "Lines": 72,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestFrameReaderBoundaries",
+        "Start": 393,
+        "End": 409,
+        "Lines": 17,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestIntegrationObservationDeadlineAndClientCancel",
+        "Start": 411,
+        "End": 433,
+        "Lines": 23,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestIntegrationClientRejectsUnsafeEndpoint",
+        "Start": 435,
+        "End": 454,
+        "Lines": 20,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestIntegrationCleanupPreservesReplacement",
+        "Start": 456,
+        "End": 470,
+        "Lines": 15,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/ipc/l06d_test.go": {
+    "Lines": 376,
+    "LongLines": 15,
+    "MaxFunction": 50,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "TestL06DContextOmissionAcrossIPCAndExport",
+        "Start": 16,
+        "End": 42,
+        "Lines": 27,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestL06DBandwidthThroughRealIPCAndSSH",
+        "Start": 44,
+        "End": 91,
+        "Lines": 48,
+        "Complexity": 16
+      },
+      {
+        "Name": "TestL06DReadCancelBlocksLatePublication",
+        "Start": 93,
+        "End": 142,
+        "Lines": 50,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestL06DLiveFiniteWindow",
+        "Start": 144,
+        "End": 183,
+        "Lines": 40,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestL06DLiveCancelByExactOperation",
+        "Start": 185,
+        "End": 216,
+        "Lines": 32,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06DTopConsumptionIsFreshMeasuredAndPaged",
+        "Start": 218,
+        "End": 253,
+        "Lines": 36,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestL06DLogIsSelectedBoundedAndNotRawThroughIPC",
+        "Start": 255,
+        "End": 289,
+        "Lines": 35,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestL06DHealthWithoutObservationThroughIPC",
+        "Start": 291,
+        "End": 331,
+        "Lines": 41,
+        "Complexity": 28
+      },
+      {
+        "Name": "TestL06DEmptyReadsKeepJSONArrayThroughIPC",
+        "Start": 333,
+        "End": 376,
+        "Lines": 44,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/adapters/ipc/owner_linux.go": {
+    "Lines": 76,
+    "LongLines": 0,
+    "MaxFunction": 21,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "processOwner",
+        "Start": 13,
+        "End": 15,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "readProcessOwner",
+        "Start": 17,
+        "End": 37,
+        "Lines": 21,
+        "Complexity": 7
+      },
+      {
+        "Name": "peerOwner",
+        "Start": 38,
+        "End": 55,
+        "Lines": 18,
+        "Complexity": 4
+      },
+      {
+        "Name": "ownerAlive",
+        "Start": 56,
+        "End": 58,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "inspectOwnerAlive",
+        "Start": 60,
+        "End": 76,
+        "Lines": 17,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/ipc/owner_linux_test.go": {
+    "Lines": 75,
+    "LongLines": 0,
+    "MaxFunction": 37,
+    "MaxComplexity": 9,
+    "Functions": [
+      {
+        "Name": "TestProcessOwnerIdentification",
+        "Start": 11,
+        "End": 47,
+        "Lines": 37,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestOwnerLivenessConservative",
+        "Start": 48,
+        "End": 75,
+        "Lines": 28,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/ipc/paths_linux.go": {
+    "Lines": 114,
+    "LongLines": 0,
+    "MaxFunction": 26,
+    "MaxComplexity": 15,
+    "Functions": [
+      {
+        "Name": "RandomID",
+        "Start": 15,
+        "End": 21,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "owned",
+        "Start": 22,
+        "End": 25,
+        "Lines": 4,
+        "Complexity": 2
+      },
+      {
+        "Name": "safeDir",
+        "Start": 26,
+        "End": 50,
+        "Lines": 25,
+        "Complexity": 15
+      },
+      {
+        "Name": "privateFile",
+        "Start": 51,
+        "End": 60,
+        "Lines": 10,
+        "Complexity": 7
+      },
+      {
+        "Name": "peerUID",
+        "Start": 61,
+        "End": 79,
+        "Lines": 19,
+        "Complexity": 4
+      },
+      {
+        "Name": "readCapability",
+        "Start": 80,
+        "End": 105,
+        "Lines": 26,
+        "Complexity": 9
+      },
+      {
+        "Name": "removeOwned",
+        "Start": 106,
+        "End": 114,
+        "Lines": 9,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/ipc/ping_statistics_test.go": {
+    "Lines": 32,
+    "LongLines": 2,
+    "MaxFunction": 22,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "TestL06T3PingPreviousTenThroughRealIPC",
+        "Start": 11,
+        "End": 32,
+        "Lines": 22,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/adapters/ipc/pppoe.go": {
+    "Lines": 400,
+    "LongLines": 9,
+    "MaxFunction": 148,
+    "MaxComplexity": 81,
+    "Functions": [
+      {
+        "Name": "isPPPoE",
+        "Start": 40,
+        "End": 40,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "strictPPObject",
+        "Start": 44,
+        "End": 61,
+        "Lines": 18,
+        "Complexity": 7
+      },
+      {
+        "Name": "validatePPPoE",
+        "Start": 62,
+        "End": 209,
+        "Lines": 148,
+        "Complexity": 81
+      },
+      {
+        "Name": "ppDigest",
+        "Start": 210,
+        "End": 221,
+        "Lines": 12,
+        "Complexity": 2
+      },
+      {
+        "Name": "ppCursor",
+        "Start": 222,
+        "End": 234,
+        "Lines": 13,
+        "Complexity": 3
+      },
+      {
+        "Name": "ppOffset",
+        "Start": 235,
+        "End": 271,
+        "Lines": 37,
+        "Complexity": 14
+      },
+      {
+        "Name": "ppToken",
+        "Start": 272,
+        "End": 279,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "dispatchPPPoE",
+        "Start": 280,
+        "End": 383,
+        "Lines": 104,
+        "Complexity": 29
+      },
+      {
+        "Name": "validErrorDetail",
+        "Start": 384,
+        "End": 400,
+        "Lines": 17,
+        "Complexity": 15
+      }
+    ]
+  },
+  "internal/adapters/ipc/pppoe_diagnostics_test.go": {
+    "Lines": 362,
+    "LongLines": 14,
+    "MaxFunction": 95,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "diagnostic",
+        "Start": 24,
+        "End": 42,
+        "Lines": 19,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay",
+        "Start": 44,
+        "End": 109,
+        "Lines": 66,
+        "Complexity": 20
+      },
+      {
+        "Name": "TestPPDiagnosticStrictInputAndContextBeforeNetwork",
+        "Start": 111,
+        "End": 133,
+        "Lines": 23,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestPPDiagnosticRadiusMonitorFailurePreservesGoodDataAndDate",
+        "Start": 135,
+        "End": 158,
+        "Lines": 24,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestPPDiagnosticSharedAdmissionCancellationAndRevocation",
+        "Start": 160,
+        "End": 214,
+        "Lines": 55,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestPPDiagnosticExportEnforcesTargetContextAtIPC",
+        "Start": 216,
+        "End": 264,
+        "Lines": 49,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestPPDiagnosticCatalogBoundaryWorkloadRealIPC",
+        "Start": 268,
+        "End": 362,
+        "Lines": 95,
+        "Complexity": 29
+      }
+    ]
+  },
+  "internal/adapters/ipc/pppoe_measure_test.go": {
+    "Lines": 305,
+    "LongLines": 13,
+    "MaxFunction": 133,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "TestPPPoEMeasure",
+        "Start": 25,
+        "End": 139,
+        "Lines": 115,
+        "Complexity": 22
+      },
+      {
+        "Name": "PPPage",
+        "Start": 150,
+        "End": 160,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "CollectPPPoE",
+        "Start": 167,
+        "End": 171,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestPPPoEMeasureTwoJobs",
+        "Start": 173,
+        "End": 305,
+        "Lines": 133,
+        "Complexity": 28
+      }
+    ]
+  },
+  "internal/adapters/ipc/pppoe_secret_test.go": {
+    "Lines": 100,
+    "LongLines": 5,
+    "MaxFunction": 83,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "TestL06DSecretEvidenceThroughIPCIsEphemeral",
+        "Start": 18,
+        "End": 100,
+        "Lines": 83,
+        "Complexity": 28
+      }
+    ]
+  },
+  "internal/adapters/ipc/pppoe_test.go": {
+    "Lines": 448,
+    "LongLines": 18,
+    "MaxFunction": 82,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "newPPJourney",
+        "Start": 39,
+        "End": 120,
+        "Lines": 82,
+        "Complexity": 15
+      },
+      {
+        "Name": "call",
+        "Start": 121,
+        "End": 128,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "collect",
+        "Start": 129,
+        "End": 146,
+        "Lines": 18,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestPPPoERealClientPersistenceReplayAndQuota",
+        "Start": 147,
+        "End": 215,
+        "Lines": 69,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestPPPoERecursiveSchemaAndCursor",
+        "Start": 216,
+        "End": 250,
+        "Lines": 35,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestPPPoEJobSlotsAndInterruptedCurrent",
+        "Start": 252,
+        "End": 276,
+        "Lines": 25,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestPPPoERealClientAuthorizationAndCursorBoundaries",
+        "Start": 277,
+        "End": 338,
+        "Lines": 62,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestL06CReadReplayOnlyWhileActive",
+        "Start": 340,
+        "End": 381,
+        "Lines": 42,
+        "Complexity": 14
+      },
+      {
+        "Name": "WithAuthorization",
+        "Start": 389,
+        "End": 401,
+        "Lines": 13,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestL06CRevokedBeforePublication",
+        "Start": 402,
+        "End": 448,
+        "Lines": 47,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/adapters/ipc/pppoe_traffic_test.go": {
+    "Lines": 117,
+    "LongLines": 8,
+    "MaxFunction": 59,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "TestL06TTrafficThroughIPCStopAndCancel",
+        "Start": 16,
+        "End": 74,
+        "Lines": 59,
+        "Complexity": 19
+      },
+      {
+        "Name": "TestL06TTrafficSixteenWorstRowsFitRealFrame",
+        "Start": 75,
+        "End": 96,
+        "Lines": 22,
+        "Complexity": 7
+      },
+      {
+        "Name": "lenMustJSON",
+        "Start": 97,
+        "End": 97,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL06TTrafficInterruptedSSHRetainsGap",
+        "Start": 99,
+        "End": 117,
+        "Lines": 19,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/adapters/ipc/protocol.go": {
+    "Lines": 316,
+    "LongLines": 2,
+    "MaxFunction": 116,
+    "MaxComplexity": 42,
+    "Functions": [
+      {
+        "Name": "readFrame",
+        "Start": 99,
+        "End": 99,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "readFrameLimit",
+        "Start": 100,
+        "End": 123,
+        "Lines": 24,
+        "Complexity": 7
+      },
+      {
+        "Name": "writeFrame",
+        "Start": 124,
+        "End": 124,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "writeFrameLimit",
+        "Start": 125,
+        "End": 152,
+        "Lines": 28,
+        "Complexity": 9
+      },
+      {
+        "Name": "strict",
+        "Start": 155,
+        "End": 189,
+        "Lines": 35,
+        "Complexity": 12
+      },
+      {
+        "Name": "validID",
+        "Start": 190,
+        "End": 200,
+        "Lines": 11,
+        "Complexity": 12
+      },
+      {
+        "Name": "validate",
+        "Start": 201,
+        "End": 316,
+        "Lines": 116,
+        "Complexity": 42
+      }
+    ]
+  },
+  "internal/adapters/ipc/radio.go": {
+    "Lines": 88,
+    "LongLines": 4,
+    "MaxFunction": 41,
+    "MaxComplexity": 17,
+    "Functions": [
+      {
+        "Name": "isRadio",
+        "Start": 23,
+        "End": 23,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "validateRadio",
+        "Start": 24,
+        "End": 64,
+        "Lines": 41,
+        "Complexity": 17
+      },
+      {
+        "Name": "dispatchRadio",
+        "Start": 65,
+        "End": 88,
+        "Lines": 24,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/ipc/radio_avulso_test.go": {
+    "Lines": 191,
+    "LongLines": 12,
+    "MaxFunction": 105,
+    "MaxComplexity": 37,
+    "Functions": [
+      {
+        "Name": "TestAvulsoIPCTofuSemSessao",
+        "Start": 16,
+        "End": 85,
+        "Lines": 70,
+        "Complexity": 28
+      },
+      {
+        "Name": "TestAvulsoDesconhecidoPreservaLeituraPerfilEVinculo",
+        "Start": 87,
+        "End": 191,
+        "Lines": 105,
+        "Complexity": 37
+      }
+    ]
+  },
+  "internal/adapters/ipc/radio_journey_test.go": {
+    "Lines": 208,
+    "LongLines": 16,
+    "MaxFunction": 178,
+    "MaxComplexity": 59,
+    "Functions": [
+      {
+        "Name": "TestL07JIndexAndConfirmThroughIPC",
+        "Start": 18,
+        "End": 195,
+        "Lines": 178,
+        "Complexity": 59
+      },
+      {
+        "Name": "TestL07JIndexPublicPageFitsFrame",
+        "Start": 197,
+        "End": 208,
+        "Lines": 12,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/ipc/radio_piloto_test.go": {
+    "Lines": 153,
+    "LongLines": 8,
+    "MaxFunction": 136,
+    "MaxComplexity": 41,
+    "Functions": [
+      {
+        "Name": "TestL07PilotoObservedUnsupportedThroughIPC",
+        "Start": 18,
+        "End": 153,
+        "Lines": 136,
+        "Complexity": 41
+      }
+    ]
+  },
+  "internal/adapters/ipc/radio_test.go": {
+    "Lines": 302,
+    "LongLines": 16,
+    "MaxFunction": 205,
+    "MaxComplexity": 59,
+    "Functions": [
+      {
+        "Name": "TestL07RadioIPCIndependentSidesAndCPERevocation",
+        "Start": 20,
+        "End": 224,
+        "Lines": 205,
+        "Complexity": 59
+      },
+      {
+        "Name": "TestL07RadioWireRejectsCommandsAndUnknownFields",
+        "Start": 225,
+        "End": 240,
+        "Lines": 16,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL07LiveContractRevisionAndTiming",
+        "Start": 242,
+        "End": 264,
+        "Lines": 23,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestL07CPU90Contract",
+        "Start": 266,
+        "End": 280,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestL07Live2ReceiptFitsFrameAndCountersStayExact",
+        "Start": 282,
+        "End": 302,
+        "Lines": 21,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/ipc/server_linux.go": {
+    "Lines": 244,
+    "LongLines": 4,
+    "MaxFunction": 52,
+    "MaxComplexity": 13,
+    "Functions": [
+      {
+        "Name": "Listen",
+        "Start": 42,
+        "End": 93,
+        "Lines": 52,
+        "Complexity": 13
+      },
+      {
+        "Name": "Serve",
+        "Start": 94,
+        "End": 139,
+        "Lines": 46,
+        "Complexity": 9
+      },
+      {
+        "Name": "Close",
+        "Start": 140,
+        "End": 162,
+        "Lines": 23,
+        "Complexity": 4
+      },
+      {
+        "Name": "handle",
+        "Start": 163,
+        "End": 199,
+        "Lines": 37,
+        "Complexity": 11
+      },
+      {
+        "Name": "dispatch",
+        "Start": 200,
+        "End": 244,
+        "Lines": 45,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/presentation/app.go": {
+    "Lines": 205,
+    "LongLines": 4,
+    "MaxFunction": 59,
+    "MaxComplexity": 35,
+    "Functions": [
+      {
+        "Name": "New",
+        "Start": 45,
+        "End": 47,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "AttachContext",
+        "Start": 48,
+        "End": 48,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "call",
+        "Start": 49,
+        "End": 107,
+        "Lines": 59,
+        "Complexity": 35
+      },
+      {
+        "Name": "Status",
+        "Start": 108,
+        "End": 108,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Register",
+        "Start": 109,
+        "End": 111,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Login",
+        "Start": 112,
+        "End": 114,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Recover",
+        "Start": 115,
+        "End": 117,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Logout",
+        "Start": 118,
+        "End": 118,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "CreateCompany",
+        "Start": 119,
+        "End": 121,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SelectCompany",
+        "Start": 122,
+        "End": 124,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SetTheme",
+        "Start": 125,
+        "End": 127,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "RenewRecovery",
+        "Start": 129,
+        "End": 131,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "AckRecovery",
+        "Start": 132,
+        "End": 149,
+        "Lines": 18,
+        "Complexity": 5
+      },
+      {
+        "Name": "syncRecoveryPending",
+        "Start": 152,
+        "End": 156,
+        "Lines": 5,
+        "Complexity": 2
+      },
+      {
+        "Name": "CopyRecovery",
+        "Start": 159,
+        "End": 169,
+        "Lines": 11,
+        "Complexity": 3
+      },
+      {
+        "Name": "checkRecovery",
+        "Start": 172,
+        "End": 199,
+        "Lines": 28,
+        "Complexity": 12
+      },
+      {
+        "Name": "GetBrand",
+        "Start": 200,
+        "End": 202,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SaveBrand",
+        "Start": 203,
+        "End": 205,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/presentation/bf04_test.go": {
+    "Lines": 217,
+    "LongLines": 1,
+    "MaxFunction": 54,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "TestBF04PreAuthCopy",
+        "Start": 18,
+        "End": 32,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestBF04SaveThreeFlowsAndPrivateFile",
+        "Start": 34,
+        "End": 87,
+        "Lines": 54,
+        "Complexity": 19
+      },
+      {
+        "Name": "TestBF04SaveDialogDoesNotLockIPCAndAckWins",
+        "Start": 88,
+        "End": 118,
+        "Lines": 31,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestBF04RecoveryDestinationSafety",
+        "Start": 119,
+        "End": 144,
+        "Lines": 26,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestBF04PreAuthRevocationDuringPickerAndExplicitDiscard",
+        "Start": 146,
+        "End": 170,
+        "Lines": 25,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestBF04MaximumBrandRealIPC",
+        "Start": 172,
+        "End": 217,
+        "Lines": 46,
+        "Complexity": 18
+      }
+    ]
+  },
+  "internal/adapters/presentation/equipment.go": {
+    "Lines": 98,
+    "LongLines": 4,
+    "MaxFunction": 10,
+    "MaxComplexity": 4,
+    "Functions": [
+      {
+        "Name": "equipmentCall",
+        "Start": 37,
+        "End": 46,
+        "Lines": 10,
+        "Complexity": 2
+      },
+      {
+        "Name": "ListEquipment",
+        "Start": 47,
+        "End": 49,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetEquipment",
+        "Start": 50,
+        "End": 52,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SaveEquipment",
+        "Start": 53,
+        "End": 62,
+        "Lines": 10,
+        "Complexity": 4
+      },
+      {
+        "Name": "SetEquipmentActive",
+        "Start": 63,
+        "End": 65,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ListCredentials",
+        "Start": 66,
+        "End": 68,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PutCredential",
+        "Start": 69,
+        "End": 71,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "InspectTrust",
+        "Start": 72,
+        "End": 74,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ConfirmTrust",
+        "Start": 75,
+        "End": 77,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StartQuery",
+        "Start": 78,
+        "End": 80,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "QueryStatus",
+        "Start": 81,
+        "End": 83,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelQuery",
+        "Start": 84,
+        "End": 86,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "EnrollmentStatus",
+        "Start": 88,
+        "End": 90,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ResetTrust",
+        "Start": 92,
+        "End": 94,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SetCredentialDefault",
+        "Start": 96,
+        "End": 98,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/presentation/lifecycle.go": {
+    "Lines": 48,
+    "LongLines": 0,
+    "MaxFunction": 11,
+    "MaxComplexity": 3,
+    "Functions": [
+      {
+        "Name": "beginEmission",
+        "Start": 14,
+        "End": 22,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "endEmission",
+        "Start": 24,
+        "End": 28,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "setPending",
+        "Start": 30,
+        "End": 34,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "PreventClose",
+        "Start": 38,
+        "End": 48,
+        "Lines": 11,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/adapters/presentation/lifecycle_test.go": {
+    "Lines": 157,
+    "LongLines": 3,
+    "MaxFunction": 67,
+    "MaxComplexity": 22,
+    "Functions": [
+      {
+        "Name": "wait",
+        "Start": 19,
+        "End": 22,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "Hash",
+        "Start": 23,
+        "End": 28,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "Verify",
+        "Start": 29,
+        "End": 34,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestNativeCloseVetoForEveryRecoveryEmissionAndAck",
+        "Start": 36,
+        "End": 102,
+        "Lines": 67,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestNativeCloseAfterFailedEmission",
+        "Start": 104,
+        "End": 112,
+        "Lines": 9,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestNativeCloseKeepsCodeAfterFailedAck",
+        "Start": 114,
+        "End": 133,
+        "Lines": 20,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestNativeCloseRequiresObservedRevocationToReleaseDisplayedCode",
+        "Start": 135,
+        "End": 157,
+        "Lines": 23,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/adapters/presentation/operational_test.go": {
+    "Lines": 164,
+    "LongLines": 2,
+    "MaxFunction": 143,
+    "MaxComplexity": 50,
+    "Functions": [
+      {
+        "Name": "TestOperationalBindingInventoryTrustAndRead",
+        "Start": 22,
+        "End": 164,
+        "Lines": 143,
+        "Complexity": 50
+      }
+    ]
+  },
+  "internal/adapters/presentation/pppoe.go": {
+    "Lines": 91,
+    "LongLines": 4,
+    "MaxFunction": 8,
+    "MaxComplexity": 2,
+    "Functions": [
+      {
+        "Name": "ppCall",
+        "Start": 16,
+        "End": 20,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "ppCallLocked",
+        "Start": 21,
+        "End": 28,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "StartPPPoECollection",
+        "Start": 29,
+        "End": 31,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPPoECollectionStatus",
+        "Start": 32,
+        "End": 34,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelPPPoECollection",
+        "Start": 35,
+        "End": 37,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetPPPoECurrent",
+        "Start": 38,
+        "End": 40,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetPPPoEObservation",
+        "Start": 41,
+        "End": 43,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ListPPPoESessions",
+        "Start": 44,
+        "End": 46,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetPPPoESession",
+        "Start": 47,
+        "End": 49,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SavePPPoEReference",
+        "Start": 50,
+        "End": 52,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ListPPPoEReferences",
+        "Start": 53,
+        "End": 55,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "DeletePPPoEReference",
+        "Start": 56,
+        "End": 58,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ComparePPPoE",
+        "Start": 59,
+        "End": 61,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPPoEContextCounts",
+        "Start": 63,
+        "End": 65,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StartPPPoERead",
+        "Start": 67,
+        "End": 69,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPPoEReadStatus",
+        "Start": 70,
+        "End": 72,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelPPPoERead",
+        "Start": 73,
+        "End": 75,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPPoEReadPage",
+        "Start": 76,
+        "End": 78,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelPPPoEReadOperation",
+        "Start": 80,
+        "End": 83,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetDeviceMonitoring",
+        "Start": 85,
+        "End": 87,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StopPPPoETraffic",
+        "Start": 89,
+        "End": 91,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/presentation/pppoe_diagnostics.go": {
+    "Lines": 25,
+    "LongLines": 4,
+    "MaxFunction": 3,
+    "MaxComplexity": 1,
+    "Functions": [
+      {
+        "Name": "StartPPPoECatalog",
+        "Start": 5,
+        "End": 7,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StartPPPoERadius",
+        "Start": 8,
+        "End": 10,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StartPPPoEPing",
+        "Start": 11,
+        "End": 13,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPPoEDiagnosticStatus",
+        "Start": 14,
+        "End": 16,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelPPPoEDiagnostic",
+        "Start": 17,
+        "End": 19,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetPPPoEDiagnostic",
+        "Start": 20,
+        "End": 22,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ListPPPoEDiagnostic",
+        "Start": 23,
+        "End": 25,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/presentation/pppoe_diagnostics_export.go": {
+    "Lines": 171,
+    "LongLines": 1,
+    "MaxFunction": 75,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "freezePPDiagnosticsLocked",
+        "Start": 19,
+        "End": 49,
+        "Lines": 31,
+        "Complexity": 9
+      },
+      {
+        "Name": "checkPPDiagnosticsLocked",
+        "Start": 50,
+        "End": 68,
+        "Lines": 19,
+        "Complexity": 9
+      },
+      {
+        "Name": "pdExportMetadata",
+        "Start": 69,
+        "End": 87,
+        "Lines": 19,
+        "Complexity": 4
+      },
+      {
+        "Name": "pdExportToken",
+        "Start": 88,
+        "End": 95,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "writePPDiagnosticExport",
+        "Start": 97,
+        "End": 171,
+        "Lines": 75,
+        "Complexity": 19
+      }
+    ]
+  },
+  "internal/adapters/presentation/pppoe_export.go": {
+    "Lines": 339,
+    "LongLines": 4,
+    "MaxFunction": 180,
+    "MaxComplexity": 43,
+    "Functions": [
+      {
+        "Name": "ExportPPPoE",
+        "Start": 22,
+        "End": 201,
+        "Lines": 180,
+        "Complexity": 43
+      },
+      {
+        "Name": "itoa",
+        "Start": 202,
+        "End": 202,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "fsync",
+        "Start": 211,
+        "End": 216,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "move",
+        "Start": 217,
+        "End": 222,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "remove",
+        "Start": 223,
+        "End": 228,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "Write",
+        "Start": 235,
+        "End": 242,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "writePPExport",
+        "Start": 243,
+        "End": 245,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "writePPExportFile",
+        "Start": 246,
+        "End": 331,
+        "Lines": 86,
+        "Complexity": 29
+      },
+      {
+        "Name": "checkPPExportLocked",
+        "Start": 334,
+        "End": 339,
+        "Lines": 6,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/adapters/presentation/pppoe_operational_export.go": {
+    "Lines": 145,
+    "LongLines": 2,
+    "MaxFunction": 122,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "ppCSVCell",
+        "Start": 14,
+        "End": 20,
+        "Lines": 7,
+        "Complexity": 4
+      },
+      {
+        "Name": "ExportPPPoEOperational",
+        "Start": 24,
+        "End": 145,
+        "Lines": 122,
+        "Complexity": 29
+      }
+    ]
+  },
+  "internal/adapters/presentation/pppoe_test.go": {
+    "Lines": 663,
+    "LongLines": 7,
+    "MaxFunction": 384,
+    "MaxComplexity": 120,
+    "Functions": [
+      {
+        "Name": "TestPPPoEBindingExportAndContext",
+        "Start": 30,
+        "End": 413,
+        "Lines": 384,
+        "Complexity": 120
+      },
+      {
+        "Name": "TestPPPoEExportFilesystemFailures",
+        "Start": 414,
+        "End": 498,
+        "Lines": 85,
+        "Complexity": 25
+      },
+      {
+        "Name": "TestPPPoEReviewExportInitialAndFinalInputs",
+        "Start": 500,
+        "End": 650,
+        "Lines": 151,
+        "Complexity": 37
+      },
+      {
+        "Name": "TestL06DCSVFormulaNeutralization",
+        "Start": 652,
+        "End": 663,
+        "Lines": 12,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/adapters/presentation/radio.go": {
+    "Lines": 52,
+    "LongLines": 3,
+    "MaxFunction": 10,
+    "MaxComplexity": 2,
+    "Functions": [
+      {
+        "Name": "radioCall",
+        "Start": 15,
+        "End": 24,
+        "Lines": 10,
+        "Complexity": 2
+      },
+      {
+        "Name": "GetRadio",
+        "Start": 25,
+        "End": 27,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StartRadio",
+        "Start": 28,
+        "End": 30,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "RadioStatus",
+        "Start": 31,
+        "End": 33,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelRadio",
+        "Start": 34,
+        "End": 36,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "CancelRadioOperation",
+        "Start": 37,
+        "End": 39,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ConfirmRadioFamily",
+        "Start": 40,
+        "End": 42,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetRadioLink",
+        "Start": 43,
+        "End": 45,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ConfirmRadioLink",
+        "Start": 46,
+        "End": 48,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "GetRadioIndexPage",
+        "Start": 50,
+        "End": 52,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/presentation/recovery_file.go": {
+    "Lines": 139,
+    "LongLines": 1,
+    "MaxFunction": 70,
+    "MaxComplexity": 25,
+    "Functions": [
+      {
+        "Name": "SaveRecovery",
+        "Start": 16,
+        "End": 48,
+        "Lines": 33,
+        "Complexity": 7
+      },
+      {
+        "Name": "recoveryDir",
+        "Start": 52,
+        "End": 69,
+        "Lines": 18,
+        "Complexity": 5
+      },
+      {
+        "Name": "writeRecovery",
+        "Start": 70,
+        "End": 139,
+        "Lines": 70,
+        "Complexity": 25
+      }
+    ]
+  },
+  "internal/adapters/presentation/recovery_test.go": {
+    "Lines": 98,
+    "LongLines": 0,
+    "MaxFunction": 48,
+    "MaxComplexity": 20,
+    "Functions": [
+      {
+        "Name": "newRecoveryApp",
+        "Start": 17,
+        "End": 49,
+        "Lines": 33,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestRecoveryCacheClipboardAndAckRealIPC",
+        "Start": 51,
+        "End": 98,
+        "Lines": 48,
+        "Complexity": 20
+      }
+    ]
+  },
+  "internal/adapters/presentation/validation_modal_test.go": {
+    "Lines": 136,
+    "LongLines": 1,
+    "MaxFunction": 112,
+    "MaxComplexity": 31,
+    "Functions": [
+      {
+        "Name": "ID",
+        "Start": 22,
+        "End": 22,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestValidationModalBindingRealDaemon",
+        "Start": 25,
+        "End": 136,
+        "Lines": 112,
+        "Complexity": 31
+      }
+    ]
+  },
+  "internal/adapters/routerssh/collector_diagnostics_test.go": {
+    "Lines": 171,
+    "LongLines": 5,
+    "MaxFunction": 60,
+    "MaxComplexity": 23,
+    "Functions": [
+      {
+        "Name": "diagnosticCommands",
+        "Start": 17,
+        "End": 44,
+        "Lines": 28,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06V7EveryExportedCollectorHasDiagnostic",
+        "Start": 45,
+        "End": 104,
+        "Lines": 60,
+        "Complexity": 23
+      },
+      {
+        "Name": "TestL06V7RealSanitizedGoldens",
+        "Start": 105,
+        "End": 141,
+        "Lines": 37,
+        "Complexity": 19
+      },
+      {
+        "Name": "TestL06V7SyntaxDiagnosticsAreStructural",
+        "Start": 142,
+        "End": 153,
+        "Lines": 12,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestL06V7AuthRecognizedCount",
+        "Start": 155,
+        "End": 171,
+        "Lines": 17,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/adapters/routerssh/collector_failure.go": {
+    "Lines": 27,
+    "LongLines": 1,
+    "MaxFunction": 9,
+    "MaxComplexity": 4,
+    "Functions": [
+      {
+        "Name": "collectorSyntaxDiagnostic",
+        "Start": 13,
+        "End": 21,
+        "Lines": 9,
+        "Complexity": 4
+      },
+      {
+        "Name": "collectorFailure",
+        "Start": 22,
+        "End": 27,
+        "Lines": 6,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/adapters/routerssh/collector_syntax_test.go": {
+    "Lines": 59,
+    "LongLines": 1,
+    "MaxFunction": 24,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "collectorSyntaxHazards",
+        "Start": 11,
+        "End": 34,
+        "Lines": 24,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestL06V7CollectorSyntaxGuard",
+        "Start": 35,
+        "End": 56,
+        "Lines": 22,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/routerssh/count_output_test.go": {
+    "Lines": 76,
+    "LongLines": 1,
+    "MaxFunction": 66,
+    "MaxComplexity": 31,
+    "Functions": [
+      {
+        "Name": "TestRouterOSCountOutput",
+        "Start": 11,
+        "End": 76,
+        "Lines": 66,
+        "Complexity": 31
+      }
+    ]
+  },
+  "internal/adapters/routerssh/device_insights.go": {
+    "Lines": 133,
+    "LongLines": 5,
+    "MaxFunction": 64,
+    "MaxComplexity": 30,
+    "Functions": [
+      {
+        "Name": "t3Lines",
+        "Start": 16,
+        "End": 36,
+        "Lines": 21,
+        "Complexity": 12
+      },
+      {
+        "Name": "parseDeviceFastTrack",
+        "Start": 37,
+        "End": 50,
+        "Lines": 14,
+        "Complexity": 12
+      },
+      {
+        "Name": "parsePortRate",
+        "Start": 54,
+        "End": 69,
+        "Lines": 16,
+        "Complexity": 8
+      },
+      {
+        "Name": "parseDevicePorts",
+        "Start": 70,
+        "End": 133,
+        "Lines": 64,
+        "Complexity": 30
+      }
+    ]
+  },
+  "internal/adapters/routerssh/device_insights_test.go": {
+    "Lines": 71,
+    "LongLines": 1,
+    "MaxFunction": 42,
+    "MaxComplexity": 20,
+    "Functions": [
+      {
+        "Name": "TestL06T3RealFastTrackAndPorts",
+        "Start": 10,
+        "End": 51,
+        "Lines": 42,
+        "Complexity": 20
+      },
+      {
+        "Name": "TestL06T3PortHalfFullAndCollectorFailure",
+        "Start": 52,
+        "End": 71,
+        "Lines": 20,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/routerssh/device_monitoring.go": {
+    "Lines": 527,
+    "LongLines": 13,
+    "MaxFunction": 222,
+    "MaxComplexity": 89,
+    "Functions": [
+      {
+        "Name": "deviceValue",
+        "Start": 15,
+        "End": 18,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "buildDeviceOperationalCommand",
+        "Start": 19,
+        "End": 40,
+        "Lines": 22,
+        "Complexity": 2
+      },
+      {
+        "Name": "buildDeviceAuthCommand",
+        "Start": 47,
+        "End": 50,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "deviceOptional",
+        "Start": 54,
+        "End": 60,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "deviceNumber",
+        "Start": 61,
+        "End": 67,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "deviceBool",
+        "Start": 68,
+        "End": 78,
+        "Lines": 11,
+        "Complexity": 3
+      },
+      {
+        "Name": "deviceClock",
+        "Start": 79,
+        "End": 102,
+        "Lines": 24,
+        "Complexity": 11
+      },
+      {
+        "Name": "ParseDeviceOperational",
+        "Start": 103,
+        "End": 106,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "parseDeviceOperational",
+        "Start": 107,
+        "End": 328,
+        "Lines": 222,
+        "Complexity": 89
+      },
+      {
+        "Name": "ParseDeviceAuthFailures",
+        "Start": 329,
+        "End": 332,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "parseDeviceAuthFailures",
+        "Start": 333,
+        "End": 438,
+        "Lines": 106,
+        "Complexity": 39
+      },
+      {
+        "Name": "sortDeviceAuth",
+        "Start": 439,
+        "End": 445,
+        "Lines": 7,
+        "Complexity": 6
+      },
+      {
+        "Name": "readDeviceOperational",
+        "Start": 446,
+        "End": 527,
+        "Lines": 82,
+        "Complexity": 23
+      }
+    ]
+  },
+  "internal/adapters/routerssh/device_monitoring_test.go": {
+    "Lines": 244,
+    "LongLines": 8,
+    "MaxFunction": 69,
+    "MaxComplexity": 53,
+    "Functions": [
+      {
+        "Name": "TestL06T2OperationalAndAuthFooterUsesCapturedUptime",
+        "Start": 12,
+        "End": 24,
+        "Lines": 13,
+        "Complexity": 7
+      },
+      {
+        "Name": "opFixture",
+        "Start": 26,
+        "End": 28,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL06T2OptionalGroupsAndClockV6V7",
+        "Start": 29,
+        "End": 64,
+        "Lines": 36,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestL06T2NoPartialGroupPrefixOrRawAuthLeak",
+        "Start": 65,
+        "End": 102,
+        "Lines": 38,
+        "Complexity": 20
+      },
+      {
+        "Name": "knownV6HealthSyntaxDefect",
+        "Start": 106,
+        "End": 128,
+        "Lines": 23,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06T2GeneratedCollectorsAvoidKnownV6ParseDefects",
+        "Start": 130,
+        "End": 165,
+        "Lines": 36,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestL06T2RealV6OperationalGolden",
+        "Start": 167,
+        "End": 235,
+        "Lines": 69,
+        "Complexity": 53
+      },
+      {
+        "Name": "TestL06T2V7KnownTemperatureAndOptionalStatusPreserved",
+        "Start": 237,
+        "End": 244,
+        "Lines": 8,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/routerssh/l06_t3_diagnostic_test.go": {
+    "Lines": 35,
+    "LongLines": 1,
+    "MaxFunction": 19,
+    "MaxComplexity": 8,
+    "Functions": [
+      {
+        "Name": "TestL06T3DiagnosticSyntax",
+        "Start": 17,
+        "End": 35,
+        "Lines": 19,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/adapters/routerssh/l06c_test.go": {
+    "Lines": 38,
+    "LongLines": 1,
+    "MaxFunction": 15,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "TestL06CCompletedMembershipChange",
+        "Start": 10,
+        "End": 22,
+        "Lines": 13,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestL06CRadiusUnknownRTTAndService",
+        "Start": 24,
+        "End": 38,
+        "Lines": 15,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/routerssh/l06d_test.go": {
+    "Lines": 352,
+    "LongLines": 18,
+    "MaxFunction": 47,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "TestL06DContextProjectionAndSSH",
+        "Start": 16,
+        "End": 59,
+        "Lines": 44,
+        "Complexity": 28
+      },
+      {
+        "Name": "TestL06DContextLimitPreservesCompleteBase",
+        "Start": 61,
+        "End": 95,
+        "Lines": 35,
+        "Complexity": 16
+      },
+      {
+        "Name": "TestL06DOptionalLimitCannotBypassRevocation",
+        "Start": 97,
+        "End": 114,
+        "Lines": 18,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestL06DProjectionGuardsAmbiguousPDAndBoundsReads",
+        "Start": 119,
+        "End": 130,
+        "Lines": 12,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DLogIsExactFilteredProjectedAndBounded",
+        "Start": 132,
+        "End": 178,
+        "Lines": 47,
+        "Complexity": 23
+      },
+      {
+        "Name": "TestL06DLogLimitAndAvailabilityAreNotEmptySuccess",
+        "Start": 180,
+        "End": 192,
+        "Lines": 13,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06DLogCategoryNeverReadsIdentityWords",
+        "Start": 194,
+        "End": 206,
+        "Lines": 13,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DPoolAndStaticCountersKeepUnknownDistinctFromZero",
+        "Start": 208,
+        "End": 245,
+        "Lines": 38,
+        "Complexity": 24
+      },
+      {
+        "Name": "TestL06DHealthUnknownLinkNeverProducesIdentity",
+        "Start": 247,
+        "End": 258,
+        "Lines": 12,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DHealthRechecksLinkAfterCounters",
+        "Start": 260,
+        "End": 273,
+        "Lines": 14,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL06DRateEnclosesExactRational",
+        "Start": 277,
+        "End": 301,
+        "Lines": 25,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DCommandsAvoidPropertyVariableCollisions",
+        "Start": 305,
+        "End": 324,
+        "Lines": 20,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06DHealthUsesDocumentedEmptyArraySyntax",
+        "Start": 326,
+        "End": 335,
+        "Lines": 10,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DStaticFilterAndUnsetFlagsMatchValidatedInterfacePath",
+        "Start": 339,
+        "End": 352,
+        "Lines": 14,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/routerssh/legacy_test.go": {
+    "Lines": 95,
+    "LongLines": 1,
+    "MaxFunction": 73,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "TestL07LegacyNegotiation",
+        "Start": 15,
+        "End": 87,
+        "Lines": 73,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestL07OnlyObservedLegacyAlgorithmsFollowModern",
+        "Start": 89,
+        "End": 95,
+        "Lines": 7,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/routerssh/operational_test.go": {
+    "Lines": 80,
+    "LongLines": 5,
+    "MaxFunction": 35,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "TestPermissionWordsAreData",
+        "Start": 11,
+        "End": 31,
+        "Lines": 21,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestOperationalVolumeKeepsSummary",
+        "Start": 33,
+        "End": 44,
+        "Lines": 12,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestOperationalInterfacePartsAndDiagnostics",
+        "Start": 46,
+        "End": 80,
+        "Lines": 35,
+        "Complexity": 19
+      }
+    ]
+  },
+  "internal/adapters/routerssh/parse_operational_test.go": {
+    "Lines": 33,
+    "LongLines": 2,
+    "MaxFunction": 23,
+    "MaxComplexity": 14,
+    "Functions": [
+      {
+        "Name": "TestOperationalEscapedInterfaceBudgetAndIncompleteCounts",
+        "Start": 11,
+        "End": 33,
+        "Lines": 23,
+        "Complexity": 14
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe.go": {
+    "Lines": 542,
+    "LongLines": 7,
+    "MaxFunction": 138,
+    "MaxComplexity": 51,
+    "Functions": [
+      {
+        "Name": "openPPConnection",
+        "Start": 32,
+        "End": 145,
+        "Lines": 114,
+        "Complexity": 31
+      },
+      {
+        "Name": "CollectPPPoE",
+        "Start": 147,
+        "End": 197,
+        "Lines": 51,
+        "Complexity": 22
+      },
+      {
+        "Name": "ppCollectionStable",
+        "Start": 199,
+        "End": 202,
+        "Lines": 4,
+        "Complexity": 5
+      },
+      {
+        "Name": "PPPoEEscape",
+        "Start": 205,
+        "End": 208,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "ppUnescape",
+        "Start": 209,
+        "End": 238,
+        "Lines": 30,
+        "Complexity": 10
+      },
+      {
+        "Name": "ParsePPDuration",
+        "Start": 241,
+        "End": 292,
+        "Lines": 52,
+        "Complexity": 20
+      },
+      {
+        "Name": "ParsePPPoE",
+        "Start": 293,
+        "End": 430,
+        "Lines": 138,
+        "Complexity": 51
+      },
+      {
+        "Name": "ppCountPrelude",
+        "Start": 437,
+        "End": 453,
+        "Lines": 17,
+        "Complexity": 5
+      },
+      {
+        "Name": "ppClockDuration",
+        "Start": 455,
+        "End": 530,
+        "Lines": 76,
+        "Complexity": 30
+      },
+      {
+        "Name": "ppDecimal",
+        "Start": 532,
+        "End": 542,
+        "Lines": 11,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_context.go": {
+    "Lines": 170,
+    "LongLines": 8,
+    "MaxFunction": 116,
+    "MaxComplexity": 55,
+    "Functions": [
+      {
+        "Name": "buildPPContext",
+        "Start": 16,
+        "End": 30,
+        "Lines": 15,
+        "Complexity": 2
+      },
+      {
+        "Name": "contextRate",
+        "Start": 32,
+        "End": 53,
+        "Lines": 22,
+        "Complexity": 7
+      },
+      {
+        "Name": "ParsePPContext",
+        "Start": 55,
+        "End": 170,
+        "Lines": 116,
+        "Complexity": 55
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_diagnostics.go": {
+    "Lines": 402,
+    "LongLines": 15,
+    "MaxFunction": 127,
+    "MaxComplexity": 44,
+    "Functions": [
+      {
+        "Name": "pdEmit",
+        "Start": 19,
+        "End": 21,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "pdPrefix",
+        "Start": 22,
+        "End": 24,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "pdFooter",
+        "Start": 25,
+        "End": 27,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "buildPDCatalog",
+        "Start": 28,
+        "End": 37,
+        "Lines": 10,
+        "Complexity": 1
+      },
+      {
+        "Name": "buildPDRadius",
+        "Start": 38,
+        "End": 45,
+        "Lines": 8,
+        "Complexity": 1
+      },
+      {
+        "Name": "pdBool",
+        "Start": 47,
+        "End": 61,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "pdNumber",
+        "Start": 62,
+        "End": 68,
+        "Lines": 7,
+        "Complexity": 3
+      },
+      {
+        "Name": "ParsePDRange",
+        "Start": 70,
+        "End": 115,
+        "Lines": 46,
+        "Complexity": 16
+      },
+      {
+        "Name": "ParsePPDiagnostic",
+        "Start": 117,
+        "End": 243,
+        "Lines": 127,
+        "Complexity": 44
+      },
+      {
+        "Name": "parsePDRow",
+        "Start": 245,
+        "End": 361,
+        "Lines": 117,
+        "Complexity": 42
+      },
+      {
+        "Name": "CollectPPDiagnostic",
+        "Start": 363,
+        "End": 402,
+        "Lines": 40,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_diagnostics_test.go": {
+    "Lines": 375,
+    "LongLines": 17,
+    "MaxFunction": 83,
+    "MaxComplexity": 33,
+    "Functions": [
+      {
+        "Name": "catalogBody",
+        "Start": 16,
+        "End": 25,
+        "Lines": 10,
+        "Complexity": 1
+      },
+      {
+        "Name": "radiusBody",
+        "Start": 26,
+        "End": 31,
+        "Lines": 6,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestPPDiagnosticCatalogAndRadiusThroughPinnedSSH",
+        "Start": 33,
+        "End": 76,
+        "Lines": 44,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestPPDiagnosticCommandsNeverRequestSensitiveOrWholeObjects",
+        "Start": 78,
+        "End": 99,
+        "Lines": 22,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestPPDiagnosticParserLimitsFailuresAndRanges",
+        "Start": 101,
+        "End": 146,
+        "Lines": 46,
+        "Complexity": 22
+      },
+      {
+        "Name": "pingTarget",
+        "Start": 148,
+        "End": 155,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "pingFresh",
+        "Start": 156,
+        "End": 158,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "pingReplies",
+        "Start": 159,
+        "End": 162,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestPPDiagnosticPingContextAndIdentityBeforeAnyProbe",
+        "Start": 164,
+        "End": 244,
+        "Lines": 81,
+        "Complexity": 33
+      },
+      {
+        "Name": "TestPPDiagnosticPingParserIndependentExampleAndFailures",
+        "Start": 246,
+        "End": 291,
+        "Lines": 46,
+        "Complexity": 31
+      },
+      {
+        "Name": "TestPPDiagnosticPingDeadlineCancelAndByteBudget",
+        "Start": 293,
+        "End": 375,
+        "Lines": 83,
+        "Complexity": 21
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_health.go": {
+    "Lines": 314,
+    "LongLines": 7,
+    "MaxFunction": 124,
+    "MaxComplexity": 56,
+    "Functions": [
+      {
+        "Name": "PPPoolSize",
+        "Start": 16,
+        "End": 77,
+        "Lines": 62,
+        "Complexity": 19
+      },
+      {
+        "Name": "ppCounterString",
+        "Start": 91,
+        "End": 98,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "ParsePPHealth",
+        "Start": 99,
+        "End": 222,
+        "Lines": 124,
+        "Complexity": 56
+      },
+      {
+        "Name": "buildPPHealthCommand",
+        "Start": 225,
+        "End": 247,
+        "Lines": 23,
+        "Complexity": 6
+      },
+      {
+        "Name": "readPPHealth",
+        "Start": 252,
+        "End": 305,
+        "Lines": 54,
+        "Complexity": 12
+      },
+      {
+        "Name": "ppHealthLink",
+        "Start": 307,
+        "End": 314,
+        "Lines": 8,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_log.go": {
+    "Lines": 200,
+    "LongLines": 6,
+    "MaxFunction": 78,
+    "MaxComplexity": 38,
+    "Functions": [
+      {
+        "Name": "ppLogContexts",
+        "Start": 18,
+        "End": 38,
+        "Lines": 21,
+        "Complexity": 5
+      },
+      {
+        "Name": "PPLogPattern",
+        "Start": 39,
+        "End": 45,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "BuildPPLogCommand",
+        "Start": 46,
+        "End": 81,
+        "Lines": 36,
+        "Complexity": 7
+      },
+      {
+        "Name": "ppLogTime",
+        "Start": 82,
+        "End": 92,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "ParsePPLog",
+        "Start": 93,
+        "End": 170,
+        "Lines": 78,
+        "Complexity": 38
+      },
+      {
+        "Name": "readPPLog",
+        "Start": 171,
+        "End": 200,
+        "Lines": 30,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_ping.go": {
+    "Lines": 360,
+    "LongLines": 12,
+    "MaxFunction": 135,
+    "MaxComplexity": 66,
+    "Functions": [
+      {
+        "Name": "pdContextSafe",
+        "Start": 16,
+        "End": 32,
+        "Lines": 17,
+        "Complexity": 10
+      },
+      {
+        "Name": "pdRemoteIdentity",
+        "Start": 34,
+        "End": 55,
+        "Lines": 22,
+        "Complexity": 25
+      },
+      {
+        "Name": "BuildPDPingCommand",
+        "Start": 56,
+        "End": 95,
+        "Lines": 40,
+        "Complexity": 10
+      },
+      {
+        "Name": "collectPDPing",
+        "Start": 97,
+        "End": 142,
+        "Lines": 46,
+        "Complexity": 12
+      },
+      {
+        "Name": "ParsePDRTTInterval",
+        "Start": 146,
+        "End": 224,
+        "Lines": 79,
+        "Complexity": 29
+      },
+      {
+        "Name": "ParsePDPing",
+        "Start": 226,
+        "End": 360,
+        "Lines": 135,
+        "Complexity": 66
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_read.go": {
+    "Lines": 327,
+    "LongLines": 7,
+    "MaxFunction": 167,
+    "MaxComplexity": 54,
+    "Functions": [
+      {
+        "Name": "ppLiteral",
+        "Start": 14,
+        "End": 16,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "BuildPPBandCommand",
+        "Start": 20,
+        "End": 51,
+        "Lines": 32,
+        "Complexity": 9
+      },
+      {
+        "Name": "ppCounter",
+        "Start": 52,
+        "End": 58,
+        "Lines": 7,
+        "Complexity": 3
+      },
+      {
+        "Name": "ParsePPBand",
+        "Start": 59,
+        "End": 128,
+        "Lines": 70,
+        "Complexity": 34
+      },
+      {
+        "Name": "ReadPP",
+        "Start": 130,
+        "End": 296,
+        "Lines": 167,
+        "Complexity": 54
+      },
+      {
+        "Name": "ppMeasureRead",
+        "Start": 300,
+        "End": 327,
+        "Lines": 28,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_secret.go": {
+    "Lines": 160,
+    "LongLines": 6,
+    "MaxFunction": 70,
+    "MaxComplexity": 34,
+    "Functions": [
+      {
+        "Name": "BuildPPSecretCommand",
+        "Start": 16,
+        "End": 41,
+        "Lines": 26,
+        "Complexity": 7
+      },
+      {
+        "Name": "ppSecretText",
+        "Start": 43,
+        "End": 58,
+        "Lines": 16,
+        "Complexity": 6
+      },
+      {
+        "Name": "ParsePPSecret",
+        "Start": 60,
+        "End": 129,
+        "Lines": 70,
+        "Complexity": 34
+      },
+      {
+        "Name": "readPPSecret",
+        "Start": 131,
+        "End": 160,
+        "Lines": 30,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_secret_test.go": {
+    "Lines": 91,
+    "LongLines": 8,
+    "MaxFunction": 41,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "TestL06DSecretStateProjection",
+        "Start": 12,
+        "End": 37,
+        "Lines": 26,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestL06DSecretScriptFiltersActiveBeforeProfile",
+        "Start": 39,
+        "End": 49,
+        "Lines": 11,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DSecretEvidenceClosedProjection",
+        "Start": 51,
+        "End": 91,
+        "Lines": 41,
+        "Complexity": 29
+      }
+    ]
+  },
+  "internal/adapters/routerssh/pppoe_test.go": {
+    "Lines": 180,
+    "LongLines": 7,
+    "MaxFunction": 48,
+    "MaxComplexity": 16,
+    "Functions": [
+      {
+        "Name": "TestPPPoEAdapterCodecAndFailures",
+        "Start": 14,
+        "End": 61,
+        "Lines": 48,
+        "Complexity": 16
+      },
+      {
+        "Name": "TestPPPoEAH04DurationGrammar",
+        "Start": 63,
+        "End": 78,
+        "Lines": 16,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestPPPoEAH04ParsedUnknownDurationCannotSupportContinuity",
+        "Start": 80,
+        "End": 104,
+        "Lines": 25,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestPPPoEParserBoundaries",
+        "Start": 105,
+        "End": 133,
+        "Lines": 29,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestPPPoEReviewMissingFinalUptimeThroughSSH",
+        "Start": 135,
+        "End": 145,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestPPPoERebootGrowingFinalUptimeAndClockFormats",
+        "Start": 147,
+        "End": 165,
+        "Lines": 19,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestPPPoERejectsUnframedControlsPreservesEscapedData",
+        "Start": 167,
+        "End": 180,
+        "Lines": 14,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio.go": {
+    "Lines": 638,
+    "LongLines": 24,
+    "MaxFunction": 135,
+    "MaxComplexity": 50,
+    "Functions": [
+      {
+        "Name": "radioRecords",
+        "Start": 29,
+        "End": 64,
+        "Lines": 36,
+        "Complexity": 11
+      },
+      {
+        "Name": "radioColon",
+        "Start": 65,
+        "End": 78,
+        "Lines": 14,
+        "Complexity": 6
+      },
+      {
+        "Name": "radioMetric",
+        "Start": 79,
+        "End": 103,
+        "Lines": 25,
+        "Complexity": 18
+      },
+      {
+        "Name": "addRadioMetric",
+        "Start": 104,
+        "End": 115,
+        "Lines": 12,
+        "Complexity": 4
+      },
+      {
+        "Name": "ParseRadioAP",
+        "Start": 116,
+        "End": 250,
+        "Lines": 135,
+        "Complexity": 50
+      },
+      {
+        "Name": "ParseRadioAirOS",
+        "Start": 251,
+        "End": 323,
+        "Lines": 73,
+        "Complexity": 26
+      },
+      {
+        "Name": "ParseRadioWOM",
+        "Start": 324,
+        "End": 396,
+        "Lines": 73,
+        "Complexity": 23
+      },
+      {
+        "Name": "ParseRadioCPEAuto",
+        "Start": 400,
+        "End": 405,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "ReadRadio",
+        "Start": 406,
+        "End": 424,
+        "Lines": 19,
+        "Complexity": 6
+      },
+      {
+        "Name": "radioPartial",
+        "Start": 426,
+        "End": 428,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ParseRadioStationV6",
+        "Start": 436,
+        "End": 508,
+        "Lines": 73,
+        "Complexity": 26
+      },
+      {
+        "Name": "radioStandaloneAPMode",
+        "Start": 510,
+        "End": 536,
+        "Lines": 27,
+        "Complexity": 10
+      },
+      {
+        "Name": "radioStandaloneUnsupported",
+        "Start": 538,
+        "End": 564,
+        "Lines": 27,
+        "Complexity": 10
+      },
+      {
+        "Name": "parseRadioIdentification",
+        "Start": 566,
+        "End": 597,
+        "Lines": 32,
+        "Complexity": 12
+      },
+      {
+        "Name": "radioStandaloneWireless",
+        "Start": 599,
+        "End": 613,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "identifyAirOS",
+        "Start": 615,
+        "End": 638,
+        "Lines": 24,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_avulso_peer_test.go": {
+    "Lines": 351,
+    "LongLines": 18,
+    "MaxFunction": 52,
+    "MaxComplexity": 17,
+    "Functions": [
+      {
+        "Name": "standaloneIdentity",
+        "Start": 18,
+        "End": 24,
+        "Lines": 7,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestAvulsoStationSSHComPin",
+        "Start": 26,
+        "End": 55,
+        "Lines": 30,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestAvulsoFamiliaDesconhecidaNaoUsaWOM",
+        "Start": 57,
+        "End": 73,
+        "Lines": 17,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestAvulsoRouterOSSemDriverPreservaIdentidade",
+        "Start": 75,
+        "End": 97,
+        "Lines": 23,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestAvulsoServicoEscolheSomenteDestinoERecusa",
+        "Start": 99,
+        "End": 150,
+        "Lines": 52,
+        "Complexity": 17
+      },
+      {
+        "Name": "TestAvulsoAPPreservaIdentidadeModoProtocolo",
+        "Start": 152,
+        "End": 177,
+        "Lines": 26,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestAvulsoAirOSDesconectadoSemDriverIdentifica",
+        "Start": 179,
+        "End": 195,
+        "Lines": 17,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestAvulsoRevogacaoAntesDaSenha",
+        "Start": 197,
+        "End": 214,
+        "Lines": 18,
+        "Complexity": 6
+      },
+      {
+        "Name": "ReadEquipment",
+        "Start": 222,
+        "End": 228,
+        "Lines": 7,
+        "Complexity": 1
+      },
+      {
+        "Name": "UpdateEquipment",
+        "Start": 229,
+        "End": 233,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReadPPTarget",
+        "Start": 234,
+        "End": 243,
+        "Lines": 10,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestAvulsoTOFURealAntesDaSenha",
+        "Start": 244,
+        "End": 280,
+        "Lines": 37,
+        "Complexity": 10
+      },
+      {
+        "Name": "WithAuthorization",
+        "Start": 288,
+        "End": 294,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestAvulsoRevogadoDuranteInspecaoNaoSalvaPinNemEnviaSenha",
+        "Start": 295,
+        "End": 332,
+        "Lines": 38,
+        "Complexity": 15
+      },
+      {
+        "Name": "TestAvulsoAirOSSelecionaDriverEConservaModo",
+        "Start": 334,
+        "End": 351,
+        "Lines": 18,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_avulso_test.go": {
+    "Lines": 38,
+    "LongLines": 1,
+    "MaxFunction": 30,
+    "MaxComplexity": 16,
+    "Functions": [
+      {
+        "Name": "TestAvulsoStationGoldenV6",
+        "Start": 9,
+        "End": 38,
+        "Lines": 30,
+        "Complexity": 16
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_counter_parser_test.go": {
+    "Lines": 80,
+    "LongLines": 2,
+    "MaxFunction": 33,
+    "MaxComplexity": 9,
+    "Functions": [
+      {
+        "Name": "TestL07TickCannotReuseCachedBSSID",
+        "Start": 11,
+        "End": 26,
+        "Lines": 16,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestL07ProjectedTickQuotedFieldsAndArrayCounters",
+        "Start": 28,
+        "End": 60,
+        "Lines": 33,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL07FamilyCounterParsers",
+        "Start": 62,
+        "End": 80,
+        "Lines": 19,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_counters.go": {
+    "Lines": 55,
+    "LongLines": 2,
+    "MaxFunction": 18,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "radioPairCounters",
+        "Start": 10,
+        "End": 27,
+        "Lines": 18,
+        "Complexity": 7
+      },
+      {
+        "Name": "radioAirCounters",
+        "Start": 28,
+        "End": 43,
+        "Lines": 16,
+        "Complexity": 6
+      },
+      {
+        "Name": "radioWOMCounters",
+        "Start": 44,
+        "End": 55,
+        "Lines": 12,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_index.go": {
+    "Lines": 72,
+    "LongLines": 2,
+    "MaxFunction": 43,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "ReadRadioIndex",
+        "Start": 14,
+        "End": 29,
+        "Lines": 16,
+        "Complexity": 4
+      },
+      {
+        "Name": "ParseRadioIndex",
+        "Start": 30,
+        "End": 72,
+        "Lines": 43,
+        "Complexity": 18
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_index_test.go": {
+    "Lines": 23,
+    "LongLines": 3,
+    "MaxFunction": 15,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "TestL07JIndexOptionalIPAndStrictIdentity",
+        "Start": 9,
+        "End": 23,
+        "Lines": 15,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_j_test.go": {
+    "Lines": 174,
+    "LongLines": 1,
+    "MaxFunction": 47,
+    "MaxComplexity": 14,
+    "Functions": [
+      {
+        "Name": "TestL07JNoGlobalRequestTenTicks",
+        "Start": 12,
+        "End": 44,
+        "Lines": 33,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestL07JReopenWithoutRichRead",
+        "Start": 46,
+        "End": 88,
+        "Lines": 43,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestL07JPartialTransportAndJob",
+        "Start": 90,
+        "End": 126,
+        "Lines": 37,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestL07JReopenedLinkMismatchIsFatal",
+        "Start": 128,
+        "End": 174,
+        "Lines": 47,
+        "Complexity": 14
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_live_test.go": {
+    "Lines": 52,
+    "LongLines": 2,
+    "MaxFunction": 38,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "TestL07PersistentICMPReportsActualWindow",
+        "Start": 15,
+        "End": 52,
+        "Lines": 38,
+        "Complexity": 18
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_partial_j_test.go": {
+    "Lines": 62,
+    "LongLines": 0,
+    "MaxFunction": 52,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "TestL07JPartialReasons",
+        "Start": 11,
+        "End": 62,
+        "Lines": 52,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_recovery_test.go": {
+    "Lines": 242,
+    "LongLines": 9,
+    "MaxFunction": 95,
+    "MaxComplexity": 46,
+    "Functions": [
+      {
+        "Name": "WithAuthorization",
+        "Start": 19,
+        "End": 24,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "Ready",
+        "Start": 28,
+        "End": 28,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Open",
+        "Start": 29,
+        "End": 31,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ID",
+        "Start": 35,
+        "End": 35,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReadPPTarget",
+        "Start": 46,
+        "End": 48,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPCurrent",
+        "Start": 49,
+        "End": 52,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPSession",
+        "Start": 53,
+        "End": 55,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "RadioCurrent",
+        "Start": 56,
+        "End": 62,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "RadioLinks",
+        "Start": 63,
+        "End": 65,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SaveRadio",
+        "Start": 66,
+        "End": 68,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "recoveryHarness",
+        "Start": 69,
+        "End": 84,
+        "Lines": 16,
+        "Complexity": 2
+      },
+      {
+        "Name": "recoveryStatus",
+        "Start": 85,
+        "End": 101,
+        "Lines": 17,
+        "Complexity": 4
+      },
+      {
+        "Name": "recoveryStart",
+        "Start": 102,
+        "End": 109,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "recoveryCancel",
+        "Start": 110,
+        "End": 117,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "recoveryGolden",
+        "Start": 118,
+        "End": 125,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL07PilotoTickRecoveryPeer",
+        "Start": 129,
+        "End": 223,
+        "Lines": 95,
+        "Complexity": 46
+      },
+      {
+        "Name": "TestL07PilotoRealXWGolden",
+        "Start": 225,
+        "End": 242,
+        "Lines": 18,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_session.go": {
+    "Lines": 522,
+    "LongLines": 10,
+    "MaxFunction": 87,
+    "MaxComplexity": 36,
+    "Functions": [
+      {
+        "Name": "OpenRadioSession",
+        "Start": 47,
+        "End": 53,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "openRadioSession",
+        "Start": 54,
+        "End": 140,
+        "Lines": 87,
+        "Complexity": 36
+      },
+      {
+        "Name": "Close",
+        "Start": 142,
+        "End": 153,
+        "Lines": 12,
+        "Complexity": 3
+      },
+      {
+        "Name": "probeLoop",
+        "Start": 157,
+        "End": 210,
+        "Lines": 54,
+        "Complexity": 14
+      },
+      {
+        "Name": "Probe",
+        "Start": 211,
+        "End": 233,
+        "Lines": 23,
+        "Complexity": 7
+      },
+      {
+        "Name": "run",
+        "Start": 235,
+        "End": 291,
+        "Lines": 57,
+        "Complexity": 15
+      },
+      {
+        "Name": "Initial",
+        "Start": 293,
+        "End": 327,
+        "Lines": 35,
+        "Complexity": 12
+      },
+      {
+        "Name": "RadioAPTickCommand",
+        "Start": 333,
+        "End": 339,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "Tick",
+        "Start": 343,
+        "End": 386,
+        "Lines": 44,
+        "Complexity": 13
+      },
+      {
+        "Name": "ParseRadioAPTick",
+        "Start": 388,
+        "End": 435,
+        "Lines": 48,
+        "Complexity": 27
+      },
+      {
+        "Name": "identifyStandalone",
+        "Start": 440,
+        "End": 522,
+        "Lines": 83,
+        "Complexity": 27
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_session_test.go": {
+    "Lines": 209,
+    "LongLines": 4,
+    "MaxFunction": 79,
+    "MaxComplexity": 22,
+    "Functions": [
+      {
+        "Name": "TestL07PersistentOneHandshakeTenTicks",
+        "Start": 15,
+        "End": 93,
+        "Lines": 79,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestL07PersistentCancellationClosesInflight",
+        "Start": 95,
+        "End": 132,
+        "Lines": 38,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestL07PersistentPinAndExpiration",
+        "Start": 134,
+        "End": 172,
+        "Lines": 39,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestL07PersistentCommandDeadlineClosesConnection",
+        "Start": 174,
+        "End": 209,
+        "Lines": 36,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/routerssh/radio_test.go": {
+    "Lines": 121,
+    "LongLines": 5,
+    "MaxFunction": 77,
+    "MaxComplexity": 54,
+    "Functions": [
+      {
+        "Name": "TestL07RadioRealGoldens",
+        "Start": 10,
+        "End": 86,
+        "Lines": 77,
+        "Complexity": 54
+      },
+      {
+        "Name": "TestL07APWrappedRateContinuation",
+        "Start": 90,
+        "End": 121,
+        "Lines": 32,
+        "Complexity": 13
+      }
+    ]
+  },
+  "internal/adapters/routerssh/ssh.go": {
+    "Lines": 434,
+    "LongLines": 8,
+    "MaxFunction": 131,
+    "MaxComplexity": 32,
+    "Functions": [
+      {
+        "Name": "Write",
+        "Start": 53,
+        "End": 67,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "timedOut",
+        "Start": 68,
+        "End": 77,
+        "Lines": 10,
+        "Complexity": 5
+      },
+      {
+        "Name": "dial",
+        "Start": 78,
+        "End": 80,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "dialBudget",
+        "Start": 81,
+        "End": 99,
+        "Lines": 19,
+        "Complexity": 5
+      },
+      {
+        "Name": "config",
+        "Start": 100,
+        "End": 116,
+        "Lines": 17,
+        "Complexity": 5
+      },
+      {
+        "Name": "legacyNegotiated",
+        "Start": 118,
+        "End": 132,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "permissionDiagnostic",
+        "Start": 133,
+        "End": 142,
+        "Lines": 10,
+        "Complexity": 3
+      },
+      {
+        "Name": "Inspect",
+        "Start": 143,
+        "End": 166,
+        "Lines": 24,
+        "Complexity": 6
+      },
+      {
+        "Name": "Query",
+        "Start": 167,
+        "End": 297,
+        "Lines": 131,
+        "Complexity": 32
+      },
+      {
+        "Name": "clean",
+        "Start": 298,
+        "End": 308,
+        "Lines": 11,
+        "Complexity": 6
+      },
+      {
+        "Name": "lines",
+        "Start": 309,
+        "End": 311,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "parseSummary",
+        "Start": 312,
+        "End": 363,
+        "Lines": 52,
+        "Complexity": 23
+      },
+      {
+        "Name": "parseInterfaces",
+        "Start": 364,
+        "End": 434,
+        "Lines": 71,
+        "Complexity": 28
+      }
+    ]
+  },
+  "internal/adapters/routerssh/ssh_test.go": {
+    "Lines": 93,
+    "LongLines": 3,
+    "MaxFunction": 44,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "TestControlledSSH",
+        "Start": 12,
+        "End": 55,
+        "Lines": 44,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestHandshakeDeadlineAndCancel",
+        "Start": 56,
+        "End": 93,
+        "Lines": 38,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/adapters/security/crypto.go": {
+    "Lines": 40,
+    "LongLines": 1,
+    "MaxFunction": 9,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "Hash",
+        "Start": 15,
+        "End": 23,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "Verify",
+        "Start": 24,
+        "End": 31,
+        "Lines": 8,
+        "Complexity": 7
+      },
+      {
+        "Name": "Token",
+        "Start": 32,
+        "End": 38,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "Digest",
+        "Start": 39,
+        "End": 39,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Equal",
+        "Start": 40,
+        "End": 40,
+        "Lines": 1,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/security/crypto_test.go": {
+    "Lines": 32,
+    "LongLines": 0,
+    "MaxFunction": 24,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "TestArgon2",
+        "Start": 9,
+        "End": 32,
+        "Lines": 24,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/adapters/storage/access_test.go": {
+    "Lines": 293,
+    "LongLines": 6,
+    "MaxFunction": 133,
+    "MaxComplexity": 24,
+    "Functions": [
+      {
+        "Name": "privateDir",
+        "Start": 15,
+        "End": 22,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestAccountJourneySQLite",
+        "Start": 26,
+        "End": 158,
+        "Lines": 133,
+        "Complexity": 24
+      },
+      {
+        "Name": "TestConcurrentFirstRegistration",
+        "Start": 159,
+        "End": 189,
+        "Lines": 31,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestDatabaseFailsClosed",
+        "Start": 190,
+        "End": 218,
+        "Lines": 29,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestPrivateStateAndMigrationOwner",
+        "Start": 220,
+        "End": 246,
+        "Lines": 27,
+        "Complexity": 7
+      },
+      {
+        "Name": "Verify",
+        "Start": 253,
+        "End": 257,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestKDFBoundAndStatusResponsive",
+        "Start": 258,
+        "End": 293,
+        "Lines": 36,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/adapters/storage/bf03_test.go": {
+    "Lines": 475,
+    "LongLines": 10,
+    "MaxFunction": 69,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "newJourney",
+        "Start": 29,
+        "End": 43,
+        "Lines": 15,
+        "Complexity": 2
+      },
+      {
+        "Name": "call",
+        "Start": 44,
+        "End": 51,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "create",
+        "Start": 52,
+        "End": 59,
+        "Lines": 8,
+        "Complexity": 1
+      },
+      {
+        "Name": "selectCompany",
+        "Start": 60,
+        "End": 71,
+        "Lines": 12,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestBF03SeparateUnitsAndBoundedSwitch",
+        "Start": 73,
+        "End": 128,
+        "Lines": 56,
+        "Complexity": 15
+      },
+      {
+        "Name": "TestBF03SelectionFailsClosed",
+        "Start": 130,
+        "End": 184,
+        "Lines": 55,
+        "Complexity": 17
+      },
+      {
+        "Name": "TestBF03IntentRecoveryAndCommitFailure",
+        "Start": 186,
+        "End": 229,
+        "Lines": 44,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestBF03MigrationFromOneAndCoherentBackup",
+        "Start": 231,
+        "End": 299,
+        "Lines": 69,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestBF03CrashHelper",
+        "Start": 301,
+        "End": 322,
+        "Lines": 22,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestBF03ActualCrashAndRestartAtProvisionBoundaries",
+        "Start": 323,
+        "End": 353,
+        "Lines": 31,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestBF03SubstitutedActiveHandleRejected",
+        "Start": 354,
+        "End": 373,
+        "Lines": 20,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestBF03LateTransactionRemainsBoundToOriginalUnit",
+        "Start": 375,
+        "End": 412,
+        "Lines": 38,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestBF03MigrationCrashHelper",
+        "Start": 414,
+        "End": 429,
+        "Lines": 16,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestBF03MigrationResumesAfterActualInterruption",
+        "Start": 430,
+        "End": 475,
+        "Lines": 46,
+        "Complexity": 16
+      }
+    ]
+  },
+  "internal/adapters/storage/bf04_test.go": {
+    "Lines": 166,
+    "LongLines": 5,
+    "MaxFunction": 55,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "testLogo",
+        "Start": 16,
+        "End": 27,
+        "Lines": 12,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestBF04BrandIsolationAuthorizationAndReopen",
+        "Start": 28,
+        "End": 82,
+        "Lines": 55,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestBF04BrandValidationAndFailedTransaction",
+        "Start": 83,
+        "End": 107,
+        "Lines": 25,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestBF04EnterpriseV1MigrationAtomicAndChecksum",
+        "Start": 108,
+        "End": 154,
+        "Lines": 47,
+        "Complexity": 14
+      },
+      {
+        "Name": "TestBF04WebPFullDecode",
+        "Start": 156,
+        "End": 166,
+        "Lines": 11,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/storage/branding.go": {
+    "Lines": 85,
+    "LongLines": 0,
+    "MaxFunction": 29,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "validLogo",
+        "Start": 15,
+        "End": 39,
+        "Lines": 25,
+        "Complexity": 18
+      },
+      {
+        "Name": "ReadBrand",
+        "Start": 41,
+        "End": 56,
+        "Lines": 16,
+        "Complexity": 7
+      },
+      {
+        "Name": "SaveBrand",
+        "Start": 57,
+        "End": 85,
+        "Lines": 29,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/storage/checksum.go": {
+    "Lines": 8,
+    "LongLines": 0,
+    "MaxFunction": 1,
+    "MaxComplexity": 1,
+    "Functions": [
+      {
+        "Name": "checksum",
+        "Start": 8,
+        "End": 8,
+        "Lines": 1,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/storage/concentrator_comparison.go": {
+    "Lines": 122,
+    "LongLines": 7,
+    "MaxFunction": 111,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "crossConcentratorRows",
+        "Start": 12,
+        "End": 122,
+        "Lines": 111,
+        "Complexity": 29
+      }
+    ]
+  },
+  "internal/adapters/storage/concentrator_comparison_test.go": {
+    "Lines": 74,
+    "LongLines": 2,
+    "MaxFunction": 63,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "TestL06T3CrossDuplicatesSavedReadingsOnly",
+        "Start": 12,
+        "End": 74,
+        "Lines": 63,
+        "Complexity": 21
+      }
+    ]
+  },
+  "internal/adapters/storage/context_peaks.go": {
+    "Lines": 102,
+    "LongLines": 2,
+    "MaxFunction": 46,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "groupContextKey",
+        "Start": 14,
+        "End": 17,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "knownOnlineGroups",
+        "Start": 18,
+        "End": 39,
+        "Lines": 22,
+        "Complexity": 10
+      },
+      {
+        "Name": "recordContextGroups",
+        "Start": 40,
+        "End": 56,
+        "Lines": 17,
+        "Complexity": 5
+      },
+      {
+        "Name": "contextPeakGroups",
+        "Start": 57,
+        "End": 102,
+        "Lines": 46,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/storage/context_peaks_test.go": {
+    "Lines": 107,
+    "LongLines": 3,
+    "MaxFunction": 67,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "TestL06T3ContextPeakSevenDaysZeroUnknownAndQuota",
+        "Start": 13,
+        "End": 79,
+        "Lines": 67,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestL06T3MigrationElevenAtomicPreservesTen",
+        "Start": 80,
+        "End": 107,
+        "Lines": 28,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/adapters/storage/device_insights.go": {
+    "Lines": 138,
+    "LongLines": 8,
+    "MaxFunction": 81,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "saveEquipmentInsights",
+        "Start": 12,
+        "End": 92,
+        "Lines": 81,
+        "Complexity": 29
+      },
+      {
+        "Name": "readEquipmentInsights",
+        "Start": 94,
+        "End": 138,
+        "Lines": 45,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/adapters/storage/device_insights_test.go": {
+    "Lines": 154,
+    "LongLines": 12,
+    "MaxFunction": 58,
+    "MaxComplexity": 27,
+    "Functions": [
+      {
+        "Name": "TestL06T3SavedPortsRestartReplayAndReopen",
+        "Start": 14,
+        "End": 71,
+        "Lines": 58,
+        "Complexity": 27
+      },
+      {
+        "Name": "dropLaterMonitoringFixtureSchema",
+        "Start": 73,
+        "End": 84,
+        "Lines": 12,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL06T3MigrationTenAtomicPreservesAppliedNine",
+        "Start": 85,
+        "End": 112,
+        "Lines": 28,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL06T3CatalogAbsenceSavedAndReopened",
+        "Start": 113,
+        "End": 154,
+        "Lines": 42,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/adapters/storage/device_monitoring.go": {
+    "Lines": 612,
+    "LongLines": 40,
+    "MaxFunction": 288,
+    "MaxComplexity": 76,
+    "Functions": [
+      {
+        "Name": "monitoringBytes",
+        "Start": 42,
+        "End": 46,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "bumpMonitoring",
+        "Start": 47,
+        "End": 50,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "trimMonitoring",
+        "Start": 51,
+        "End": 152,
+        "Lines": 102,
+        "Complexity": 27
+      },
+      {
+        "Name": "monitoringGC",
+        "Start": 153,
+        "End": 182,
+        "Lines": 30,
+        "Complexity": 4
+      },
+      {
+        "Name": "recordSessionMonitoring",
+        "Start": 183,
+        "End": 246,
+        "Lines": 64,
+        "Complexity": 27
+      },
+      {
+        "Name": "SaveDeviceMonitoring",
+        "Start": 247,
+        "End": 324,
+        "Lines": 78,
+        "Complexity": 29
+      },
+      {
+        "Name": "DeviceMonitoring",
+        "Start": 325,
+        "End": 612,
+        "Lines": 288,
+        "Complexity": 76
+      }
+    ]
+  },
+  "internal/adapters/storage/device_monitoring_test.go": {
+    "Lines": 512,
+    "LongLines": 27,
+    "MaxFunction": 154,
+    "MaxComplexity": 47,
+    "Functions": [
+      {
+        "Name": "monitoringObservation",
+        "Start": 17,
+        "End": 22,
+        "Lines": 6,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL06T2SeriesTransitionsFailureReplayAndReopen",
+        "Start": 23,
+        "End": 81,
+        "Lines": 59,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestL06T2RetentionAndBaseQuotaPriority",
+        "Start": 82,
+        "End": 150,
+        "Lines": 69,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestL06T2MigrationNineAtomicAndFirstEightUnchanged",
+        "Start": 151,
+        "End": 183,
+        "Lines": 33,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestL06T2HealthSourceAndPackageProjectionPersist",
+        "Start": 184,
+        "End": 202,
+        "Lines": 19,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestL06T2GlobalPackageDivergenceIncludesOtherPage",
+        "Start": 204,
+        "End": 255,
+        "Lines": 52,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestL06T2CursorCoversInventoryAndTemporalWindow",
+        "Start": 256,
+        "End": 284,
+        "Lines": 29,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestL06T2FlappingOverflowIsNotACompletePrefix",
+        "Start": 286,
+        "End": 306,
+        "Lines": 21,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06T2OperationalTwentyMiBOnlyReclaimsOwnOldestData",
+        "Start": 308,
+        "End": 354,
+        "Lines": 47,
+        "Complexity": 16
+      },
+      {
+        "Name": "TestL06T2BasePublicationReclaimsMaterialSeriesWithinBudget",
+        "Start": 359,
+        "End": 512,
+        "Lines": 154,
+        "Complexity": 47
+      }
+    ]
+  },
+  "internal/adapters/storage/enroll_test.go": {
+    "Lines": 152,
+    "LongLines": 3,
+    "MaxFunction": 101,
+    "MaxComplexity": 23,
+    "Functions": [
+      {
+        "Name": "TestEquipmentDirectEnrollmentAtomicRetry",
+        "Start": 16,
+        "End": 116,
+        "Lines": 101,
+        "Complexity": 23
+      },
+      {
+        "Name": "TestEquipmentExistingAccessEnrollmentStatus",
+        "Start": 118,
+        "End": 152,
+        "Lines": 35,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/storage/equipment.go": {
+    "Lines": 285,
+    "LongLines": 11,
+    "MaxFunction": 130,
+    "MaxComplexity": 40,
+    "Functions": [
+      {
+        "Name": "ReadEquipment",
+        "Start": 13,
+        "End": 27,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "loadEquipment",
+        "Start": 28,
+        "End": 155,
+        "Lines": 128,
+        "Complexity": 34
+      },
+      {
+        "Name": "UpdateEquipment",
+        "Start": 156,
+        "End": 285,
+        "Lines": 130,
+        "Complexity": 40
+      }
+    ]
+  },
+  "internal/adapters/storage/equipment_j_test.go": {
+    "Lines": 221,
+    "LongLines": 1,
+    "MaxFunction": 71,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "TestL07JDefaultsAndTOFU",
+        "Start": 13,
+        "End": 83,
+        "Lines": 71,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestL07JRefusedCredentialNeedsExplicitReplacement",
+        "Start": 85,
+        "End": 147,
+        "Lines": 63,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestL07JMigration13PreservesFixtureAndRollsBack",
+        "Start": 149,
+        "End": 186,
+        "Lines": 38,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestL07JClassDefaultsPersistAPCPEPTP",
+        "Start": 188,
+        "End": 221,
+        "Lines": 34,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/adapters/storage/equipment_test.go": {
+    "Lines": 847,
+    "LongLines": 9,
+    "MaxFunction": 140,
+    "MaxComplexity": 42,
+    "Functions": [
+      {
+        "Name": "ID",
+        "Start": 25,
+        "End": 25,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "newEquipment",
+        "Start": 26,
+        "End": 31,
+        "Lines": 6,
+        "Complexity": 1
+      },
+      {
+        "Name": "equipmentScope",
+        "Start": 32,
+        "End": 37,
+        "Lines": 6,
+        "Complexity": 1
+      },
+      {
+        "Name": "equipmentCall",
+        "Start": 38,
+        "End": 45,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "setupEquipment",
+        "Start": 46,
+        "End": 67,
+        "Lines": 22,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestEquipmentPersistenceIsolationConflictAndRollback",
+        "Start": 68,
+        "End": 204,
+        "Lines": 137,
+        "Complexity": 24
+      },
+      {
+        "Name": "awaitJob",
+        "Start": 205,
+        "End": 219,
+        "Lines": 15,
+        "Complexity": 3
+      },
+      {
+        "Name": "trustEquipment",
+        "Start": 220,
+        "End": 241,
+        "Lines": 22,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestEquipmentActivationPreservesObservation",
+        "Start": 242,
+        "End": 364,
+        "Lines": 123,
+        "Complexity": 27
+      },
+      {
+        "Name": "TestEquipmentQueriesRevocationSaturationAndRestart",
+        "Start": 365,
+        "End": 504,
+        "Lines": 140,
+        "Complexity": 42
+      },
+      {
+        "Name": "TestEquipmentConcurrentOptimisticUpdateAndMissingVault",
+        "Start": 505,
+        "End": 547,
+        "Lines": 43,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestEquipmentCoherentRestoreAndSchemaThree",
+        "Start": 549,
+        "End": 626,
+        "Lines": 78,
+        "Complexity": 19
+      },
+      {
+        "Name": "TestEquipmentInspectNonblockingAndRealTotalDeadline",
+        "Start": 627,
+        "End": 669,
+        "Lines": 43,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestEquipmentJobRetentionAndRecordLimit",
+        "Start": 671,
+        "End": 733,
+        "Lines": 63,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestFocalMissingCompanyKeyPreservesInventory",
+        "Start": 735,
+        "End": 762,
+        "Lines": 28,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestFocalWriteReplayPreservesJobs",
+        "Start": 763,
+        "End": 847,
+        "Lines": 85,
+        "Complexity": 19
+      }
+    ]
+  },
+  "internal/adapters/storage/l06c_test.go": {
+    "Lines": 235,
+    "LongLines": 13,
+    "MaxFunction": 62,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "TestL06CReadAtMutationQuota",
+        "Start": 14,
+        "End": 46,
+        "Lines": 33,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestL06CMigrationPreservesMutationsAndAttempts",
+        "Start": 48,
+        "End": 109,
+        "Lines": 62,
+        "Complexity": 16
+      },
+      {
+        "Name": "TestL06COfflinePersistedAcrossReopenAndReference",
+        "Start": 111,
+        "End": 166,
+        "Lines": 56,
+        "Complexity": 19
+      },
+      {
+        "Name": "TestL06CEquipmentWritesOnlyChangedRecords",
+        "Start": 168,
+        "End": 187,
+        "Lines": 20,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestL06COfflineByteBudgetNeverDisplacesOnline",
+        "Start": 189,
+        "End": 197,
+        "Lines": 9,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL06CMeasurePublication2048",
+        "Start": 199,
+        "End": 235,
+        "Lines": 37,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/storage/l06d_capacity_test.go": {
+    "Lines": 163,
+    "LongLines": 5,
+    "MaxFunction": 49,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "capacityObservation",
+        "Start": 16,
+        "End": 24,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL06DContextYieldsBeforeOfflineAndRowLimit",
+        "Start": 26,
+        "End": 50,
+        "Lines": 25,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL06DContextCapacityPublicationReopen",
+        "Start": 52,
+        "End": 100,
+        "Lines": 49,
+        "Complexity": 19
+      },
+      {
+        "Name": "capacityBytes",
+        "Start": 102,
+        "End": 116,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL06DOptionalContextCapacity",
+        "Start": 118,
+        "End": 163,
+        "Lines": 46,
+        "Complexity": 15
+      }
+    ]
+  },
+  "internal/adapters/storage/l06d_test.go": {
+    "Lines": 84,
+    "LongLines": 3,
+    "MaxFunction": 73,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "TestL06DContextMigrationReopenAndBudget",
+        "Start": 12,
+        "End": 84,
+        "Lines": 73,
+        "Complexity": 21
+      }
+    ]
+  },
+  "internal/adapters/storage/operational_test.go": {
+    "Lines": 372,
+    "LongLines": 14,
+    "MaxFunction": 110,
+    "MaxComplexity": 47,
+    "Functions": [
+      {
+        "Name": "TestOperationalEditsPreserveOnlyMatchingReading",
+        "Start": 15,
+        "End": 124,
+        "Lines": 110,
+        "Complexity": 47
+      },
+      {
+        "Name": "TestOperationalExplicitFirstAcceptanceWithoutOrigin",
+        "Start": 126,
+        "End": 177,
+        "Lines": 52,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestOperationalPartsFailureAttemptAndExplicitRecovery",
+        "Start": 179,
+        "End": 240,
+        "Lines": 62,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestOperationalAcceptanceRejectsWrongCandidateAndScope",
+        "Start": 242,
+        "End": 288,
+        "Lines": 47,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestOperationalAdditiveV3MigrationPreservesLegacy",
+        "Start": 290,
+        "End": 337,
+        "Lines": 48,
+        "Complexity": 18
+      },
+      {
+        "Name": "TestOperationalPersistenceFailureKeepsPreviousReading",
+        "Start": 339,
+        "End": 372,
+        "Lines": 34,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/storage/paths_linux.go": {
+    "Lines": 61,
+    "LongLines": 0,
+    "MaxFunction": 34,
+    "MaxComplexity": 20,
+    "Functions": [
+      {
+        "Name": "ownedPrivate",
+        "Start": 10,
+        "End": 43,
+        "Lines": 34,
+        "Complexity": 20
+      },
+      {
+        "Name": "lockState",
+        "Start": 45,
+        "End": 61,
+        "Lines": 17,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/storage/pppoe.go": {
+    "Lines": 758,
+    "LongLines": 29,
+    "MaxFunction": 154,
+    "MaxComplexity": 46,
+    "Functions": [
+      {
+        "Name": "ppWrite",
+        "Start": 15,
+        "End": 40,
+        "Lines": 26,
+        "Complexity": 8
+      },
+      {
+        "Name": "ppTarget",
+        "Start": 41,
+        "End": 67,
+        "Lines": 27,
+        "Complexity": 7
+      },
+      {
+        "Name": "ReadPPTarget",
+        "Start": 68,
+        "End": 78,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "ppReceipt",
+        "Start": 81,
+        "End": 101,
+        "Lines": 21,
+        "Complexity": 6
+      },
+      {
+        "Name": "ReservePPCollection",
+        "Start": 102,
+        "End": 129,
+        "Lines": 28,
+        "Complexity": 6
+      },
+      {
+        "Name": "ppGC",
+        "Start": 130,
+        "End": 133,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "FinishPPCollection",
+        "Start": 134,
+        "End": 287,
+        "Lines": 154,
+        "Complexity": 46
+      },
+      {
+        "Name": "nullablePP",
+        "Start": 288,
+        "End": 293,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "ppMeta",
+        "Start": 294,
+        "End": 308,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "PPObservation",
+        "Start": 309,
+        "End": 319,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "PPCurrent",
+        "Start": 320,
+        "End": 352,
+        "Lines": 33,
+        "Complexity": 10
+      },
+      {
+        "Name": "PPPage",
+        "Start": 353,
+        "End": 421,
+        "Lines": 69,
+        "Complexity": 21
+      },
+      {
+        "Name": "PPSession",
+        "Start": 422,
+        "End": 448,
+        "Lines": 27,
+        "Complexity": 8
+      },
+      {
+        "Name": "scanPPReference",
+        "Start": 452,
+        "End": 456,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "SavePPReference",
+        "Start": 458,
+        "End": 524,
+        "Lines": 67,
+        "Complexity": 17
+      },
+      {
+        "Name": "PPReferences",
+        "Start": 525,
+        "End": 552,
+        "Lines": 28,
+        "Complexity": 8
+      },
+      {
+        "Name": "DeletePPReference",
+        "Start": 553,
+        "End": 584,
+        "Lines": 32,
+        "Complexity": 7
+      },
+      {
+        "Name": "ppWithinBudget",
+        "Start": 588,
+        "End": 650,
+        "Lines": 63,
+        "Complexity": 24
+      },
+      {
+        "Name": "ppOmitContext",
+        "Start": 652,
+        "End": 665,
+        "Lines": 14,
+        "Complexity": 4
+      },
+      {
+        "Name": "PPContextCounts",
+        "Start": 667,
+        "End": 758,
+        "Lines": 92,
+        "Complexity": 23
+      }
+    ]
+  },
+  "internal/adapters/storage/pppoe_admission_test.go": {
+    "Lines": 120,
+    "LongLines": 2,
+    "MaxFunction": 93,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "CollectPPPoE",
+        "Start": 22,
+        "End": 27,
+        "Lines": 6,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestPPPoEAdmissionAliasesAndCancel",
+        "Start": 28,
+        "End": 120,
+        "Lines": 93,
+        "Complexity": 18
+      }
+    ]
+  },
+  "internal/adapters/storage/pppoe_diagnostics.go": {
+    "Lines": 346,
+    "LongLines": 15,
+    "MaxFunction": 136,
+    "MaxComplexity": 42,
+    "Functions": [
+      {
+        "Name": "ppTotalBytes",
+        "Start": 13,
+        "End": 17,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReservePPDiagnostic",
+        "Start": 18,
+        "End": 48,
+        "Lines": 31,
+        "Complexity": 7
+      },
+      {
+        "Name": "pdBudget",
+        "Start": 50,
+        "End": 104,
+        "Lines": 55,
+        "Complexity": 31
+      },
+      {
+        "Name": "FinishPPDiagnostic",
+        "Start": 106,
+        "End": 241,
+        "Lines": 136,
+        "Complexity": 42
+      },
+      {
+        "Name": "pdMeta",
+        "Start": 243,
+        "End": 263,
+        "Lines": 21,
+        "Complexity": 5
+      },
+      {
+        "Name": "PPDiagnosticCurrent",
+        "Start": 264,
+        "End": 291,
+        "Lines": 28,
+        "Complexity": 9
+      },
+      {
+        "Name": "PPDiagnosticPage",
+        "Start": 292,
+        "End": 346,
+        "Lines": 55,
+        "Complexity": 18
+      }
+    ]
+  },
+  "internal/adapters/storage/pppoe_diagnostics_test.go": {
+    "Lines": 273,
+    "LongLines": 18,
+    "MaxFunction": 124,
+    "MaxComplexity": 34,
+    "Functions": [
+      {
+        "Name": "dropPPDiagnosticFixtureSchema",
+        "Start": 13,
+        "End": 31,
+        "Lines": 19,
+        "Complexity": 7
+      },
+      {
+        "Name": "pdSynthetic",
+        "Start": 32,
+        "End": 49,
+        "Lines": 18,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestPPDiagnosticPersistencePageReopenGCAndFailure",
+        "Start": 50,
+        "End": 92,
+        "Lines": 43,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestPPDiagnosticFinalByteBudget",
+        "Start": 94,
+        "End": 117,
+        "Lines": 24,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestPPDiagnosticMigrationSixIsAdditiveAtomic",
+        "Start": 118,
+        "End": 148,
+        "Lines": 31,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestPPDiagnosticSharedCompanyBudgetBothPublicationDirections",
+        "Start": 150,
+        "End": 273,
+        "Lines": 124,
+        "Complexity": 34
+      }
+    ]
+  },
+  "internal/adapters/storage/pppoe_readiness_test.go": {
+    "Lines": 104,
+    "LongLines": 1,
+    "MaxFunction": 88,
+    "MaxComplexity": 26,
+    "Functions": [
+      {
+        "Name": "TestPPPoEProviderReadinessDuringBlockedJob",
+        "Start": 17,
+        "End": 104,
+        "Lines": 88,
+        "Complexity": 26
+      }
+    ]
+  },
+  "internal/adapters/storage/pppoe_test.go": {
+    "Lines": 330,
+    "LongLines": 10,
+    "MaxFunction": 56,
+    "MaxComplexity": 22,
+    "Functions": [
+      {
+        "Name": "dropPPPoEFixtureSchema",
+        "Start": 15,
+        "End": 26,
+        "Lines": 12,
+        "Complexity": 4
+      },
+      {
+        "Name": "ppStoreSetup",
+        "Start": 28,
+        "End": 40,
+        "Lines": 13,
+        "Complexity": 2
+      },
+      {
+        "Name": "ppSynthetic",
+        "Start": 41,
+        "End": 61,
+        "Lines": 21,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestPPPoEStoreReferencesGCPageAndReopen",
+        "Start": 62,
+        "End": 117,
+        "Lines": 56,
+        "Complexity": 22
+      },
+      {
+        "Name": "TestPPPoEMigrationRollbackAndLegacyPreservation",
+        "Start": 118,
+        "End": 161,
+        "Lines": 44,
+        "Complexity": 15
+      },
+      {
+        "Name": "TestPPPoECommitFailurePreservesGood",
+        "Start": 162,
+        "End": 192,
+        "Lines": 31,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestPPPoEReviewFinalBudgetBytes",
+        "Start": 194,
+        "End": 208,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestPPPoEUnicodeSQLAndReferenceBounds",
+        "Start": 210,
+        "End": 233,
+        "Lines": 24,
+        "Complexity": 11
+      },
+      {
+        "Name": "TestPPPoECompanyReferenceBoundary",
+        "Start": 235,
+        "End": 274,
+        "Lines": 40,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestPPPoEAH03CanonicalReferenceAcrossCreateReuseReplayAndReopen",
+        "Start": 276,
+        "End": 312,
+        "Lines": 37,
+        "Complexity": 17
+      },
+      {
+        "Name": "TestPPPoEAH03ReplayDatabaseFailureIsNotRemovedReference",
+        "Start": 314,
+        "End": 330,
+        "Lines": 17,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/storage/radio.go": {
+    "Lines": 262,
+    "LongLines": 21,
+    "MaxFunction": 66,
+    "MaxComplexity": 46,
+    "Functions": [
+      {
+        "Name": "radioCurrent",
+        "Start": 11,
+        "End": 33,
+        "Lines": 23,
+        "Complexity": 7
+      },
+      {
+        "Name": "RadioCurrent",
+        "Start": 34,
+        "End": 58,
+        "Lines": 25,
+        "Complexity": 16
+      },
+      {
+        "Name": "SaveRadio",
+        "Start": 59,
+        "End": 124,
+        "Lines": 66,
+        "Complexity": 46
+      },
+      {
+        "Name": "ConfirmRadioFamily",
+        "Start": 125,
+        "End": 148,
+        "Lines": 24,
+        "Complexity": 16
+      },
+      {
+        "Name": "RadioLinks",
+        "Start": 149,
+        "End": 176,
+        "Lines": 28,
+        "Complexity": 9
+      },
+      {
+        "Name": "SaveRadioLink",
+        "Start": 177,
+        "End": 234,
+        "Lines": 58,
+        "Complexity": 27
+      },
+      {
+        "Name": "RadioAPReadings",
+        "Start": 235,
+        "End": 262,
+        "Lines": 28,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/adapters/storage/radio_test.go": {
+    "Lines": 157,
+    "LongLines": 4,
+    "MaxFunction": 73,
+    "MaxComplexity": 25,
+    "Functions": [
+      {
+        "Name": "dropRadioFixtureSchema",
+        "Start": 11,
+        "End": 21,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL07RadioMigrationCurrentContextAndPTP",
+        "Start": 22,
+        "End": 94,
+        "Lines": 73,
+        "Complexity": 25
+      },
+      {
+        "Name": "TestL07LinkReceiptReplayAndSourceReplacement",
+        "Start": 95,
+        "End": 131,
+        "Lines": 37,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestL07ZeroClientsHistoryIsPerInterfaceAndBSSID",
+        "Start": 133,
+        "End": 157,
+        "Lines": 25,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/adapters/storage/read_receipts.go": {
+    "Lines": 99,
+    "LongLines": 1,
+    "MaxFunction": 51,
+    "MaxComplexity": 35,
+    "Functions": [
+      {
+        "Name": "readReceiptClass",
+        "Start": 13,
+        "End": 63,
+        "Lines": 51,
+        "Complexity": 35
+      },
+      {
+        "Name": "migrateReadReceipts",
+        "Start": 65,
+        "End": 99,
+        "Lines": 35,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/adapters/storage/recovery_bf03_test.go": {
+    "Lines": 161,
+    "LongLines": 2,
+    "MaxFunction": 70,
+    "MaxComplexity": 11,
+    "Functions": [
+      {
+        "Name": "TestBF03RenewRecoveryRealResetAndRollback",
+        "Start": 12,
+        "End": 81,
+        "Lines": 70,
+        "Complexity": 11
+      },
+      {
+        "Name": "Verify",
+        "Start": 90,
+        "End": 100,
+        "Lines": 11,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestBF03RenewalRevalidatesEpochWithoutBlockingSnapshot",
+        "Start": 101,
+        "End": 138,
+        "Lines": 38,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestBF03LostResponseRequiresExplicitReissue",
+        "Start": 140,
+        "End": 161,
+        "Lines": 22,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/adapters/storage/sqlite.go": {
+    "Lines": 346,
+    "LongLines": 5,
+    "MaxFunction": 116,
+    "MaxComplexity": 32,
+    "Functions": [
+      {
+        "Name": "Open",
+        "Start": 35,
+        "End": 35,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "openStore",
+        "Start": 37,
+        "End": 115,
+        "Lines": 79,
+        "Complexity": 24
+      },
+      {
+        "Name": "Close",
+        "Start": 116,
+        "End": 128,
+        "Lines": 13,
+        "Complexity": 3
+      },
+      {
+        "Name": "load",
+        "Start": 129,
+        "End": 196,
+        "Lines": 68,
+        "Complexity": 30
+      },
+      {
+        "Name": "Read",
+        "Start": 197,
+        "End": 216,
+        "Lines": 20,
+        "Complexity": 5
+      },
+      {
+        "Name": "Update",
+        "Start": 217,
+        "End": 332,
+        "Lines": 116,
+        "Complexity": 32
+      },
+      {
+        "Name": "Diagnostics",
+        "Start": 333,
+        "End": 346,
+        "Lines": 14,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/adapters/storage/units.go": {
+    "Lines": 479,
+    "LongLines": 4,
+    "MaxFunction": 92,
+    "MaxComplexity": 26,
+    "Functions": [
+      {
+        "Name": "migrateGlobal",
+        "Start": 56,
+        "End": 99,
+        "Lines": 44,
+        "Complexity": 14
+      },
+      {
+        "Name": "unitPath",
+        "Start": 101,
+        "End": 117,
+        "Lines": 17,
+        "Complexity": 6
+      },
+      {
+        "Name": "openPrivateDB",
+        "Start": 119,
+        "End": 161,
+        "Lines": 43,
+        "Complexity": 13
+      },
+      {
+        "Name": "validateUnit",
+        "Start": 163,
+        "End": 169,
+        "Lines": 7,
+        "Complexity": 3
+      },
+      {
+        "Name": "validateUnitIdentity",
+        "Start": 170,
+        "End": 216,
+        "Lines": 47,
+        "Complexity": 20
+      },
+      {
+        "Name": "openUnit",
+        "Start": 218,
+        "End": 236,
+        "Lines": 19,
+        "Complexity": 5
+      },
+      {
+        "Name": "syncFile",
+        "Start": 238,
+        "End": 245,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "syncDir",
+        "Start": 246,
+        "End": 246,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "provision",
+        "Start": 248,
+        "End": 339,
+        "Lines": 92,
+        "Complexity": 26
+      },
+      {
+        "Name": "prepareIntent",
+        "Start": 341,
+        "End": 372,
+        "Lines": 32,
+        "Complexity": 10
+      },
+      {
+        "Name": "reconcile",
+        "Start": 373,
+        "End": 408,
+        "Lines": 36,
+        "Complexity": 10
+      },
+      {
+        "Name": "backupBeforeSplit",
+        "Start": 411,
+        "End": 449,
+        "Lines": 39,
+        "Complexity": 12
+      },
+      {
+        "Name": "checkActive",
+        "Start": 452,
+        "End": 471,
+        "Lines": 20,
+        "Complexity": 7
+      },
+      {
+        "Name": "observe",
+        "Start": 475,
+        "End": 479,
+        "Lines": 5,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/adapters/storage/webp_linux.go": {
+    "Lines": 28,
+    "LongLines": 0,
+    "MaxFunction": 6,
+    "MaxComplexity": 2,
+    "Functions": [
+      {
+        "Name": "validWebP",
+        "Start": 23,
+        "End": 28,
+        "Lines": 6,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/adapters/synthetic/source.go": {
+    "Lines": 19,
+    "LongLines": 0,
+    "MaxFunction": 10,
+    "MaxComplexity": 3,
+    "Functions": [
+      {
+        "Name": "Read",
+        "Start": 10,
+        "End": 19,
+        "Lines": 10,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/adapters/synthetic/source_test.go": {
+    "Lines": 24,
+    "LongLines": 0,
+    "MaxFunction": 16,
+    "MaxComplexity": 5,
+    "Functions": [
+      {
+        "Name": "TestIndependentOracles",
+        "Start": 9,
+        "End": 24,
+        "Lines": 16,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/adapters/vault/provider_linux.go": {
+    "Lines": 164,
+    "LongLines": 4,
+    "MaxFunction": 46,
+    "MaxComplexity": 20,
+    "Functions": [
+      {
+        "Name": "Systemd",
+        "Start": 22,
+        "End": 67,
+        "Lines": 46,
+        "Complexity": 20
+      },
+      {
+        "Name": "openRootDirectory",
+        "Start": 69,
+        "End": 89,
+        "Lines": 21,
+        "Complexity": 7
+      },
+      {
+        "Name": "systemdObject",
+        "Start": 91,
+        "End": 99,
+        "Lines": 9,
+        "Complexity": 3
+      },
+      {
+        "Name": "systemdMetadata",
+        "Start": 100,
+        "End": 128,
+        "Lines": 29,
+        "Complexity": 16
+      },
+      {
+        "Name": "ReadKey",
+        "Start": 132,
+        "End": 147,
+        "Lines": 16,
+        "Complexity": 10
+      },
+      {
+        "Name": "stableKey",
+        "Start": 150,
+        "End": 159,
+        "Lines": 10,
+        "Complexity": 7
+      },
+      {
+        "Name": "stableMetadata",
+        "Start": 160,
+        "End": 164,
+        "Lines": 5,
+        "Complexity": 14
+      }
+    ]
+  },
+  "internal/adapters/vault/provider_linux_test.go": {
+    "Lines": 139,
+    "LongLines": 2,
+    "MaxFunction": 40,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "aclFixture",
+        "Start": 12,
+        "End": 30,
+        "Lines": 19,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestSystemdMetadataObservedACL",
+        "Start": 31,
+        "End": 70,
+        "Lines": 40,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestSystemdRejectsUntrustedDirectoryAndDEVExposure",
+        "Start": 71,
+        "End": 101,
+        "Lines": 31,
+        "Complexity": 12
+      },
+      {
+        "Name": "mustStat",
+        "Start": 103,
+        "End": 110,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestStableReadBindsAuthorizedSnapshot",
+        "Start": 111,
+        "End": 139,
+        "Lines": 29,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/adapters/vault/vault.go": {
+    "Lines": 202,
+    "LongLines": 1,
+    "MaxFunction": 36,
+    "MaxComplexity": 20,
+    "Functions": [
+      {
+        "Name": "New",
+        "Start": 32,
+        "End": 32,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "master",
+        "Start": 33,
+        "End": 42,
+        "Lines": 10,
+        "Complexity": 4
+      },
+      {
+        "Name": "Available",
+        "Start": 43,
+        "End": 43,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Ready",
+        "Start": 44,
+        "End": 56,
+        "Lines": 13,
+        "Complexity": 3
+      },
+      {
+        "Name": "aad",
+        "Start": 57,
+        "End": 60,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "decode",
+        "Start": 61,
+        "End": 96,
+        "Lines": 36,
+        "Complexity": 20
+      },
+      {
+        "Name": "seal",
+        "Start": 97,
+        "End": 111,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "open",
+        "Start": 112,
+        "End": 122,
+        "Lines": 11,
+        "Complexity": 3
+      },
+      {
+        "Name": "dataKey",
+        "Start": 123,
+        "End": 134,
+        "Lines": 12,
+        "Complexity": 4
+      },
+      {
+        "Name": "Seal",
+        "Start": 135,
+        "End": 169,
+        "Lines": 35,
+        "Complexity": 7
+      },
+      {
+        "Name": "Open",
+        "Start": 170,
+        "End": 191,
+        "Lines": 22,
+        "Complexity": 6
+      },
+      {
+        "Name": "Stamp",
+        "Start": 192,
+        "End": 202,
+        "Lines": 11,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/adapters/vault/vault_test.go": {
+    "Lines": 118,
+    "LongLines": 1,
+    "MaxFunction": 66,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "testVault",
+        "Start": 14,
+        "End": 16,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Read",
+        "Start": 20,
+        "End": 20,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestEnvelopeAndTampering",
+        "Start": 21,
+        "End": 86,
+        "Lines": 66,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestProviderDEV",
+        "Start": 87,
+        "End": 118,
+        "Lines": 32,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/composition/composition.go": {
+    "Lines": 96,
+    "LongLines": 0,
+    "MaxFunction": 29,
+    "MaxComplexity": 8,
+    "Functions": [
+      {
+        "Name": "RuntimePath",
+        "Start": 22,
+        "End": 31,
+        "Lines": 10,
+        "Complexity": 4
+      },
+      {
+        "Name": "Desktop",
+        "Start": 32,
+        "End": 34,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "StatePath",
+        "Start": 35,
+        "End": 44,
+        "Lines": 10,
+        "Complexity": 4
+      },
+      {
+        "Name": "ClientStatePath",
+        "Start": 45,
+        "End": 54,
+        "Lines": 10,
+        "Complexity": 3
+      },
+      {
+        "Name": "ID",
+        "Start": 61,
+        "End": 67,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "Daemon",
+        "Start": 68,
+        "End": 96,
+        "Lines": 29,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/modules/access/authorization.go": {
+    "Lines": 24,
+    "LongLines": 0,
+    "MaxFunction": 18,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "WithAuthorization",
+        "Start": 7,
+        "End": 24,
+        "Lines": 18,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/modules/access/branding.go": {
+    "Lines": 69,
+    "LongLines": 0,
+    "MaxFunction": 25,
+    "MaxComplexity": 13,
+    "Functions": [
+      {
+        "Name": "ValidBrand",
+        "Start": 19,
+        "End": 43,
+        "Lines": 25,
+        "Complexity": 13
+      },
+      {
+        "Name": "brand",
+        "Start": 46,
+        "End": 69,
+        "Lines": 24,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/modules/access/policy_test.go": {
+    "Lines": 32,
+    "LongLines": 1,
+    "MaxFunction": 24,
+    "MaxComplexity": 9,
+    "Functions": [
+      {
+        "Name": "TestPasswordAndNamePolicy",
+        "Start": 9,
+        "End": 32,
+        "Lines": 24,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/modules/access/service.go": {
+    "Lines": 597,
+    "LongLines": 7,
+    "MaxFunction": 250,
+    "MaxComplexity": 90,
+    "Functions": [
+      {
+        "Name": "New",
+        "Start": 103,
+        "End": 109,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "ValidPassword",
+        "Start": 110,
+        "End": 113,
+        "Lines": 4,
+        "Complexity": 3
+      },
+      {
+        "Name": "ValidName",
+        "Start": 114,
+        "End": 124,
+        "Lines": 11,
+        "Complexity": 7
+      },
+      {
+        "Name": "Backoff",
+        "Start": 125,
+        "End": 133,
+        "Lines": 9,
+        "Complexity": 3
+      },
+      {
+        "Name": "reserve",
+        "Start": 134,
+        "End": 145,
+        "Lines": 12,
+        "Complexity": 3
+      },
+      {
+        "Name": "authorized",
+        "Start": 146,
+        "End": 155,
+        "Lines": 10,
+        "Complexity": 10
+      },
+      {
+        "Name": "view",
+        "Start": 156,
+        "End": 166,
+        "Lines": 11,
+        "Complexity": 2
+      },
+      {
+        "Name": "open",
+        "Start": 167,
+        "End": 238,
+        "Lines": 72,
+        "Complexity": 25
+      },
+      {
+        "Name": "Handle",
+        "Start": 239,
+        "End": 488,
+        "Lines": 250,
+        "Complexity": 90
+      },
+      {
+        "Name": "Reap",
+        "Start": 492,
+        "End": 506,
+        "Lines": 15,
+        "Complexity": 6
+      },
+      {
+        "Name": "ownerSession",
+        "Start": 510,
+        "End": 517,
+        "Lines": 8,
+        "Complexity": 3
+      },
+      {
+        "Name": "ValidCompanyID",
+        "Start": 519,
+        "End": 533,
+        "Lines": 15,
+        "Complexity": 12
+      },
+      {
+        "Name": "renewRecovery",
+        "Start": 535,
+        "End": 597,
+        "Lines": 63,
+        "Complexity": 17
+      }
+    ]
+  },
+  "internal/modules/access/session_test.go": {
+    "Lines": 139,
+    "LongLines": 2,
+    "MaxFunction": 40,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "Read",
+        "Start": 14,
+        "End": 14,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Update",
+        "Start": 15,
+        "End": 17,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Token",
+        "Start": 24,
+        "End": 24,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestSessionOwnerAuthorization",
+        "Start": 26,
+        "End": 65,
+        "Lines": 40,
+        "Complexity": 5
+      },
+      {
+        "Name": "TestSessionLimitAndOwnerReuse",
+        "Start": 67,
+        "End": 102,
+        "Lines": 36,
+        "Complexity": 12
+      },
+      {
+        "Name": "Digest",
+        "Start": 106,
+        "End": 106,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Equal",
+        "Start": 107,
+        "End": 107,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestCompanyCreationRetryAtLimit",
+        "Start": 109,
+        "End": 139,
+        "Lines": 31,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/modules/equipment/catalog_absence.go": {
+    "Lines": 72,
+    "LongLines": 1,
+    "MaxFunction": 63,
+    "MaxComplexity": 27,
+    "Functions": [
+      {
+        "Name": "ReconcileCatalogAbsences",
+        "Start": 10,
+        "End": 72,
+        "Lines": 63,
+        "Complexity": 27
+      }
+    ]
+  },
+  "internal/modules/equipment/catalog_absence_test.go": {
+    "Lines": 39,
+    "LongLines": 3,
+    "MaxFunction": 32,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "TestL06T3DynamicAbsentReappearContextAndRetention",
+        "Start": 8,
+        "End": 39,
+        "Lines": 32,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/modules/equipment/collector_failure.go": {
+    "Lines": 19,
+    "LongLines": 1,
+    "MaxFunction": 13,
+    "MaxComplexity": 6,
+    "Functions": [
+      {
+        "Name": "ValidCollectorReason",
+        "Start": 7,
+        "End": 19,
+        "Lines": 13,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/concentrator_comparison.go": {
+    "Lines": 28,
+    "LongLines": 1,
+    "MaxFunction": 10,
+    "MaxComplexity": 16,
+    "Functions": [
+      {
+        "Name": "ComparableConcentratorReadings",
+        "Start": 19,
+        "End": 28,
+        "Lines": 10,
+        "Complexity": 16
+      }
+    ]
+  },
+  "internal/modules/equipment/concentrator_comparison_test.go": {
+    "Lines": 25,
+    "LongLines": 1,
+    "MaxFunction": 18,
+    "MaxComplexity": 4,
+    "Functions": [
+      {
+        "Name": "TestL06T3CrossConcentratorFreshOverlap",
+        "Start": 8,
+        "End": 25,
+        "Lines": 18,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/modules/equipment/device_insights.go": {
+    "Lines": 42,
+    "LongLines": 2,
+    "MaxFunction": 15,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "DetectedDeviceReboot",
+        "Start": 16,
+        "End": 30,
+        "Lines": 15,
+        "Complexity": 12
+      },
+      {
+        "Name": "PortNegotiationChanged",
+        "Start": 31,
+        "End": 42,
+        "Lines": 12,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/modules/equipment/device_insights_test.go": {
+    "Lines": 30,
+    "LongLines": 2,
+    "MaxFunction": 23,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "TestL06T3RestartAndNegotiationBoundaries",
+        "Start": 8,
+        "End": 30,
+        "Lines": 23,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/modules/equipment/device_monitoring.go": {
+    "Lines": 57,
+    "LongLines": 1,
+    "MaxFunction": 7,
+    "MaxComplexity": 5,
+    "Functions": [
+      {
+        "Name": "PPMonitoringContinuous",
+        "Start": 45,
+        "End": 51,
+        "Lines": 7,
+        "Complexity": 5
+      },
+      {
+        "Name": "PPMonitoringDrop",
+        "Start": 52,
+        "End": 54,
+        "Lines": 3,
+        "Complexity": 3
+      },
+      {
+        "Name": "MonitoringRetention",
+        "Start": 55,
+        "End": 57,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/modules/equipment/l06c_test.go": {
+    "Lines": 109,
+    "LongLines": 5,
+    "MaxFunction": 58,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "l06cObservation",
+        "Start": 9,
+        "End": 11,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL06COfflineReconnectionRetention",
+        "Start": 13,
+        "End": 70,
+        "Lines": 58,
+        "Complexity": 28
+      },
+      {
+        "Name": "TestL06CSiblingSessionDoesNotHideAbsence",
+        "Start": 72,
+        "End": 94,
+        "Lines": 23,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL06CPingBoundsAfterLongDelay",
+        "Start": 96,
+        "End": 109,
+        "Lines": 14,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/modules/equipment/l06d_test.go": {
+    "Lines": 187,
+    "LongLines": 8,
+    "MaxFunction": 45,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "TestL06DAssociationRequiresUniqueTupleAndUptime",
+        "Start": 10,
+        "End": 46,
+        "Lines": 37,
+        "Complexity": 14
+      },
+      {
+        "Name": "TestL06DBandwidthUsesRealWindowsAndRejectsResets",
+        "Start": 48,
+        "End": 92,
+        "Lines": 45,
+        "Complexity": 21
+      },
+      {
+        "Name": "TestL06DReadRejectsRouterRestartBeforeFirstSample",
+        "Start": 94,
+        "End": 108,
+        "Lines": 15,
+        "Complexity": 3
+      },
+      {
+        "Name": "PPCurrent",
+        "Start": 117,
+        "End": 119,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPSession",
+        "Start": 120,
+        "End": 122,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL06DPreparedAgeHasOneClockOrigin",
+        "Start": 123,
+        "End": 139,
+        "Lines": 17,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL06DLiveAdmissionHasFiniteSixtySecondBudget",
+        "Start": 141,
+        "End": 151,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL06DOperationCancelCannotStopAtCompletedCache",
+        "Start": 153,
+        "End": 176,
+        "Lines": 24,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestL06DTopConsumptionOrdersKnownLowerBounds",
+        "Start": 178,
+        "End": 187,
+        "Lines": 10,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/ping_statistics.go": {
+    "Lines": 99,
+    "LongLines": 1,
+    "MaxFunction": 30,
+    "MaxComplexity": 14,
+    "Functions": [
+      {
+        "Name": "PingJitter",
+        "Start": 9,
+        "End": 32,
+        "Lines": 24,
+        "Complexity": 12
+      },
+      {
+        "Name": "PingMedianTen",
+        "Start": 33,
+        "End": 46,
+        "Lines": 14,
+        "Complexity": 4
+      },
+      {
+        "Name": "pingStatsKey",
+        "Start": 47,
+        "End": 52,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "decoratePingLocked",
+        "Start": 55,
+        "End": 69,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "rememberPingLocked",
+        "Start": 70,
+        "End": 99,
+        "Lines": 30,
+        "Complexity": 14
+      }
+    ]
+  },
+  "internal/modules/equipment/ping_statistics_test.go": {
+    "Lines": 37,
+    "LongLines": 0,
+    "MaxFunction": 30,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "TestL06T3JitterMedianAndLostProbe",
+        "Start": 8,
+        "End": 37,
+        "Lines": 30,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_compare.go": {
+    "Lines": 147,
+    "LongLines": 4,
+    "MaxFunction": 92,
+    "MaxComplexity": 37,
+    "Functions": [
+      {
+        "Name": "PPCompatible",
+        "Start": 5,
+        "End": 7,
+        "Lines": 3,
+        "Complexity": 19
+      },
+      {
+        "Name": "intervalAdvance",
+        "Start": 10,
+        "End": 15,
+        "Lines": 6,
+        "Complexity": 12
+      },
+      {
+        "Name": "ppWallElapsed",
+        "Start": 19,
+        "End": 28,
+        "Lines": 10,
+        "Complexity": 7
+      },
+      {
+        "Name": "ppJointElapsed",
+        "Start": 29,
+        "End": 44,
+        "Lines": 16,
+        "Complexity": 12
+      },
+      {
+        "Name": "continuity",
+        "Start": 45,
+        "End": 53,
+        "Lines": 9,
+        "Complexity": 9
+      },
+      {
+        "Name": "ComparePP",
+        "Start": 56,
+        "End": 147,
+        "Lines": 92,
+        "Complexity": 37
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_compare_test.go": {
+    "Lines": 98,
+    "LongLines": 3,
+    "MaxFunction": 52,
+    "MaxComplexity": 16,
+    "Functions": [
+      {
+        "Name": "TestPPPoEContinuityIndependentSequences",
+        "Start": 8,
+        "End": 59,
+        "Lines": 52,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestPPPoEC03WallAndMonotonicWindows",
+        "Start": 61,
+        "End": 98,
+        "Lines": 38,
+        "Complexity": 16
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_context.go": {
+    "Lines": 77,
+    "LongLines": 1,
+    "MaxFunction": 39,
+    "MaxComplexity": 11,
+    "Functions": [
+      {
+        "Name": "PPTunnelMatches",
+        "Start": 31,
+        "End": 36,
+        "Lines": 6,
+        "Complexity": 8
+      },
+      {
+        "Name": "AssociatePPTunnels",
+        "Start": 39,
+        "End": 77,
+        "Lines": 39,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_diagnostic_service.go": {
+    "Lines": 250,
+    "LongLines": 4,
+    "MaxFunction": 137,
+    "MaxComplexity": 32,
+    "Functions": [
+      {
+        "Name": "handlePD",
+        "Start": 9,
+        "End": 78,
+        "Lines": 70,
+        "Complexity": 27
+      },
+      {
+        "Name": "preparePPPing",
+        "Start": 80,
+        "End": 112,
+        "Lines": 33,
+        "Complexity": 20
+      },
+      {
+        "Name": "runPD",
+        "Start": 114,
+        "End": 250,
+        "Lines": 137,
+        "Complexity": 32
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_diagnostic_test.go": {
+    "Lines": 61,
+    "LongLines": 3,
+    "MaxFunction": 35,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "TestPPDiagnosticRelationsAreConfigurationOnly",
+        "Start": 8,
+        "End": 25,
+        "Lines": 18,
+        "Complexity": 10
+      },
+      {
+        "Name": "TestPPDiagnosticPingIdentityIsOpaqueAndConservative",
+        "Start": 27,
+        "End": 61,
+        "Lines": 35,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_diagnostic_types.go": {
+    "Lines": 266,
+    "LongLines": 2,
+    "MaxFunction": 67,
+    "MaxComplexity": 20,
+    "Functions": [
+      {
+        "Name": "PPPingBounds",
+        "Start": 13,
+        "End": 37,
+        "Lines": 25,
+        "Complexity": 13
+      },
+      {
+        "Name": "PDValidScope",
+        "Start": 136,
+        "End": 138,
+        "Lines": 3,
+        "Complexity": 3
+      },
+      {
+        "Name": "PPPingAddress",
+        "Start": 140,
+        "End": 150,
+        "Lines": 11,
+        "Complexity": 6
+      },
+      {
+        "Name": "PPPingStable",
+        "Start": 154,
+        "End": 185,
+        "Lines": 32,
+        "Complexity": 20
+      },
+      {
+        "Name": "ResolvePDRelations",
+        "Start": 189,
+        "End": 255,
+        "Lines": 67,
+        "Complexity": 18
+      },
+      {
+        "Name": "PDCompatibleExport",
+        "Start": 260,
+        "End": 266,
+        "Lines": 7,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_read.go": {
+    "Lines": 165,
+    "LongLines": 3,
+    "MaxFunction": 19,
+    "MaxComplexity": 21,
+    "Functions": [
+      {
+        "Name": "PPReadScope",
+        "Start": 97,
+        "End": 99,
+        "Lines": 3,
+        "Complexity": 8
+      },
+      {
+        "Name": "PPReadBudget",
+        "Start": 100,
+        "End": 105,
+        "Lines": 6,
+        "Complexity": 3
+      },
+      {
+        "Name": "PPReadWithinBudget",
+        "Start": 106,
+        "End": 108,
+        "Lines": 3,
+        "Complexity": 10
+      },
+      {
+        "Name": "PPBandwidth",
+        "Start": 112,
+        "End": 125,
+        "Lines": 14,
+        "Complexity": 21
+      },
+      {
+        "Name": "MatchPPRead",
+        "Start": 128,
+        "End": 144,
+        "Lines": 17,
+        "Complexity": 5
+      },
+      {
+        "Name": "SortPPConsumption",
+        "Start": 147,
+        "End": 165,
+        "Lines": 19,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_read_service.go": {
+    "Lines": 292,
+    "LongLines": 7,
+    "MaxFunction": 81,
+    "MaxComplexity": 34,
+    "Functions": [
+      {
+        "Name": "handlePPRead",
+        "Start": 10,
+        "End": 90,
+        "Lines": 81,
+        "Complexity": 29
+      },
+      {
+        "Name": "preparePPRead",
+        "Start": 92,
+        "End": 144,
+        "Lines": 53,
+        "Complexity": 34
+      },
+      {
+        "Name": "startPPRead",
+        "Start": 146,
+        "End": 218,
+        "Lines": 73,
+        "Complexity": 29
+      },
+      {
+        "Name": "publishPPRead",
+        "Start": 220,
+        "End": 248,
+        "Lines": 29,
+        "Complexity": 8
+      },
+      {
+        "Name": "runPPRead",
+        "Start": 249,
+        "End": 292,
+        "Lines": 44,
+        "Complexity": 23
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_reconcile.go": {
+    "Lines": 95,
+    "LongLines": 1,
+    "MaxFunction": 86,
+    "MaxComplexity": 32,
+    "Functions": [
+      {
+        "Name": "ReconcilePP",
+        "Start": 10,
+        "End": 95,
+        "Lines": 86,
+        "Complexity": 32
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_review_test.go": {
+    "Lines": 77,
+    "LongLines": 3,
+    "MaxFunction": 20,
+    "MaxComplexity": 8,
+    "Functions": [
+      {
+        "Name": "WithAuthorization",
+        "Start": 11,
+        "End": 13,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReadEquipment",
+        "Start": 17,
+        "End": 17,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "UpdateEquipment",
+        "Start": 18,
+        "End": 20,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ID",
+        "Start": 24,
+        "End": 24,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestPPPoEReviewCancelKindBeforeEffect",
+        "Start": 25,
+        "End": 44,
+        "Lines": 20,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestPPPoEReviewSameObservationAndVersion",
+        "Start": 45,
+        "End": 62,
+        "Lines": 18,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestPPPoEReviewTimestampFractionOrdering",
+        "Start": 64,
+        "End": 77,
+        "Lines": 14,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_service.go": {
+    "Lines": 539,
+    "LongLines": 4,
+    "MaxFunction": 220,
+    "MaxComplexity": 73,
+    "Functions": [
+      {
+        "Name": "ppStamp",
+        "Start": 12,
+        "End": 17,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "checkPP",
+        "Start": 18,
+        "End": 43,
+        "Lines": 26,
+        "Complexity": 9
+      },
+      {
+        "Name": "HandlePP",
+        "Start": 44,
+        "End": 263,
+        "Lines": 220,
+        "Complexity": 73
+      },
+      {
+        "Name": "ppLoad",
+        "Start": 264,
+        "End": 291,
+        "Lines": 28,
+        "Complexity": 8
+      },
+      {
+        "Name": "startPP",
+        "Start": 292,
+        "End": 390,
+        "Lines": 99,
+        "Complexity": 34
+      },
+      {
+        "Name": "runPP",
+        "Start": 391,
+        "End": 515,
+        "Lines": 125,
+        "Complexity": 29
+      },
+      {
+        "Name": "watchPP",
+        "Start": 517,
+        "End": 539,
+        "Lines": 23,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_traffic.go": {
+    "Lines": 118,
+    "LongLines": 2,
+    "MaxFunction": 38,
+    "MaxComplexity": 11,
+    "Functions": [
+      {
+        "Name": "rateFromBytes",
+        "Start": 39,
+        "End": 54,
+        "Lines": 16,
+        "Complexity": 6
+      },
+      {
+        "Name": "trafficPeak",
+        "Start": 55,
+        "End": 64,
+        "Lines": 10,
+        "Complexity": 3
+      },
+      {
+        "Name": "Add",
+        "Start": 68,
+        "End": 105,
+        "Lines": 38,
+        "Complexity": 11
+      },
+      {
+        "Name": "TrafficLoadAbort",
+        "Start": 116,
+        "End": 118,
+        "Lines": 3,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_traffic_test.go": {
+    "Lines": 114,
+    "LongLines": 2,
+    "MaxFunction": 51,
+    "MaxComplexity": 28,
+    "Functions": [
+      {
+        "Name": "trafficPair",
+        "Start": 9,
+        "End": 21,
+        "Lines": 13,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL06TTrafficSummaryExactDirectionGapsAndImmutablePublication",
+        "Start": 22,
+        "End": 72,
+        "Lines": 51,
+        "Complexity": 28
+      },
+      {
+        "Name": "TestL06TTrafficLoadAbortAtExactContractBoundaries",
+        "Start": 73,
+        "End": 98,
+        "Lines": 26,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL06TTrafficRetentionDoesNotExpandOtherScopes",
+        "Start": 99,
+        "End": 114,
+        "Lines": 16,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/modules/equipment/pppoe_types.go": {
+    "Lines": 259,
+    "LongLines": 1,
+    "MaxFunction": 7,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "ppDeltaSession",
+        "Start": 150,
+        "End": 156,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "PPConnection",
+        "Start": 242,
+        "End": 244,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "fmtPort",
+        "Start": 245,
+        "End": 245,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Endpoint",
+        "Start": 246,
+        "End": 252,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "PPValidQuery",
+        "Start": 253,
+        "End": 258,
+        "Lines": 6,
+        "Complexity": 18
+      },
+      {
+        "Name": "PPTime",
+        "Start": 259,
+        "End": 259,
+        "Lines": 1,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/modules/equipment/radio.go": {
+    "Lines": 487,
+    "LongLines": 6,
+    "MaxFunction": 129,
+    "MaxComplexity": 60,
+    "Functions": [
+      {
+        "Name": "radioFinite",
+        "Start": 182,
+        "End": 182,
+        "Lines": 1,
+        "Complexity": 3
+      },
+      {
+        "Name": "radioSeconds",
+        "Start": 183,
+        "End": 183,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "AssessRadioMeasurements",
+        "Start": 184,
+        "End": 312,
+        "Lines": 129,
+        "Complexity": 60
+      },
+      {
+        "Name": "RadioLiveLimit",
+        "Start": 313,
+        "End": 323,
+        "Lines": 11,
+        "Complexity": 12
+      },
+      {
+        "Name": "RadioLiveTickViolation",
+        "Start": 327,
+        "End": 329,
+        "Lines": 3,
+        "Complexity": 5
+      },
+      {
+        "Name": "RadioFamily",
+        "Start": 361,
+        "End": 363,
+        "Lines": 3,
+        "Complexity": 4
+      },
+      {
+        "Name": "RadioMAC",
+        "Start": 364,
+        "End": 382,
+        "Lines": 19,
+        "Complexity": 8
+      },
+      {
+        "Name": "RadioLinkPresent",
+        "Start": 383,
+        "End": 393,
+        "Lines": 11,
+        "Complexity": 8
+      },
+      {
+        "Name": "RadioCostGate",
+        "Start": 394,
+        "End": 423,
+        "Lines": 30,
+        "Complexity": 14
+      },
+      {
+        "Name": "StampRadio",
+        "Start": 424,
+        "End": 452,
+        "Lines": 29,
+        "Complexity": 8
+      },
+      {
+        "Name": "AccumulateRadioChains",
+        "Start": 455,
+        "End": 487,
+        "Lines": 33,
+        "Complexity": 20
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_avulso_test.go": {
+    "Lines": 204,
+    "LongLines": 3,
+    "MaxFunction": 31,
+    "MaxComplexity": 6,
+    "Functions": [
+      {
+        "Name": "ReadEquipment",
+        "Start": 16,
+        "End": 23,
+        "Lines": 8,
+        "Complexity": 1
+      },
+      {
+        "Name": "UpdateEquipment",
+        "Start": 24,
+        "End": 28,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReadPPTarget",
+        "Start": 29,
+        "End": 40,
+        "Lines": 12,
+        "Complexity": 3
+      },
+      {
+        "Name": "Inspect",
+        "Start": 47,
+        "End": 50,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestAvulsoPTPTOFUOnceSemSessao",
+        "Start": 51,
+        "End": 81,
+        "Lines": 31,
+        "Complexity": 6
+      },
+      {
+        "Name": "ReadRadio",
+        "Start": 89,
+        "End": 92,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestAvulsoRecusaSemTentativaExtra",
+        "Start": 93,
+        "End": 118,
+        "Lines": 26,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestAvulsoSemCredencialNaoInspeciona",
+        "Start": 119,
+        "End": 132,
+        "Lines": 14,
+        "Complexity": 4
+      },
+      {
+        "Name": "ReadRadio",
+        "Start": 139,
+        "End": 142,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestAvulsoNaoAceitaDriverSugeridoPeloCliente",
+        "Start": 143,
+        "End": 159,
+        "Lines": 17,
+        "Complexity": 3
+      },
+      {
+        "Name": "ReadRadio",
+        "Start": 163,
+        "End": 165,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestAvulsoInconclusivoNaoSobrescrevePerfil",
+        "Start": 166,
+        "End": 187,
+        "Lines": 22,
+        "Complexity": 5
+      },
+      {
+        "Name": "ReadRadio",
+        "Start": 191,
+        "End": 193,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestAvulsoPreservacaoNaoBloqueiaFallbackVinculado",
+        "Start": 194,
+        "End": 204,
+        "Lines": 11,
+        "Complexity": 4
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_counters.go": {
+    "Lines": 89,
+    "LongLines": 1,
+    "MaxFunction": 69,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "RadioCounterMetrics",
+        "Start": 21,
+        "End": 89,
+        "Lines": 69,
+        "Complexity": 29
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_counters_test.go": {
+    "Lines": 52,
+    "LongLines": 2,
+    "MaxFunction": 48,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "TestL07CounterRateBaselineResetAndUnavailable",
+        "Start": 5,
+        "End": 52,
+        "Lines": 48,
+        "Complexity": 19
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_cpu90_test.go": {
+    "Lines": 34,
+    "LongLines": 0,
+    "MaxFunction": 27,
+    "MaxComplexity": 6,
+    "Functions": [
+      {
+        "Name": "TestL07CPU90GateAndTickBoundary",
+        "Start": 8,
+        "End": 34,
+        "Lines": 27,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_journey.go": {
+    "Lines": 537,
+    "LongLines": 5,
+    "MaxFunction": 141,
+    "MaxComplexity": 45,
+    "Functions": [
+      {
+        "Name": "radioIndexKey",
+        "Start": 47,
+        "End": 47,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "radioIndexContext",
+        "Start": 48,
+        "End": 59,
+        "Lines": 12,
+        "Complexity": 5
+      },
+      {
+        "Name": "radioIndexView",
+        "Start": 60,
+        "End": 123,
+        "Lines": 64,
+        "Complexity": 25
+      },
+      {
+        "Name": "pinRadioTOFU",
+        "Start": 127,
+        "End": 214,
+        "Lines": 88,
+        "Complexity": 26
+      },
+      {
+        "Name": "startRadioIndex",
+        "Start": 216,
+        "End": 271,
+        "Lines": 56,
+        "Complexity": 22
+      },
+      {
+        "Name": "runRadioIndex",
+        "Start": 272,
+        "End": 412,
+        "Lines": 141,
+        "Complexity": 33
+      },
+      {
+        "Name": "runRadioPreparedOnce",
+        "Start": 414,
+        "End": 510,
+        "Lines": 97,
+        "Complexity": 45
+      },
+      {
+        "Name": "pageRadioIndex",
+        "Start": 514,
+        "End": 537,
+        "Lines": 24,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_journey_test.go": {
+    "Lines": 83,
+    "LongLines": 5,
+    "MaxFunction": 42,
+    "MaxComplexity": 9,
+    "Functions": [
+      {
+        "Name": "ReadEquipment",
+        "Start": 16,
+        "End": 16,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL07JIndexMatchDecisions",
+        "Start": 17,
+        "End": 58,
+        "Lines": 42,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL07JIndexMetadataFitsIPCAndPagesAllTargets",
+        "Start": 60,
+        "End": 83,
+        "Lines": 24,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_live2_test.go": {
+    "Lines": 23,
+    "LongLines": 0,
+    "MaxFunction": 16,
+    "MaxComplexity": 5,
+    "Functions": [
+      {
+        "Name": "TestL07Live2SpikesAndCommandInterval",
+        "Start": 8,
+        "End": 23,
+        "Lines": 16,
+        "Complexity": 5
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_live_service_test.go": {
+    "Lines": 229,
+    "LongLines": 9,
+    "MaxFunction": 77,
+    "MaxComplexity": 27,
+    "Functions": [
+      {
+        "Name": "radioLiveUUID",
+        "Start": 15,
+        "End": 17,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "WithAuthorization",
+        "Start": 21,
+        "End": 23,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Ready",
+        "Start": 27,
+        "End": 27,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Open",
+        "Start": 28,
+        "End": 30,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "ID",
+        "Start": 34,
+        "End": 34,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReadPPTarget",
+        "Start": 46,
+        "End": 48,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPCurrent",
+        "Start": 49,
+        "End": 52,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "PPSession",
+        "Start": 53,
+        "End": 55,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "RadioCurrent",
+        "Start": 56,
+        "End": 58,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "SaveRadio",
+        "Start": 59,
+        "End": 64,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "RadioLinks",
+        "Start": 65,
+        "End": 67,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "OpenRadioSession",
+        "Start": 89,
+        "End": 92,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "Initial",
+        "Start": 93,
+        "End": 96,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "Tick",
+        "Start": 97,
+        "End": 103,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "Probe",
+        "Start": 104,
+        "End": 111,
+        "Lines": 8,
+        "Complexity": 3
+      },
+      {
+        "Name": "Close",
+        "Start": 112,
+        "End": 112,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "ReadRadio",
+        "Start": 114,
+        "End": 152,
+        "Lines": 39,
+        "Complexity": 13
+      },
+      {
+        "Name": "TestL07LiveWorkerUsesBothCommandsAndTwoConsecutiveViolations",
+        "Start": 153,
+        "End": 229,
+        "Lines": 77,
+        "Complexity": 27
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_live_test.go": {
+    "Lines": 103,
+    "LongLines": 2,
+    "MaxFunction": 35,
+    "MaxComplexity": 16,
+    "Functions": [
+      {
+        "Name": "liveSamples",
+        "Start": 9,
+        "End": 23,
+        "Lines": 15,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL07LiveCommandGateAndReasons",
+        "Start": 24,
+        "End": 58,
+        "Lines": 35,
+        "Complexity": 16
+      },
+      {
+        "Name": "TestL07LiveLimitsUseCommandTiming",
+        "Start": 59,
+        "End": 71,
+        "Lines": 13,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestL07LiveCPUAbsoluteLimitKeepsSpecificFailure",
+        "Start": 73,
+        "End": 103,
+        "Lines": 31,
+        "Complexity": 10
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_persistent_service.go": {
+    "Lines": 531,
+    "LongLines": 4,
+    "MaxFunction": 431,
+    "MaxComplexity": 142,
+    "Functions": [
+      {
+        "Name": "openRadioSide",
+        "Start": 9,
+        "End": 36,
+        "Lines": 28,
+        "Complexity": 8
+      },
+      {
+        "Name": "runRadioPersistent",
+        "Start": 38,
+        "End": 468,
+        "Lines": 431,
+        "Complexity": 142
+      },
+      {
+        "Name": "radioTickReason",
+        "Start": 470,
+        "End": 495,
+        "Lines": 26,
+        "Complexity": 11
+      },
+      {
+        "Name": "radioTickComplete",
+        "Start": 497,
+        "End": 521,
+        "Lines": 25,
+        "Complexity": 18
+      },
+      {
+        "Name": "radioTransientTick",
+        "Start": 525,
+        "End": 531,
+        "Lines": 7,
+        "Complexity": 2
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_persistent_service_test.go": {
+    "Lines": 204,
+    "LongLines": 8,
+    "MaxFunction": 60,
+    "MaxComplexity": 18,
+    "Functions": [
+      {
+        "Name": "live2Harness",
+        "Start": 12,
+        "End": 26,
+        "Lines": 15,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL07PersistentWorkerSequencesAndReceipt",
+        "Start": 28,
+        "End": 87,
+        "Lines": 60,
+        "Complexity": 18
+      },
+      {
+        "Name": "PPSession",
+        "Start": 91,
+        "End": 93,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestL07PersistentCPEAddressCheckBeforeOpen",
+        "Start": 94,
+        "End": 105,
+        "Lines": 12,
+        "Complexity": 4
+      },
+      {
+        "Name": "TestL07OneObservationAcrossDistinctEndpoints",
+        "Start": 107,
+        "End": 118,
+        "Lines": 12,
+        "Complexity": 3
+      },
+      {
+        "Name": "WithAuthorization",
+        "Start": 122,
+        "End": 127,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL07PersistentRevocationClosesIdleSessions",
+        "Start": 128,
+        "End": 163,
+        "Lines": 36,
+        "Complexity": 10
+      },
+      {
+        "Name": "OpenRadioSession",
+        "Start": 177,
+        "End": 180,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "Tick",
+        "Start": 181,
+        "End": 186,
+        "Lines": 6,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestL07JReopenedCPUIsAnObservedTick",
+        "Start": 187,
+        "End": 204,
+        "Lines": 18,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_piloto_test.go": {
+    "Lines": 100,
+    "LongLines": 5,
+    "MaxFunction": 22,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "RadioCurrent",
+        "Start": 13,
+        "End": 19,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL07PilotoCostCannotCrossPerspective",
+        "Start": 20,
+        "End": 34,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "OpenRadioSession",
+        "Start": 45,
+        "End": 52,
+        "Lines": 8,
+        "Complexity": 2
+      },
+      {
+        "Name": "Tick",
+        "Start": 53,
+        "End": 58,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "TestL07PilotoPermanentErrorsNeverReopen",
+        "Start": 59,
+        "End": 80,
+        "Lines": 22,
+        "Complexity": 7
+      },
+      {
+        "Name": "TestL07PilotoAPOnlyStillNeedsCompleteAPCPUAndPing",
+        "Start": 81,
+        "End": 100,
+        "Lines": 20,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_service.go": {
+    "Lines": 666,
+    "LongLines": 14,
+    "MaxFunction": 208,
+    "MaxComplexity": 79,
+    "Functions": [
+      {
+        "Name": "jobUsesEndpoint",
+        "Start": 10,
+        "End": 20,
+        "Lines": 11,
+        "Complexity": 4
+      },
+      {
+        "Name": "radioRow",
+        "Start": 21,
+        "End": 65,
+        "Lines": 45,
+        "Complexity": 19
+      },
+      {
+        "Name": "radioKey",
+        "Start": 66,
+        "End": 75,
+        "Lines": 10,
+        "Complexity": 3
+      },
+      {
+        "Name": "radioPage",
+        "Start": 76,
+        "End": 106,
+        "Lines": 31,
+        "Complexity": 12
+      },
+      {
+        "Name": "HandleRadio",
+        "Start": 107,
+        "End": 314,
+        "Lines": 208,
+        "Complexity": 79
+      },
+      {
+        "Name": "startRadio",
+        "Start": 316,
+        "End": 450,
+        "Lines": 135,
+        "Complexity": 62
+      },
+      {
+        "Name": "readRadioSide",
+        "Start": 452,
+        "End": 529,
+        "Lines": 78,
+        "Complexity": 27
+      },
+      {
+        "Name": "runRadio",
+        "Start": 530,
+        "End": 660,
+        "Lines": 131,
+        "Complexity": 50
+      },
+      {
+        "Name": "radioUnsupportedCPE",
+        "Start": 664,
+        "End": 666,
+        "Lines": 3,
+        "Complexity": 11
+      }
+    ]
+  },
+  "internal/modules/equipment/radio_session.go": {
+    "Lines": 16,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "internal/modules/equipment/radio_test.go": {
+    "Lines": 145,
+    "LongLines": 4,
+    "MaxFunction": 40,
+    "MaxComplexity": 19,
+    "Functions": [
+      {
+        "Name": "TestL07RadioCostAndProvenance",
+        "Start": 9,
+        "End": 42,
+        "Lines": 34,
+        "Complexity": 19
+      },
+      {
+        "Name": "TestL07LinkRequiresExactInterfaceBSSIDAndMAC",
+        "Start": 43,
+        "End": 66,
+        "Lines": 24,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestL07AllMeasurementSamplesAndCoverageRequired",
+        "Start": 67,
+        "End": 105,
+        "Lines": 39,
+        "Complexity": 9
+      },
+      {
+        "Name": "TestL07RadioChainExtremaAndLiveLimits",
+        "Start": 106,
+        "End": 145,
+        "Lines": 40,
+        "Complexity": 9
+      }
+    ]
+  },
+  "internal/modules/equipment/service.go": {
+    "Lines": 854,
+    "LongLines": 13,
+    "MaxFunction": 213,
+    "MaxComplexity": 82,
+    "Functions": [
+      {
+        "Name": "New",
+        "Start": 49,
+        "End": 55,
+        "Lines": 7,
+        "Complexity": 2
+      },
+      {
+        "Name": "authorized",
+        "Start": 56,
+        "End": 66,
+        "Lines": 11,
+        "Complexity": 6
+      },
+      {
+        "Name": "Handle",
+        "Start": 67,
+        "End": 168,
+        "Lines": 102,
+        "Complexity": 36
+      },
+      {
+        "Name": "mutate",
+        "Start": 169,
+        "End": 381,
+        "Lines": 213,
+        "Complexity": 82
+      },
+      {
+        "Name": "sameScope",
+        "Start": 382,
+        "End": 384,
+        "Lines": 3,
+        "Complexity": 6
+      },
+      {
+        "Name": "prune",
+        "Start": 385,
+        "End": 395,
+        "Lines": 11,
+        "Complexity": 6
+      },
+      {
+        "Name": "copyJob",
+        "Start": 396,
+        "End": 396,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "start",
+        "Start": 399,
+        "End": 486,
+        "Lines": 88,
+        "Complexity": 29
+      },
+      {
+        "Name": "check",
+        "Start": 487,
+        "End": 525,
+        "Lines": 39,
+        "Complexity": 14
+      },
+      {
+        "Name": "run",
+        "Start": 526,
+        "End": 686,
+        "Lines": 161,
+        "Complexity": 47
+      },
+      {
+        "Name": "status",
+        "Start": 688,
+        "End": 690,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "statusKind",
+        "Start": 691,
+        "End": 725,
+        "Lines": 35,
+        "Complexity": 17
+      },
+      {
+        "Name": "confirm",
+        "Start": 726,
+        "End": 787,
+        "Lines": 62,
+        "Complexity": 24
+      },
+      {
+        "Name": "invalidate",
+        "Start": 788,
+        "End": 834,
+        "Lines": 47,
+        "Complexity": 21
+      },
+      {
+        "Name": "Close",
+        "Start": 835,
+        "End": 843,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "vaultReady",
+        "Start": 846,
+        "End": 851,
+        "Lines": 6,
+        "Complexity": 3
+      },
+      {
+        "Name": "VaultAvailable",
+        "Start": 854,
+        "End": 854,
+        "Lines": 1,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/modules/equipment/types.go": {
+    "Lines": 265,
+    "LongLines": 1,
+    "MaxFunction": 16,
+    "MaxComplexity": 14,
+    "Functions": [
+      {
+        "Name": "ValidText",
+        "Start": 199,
+        "End": 209,
+        "Lines": 11,
+        "Complexity": 7
+      },
+      {
+        "Name": "ValidateDevice",
+        "Start": 212,
+        "End": 227,
+        "Lines": 16,
+        "Complexity": 14
+      },
+      {
+        "Name": "ValidDevice",
+        "Start": 228,
+        "End": 228,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "validateCredential",
+        "Start": 229,
+        "End": 240,
+        "Lines": 12,
+        "Complexity": 5
+      },
+      {
+        "Name": "credential",
+        "Start": 241,
+        "End": 248,
+        "Lines": 8,
+        "Complexity": 3
+      },
+      {
+        "Name": "device",
+        "Start": 249,
+        "End": 256,
+        "Lines": 8,
+        "Complexity": 3
+      },
+      {
+        "Name": "links",
+        "Start": 257,
+        "End": 265,
+        "Lines": 9,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/modules/foundation/service.go": {
+    "Lines": 153,
+    "LongLines": 1,
+    "MaxFunction": 28,
+    "MaxComplexity": 11,
+    "Functions": [
+      {
+        "Name": "New",
+        "Start": 65,
+        "End": 67,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Open",
+        "Start": 68,
+        "End": 89,
+        "Lines": 22,
+        "Complexity": 6
+      },
+      {
+        "Name": "authorize",
+        "Start": 90,
+        "End": 104,
+        "Lines": 15,
+        "Complexity": 7
+      },
+      {
+        "Name": "Snapshot",
+        "Start": 105,
+        "End": 113,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "ValidLabel",
+        "Start": 114,
+        "End": 125,
+        "Lines": 12,
+        "Complexity": 11
+      },
+      {
+        "Name": "Observe",
+        "Start": 126,
+        "End": 153,
+        "Lines": 28,
+        "Complexity": 7
+      }
+    ]
+  },
+  "internal/modules/foundation/service_test.go": {
+    "Lines": 108,
+    "LongLines": 2,
+    "MaxFunction": 38,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "Read",
+        "Start": 15,
+        "End": 23,
+        "Lines": 9,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestAuthorizationTTLAndSessionBound",
+        "Start": 24,
+        "End": 61,
+        "Lines": 38,
+        "Complexity": 12
+      },
+      {
+        "Name": "TestLabelRules",
+        "Start": 62,
+        "End": 71,
+        "Lines": 10,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestConcurrencyStatusAndCancellation",
+        "Start": 72,
+        "End": 108,
+        "Lines": 37,
+        "Complexity": 8
+      }
+    ]
+  },
+  "internal/testsupport/sshfixture/diagnostics.go": {
+    "Lines": 107,
+    "LongLines": 9,
+    "MaxFunction": 79,
+    "MaxComplexity": 29,
+    "Functions": [
+      {
+        "Name": "CatalogTranscript",
+        "Start": 13,
+        "End": 15,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "RadiusTranscript",
+        "Start": 16,
+        "End": 18,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "PingTranscript",
+        "Start": 19,
+        "End": 21,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "diagnosticOutput",
+        "Start": 25,
+        "End": 103,
+        "Lines": 79,
+        "Complexity": 29
+      },
+      {
+        "Name": "DeviceOperationalTranscript",
+        "Start": 105,
+        "End": 107,
+        "Lines": 3,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/testsupport/sshfixture/pppoe.go": {
+    "Lines": 40,
+    "LongLines": 0,
+    "MaxFunction": 15,
+    "MaxComplexity": 4,
+    "Functions": [
+      {
+        "Name": "ppOutput",
+        "Start": 11,
+        "End": 25,
+        "Lines": 15,
+        "Complexity": 4
+      },
+      {
+        "Name": "PPPoETranscript",
+        "Start": 26,
+        "End": 40,
+        "Lines": 15,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/testsupport/sshfixture/server.go": {
+    "Lines": 301,
+    "LongLines": 1,
+    "MaxFunction": 89,
+    "MaxComplexity": 24,
+    "Functions": [
+      {
+        "Name": "Start",
+        "Start": 54,
+        "End": 71,
+        "Lines": 18,
+        "Complexity": 4
+      },
+      {
+        "Name": "Port",
+        "Start": 72,
+        "End": 72,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "ActiveConnections",
+        "Start": 73,
+        "End": 73,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Fingerprint",
+        "Start": 74,
+        "End": 78,
+        "Lines": 5,
+        "Complexity": 1
+      },
+      {
+        "Name": "RotateHostKey",
+        "Start": 82,
+        "End": 95,
+        "Lines": 14,
+        "Complexity": 3
+      },
+      {
+        "Name": "serve",
+        "Start": 96,
+        "End": 120,
+        "Lines": 25,
+        "Complexity": 4
+      },
+      {
+        "Name": "handle",
+        "Start": 121,
+        "End": 209,
+        "Lines": 89,
+        "Complexity": 24
+      },
+      {
+        "Name": "output",
+        "Start": 210,
+        "End": 285,
+        "Lines": 76,
+        "Complexity": 24
+      },
+      {
+        "Name": "Close",
+        "Start": 286,
+        "End": 301,
+        "Lines": 16,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/testsupport/sshfixture/unimplemented.go": {
+    "Lines": 19,
+    "LongLines": 0,
+    "MaxFunction": 4,
+    "MaxComplexity": 1,
+    "Functions": [
+      {
+        "Name": "sendUnimplemented",
+        "Start": 16,
+        "End": 19,
+        "Lines": 4,
+        "Complexity": 1
+      }
+    ]
+  },
+  "main.go": {
+    "Lines": 58,
+    "LongLines": 0,
+    "MaxFunction": 36,
+    "MaxComplexity": 6,
+    "Functions": [
+      {
+        "Name": "main",
+        "Start": 23,
+        "End": 58,
+        "Lines": 36,
+        "Complexity": 6
+      }
+    ]
+  },
+  "scripts/architecture.go": {
+    "Lines": 152,
+    "LongLines": 5,
+    "MaxFunction": 103,
+    "MaxComplexity": 32,
+    "Functions": [
+      {
+        "Name": "violation",
+        "Start": 24,
+        "End": 49,
+        "Lines": 26,
+        "Complexity": 8
+      },
+      {
+        "Name": "main",
+        "Start": 50,
+        "End": 152,
+        "Lines": 103,
+        "Complexity": 32
+      }
+    ]
+  },
+  "scripts/part1-fixture/main.go": {
+    "Lines": 32,
+    "LongLines": 2,
+    "MaxFunction": 20,
+    "MaxComplexity": 4,
+    "Functions": [
+      {
+        "Name": "main",
+        "Start": 13,
+        "End": 32,
+        "Lines": 20,
+        "Complexity": 4
+      }
+    ]
+  },
+  "scripts/quality.go": {
+    "Lines": 278,
+    "LongLines": 3,
+    "MaxFunction": 37,
+    "MaxComplexity": 14,
+    "Functions": [
+      {
+        "Name": "main",
+        "Start": 35,
+        "End": 59,
+        "Lines": 25,
+        "Complexity": 4
+      },
+      {
+        "Name": "fatal",
+        "Start": 60,
+        "End": 65,
+        "Lines": 6,
+        "Complexity": 2
+      },
+      {
+        "Name": "writeBaseline",
+        "Start": 66,
+        "End": 74,
+        "Lines": 9,
+        "Complexity": 2
+      },
+      {
+        "Name": "authored",
+        "Start": 75,
+        "End": 81,
+        "Lines": 7,
+        "Complexity": 8
+      },
+      {
+        "Name": "measureSources",
+        "Start": 82,
+        "End": 113,
+        "Lines": 32,
+        "Complexity": 12
+      },
+      {
+        "Name": "measureGo",
+        "Start": 114,
+        "End": 132,
+        "Lines": 19,
+        "Complexity": 5
+      },
+      {
+        "Name": "complexity",
+        "Start": 133,
+        "End": 155,
+        "Lines": 23,
+        "Complexity": 9
+      },
+      {
+        "Name": "git",
+        "Start": 156,
+        "End": 156,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "changedSources",
+        "Start": 157,
+        "End": 193,
+        "Lines": 37,
+        "Complexity": 11
+      },
+      {
+        "Name": "overlaps",
+        "Start": 194,
+        "End": 201,
+        "Lines": 8,
+        "Complexity": 4
+      },
+      {
+        "Name": "validate",
+        "Start": 202,
+        "End": 224,
+        "Lines": 23,
+        "Complexity": 10
+      },
+      {
+        "Name": "validateFunctions",
+        "Start": 225,
+        "End": 242,
+        "Lines": 18,
+        "Complexity": 9
+      },
+      {
+        "Name": "validateText",
+        "Start": 243,
+        "End": 278,
+        "Lines": 36,
+        "Complexity": 14
+      }
+    ]
+  },
+  "frontend/src/presentation.ts": {
+    "Lines": 630,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio-api.ts": {
+    "Lines": 166,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  }
+}

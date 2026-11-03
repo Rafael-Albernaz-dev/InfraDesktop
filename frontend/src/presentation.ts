@@ -1,4 +1,6 @@
 import {
+  SetCredentialDefault,
+  GetRadioIndexPage,
   GetRadio,
   StartRadio,
   RadioStatus,
@@ -134,6 +136,7 @@ export type EquipmentResult = {
     vault_available: boolean;
     total_devices?: number;
     operation_state?: string;
+    credential_defaults?: Record<string, string>;
   };
 };
 export type DeviceInput = Omit<
@@ -152,6 +155,7 @@ const equipmentBindings = {
     SaveEquipment(profile, activation, input as presentation.DeviceInput),
   active: SetEquipmentActive,
   credentials: ListCredentials,
+  setDefault: SetCredentialDefault,
   putCredential: (
     profile: string,
     activation: string,
@@ -557,6 +561,14 @@ export const deviceMonitoringAPI = {
 
 import type { RadioResult, RadioInput, RadioLinkChoice } from './radio-api';
 export const radioAPI = {
+  indexPage: (
+    p: string,
+    a: string,
+    d: string,
+    o: string,
+    row: string,
+    offset: number,
+  ): Promise<RadioResult> => GetRadioIndexPage(p, a, d, o, row, offset),
   current: (
     p: string,
     a: string,

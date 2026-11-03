@@ -35,6 +35,13 @@ export type RadioClient = {
   metrics: RadioMetric[];
 };
 export type RadioReading = {
+  model?: string;
+  manufacturer?: string;
+  driver_reason?: string;
+  mode?: string;
+  wireless_protocol?: string;
+  scope?: string;
+  cpu_before_during_after?: number[];
   device_name?: string;
   address?: string;
   id: string;
@@ -48,6 +55,7 @@ export type RadioReading = {
   credential_revision: number;
   connection: string;
   ssh_legacy?: string[];
+  ssh_negotiated?: string[];
   interfaces: RadioInterface[];
   clients: RadioClient[];
   metrics: RadioMetric[];
@@ -67,6 +75,7 @@ export type RadioProfile = {
   critical: number;
 };
 export type RadioLinkChoice = {
+  credential_id?: string;
   cpe_id: string;
   ap_id: string;
   mac: string;
@@ -84,6 +93,15 @@ export type RadioLink = RadioLinkChoice & {
 };
 export type RadioTiming = { command_seconds: number; path_seconds: number };
 export type RadioCost = {
+  ap_only?: boolean;
+  series?: {
+    observed_at: string;
+    cpu: number[];
+    ap_command_seconds: number;
+    cpe_command_seconds: number;
+    icmp_rtt_ms: number[];
+    reason: string;
+  }[];
   measurements?: { ap: RadioTiming; cpe: RadioTiming; seconds: number }[];
   ping_baseline_ms?: number;
   ping_limit_ms?: number;
@@ -95,6 +113,28 @@ export type RadioCost = {
   reason: string;
 };
 export type RadioView = {
+  index?: {
+    total?: number;
+    offset?: number;
+    next_offset?: number;
+    more?: boolean;
+    observed_at: string;
+    complete: boolean;
+    targets: Record<string, string>;
+    labels?: Record<string, string>;
+  };
+  proposal?: {
+    ap_name: string;
+    ap_address: string;
+    credential_alias: string;
+    choice: RadioLinkChoice;
+    address: string;
+    family: string;
+    credential_id: string;
+  };
+  match_reason?: string;
+
+  cpe_note?: string;
   reading?: RadioReading;
   cpe_reading?: RadioReading;
   profile?: RadioProfile;

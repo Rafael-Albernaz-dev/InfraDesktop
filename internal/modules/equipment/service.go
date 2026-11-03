@@ -28,21 +28,22 @@ type runningJob struct {
 	cancel             context.CancelFunc
 }
 type Service struct {
-	radioCosts  map[string]RadioCost
-	pingHistory map[string][]int64
-	pingOrder   []string
-	auth        Authorizer
-	store       Store
-	vault       Vault
-	remote      Remote
-	ids         IDs
-	now         func() time.Time
-	mu          sync.Mutex
-	jobs        map[string]*runningJob
-	closed      bool
-	wg          sync.WaitGroup
-	epoch       string
-	origin      time.Time
+	radioIndexes map[string]RadioIndex
+	radioCosts   map[string]RadioCost
+	pingHistory  map[string][]int64
+	pingOrder    []string
+	auth         Authorizer
+	store        Store
+	vault        Vault
+	remote       Remote
+	ids          IDs
+	now          func() time.Time
+	mu           sync.Mutex
+	jobs         map[string]*runningJob
+	closed       bool
+	wg           sync.WaitGroup
+	epoch        string
+	origin       time.Time
 }
 
 func New(auth Authorizer, store Store, vault Vault, remote Remote, ids IDs, now func() time.Time) *Service {
@@ -85,6 +86,7 @@ func (s *Service) Handle(ctx context.Context, q Command) (View, Code) {
 			if c != OK {
 				return c
 			}
+			v.CredentialDefaults = st.CredentialDefaults
 			v.VaultAvailable = s.vaultReady(&st)
 			v.Total = len(st.Devices)
 			if q.Op == "inventory.enroll-status" {
@@ -194,9 +196,9 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 			return c
 		}
 	}
-	stamp := fmt.Sprintf("%q", []string{q.Op, q.ID, q.Name, q.Address, fmt.Sprint(q.Port), q.Transport, q.CredentialID, fmt.Sprint(q.Revision), fmt.Sprint(q.Active), q.Alias, q.User, secretStamp, fmt.Sprint(q.Affected)})
+	stamp := fmt.Sprintf("%q", []string{q.Op, q.ID, q.Name, q.Address, fmt.Sprint(q.Port), string(q.Transport), q.CredentialID, fmt.Sprint(q.Revision), fmt.Sprint(q.Active), q.Alias, q.User, secretStamp, fmt.Sprint(q.Affected)})
 	if q.Role != "" && q.Role != "other" {
-		stamp += ";role:" + q.Role
+		stamp += ";role:" + string(q.Role)
 	}
 	mutated := false
 	c := s.store.UpdateEquipment(ctx, q.Scope.Profile, func(st *State) Code {
@@ -223,6 +225,18 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 			return Limit
 		}
 		switch q.Op {
+		case "credential.default-set":
+			if q.Role != "ap" && q.Role != "cpe" && q.Role != "ptp" {
+				return Invalid
+			}
+			if credential(st, q.CredentialID) == nil {
+				return MissingCredential
+			}
+			if st.CredentialDefaults == nil {
+				st.CredentialDefaults = map[string]string{}
+			}
+			st.CredentialDefaults[string(q.Role)] = q.CredentialID
+			v.CredentialDefaults = st.CredentialDefaults
 		case "credential.put":
 			if !s.vaultReady(st) {
 				return VaultUnavailable
@@ -309,6 +323,9 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 			old := device(st, q.ID)
 			d := Device{Role: q.Role, ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port, Transport: q.Transport, CredentialID: q.CredentialID, Revision: 1, Active: true}
 			if q.Op == "inventory.create" {
+				if d.CredentialID == "" {
+					d.CredentialID = st.CredentialDefaults[string(d.Role)]
+				}
 				if old != nil || q.Revision != 0 {
 					return Revision
 				}
@@ -597,6 +614,21 @@ func (s *Service) run(ctx context.Context, j *runningJob) {
 			d := device(st, j.device.ID)
 			if d == nil || d.Revision != j.device.Revision || !d.Active {
 				return Revision
+			}
+			if j.command.Op == "trust.inspect" && outcome == OK && (d.Role == "ap" || d.Role == "cpe") {
+				if d.Fingerprint != "" && d.Fingerprint != fingerprint {
+					outcome = TrustChanged
+				}
+				if d.Fingerprint == "" {
+					if len(st.Operations) >= MaxOperations {
+						return Limit
+					}
+					d.Fingerprint = fingerprint
+					d.TrustOrigin = "automatic-tofu"
+					d.TrustAcceptance = &TrustAcceptance{Mode: "automatic-tofu", At: PPTime(s.now()), UID: j.command.UID, Company: j.command.Scope.Profile, DeviceID: d.ID, Address: d.Address, Port: d.Port, Revision: d.Revision, Fingerprint: fingerprint}
+					d.Revision++
+					st.Operations = append(st.Operations, Operation{j.command.Operation, "automatic-tofu:" + fingerprint, d.ID})
+				}
 			}
 			if j.command.Op == "device.query-start" {
 				cr := credential(st, d.CredentialID)

@@ -34,15 +34,18 @@ func (a *App) RadioStatus(p, act, job, reading string, offset int) RadioResult {
 func (a *App) CancelRadio(p, act, job string) RadioResult {
 	return a.radioCall("radio.cancel", p, act, equipment.RadioInput{JobID: job})
 }
-func (a *App) CancelRadioOperation(p, act, device, operation string) RadioResult {
-	return a.radioCall("radio.cancel", p, act, equipment.RadioInput{DeviceID: device, Operation: operation})
-}
+
 func (a *App) ConfirmRadioFamily(p, act, device, family string, revision uint64, warning, critical int) RadioResult {
-	return a.radioCall("radio.confirm-family", p, act, equipment.RadioInput{DeviceID: device, Revision: revision, Family: family, Warning: warning, Critical: critical})
+	return a.radioCall("radio.confirm-family", p, act, equipment.RadioInput{
+		DeviceID: device, Revision: revision, Family: equipment.RadioFamily(family),
+		Warning: warning, Critical: critical,
+	})
 }
 func (a *App) GetRadioLink(p, act, device, observation, row string) RadioResult {
 	return a.radioCall("radio.link-current", p, act, equipment.RadioInput{DeviceID: device, ObservationID: observation, RowID: row})
 }
 func (a *App) ConfirmRadioLink(p, act, device, observation, row, operation string, link equipment.RadioLinkChoice) RadioResult {
-	return a.radioCall("radio.link-confirm", p, act, equipment.RadioInput{DeviceID: device, ObservationID: observation, RowID: row, Operation: operation, Link: &link})
+	return a.radioCall("radio.link-confirm", p, act, equipment.RadioInput{
+		DeviceID: device, ObservationID: observation, RowID: row, Operation: operation, Link: &link,
+	})
 }

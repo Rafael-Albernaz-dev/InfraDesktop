@@ -5,14 +5,14 @@ import (
 	"testing"
 )
 
-func TestL07CPU90GateAndTickBoundary(t *testing.T) {
+func TestRadioCPULimitGateAndTickBoundary(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		cpu     []int
 		allowed bool
 	}{
 		{"observed I1", []int{26, 57, 30}, true}, {"observed U1", []int{36, 59, 30}, true}, {"exact90", []int{6, 90, 7}, true},
-		{"above90", []int{6, 91, 7}, false}, {"baseline above90", []int{91, 80, 70}, false},
+		{"above90 twice", []int{6, 91, 91}, false}, {"baseline above90 twice", []int{91, 92, 70}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			samples := liveSamples(t)

@@ -210,6 +210,14 @@ export function Equipment({
     acceptEquipmentAuthority(profile, activation);
   }, [profile, activation]);
   const [credentialRefresh, reloadCredentials] = useState(0);
+  const defaultContext = useRef([profile, activation].join('|'));
+  useLayoutEffect(() => {
+    defaultContext.current = [profile, activation].join('|');
+  }, [profile, activation]);
+  const [credentialDefaults, setCredentialDefaults] = useState<
+    Record<string, string>
+  >({});
+  const [defaultBusy, setDefaultBusy] = useState(false);
   const [credentialError, setCredentialError] = useState('');
   const [ppOpen, setPPOpen] = useState(false);
   const detailSurface = useRef<HTMLElement>(null);
@@ -338,6 +346,7 @@ export function Equipment({
         if (stopped) return;
         if (r.code !== 'OK' || !r.data) throw new Error(r.code);
         all.push(...(r.data.credentials || []));
+        setCredentialDefaults(r.data.credential_defaults || {});
         page = r.data.next_cursor;
       } while (page);
       setCredentialCatalog({
@@ -583,7 +592,11 @@ export function Equipment({
     };
   }, [connectRequest, busy, connected]);
   useEffect(() => {
-    if (!job || job.kind !== 'device.query-start' || job.state === 'RUNNING')
+    if (
+      !job ||
+      !['device.query-start', 'trust.inspect'].includes(job.kind) ||
+      job.state === 'RUNNING'
+    )
       return;
     let cancelled = false;
     const intent = surface.current;
@@ -645,6 +658,8 @@ export function Equipment({
   const locked = busy || !connected;
   const trustOpen = Boolean(
     !selected?.fingerprint &&
+    selected?.role !== 'ap' &&
+    selected?.role !== 'cpe' &&
     job?.kind === 'trust.inspect' &&
     job.state === 'SUCCEEDED' &&
     selected &&
@@ -680,6 +695,12 @@ export function Equipment({
         <details className="equipment-help">
           <summary>Detalhes da chave SSH</summary>
           <p className="fingerprint mono">{selected.fingerprint}</p>
+          <p>
+            {selected.trust_acceptance?.mode || selected.trust_origin} ·{' '}
+            {selected.trust_acceptance?.accepted_at
+              ? formatDate(selected.trust_acceptance.accepted_at)
+              : 'Data não registrada'}
+          </p>
           <Button
             disabled={locked || job?.state === 'RUNNING'}
             onClick={() => {
@@ -724,6 +745,11 @@ export function Equipment({
             Recarregar credenciais
           </button>
         </p>
+      )}
+      {selected && job?.code === 'REMOTE_AUTH_FAILED' && !shownForm && (
+        <Button disabled={locked} onClick={() => setForm(selected)}>
+          Escolher outra credencial
+        </Button>
       )}
       {error && !shownForm && !credentialForm && !trustOpen && !resetTrust && (
         <p className="inline-error operation-error" role="alert">
@@ -1164,8 +1190,9 @@ export function Equipment({
                   />
                 )}
                 {detailOpen &&
-                  (selected.role === 'ap' || selected.role === 'cpe') &&
-                  selected.fingerprint && (
+                  (selected.role === 'ap' ||
+                    selected.role === 'cpe' ||
+                    selected.role === 'ptp') && (
                     <RadioEquipment
                       key={[
                         profile,
@@ -1335,6 +1362,7 @@ export function Equipment({
             key={shownForm === 'new' ? 'new' : shownForm.id}
             device={shownForm === 'new' ? undefined : shownForm}
             credentials={credentials}
+            defaults={credentialDefaults}
             disabled={locked}
             vault={vault}
             contextKey={[profile, activation].join('|')}
@@ -1384,6 +1412,48 @@ export function Equipment({
             Reutilizáveis somente nesta empresa. Substituir aqui não altera a
             senha no equipamento.
           </p>
+          {credentialForm && (
+            <details className="equipment-help">
+              <summary>Credencial padrão por classe</summary>
+              {(['ap', 'cpe', 'ptp'] as const).map((role) => (
+                <label className="field" key={role}>
+                  {role.toUpperCase()}
+                  <select
+                    aria-label={'Credencial padrão ' + role.toUpperCase()}
+                    disabled={locked || defaultBusy}
+                    value={credentialDefaults[role] || ''}
+                    onChange={(e) => {
+                      const selected = e.target.value,
+                        context = [profile, activation].join('|');
+                      if (!selected) return;
+                      setDefaultBusy(true);
+                      void api
+                        .setDefault(profile, activation, role, selected, id())
+                        .then((r) => {
+                          if (defaultContext.current !== context) return;
+                          if (r.code === 'OK') reloadCredentials((n) => n + 1);
+                          else setCredentialError(equipmentMessage(r.code));
+                        })
+                        .catch(() => {
+                          if (defaultContext.current === context)
+                            setCredentialError(
+                              equipmentMessage('SERVICE_UNAVAILABLE'),
+                            );
+                        })
+                        .finally(() => setDefaultBusy(false));
+                    }}
+                  >
+                    <option value="">Selecione no cofre</option>
+                    {credentials.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.alias} · {c.user}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </details>
+          )}
           <CredentialPicker
             disabled={locked}
             credentials={credentials}
@@ -1412,6 +1482,7 @@ export function Equipment({
   );
 }
 function DeviceForm({
+  defaults,
   device,
   credentials,
   disabled,
@@ -1420,6 +1491,7 @@ function DeviceForm({
   save,
   reconcile,
 }: {
+  defaults: Record<string, string>;
   device?: Device;
   credentials: Credential[];
   disabled: boolean;
@@ -1600,7 +1672,18 @@ function DeviceForm({
               <select
                 aria-label="Papel do equipamento"
                 value={draft.role}
-                onChange={(e) => change({ role: e.target.value })}
+                onChange={(e) => {
+                  const role = e.target.value;
+                  if (!device && ['ap', 'cpe', 'ptp'].includes(role)) {
+                    setExisting(true);
+                    change({
+                      role,
+                      credential_id: defaults[role] || '',
+                      user: '',
+                      secret: '',
+                    });
+                  } else change({ role });
+                }}
               >
                 <option value="other">Outro</option>
                 <option value="concentrator">Concentrador</option>
@@ -1696,7 +1779,7 @@ function DeviceForm({
                 </label>
               </>
             )}
-            {!device && (
+            {!device && !['ap', 'cpe', 'ptp'].includes(draft.role || '') && (
               <Button
                 kind="flat"
                 disabled={!vault && existing}

@@ -39,6 +39,7 @@ type radioLiveStore struct {
 	devices                map[string]Device
 	conc, observation, row string
 	link                   RadioLink
+	saves                  *atomic.Int32
 }
 
 func (s radioLiveStore) ReadPPTarget(_ context.Context, _ string, id string, _ bool) (PPTarget, Code) {
@@ -46,15 +47,22 @@ func (s radioLiveStore) ReadPPTarget(_ context.Context, _ string, id string, _ b
 }
 func (s radioLiveStore) PPCurrent(context.Context, string, string) (PPView, Code) {
 	d := s.devices[s.conc]
-	return PPView{Current: &PPObservation{ID: s.observation, Provenance: PPProvenance{Revision: 1, CredentialRevision: 1, Connection: PPConnection(d)}}}, OK
+	return PPView{Current: &PPObservation{ID: s.observation,
+			Provenance: PPProvenance{Revision: 1,
+				CredentialRevision: 1,
+				Connection:         PPConnection(d)}}},
+		OK
 }
 func (s radioLiveStore) PPSession(context.Context, string, PPInput) (PPView, Code) {
 	return PPView{Rows: []PPRow{{ID: s.row, Login: "synthetic", Address: s.devices[s.link.CPE].Address, State: "ONLINE"}}}, OK
 }
 func (s radioLiveStore) RadioCurrent(context.Context, string, string) (*RadioReading, *RadioProfile, Code) {
-	return nil, &RadioProfile{Confirmed: true, Family: "routeros-wireless-v6"}, OK
+	return nil, &RadioProfile{Confirmed: true, Family: RadioRouterOSWirelessV6}, OK
 }
 func (s radioLiveStore) SaveRadio(context.Context, string, Device, uint64, *RadioReading) Code {
+	if s.saves != nil {
+		s.saves.Add(1)
+	}
 	return OK
 }
 func (s radioLiveStore) RadioLinks(context.Context, string, string, string) ([]RadioLink, Code) {
@@ -63,14 +71,78 @@ func (s radioLiveStore) RadioLinks(context.Context, string, string, string) ([]R
 
 type radioLiveRemote struct {
 	Remote
-	slowSide string
-	delay    time.Duration
-	calls    atomic.Int32
+	slowSide  string
+	delay     time.Duration
+	calls     atomic.Int32
+	cpuTicks  [][]int
+	pingTicks [][]float64
+	apTicks   atomic.Int32
+	closes    atomic.Int32
+	opens     atomic.Int32
+	holdAfter int
 }
 
-func (r *radioLiveRemote) ReadRadio(ctx context.Context, d Device, _ string, _ string, _ string, check func() Code) (*RadioReading, Code) {
+type radioFakeSession struct {
+	remote *radioLiveRemote
+	ctx    context.Context
+	d      Device
+	check  func() Code
+}
+
+func (r *radioLiveRemote) OpenRadioSession(ctx context.Context,
+	d Device,
+	_,
+	_ string,
+	_ RadioFamily,
+	_ *RadioLink,
+	check func() Code) (RadioReadSession,
+	Code) {
+	r.opens.Add(1)
+	return &radioFakeSession{r, ctx, d, check}, OK
+}
+func (r *radioFakeSession) Initial() (*RadioReading, Code) {
+	fresh := &radioLiveRemote{slowSide: r.remote.slowSide}
+	return fresh.ReadRadio(r.ctx, r.d, "", "", "", r.check)
+}
+func (r *radioFakeSession) Tick() (*RadioReading, Code) {
+	reading, c := r.remote.ReadRadio(r.ctx, r.d, "", "", "", r.check)
+	if reading != nil {
+		reading.Scope = "link-tick"
+	}
+	return reading, c
+}
+func (r *radioFakeSession) Probe() (RadioLoad, Code) {
+	values := []float64{1}
+	i := int(r.remote.apTicks.Load()) - 1
+	if i >= 0 && i < len(r.remote.pingTicks) {
+		values = r.remote.pingTicks[i]
+	}
+	return RadioLoad{Started: time.Now().Add(-time.Millisecond),
+			Ended:        time.Now(),
+			PingSent:     len(values),
+			PingReceived: len(values),
+			PingRTT:      values},
+		OK
+}
+func (r *radioFakeSession) Close() { r.remote.closes.Add(1) }
+
+func (r *radioLiveRemote) ReadRadio(ctx context.Context,
+	d Device,
+	_ string,
+	_ string,
+	_ RadioFamily,
+	check func() Code) (*RadioReading,
+	Code) {
 	if c := check(); c != OK {
 		return nil, c
+	}
+	index := -1
+	if d.Role == RoleAP {
+		index = int(r.apTicks.Add(1)) - 1
+		if r.holdAfter > 0 && index >= r.holdAfter {
+			<-ctx.Done()
+			return nil, Cancelled
+		}
 	}
 	if r.delay > 0 {
 		timer := time.NewTimer(r.delay)
@@ -84,84 +156,32 @@ func (r *radioLiveRemote) ReadRadio(ctx context.Context, d Device, _ string, _ s
 	r.calls.Add(1)
 	ping := 1.0
 	seconds := .4
-	if d.Role == r.slowSide {
+	if string(d.Role) == r.slowSide {
 		seconds = 3.2
 	}
 	cpu := []int{6, 7, 6}
+	if index >= 0 && index < len(r.cpuTicks) {
+		cpu = r.cpuTicks[index]
+	}
 	if r.slowSide == "cpu" {
-		cpu = []int{6, 91, 6}
+		cpu = []int{91}
 	}
 	if r.slowSide == "cpu90" {
 		cpu = []int{26, 90, 57}
 	}
-	return &RadioReading{CommandSeconds: seconds, PingRTT: &ping, CPU: cpu, Compatible: true, Clients: []RadioClient{{MAC: "AA:BB:CC:DD:EE:FF", Interface: "wlan1", BSSID: "AA:BB:CC:DD:EE:00"}}, APBSSID: "AA:BB:CC:DD:EE:00", WirelessMAC: "AA:BB:CC:DD:EE:FF"}, OK
+	return &RadioReading{CommandSeconds: seconds,
+			PingRTT:    &ping,
+			CPU:        cpu,
+			Compatible: true,
+			Clients: []RadioClient{{MAC: "AA:BB:CC:DD:EE:FF",
+				Interface: "wlan1",
+				BSSID:     "AA:BB:CC:DD:EE:00"}},
+			APBSSID:     "AA:BB:CC:DD:EE:00",
+			WirelessMAC: "AA:BB:CC:DD:EE:FF"},
+		OK
 }
-func TestL07LiveWorkerUsesBothCommandsAndTwoConsecutiveViolations(t *testing.T) {
-	for _, side := range []string{"healthy", "ap", "cpe", "cpu", "cpu90"} {
-		t.Run(side, func(t *testing.T) {
-			ap, cpe, conc := radioLiveUUID(), radioLiveUUID(), radioLiveUUID()
-			store := radioLiveStore{conc: conc, observation: radioLiveUUID(), row: radioLiveUUID(), link: RadioLink{AP: ap, CPE: cpe, MAC: "AA:BB:CC:DD:EE:FF", Interface: "wlan1", BSSID: "AA:BB:CC:DD:EE:00"}, devices: map[string]Device{}}
-			for i, item := range []struct{ id, role string }{{ap, "ap"}, {cpe, "cpe"}, {conc, "concentrator"}} {
-				store.devices[item.id] = Device{ID: item.id, Role: item.role, Revision: 1, Active: true, Address: "192.0.2." + string(rune('1'+i)), Port: 22, Fingerprint: "synthetic", Transport: "ssh"}
-			}
-			remote := &radioLiveRemote{slowSide: side}
-			if side == "healthy" || side == "cpu90" {
-				remote.delay = 2500 * time.Millisecond
-			}
-			s := New(radioLiveAuth{}, store, radioLiveVault{}, remote, radioLiveIDs{}, time.Now)
-			t.Cleanup(s.Close)
-			q := Command{Op: "radio.start", Scope: access.Command{Profile: "synthetic", ExpectedProfile: "synthetic", Activation: "active", ExpectedActivation: "active"}}
-			key := radioKey(q, &store.link, []Device{store.devices[ap], store.devices[cpe]}, []uint64{1, 1})
-			s.radioCosts = map[string]RadioCost{key: {Enabled: true, Interval: .001, CPUBaseline: 6, PingLimit: 2}}
-			in := RadioInput{DeviceID: conc, Revision: 1, ObservationID: store.observation, RowID: store.row, Operation: radioLiveUUID(), Mode: "live"}
-			view, c := s.HandleRadio(context.Background(), q, in)
-			if c != OK {
-				t.Fatal(c)
-			}
-			job := view.Job.ID
-			// A second admission cannot launch another link while this one owns it.
-			second := in
-			second.Operation = radioLiveUUID()
-			if _, c = s.HandleRadio(context.Background(), q, second); c != access.Busy {
-				t.Fatal("second live admitted", c)
-			}
-			deadline := time.Now().Add(14 * time.Second)
-			for time.Now().Before(deadline) {
-				time.Sleep(5 * time.Millisecond)
-				status := q
-				status.Op = "radio.status"
-				view, c = s.HandleRadio(context.Background(), status, RadioInput{JobID: job})
-				if c != OK {
-					t.Fatal(c)
-				}
-				if (side == "healthy" || side == "cpu90") && remote.calls.Load() >= 4 {
-					if view.Job.State != "RUNNING" {
-						t.Fatal("5s path aborted despite0.4s commands", view.Job)
-					}
-					stop := q
-					stop.Op = "radio.cancel"
-					if _, c = s.HandleRadio(context.Background(), stop, RadioInput{JobID: job}); c != OK {
-						t.Fatal(c)
-					}
-					s.wg.Wait()
-					if remote.calls.Load() > 5 {
-						t.Fatal("read continued after stop")
-					}
-					return
-				}
-				if view.Job.State != "RUNNING" {
-					if side == "healthy" || side == "cpu90" || view.Job.Code != "RADIO_LIVE_ABORTED" || remote.calls.Load() != 4 {
-						t.Fatal("expected two complete violating ticks", side, view.Job, remote.calls.Load())
-					}
-					s.wg.Wait()
-					return
-				}
-			}
-			s.mu.Lock()
-			s.jobs[job].cancel()
-			s.mu.Unlock()
-			s.wg.Wait()
-			t.Fatal("worker did not reach expected state")
-		})
+func TestRadioLiveWorkerUsesBothCommandsAndTwoConsecutiveViolations(t *testing.T) {
+	for _, side := range []string{"healthy", string(RoleAP), string(RoleCPE), "cpu", "cpu90"} {
+		t.Run(side, func(t *testing.T) { assertCommandTimingLive(t, side) })
 	}
 }

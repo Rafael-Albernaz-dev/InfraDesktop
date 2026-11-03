@@ -12,28 +12,29 @@ import (
 // EquipmentInput is operation-specific on the wire; presence allowlists below
 // reject unrelated fields even when their values are zero.
 type EquipmentInput struct {
-	ID           string `json:"id,omitempty"`
-	Operation    string `json:"operation_id,omitempty"`
-	Revision     uint64 `json:"revision,omitempty"`
-	Role         string `json:"role,omitempty"`
-	Name         string `json:"name,omitempty"`
-	Address      string `json:"address,omitempty"`
-	Port         int    `json:"port,omitempty"`
-	Transport    string `json:"transport,omitempty"`
-	CredentialID string `json:"credential_id,omitempty"`
-	Active       bool   `json:"active,omitempty"`
-	Inactive     bool   `json:"inactive,omitempty"`
-	Search       string `json:"search,omitempty"`
-	Cursor       int    `json:"cursor,omitempty"`
-	Alias        string `json:"alias,omitempty"`
-	User         string `json:"user,omitempty"`
-	Secret       string `json:"secret,omitempty"`
-	Affected     int    `json:"affected_links,omitempty"`
-	JobID        string `json:"job_id,omitempty"`
-	Fingerprint  string `json:"fingerprint,omitempty"`
+	ID           string              `json:"id,omitempty"`
+	Operation    string              `json:"operation_id,omitempty"`
+	Revision     uint64              `json:"revision,omitempty"`
+	Role         equipment.Role      `json:"role,omitempty"`
+	Name         string              `json:"name,omitempty"`
+	Address      string              `json:"address,omitempty"`
+	Port         int                 `json:"port,omitempty"`
+	Transport    equipment.Transport `json:"transport,omitempty"`
+	CredentialID string              `json:"credential_id,omitempty"`
+	Active       bool                `json:"active,omitempty"`
+	Inactive     bool                `json:"inactive,omitempty"`
+	Search       string              `json:"search,omitempty"`
+	Cursor       int                 `json:"cursor,omitempty"`
+	Alias        string              `json:"alias,omitempty"`
+	User         string              `json:"user,omitempty"`
+	Secret       string              `json:"secret,omitempty"`
+	Affected     int                 `json:"affected_links,omitempty"`
+	JobID        string              `json:"job_id,omitempty"`
+	Fingerprint  string              `json:"fingerprint,omitempty"`
 }
 
 var equipmentFields = map[string][]string{
+	"credential.default-set":  {"id", "operation_id", "role", "credential_id"},
 	"trust.reset":             {"operation_id", "id", "revision"},
 	"inventory.enroll":        {"operation_id", "id", "name", "role", "address", "port", "transport", "user", "secret"},
 	"inventory.enroll-status": {"operation_id", "id"},

@@ -39,6 +39,7 @@ vi.mock('./presentation', () => ({
     active: vi.fn(),
     credentials: vi.fn(),
     putCredential: vi.fn(),
+    setDefault: vi.fn(),
     inspect: vi.fn(),
     confirm: vi.fn(),
     start: vi.fn(),
@@ -1927,6 +1928,23 @@ it.each(['cpe', 'ap', 'concentrator'])(
     fireEvent.click(
       screen.getByRole('button', { name: 'Verificar identidade' }),
     );
+    if (role !== 'concentrator') {
+      vi.mocked(api.get).mockResolvedValue({
+        ...data([target]),
+        data: {
+          ...data([target]).data!,
+          device: { ...target, fingerprint: 'SHA256:fixture', revision: 2 },
+        },
+      });
+      await waitFor(() => expect(api.inspect).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(api.get).toHaveBeenCalled());
+      expect(
+        screen.queryByRole('dialog', { name: 'Primeira conexão' }),
+      ).not.toBeInTheDocument();
+      expect(api.confirm).not.toHaveBeenCalled();
+      expect(api.start).not.toHaveBeenCalled();
+      return;
+    }
     await screen.findByRole('dialog', { name: 'Primeira conexão' });
     fireEvent.click(
       screen.getByRole('button', {
@@ -1944,3 +1962,69 @@ it.each(['cpe', 'ap', 'concentrator'])(
     else expect(api.start).not.toHaveBeenCalled();
   },
 );
+
+it('radio enrollment uses the chosen class default and allows an explicit per-device override', async () => {
+  const credentials = [
+    {
+      id: 'ap-access',
+      alias: 'Acesso AP',
+      user: 'reader',
+      revision: 1,
+      links: 0,
+    },
+    {
+      id: 'cpe-access',
+      alias: 'Acesso CPE',
+      user: 'reader',
+      revision: 1,
+      links: 0,
+    },
+    {
+      id: 'ptp-access',
+      alias: 'Acesso PTP',
+      user: 'reader',
+      revision: 1,
+      links: 0,
+    },
+  ];
+  vi.mocked(api.credentials).mockResolvedValue({
+    ...data(),
+    data: {
+      ...data().data!,
+      credentials,
+      credential_defaults: {
+        ap: 'ap-access',
+        cpe: 'cpe-access',
+        ptp: 'ptp-access',
+      },
+    },
+  });
+  render(<Equipment profile="X" activation="a" connected createRequest={1} />);
+  const role = await screen.findByRole('combobox', {
+    name: 'Papel do equipamento',
+  });
+  await waitFor(() => expect(api.credentials).toHaveBeenCalled());
+  for (const [value, expected] of [
+    ['ap', 'ap-access'],
+    ['cpe', 'cpe-access'],
+    ['ptp', 'ptp-access'],
+  ]) {
+    fireEvent.change(role, { target: { value } });
+    expect(
+      screen.getByRole('combobox', { name: 'Credencial de consulta' }),
+    ).toHaveValue(expected);
+    expect(
+      screen.queryByLabelText('Senha', { exact: true }),
+    ).not.toBeInTheDocument();
+  }
+  fireEvent.change(
+    screen.getByRole('combobox', { name: 'Credencial de consulta' }),
+    { target: { value: 'cpe-access' } },
+  );
+  expect(
+    screen.getByRole('combobox', { name: 'Credencial de consulta' }),
+  ).toHaveValue('cpe-access');
+  expect(api.start).not.toHaveBeenCalled();
+  expect(api.inspect).not.toHaveBeenCalled();
+  expect(api.save).not.toHaveBeenCalled();
+});

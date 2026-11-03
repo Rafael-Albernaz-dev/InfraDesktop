@@ -1,0 +1,57 @@
+L07-CPU-BEFORE
+                   uptime: 1d14h52m22s
+                  version: 6.49.13 (long-term)
+               build-time: Apr/04/2024 [IPv6 omitido]
+         factory-software: 6.39.2
+              free-memory: 37.6MiB
+             total-memory: 64.0MiB
+                      cpu: MIPS 74Kc V4.12
+                cpu-count: 1
+            cpu-frequency: 600MHz
+                 cpu-load: 14%
+           free-hdd-space: 3024.0KiB
+          total-hdd-space: 16.0MiB
+  write-sect-since-reboot: 30342
+         write-sect-total: 33720
+               bad-blocks: 0%
+        architecture-name: mipsbe
+               board-name: LHG XL HP5
+                 platform: MikroTik
+
+L07-INTERFACES
+Flags: X - disabled, R - running 
+ 0    name="wlan1" mtu=1500 l2mtu=1600 mac-address=02:00:00:00:10:10 
+      arp=enabled interface-type=Atheros AR9300 mode=bridge 
+      ssid="[omitido]" frequency=5200 band=5ghz-onlyn 
+      channel-width=20/40mhz-Ce secondary-frequency="" scan-list=5200,5180 
+      wireless-protocol=nv2 vlan-mode=no-tag vlan-id=1 wds-mode=dynamic 
+      wds-default-bridge=Br_Lan wds-ignore-ssid=no bridge-mode=enabled 
+      default-authentication=yes default-forwarding=yes default-ap-tx-limit=0 
+      default-client-tx-limit=0 hide-ssid=no security-profile=default 
+      compression=no 
+
+L07-MONITORS
+L07-INTERFACE=wlan1
+                 status: running-ap
+                channel: 5200/20-Ce/an
+      wireless-protocol: nv2
+            noise-floor: -116dBm
+     registered-clients: 0
+  authenticated-clients: 0
+      current-tx-powers: 6Mbps:25(25/28),9Mbps:25(25/28),12Mbps:25(25/28),
+                         18Mbps:25(25/28),24Mbps:25(25/28),36Mbps:25(25/28),
+                         48Mbps:23(23/26),54Mbps:22(22/25),HT20-0:25(25/28),
+                         HT20-1:25(25/28),HT20-2:25(25/28),HT20-3:25(25/28),
+                         HT20-4:25(25/28),HT20-5:25(25/28),HT20-6:23(23/26),
+                         HT20-7:21(21/24),HT40-0:25(25/28),HT40-1:25(25/28),
+                         HT40-2:25(25/28),HT40-3:25(25/28),HT40-4:25(25/28),
+                         HT40-5:25(25/28),HT40-6:23(23/26),HT40-7:21(21/24)
+    notify-external-fdb: no
+
+L07-CPU-DURING
+cpu-load=14
+L07-CLIENTS
+
+L07-CPU-AFTER
+cpu-load=14
+L07-DONE

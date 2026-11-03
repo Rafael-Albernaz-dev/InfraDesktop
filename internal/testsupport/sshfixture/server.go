@@ -17,29 +17,38 @@ import (
 const Password = "local-fixture-only"
 
 type Config struct {
-	Family, Mode            string
-	Identity, InterfaceName string
-	InterfaceMode           func() string
-	PPPoE                   func() string
-	Command                 func(string) (string, bool)
-	DisconnectCommand       func(string) bool
-	PPRows                  int
-	RealTime                bool
-	Hold                    <-chan struct{}
+	OnHandshake                 func()
+	OnPassword                  func()
+	Family, Mode                string
+	ServerVersion               string
+	Identity, InterfaceName     string
+	InterfaceMode               func() string
+	PPPoE                       func() string
+	Command                     func(string) (string, bool)
+	DisconnectCommand           func(string) bool
+	PPRows                      int
+	RealTime                    bool
+	IgnoreGlobalRequests        bool
+	UnimplementedGlobalRequests bool
+	Stderr                      string
+	ExitStatus                  uint32
+	Hold                        <-chan struct{}
 }
 type Server struct {
-	listener  net.Listener
-	config    Config
-	signer    ssh.Signer
-	mu        sync.Mutex
-	conns     map[net.Conn]bool
-	closed    chan struct{}
-	wg        sync.WaitGroup
-	Auth      atomic.Int32
-	Commands  atomic.Int32
-	PPCalls   atomic.Int32
-	PingCalls atomic.Int32
-	started   time.Time
+	listener       net.Listener
+	config         Config
+	signer         ssh.Signer
+	mu             sync.Mutex
+	conns          map[net.Conn]bool
+	closed         chan struct{}
+	wg             sync.WaitGroup
+	Auth           atomic.Int32
+	Handshakes     atomic.Int32
+	Commands       atomic.Int32
+	PPCalls        atomic.Int32
+	PingCalls      atomic.Int32
+	GlobalRequests atomic.Int32
+	started        time.Time
 }
 
 func Start(config Config) (*Server, error) {
@@ -60,8 +69,30 @@ func Start(config Config) (*Server, error) {
 	go s.serve()
 	return s, nil
 }
-func (s *Server) Port() int           { return s.listener.Addr().(*net.TCPAddr).Port }
-func (s *Server) Fingerprint() string { return ssh.FingerprintSHA256(s.signer.PublicKey()) }
+func (s *Server) Port() int              { return s.listener.Addr().(*net.TCPAddr).Port }
+func (s *Server) ActiveConnections() int { s.mu.Lock(); defer s.mu.Unlock(); return len(s.conns) }
+func (s *Server) Fingerprint() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return ssh.FingerprintSHA256(s.signer.PublicKey())
+}
+
+// RotateHostKey simulates replacement at the same endpoint, without changing
+// the client's stored pin or allowing a password to precede pin verification.
+func (s *Server) RotateHostKey() error {
+	_, key, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return err
+	}
+	signer, err := ssh.NewSignerFromKey(key)
+	if err != nil {
+		return err
+	}
+	s.mu.Lock()
+	s.signer = signer
+	s.mu.Unlock()
+	return nil
+}
 func (s *Server) serve() {
 	defer s.wg.Done()
 	for {
@@ -92,8 +123,11 @@ func (s *Server) handle(conn net.Conn) {
 		<-s.closed
 		return
 	}
-	config := &ssh.ServerConfig{PasswordCallback: func(meta ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
+	config := &ssh.ServerConfig{ServerVersion: s.config.ServerVersion, PasswordCallback: func(meta ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 		s.Auth.Add(1)
+		if s.config.OnPassword != nil {
+			s.config.OnPassword()
+		}
 		if s.config.Mode == "disconnect-auth" {
 			conn.Close()
 			return nil, nil
@@ -103,13 +137,30 @@ func (s *Server) handle(conn net.Conn) {
 		}
 		return nil, nil
 	}}
-	config.AddHostKey(s.signer)
+	s.mu.Lock()
+	signer := s.signer
+	s.mu.Unlock()
+	config.AddHostKey(signer)
+	if s.config.OnHandshake != nil {
+		s.config.OnHandshake()
+	}
+	s.Handshakes.Add(1)
 	peer, channels, requests, e := ssh.NewServerConn(conn, config)
 	if e != nil {
 		return
 	}
 	defer peer.Close()
-	go ssh.DiscardRequests(requests)
+	go func() {
+		for request := range requests {
+			s.GlobalRequests.Add(1)
+			if s.config.UnimplementedGlobalRequests {
+				_ = sendUnimplemented(peer)
+			} else if !s.config.IgnoreGlobalRequests {
+				_ = request.Reply(false, nil)
+			}
+		}
+	}()
+
 	for channel := range channels {
 		if channel.ChannelType() != "session" {
 			channel.Reject(ssh.Prohibited, "only session")
@@ -144,10 +195,11 @@ func (s *Server) handle(conn net.Conn) {
 					return
 				}
 				out, ok := s.output(exec.Command)
-				status := uint32(0)
+				status := s.config.ExitStatus
 				if !ok {
 					status = 1
 				}
+				_, _ = ch.Stderr().Write([]byte(s.config.Stderr))
 				_, _ = ch.Write([]byte(out))
 				_, _ = ch.SendRequest("exit-status", false, ssh.Marshal(struct{ Status uint32 }{status}))
 				return

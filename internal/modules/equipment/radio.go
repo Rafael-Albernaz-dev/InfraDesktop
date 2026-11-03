@@ -41,64 +41,80 @@ type RadioInterface struct {
 	Metrics         []RadioMetric `json:"metrics"`
 }
 type RadioClient struct {
-	MAC          string        `json:"mac"`
-	Name         string        `json:"name"`
-	Interface    string        `json:"interface"`
-	BSSID        string        `json:"bssid"`
-	Uptime       string        `json:"wireless_uptime,omitempty"`
-	LastActivity string        `json:"last_activity,omitempty"`
-	Metrics      []RadioMetric `json:"metrics"`
+	Counters     map[string]string `json:"counters,omitempty"`
+	MAC          string            `json:"mac"`
+	Name         string            `json:"name"`
+	Interface    string            `json:"interface"`
+	BSSID        string            `json:"bssid"`
+	Uptime       string            `json:"wireless_uptime,omitempty"`
+	LastActivity string            `json:"last_activity,omitempty"`
+	Metrics      []RadioMetric     `json:"metrics"`
 }
+type RadioFailure struct {
+	Reason string `json:"reason"`
+	Bytes  int    `json:"bytes"`
+}
+
 type RadioReading struct {
-	DeviceName         string           `json:"device_name"`
-	Address            string           `json:"address"`
-	PingRTT            *float64         `json:"ping_rtt_ms,omitempty"`
-	Compatible         bool             `json:"compatible"`
-	ID                 string           `json:"id"`
-	DeviceID           string           `json:"device_id"`
-	Family             string           `json:"family"`
-	Version            string           `json:"version"`
-	Perspective        string           `json:"perspective"`
-	At                 string           `json:"observed_at"`
-	Revision           uint64           `json:"revision"`
-	CredentialRevision uint64           `json:"credential_revision"`
-	Connection         string           `json:"connection"`
-	Legacy             []string         `json:"ssh_legacy,omitempty"`
-	Interfaces         []RadioInterface `json:"interfaces"`
-	Clients            []RadioClient    `json:"clients"`
-	Metrics            []RadioMetric    `json:"metrics"`
-	WirelessUptime     string           `json:"wireless_uptime,omitempty"`
-	DeviceUptime       string           `json:"device_uptime,omitempty"`
-	APBSSID            string           `json:"ap_bssid,omitempty"`
-	WirelessMAC        string           `json:"wireless_mac,omitempty"`
-	CPU                []int            `json:"cpu_before_during_after,omitempty"`
-	Seconds            float64          `json:"seconds"`
-	CommandSeconds     float64          `json:"command_seconds"`
-	HadClients         bool             `json:"had_clients"`
+	Failure            *RadioFailure     `json:"failure,omitempty"`
+	Model              string            `json:"model,omitempty"`
+	Manufacturer       string            `json:"manufacturer,omitempty"`
+	DriverReason       string            `json:"driver_reason,omitempty"`
+	Mode               string            `json:"mode,omitempty"`
+	WirelessProtocol   string            `json:"wireless_protocol,omitempty"`
+	Scope              string            `json:"scope,omitempty"`
+	Counters           map[string]string `json:"counters,omitempty"`
+	DeviceName         string            `json:"device_name"`
+	Address            string            `json:"address"`
+	PingRTT            *float64          `json:"ping_rtt_ms,omitempty"`
+	Compatible         bool              `json:"compatible"`
+	ID                 string            `json:"id"`
+	DeviceID           string            `json:"device_id"`
+	Family             RadioFamily       `json:"family"`
+	Version            string            `json:"version"`
+	Perspective        string            `json:"perspective"`
+	At                 string            `json:"observed_at"`
+	Revision           uint64            `json:"revision"`
+	CredentialRevision uint64            `json:"credential_revision"`
+	Connection         string            `json:"connection"`
+	Legacy             []string          `json:"ssh_legacy,omitempty"`
+	Negotiated         []string          `json:"ssh_negotiated,omitempty"`
+	Interfaces         []RadioInterface  `json:"interfaces"`
+	Clients            []RadioClient     `json:"clients"`
+	Metrics            []RadioMetric     `json:"metrics"`
+	WirelessUptime     string            `json:"wireless_uptime,omitempty"`
+	DeviceUptime       string            `json:"device_uptime,omitempty"`
+	APBSSID            string            `json:"ap_bssid,omitempty"`
+	WirelessMAC        string            `json:"wireless_mac,omitempty"`
+	CPU                []int             `json:"cpu_before_during_after,omitempty"`
+	Seconds            float64           `json:"seconds"`
+	CommandSeconds     float64           `json:"command_seconds"`
+	HadClients         bool              `json:"had_clients"`
 }
 type RadioProfile struct {
-	DeviceID           string `json:"device_id"`
-	Family             string `json:"family"`
-	Confirmed          bool   `json:"confirmed"`
-	Revision           uint64 `json:"revision"`
-	CredentialRevision uint64 `json:"credential_revision"`
-	Connection         string `json:"connection"`
-	Warning            int    `json:"warning"`
-	Critical           int    `json:"critical"`
+	DeviceID           string      `json:"device_id"`
+	Family             RadioFamily `json:"family"`
+	Confirmed          bool        `json:"confirmed"`
+	Revision           uint64      `json:"revision"`
+	CredentialRevision uint64      `json:"credential_revision"`
+	Connection         string      `json:"connection"`
+	Warning            int         `json:"warning"`
+	Critical           int         `json:"critical"`
 }
 type RadioLink struct {
-	Concentrator string `json:"concentrator_id"`
-	Scope        string `json:"scope"`
-	Login        string `json:"login"`
-	CPE          string `json:"cpe_id"`
-	AP           string `json:"ap_id"`
-	MAC          string `json:"mac"`
-	Interface    string `json:"interface"`
-	BSSID        string `json:"bssid"`
-	Evidence     string `json:"evidence"`
-	Origin       string `json:"origin"`
-	At           string `json:"confirmed_at"`
-	ConfirmedNow bool   `json:"confirmed_now"`
+	NewCPE       *Device `json:"-"`
+	Concentrator string  `json:"concentrator_id"`
+	Scope        string  `json:"scope"`
+	Login        string  `json:"login"`
+	CPE          string  `json:"cpe_id"`
+	AP           string  `json:"ap_id"`
+	MAC          string  `json:"mac"`
+	Interface    string  `json:"interface"`
+	BSSID        string  `json:"bssid"`
+	Evidence     string  `json:"evidence"`
+	Origin       string  `json:"origin"`
+	At           string  `json:"confirmed_at"`
+	ConfirmedNow bool    `json:"confirmed_now"`
 }
 type RadioInput struct {
 	DeviceID      string           `json:"device_id,omitempty"`
@@ -107,28 +123,31 @@ type RadioInput struct {
 	JobID         string           `json:"job_id,omitempty"`
 	ObservationID string           `json:"observation_id,omitempty"`
 	RowID         string           `json:"row_id,omitempty"`
-	Family        string           `json:"family,omitempty"`
+	Family        RadioFamily      `json:"family,omitempty"`
 	Offset        int              `json:"offset,omitempty"`
 	ReadingID     string           `json:"reading_id,omitempty"`
 	Link          *RadioLinkChoice `json:"link,omitempty"`
 	Warning       int              `json:"warning,omitempty"`
 	Critical      int              `json:"critical,omitempty"`
-	Mode          string           `json:"mode,omitempty"`
+	Mode          RadioMode        `json:"mode,omitempty"`
 }
 type RadioLinkChoice struct {
-	CPE       string `json:"cpe_id"`
-	AP        string `json:"ap_id"`
-	MAC       string `json:"mac"`
-	Interface string `json:"interface"`
-	BSSID     string `json:"bssid"`
-	Evidence  string `json:"evidence"`
-	Origin    string `json:"origin"`
+	CredentialID string `json:"credential_id,omitempty"`
+	CPE          string `json:"cpe_id"`
+	AP           string `json:"ap_id"`
+	MAC          string `json:"mac"`
+	Interface    string `json:"interface"`
+	BSSID        string `json:"bssid"`
+	Evidence     string `json:"evidence"`
+	Origin       string `json:"origin"`
 }
 type RadioTiming struct {
 	CommandSeconds float64 `json:"command_seconds"`
 	PathSeconds    float64 `json:"path_seconds"`
 }
 type RadioCost struct {
+	APOnly       bool               `json:"ap_only,omitempty"`
+	Series       []RadioTickReceipt `json:"series,omitempty"`
 	Measurements []RadioMeasurement `json:"measurements,omitempty"`
 	PingBaseline float64            `json:"ping_baseline_ms"`
 	PingLimit    float64            `json:"ping_limit_ms"`
@@ -149,10 +168,8 @@ type RadioLoad struct {
 	Started      time.Time `json:"started_at"`
 	Ended        time.Time `json:"ended_at"`
 }
-type RadioLoadRemote interface {
-	ObserveRadioLoad(context.Context, Device, string, string, func() Code, func(), <-chan struct{}) (RadioLoad, Code)
-}
 type RadioMeasurement struct {
+	APOnly   bool        `json:"ap_only,omitempty"`
 	Seconds  float64     `json:"seconds"`
 	AP       RadioTiming `json:"ap"`
 	CPE      RadioTiming `json:"cpe"`
@@ -164,120 +181,15 @@ type RadioMeasurement struct {
 
 func radioFinite(n float64) bool    { return !math.IsNaN(n) && !math.IsInf(n, 0) && n >= 0 }
 func radioSeconds(n float64) string { return strings.ReplaceAll(fmt.Sprintf("%.2f", n), ".", ",") }
-func AssessRadioMeasurements(samples []RadioMeasurement) RadioCost {
-	cost := RadioCost{Interval: 5, Reason: "Custo ainda não medido em dez leituras.", Measurements: append([]RadioMeasurement{}, samples...)}
-	var times, bases, cpus []float64
-	for _, sample := range samples {
-		cost.Samples = append(cost.Samples, sample.Seconds)
-		cost.Load = append(cost.Load, sample.Load)
-		if radioFinite(sample.Seconds) && sample.Seconds > 0 {
-			times = append(times, sample.Seconds)
-		}
-		if len(sample.Load.PingRTT) > 0 && radioFinite(sample.Load.PingRTT[0]) {
-			bases = append(bases, sample.Load.PingRTT[0])
-		}
-		if len(sample.Load.CPU) > 0 && sample.Load.CPU[0] >= 0 && sample.Load.CPU[0] <= 100 {
-			cpus = append(cpus, float64(sample.Load.CPU[0]))
-		}
-	}
-	if len(times) > 0 {
-		sort.Float64s(times)
-		cost.P95 = times[int(math.Ceil(.95*float64(len(times))))-1]
-		cost.Interval = math.Max(5, 3*cost.P95)
-	}
-	if len(samples) != 10 {
-		return cost
-	}
-	cost.Reason = ""
-	refuse := func(reason string) {
-		if cost.Reason == "" {
-			cost.Reason = reason
-		}
-	}
-	for _, sample := range samples {
-		if !sample.Complete {
-			refuse("Amostra de leitura falhou; live desligado.")
-		}
-	}
-	for _, side := range []struct {
-		name string
-		get  func(RadioMeasurement) RadioTiming
-	}{
-		{"AP", func(s RadioMeasurement) RadioTiming { return s.AP }}, {"CPE", func(s RadioMeasurement) RadioTiming { return s.CPE }},
-	} {
-		for _, sample := range samples {
-			timing := side.get(sample)
-			if timing.CommandSeconds > 3 {
-				article := "do AP"
-				if side.name == "CPE" {
-					article = "da CPE"
-				}
-				refuse("Comando " + article + " levou " + radioSeconds(timing.CommandSeconds) + " s (limite 3 s); live desligado.")
-			}
-		}
-	}
-	if len(cpus) == 10 {
-		sort.Float64s(cpus)
-		cost.CPUBaseline = (cpus[4] + cpus[5]) / 2
-	}
-	for _, sample := range samples {
-		for _, cpu := range sample.Load.CPU {
-			if cpu <= 100 && cpu > RadioMaxCPU {
-				refuse(fmt.Sprintf("CPU do AP chegou a %d%% (limite %d%%); live desligado.", cpu, RadioMaxCPU))
-			}
-		}
-	}
-	if len(bases) == 10 {
-		sort.Float64s(bases)
-		cost.PingBaseline = (bases[4] + bases[5]) / 2
-		cost.PingLimit = 2 * cost.PingBaseline
-		consecutive := 0
-		for _, sample := range samples {
-			if len(sample.Load.PingRTT) == 0 {
-				continue
-			}
-			for _, rtt := range sample.Load.PingRTT[1:] {
-				if radioFinite(rtt) && rtt > cost.PingLimit {
-					consecutive++
-				} else {
-					consecutive = 0
-				}
-				if consecutive >= 2 {
-					refuse("Ping degradou: " + radioSeconds(rtt) + " ms, duas latências consecutivas acima de " + radioSeconds(cost.PingLimit) + " ms (2× a mediana); live desligado.")
-				}
-			}
-		}
-	}
-	for _, sample := range samples {
-		load := sample.Load
-		if load.PingSent > 0 && load.PingReceived >= 0 && load.PingReceived < load.PingSent {
-			refuse(fmt.Sprintf("Ping perdido: %d de %d respostas; live desligado.", load.PingReceived, load.PingSent))
-		}
-	}
-	for _, sample := range samples {
-		load := sample.Load
-		valid := radioFinite(sample.Seconds) && sample.Seconds > 0 && !load.Started.IsZero() && !load.Started.After(sample.Started) && !load.Ended.Before(sample.Ended) && len(load.CPU) >= 3 && load.PingSent >= 3 && load.PingReceived == load.PingSent && len(load.PingRTT) == load.PingReceived
-		for _, timing := range []RadioTiming{sample.AP, sample.CPE} {
-			valid = valid && radioFinite(timing.CommandSeconds) && timing.CommandSeconds > 0 && radioFinite(timing.PathSeconds) && timing.PathSeconds >= timing.CommandSeconds
-		}
-		for _, rtt := range load.PingRTT {
-			valid = valid && radioFinite(rtt)
-		}
-		for _, cpu := range load.CPU {
-			valid = valid && cpu >= 0 && cpu <= 100
-		}
-		if !valid {
-			refuse("Carga incompleta: CPU, ping ou janela não cobrem a leitura; live desligado.")
-		}
-	}
-	if cost.Reason == "" {
-		cost.Enabled = true
-		cost.Reason = "Custo medido em dez leituras; comandos AP/CPE até 3 s e CPU do AP até 90%."
-	}
-	return cost
-}
 func RadioLiveLimit(reading *RadioReading, cost RadioCost) bool {
-	if reading == nil || !radioFinite(reading.CommandSeconds) || reading.CommandSeconds <= 0 || reading.CommandSeconds > 3 || reading.PingRTT == nil || !radioFinite(*reading.PingRTT) || *reading.PingRTT > cost.PingLimit || len(reading.CPU) < 3 {
+	if reading == nil ||
+		!radioFinite(reading.CommandSeconds) ||
+		reading.CommandSeconds <= 0 ||
+		reading.CommandSeconds > 3 ||
+		reading.PingRTT == nil ||
+		!radioFinite(*reading.PingRTT) ||
+		*reading.PingRTT > cost.PingLimit ||
+		len(reading.CPU) < 1 {
 		return true
 	}
 	for _, cpu := range reading.CPU {
@@ -295,33 +207,37 @@ func RadioLiveTickViolation(ap, cpe *RadioReading, cost RadioCost) bool {
 }
 
 type RadioView struct {
-	Reading     *RadioReading `json:"reading,omitempty"`
-	CPEReading  *RadioReading `json:"cpe_reading,omitempty"`
-	Profile     *RadioProfile `json:"profile,omitempty"`
-	Link        *RadioLink    `json:"link,omitempty"`
-	Suggestions []RadioLink   `json:"suggestions,omitempty"`
-	Job         *Job          `json:"job,omitempty"`
-	APCode      Code          `json:"ap_code,omitempty"`
-	CPECode     Code          `json:"cpe_code,omitempty"`
-	Cost        *RadioCost    `json:"cost,omitempty"`
-	Total       int           `json:"total"`
-	More        bool          `json:"more"`
-	NextOffset  int           `json:"next_offset"`
+	Index       *RadioIndex    `json:"index,omitempty"`
+	Proposal    *RadioProposal `json:"proposal,omitempty"`
+	MatchReason string         `json:"match_reason,omitempty"`
+	CPENote     string         `json:"cpe_note,omitempty"`
+	Reading     *RadioReading  `json:"reading,omitempty"`
+	CPEReading  *RadioReading  `json:"cpe_reading,omitempty"`
+	Profile     *RadioProfile  `json:"profile,omitempty"`
+	Link        *RadioLink     `json:"link,omitempty"`
+	Suggestions []RadioLink    `json:"suggestions,omitempty"`
+	Job         *Job           `json:"job,omitempty"`
+	APCode      Code           `json:"ap_code,omitempty"`
+	CPECode     Code           `json:"cpe_code,omitempty"`
+	Cost        *RadioCost     `json:"cost,omitempty"`
+	Total       int            `json:"total"`
+	More        bool           `json:"more"`
+	NextOffset  int            `json:"next_offset"`
 }
 type RadioStore interface {
 	RadioCurrent(context.Context, string, string) (*RadioReading, *RadioProfile, Code)
 	SaveRadio(context.Context, string, Device, uint64, *RadioReading) Code
-	ConfirmRadioFamily(context.Context, string, Device, uint64, string, int, int) Code
+	ConfirmRadioFamily(context.Context, string, Device, uint64, RadioFamily, int, int) Code
 	RadioLinks(context.Context, string, string, string) ([]RadioLink, Code)
 	SaveRadioLink(context.Context, string, RadioLink, string, PPInput) Code
 	RadioAPReadings(context.Context, string) ([]RadioReading, Code)
 }
 type RadioRemote interface {
-	ReadRadio(context.Context, Device, string, string, string, func() Code) (*RadioReading, Code)
+	ReadRadio(context.Context, Device, string, string, RadioFamily, func() Code) (*RadioReading, Code)
 }
 
-func RadioFamily(f string) bool {
-	return f == "routeros-wireless-v6" || f == "airos-v6" || f == "intelbras-wom" || f == "unsupported"
+func IsRadioFamily(f RadioFamily) bool {
+	return f == RadioRouterOSWirelessV6 || f == RadioAirOSV6 || f == RadioIntelbrasWOM || f == RadioUnsupported
 }
 func RadioMAC(s string) (string, bool) {
 	s = strings.ToUpper(s)
@@ -386,11 +302,25 @@ func RadioCostGate(samples []float64, cpu [][]int) RadioCost {
 func StampRadio(reading *RadioReading, device Device, credential uint64, at time.Time) {
 	reading.DeviceName, reading.Address = device.Name, device.Address
 	reading.Compatible = true
-	reading.DeviceID, reading.Revision, reading.CredentialRevision, reading.Connection, reading.At = device.ID, device.Revision, credential, PPConnection(device), PPTime(at)
+	reading.DeviceID,
+		reading.Revision,
+		reading.CredentialRevision,
+		reading.Connection,
+		reading.At = device.ID,
+		device.Revision,
+		credential,
+		PPConnection(device),
+		PPTime(at)
 	stamp := func(metrics []RadioMetric, iface string) {
 		for i := range metrics {
 			m := &metrics[i]
-			m.Perspective, m.DeviceID, m.At, m.Quality, m.Interface = reading.Perspective, device.ID, reading.At, "observed", iface
+			m.Perspective, m.DeviceID, m.Interface = reading.Perspective, device.ID, iface
+			if m.Quality != "initial" || m.At == "" {
+				m.At = reading.At
+			}
+			if m.Quality == "" {
+				m.Quality = "observed"
+			}
 			if strings.HasPrefix(m.Name, "chain") {
 				v := m.Value
 				m.Best, m.Worst = &v, &v
@@ -409,34 +339,40 @@ func StampRadio(reading *RadioReading, device Device, credential uint64, at time
 
 // Extrema belong to this finite observation only; PHY rates never form a series.
 func AccumulateRadioChains(previous, next *RadioReading) {
-	if previous == nil || next == nil || previous.DeviceID != next.DeviceID || previous.Connection != next.Connection || previous.Revision != next.Revision || previous.CredentialRevision != next.CredentialRevision {
+	if previous == nil ||
+		next == nil ||
+		previous.DeviceID != next.DeviceID ||
+		previous.Connection != next.Connection ||
+		previous.Revision != next.Revision ||
+		previous.CredentialRevision != next.CredentialRevision {
 		return
 	}
-	merge := func(before, after []RadioMetric) {
-		for i := range after {
-			m := &after[i]
-			if !strings.HasPrefix(m.Name, "chain") {
-				continue
-			}
-			for _, old := range before {
-				if old.Name == m.Name && old.Direction == m.Direction && old.Interface == m.Interface {
-					best, worst := m.Value, m.Value
-					if old.Best != nil {
-						best = math.Max(best, *old.Best)
-					}
-					if old.Worst != nil {
-						worst = math.Min(worst, *old.Worst)
-					}
-					m.Best, m.Worst = &best, &worst
-				}
-			}
-		}
-	}
-	merge(previous.Metrics, next.Metrics)
+	mergeRadioChainExtrema(previous.Metrics, next.Metrics)
 	for i := range next.Clients {
 		for _, old := range previous.Clients {
 			if old.MAC == next.Clients[i].MAC && old.Interface == next.Clients[i].Interface && old.BSSID == next.Clients[i].BSSID {
-				merge(old.Metrics, next.Clients[i].Metrics)
+				mergeRadioChainExtrema(old.Metrics, next.Clients[i].Metrics)
+			}
+		}
+	}
+}
+
+func mergeRadioChainExtrema(before, after []RadioMetric) {
+	for i := range after {
+		m := &after[i]
+		if !strings.HasPrefix(m.Name, "chain") {
+			continue
+		}
+		for _, old := range before {
+			if old.Name == m.Name && old.Direction == m.Direction && old.Interface == m.Interface {
+				best, worst := m.Value, m.Value
+				if old.Best != nil {
+					best = math.Max(best, *old.Best)
+				}
+				if old.Worst != nil {
+					worst = math.Min(worst, *old.Worst)
+				}
+				m.Best, m.Worst = &best, &worst
 			}
 		}
 	}

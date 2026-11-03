@@ -58,7 +58,7 @@ func (a *App) SaveEquipment(profile, activation string, d DeviceInput) Equipment
 			op = "inventory.enroll"
 		}
 	}
-	return a.equipmentCall(op, profile, activation, ipc.EquipmentInput{ID: d.ID, Operation: d.Operation, Revision: d.Revision, Role: d.Role, Name: d.Name, Address: d.Address, Port: d.Port, Transport: d.Transport, CredentialID: d.CredentialID, User: d.User, Secret: d.Secret})
+	return a.equipmentCall(op, profile, activation, ipc.EquipmentInput{ID: d.ID, Operation: d.Operation, Revision: d.Revision, Role: equipment.Role(d.Role), Name: d.Name, Address: d.Address, Port: d.Port, Transport: equipment.Transport(d.Transport), CredentialID: d.CredentialID, User: d.User, Secret: d.Secret})
 }
 func (a *App) SetEquipmentActive(profile, activation, id, operation string, revision uint64, active bool) EquipmentResult {
 	return a.equipmentCall("inventory.set-active", profile, activation, ipc.EquipmentInput{ID: id, Operation: operation, Revision: revision, Active: active})

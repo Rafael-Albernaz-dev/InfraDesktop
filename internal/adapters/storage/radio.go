@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"infradesktop/internal/modules/equipment"
-	"time"
 )
 
 func radioCurrent(ctx context.Context, q queryer, device string) (*equipment.RadioReading, *equipment.RadioProfile, equipment.Code) {
@@ -20,7 +19,7 @@ func radioCurrent(ctx context.Context, q queryer, device string) (*equipment.Rad
 	} else if err != sql.ErrNoRows {
 		return nil, nil, equipment.Unavailable
 	}
-	profile := &equipment.RadioProfile{DeviceID: device, Family: "unsupported", Warning: 15, Critical: 20}
+	profile := &equipment.RadioProfile{DeviceID: device, Family: equipment.RadioUnsupported, Warning: 15, Critical: 20}
 	err = q.QueryRowContext(ctx, "SELECT body FROM radio_profiles WHERE device_id=?", device).Scan(&body)
 	if err == nil {
 		if json.Unmarshal([]byte(body), profile) != nil {
@@ -31,7 +30,11 @@ func radioCurrent(ctx context.Context, q queryer, device string) (*equipment.Rad
 	}
 	return reading, profile, equipment.OK
 }
-func (s *Store) RadioCurrent(ctx context.Context, company, device string) (*equipment.RadioReading, *equipment.RadioProfile, equipment.Code) {
+func (s *Store) RadioCurrent(ctx context.Context,
+	company,
+	device string) (*equipment.RadioReading,
+	*equipment.RadioProfile,
+	equipment.Code) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.unit == nil || s.unitID != company {
@@ -48,82 +51,54 @@ func (s *Store) RadioCurrent(ctx context.Context, company, device string) (*equi
 	if c != equipment.OK {
 		return nil, nil, c
 	}
-	if !t.Device.Active || c == equipment.MissingCredential || p.Revision != t.Device.Revision || p.CredentialRevision != t.Credential.Metadata.Revision || p.Connection != equipment.PPConnection(t.Device) {
+	if !radioStoredProfileMatches(p, t, c) {
 		p.Confirmed = false
 	}
 	if r != nil {
-		r.Compatible = t.Device.Active && r.Revision == t.Device.Revision && r.CredentialRevision == t.Credential.Metadata.Revision && r.Connection == equipment.PPConnection(t.Device)
+		r.Compatible = t.Device.Active &&
+			r.Revision == t.Device.Revision &&
+			r.CredentialRevision == t.Credential.Metadata.Revision &&
+			r.Connection == equipment.PPConnection(t.Device)
 	}
 	return r, p, equipment.OK
 }
-func (s *Store) SaveRadio(ctx context.Context, company string, device equipment.Device, credential uint64, reading *equipment.RadioReading) equipment.Code {
-	if reading == nil || reading.DeviceID != device.ID || reading.Revision != device.Revision || reading.CredentialRevision != credential || len(reading.Clients) > equipment.RadioMaxClients || len(reading.Interfaces) > 32 {
+func (s *Store) SaveRadio(ctx context.Context, company string,
+	device equipment.Device, credential uint64, reading *equipment.RadioReading) equipment.Code {
+	if !validRadioPublication(device, credential, reading) {
 		return equipment.Invalid
 	}
 	return s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
-		t, c := ppTarget(ctx, tx, s.installation, company, device.ID, false)
-		if c != equipment.OK {
-			return c
+		target, code := ppTarget(ctx, tx, s.installation, company, device.ID, false)
+		if code != equipment.OK {
+			return code
 		}
-		if !t.Device.Active || t.Device.Revision != device.Revision || equipment.PPConnection(t.Device) != equipment.PPConnection(device) || t.Credential.Metadata.Revision != credential {
+		if !radioPublicationMatchesTarget(target, device, credential) {
 			return equipment.Revision
 		}
-		old, profile, c := radioCurrent(ctx, tx, device.ID)
-		if c != equipment.OK {
-			return c
+		old, profile, code := radioCurrent(ctx, tx, device.ID)
+		if code != equipment.OK {
+			return code
 		}
-		if old != nil && old.Connection == reading.Connection && old.Revision == reading.Revision && old.CredentialRevision == credential {
-			before, err1 := time.Parse(time.RFC3339Nano, old.At)
-			after, err2 := time.Parse(time.RFC3339Nano, reading.At)
-			if err1 != nil || err2 != nil || !after.After(before) {
-				return equipment.Revision
-			}
-			reading.HadClients = old.HadClients || len(old.Clients) > 0
+		if code = inheritRadioHistory(old, reading, credential); code != equipment.OK {
+			return code
 		}
-		reading.HadClients = reading.HadClients || len(reading.Clients) > 0
-		for i := range reading.Interfaces {
-			current := &reading.Interfaces[i]
-			current.HadClients = current.Clients != nil && *current.Clients > 0
-			if old != nil && old.Connection == reading.Connection && old.Revision == reading.Revision && old.CredentialRevision == credential {
-				for _, before := range old.Interfaces {
-					if before.Name == current.Name && before.BSSID == current.BSSID {
-						current.HadClients = current.HadClients || before.HadClients || before.Clients != nil && *before.Clients > 0
-					}
-				}
-			}
+		body, code := encodeRadioPublication(ctx, tx, device.ID, reading)
+		if code != equipment.OK {
+			return code
 		}
-		body, err := json.Marshal(reading)
-		if err != nil || len(body) > equipment.PPObservationBytes {
-			return equipment.Limit
-		}
-		var previous int
-		err = tx.QueryRowContext(ctx, "SELECT payload_bytes FROM radio_current WHERE device_id=?", device.ID).Scan(&previous)
-		if err != nil && err != sql.ErrNoRows {
-			return equipment.Unavailable
-		}
-		total, err := ppTotalBytes(ctx, tx)
-		if err != nil {
-			return equipment.Unavailable
-		}
-		if total-int64(previous)+int64(len(body)) > equipment.PPCompanyBytes {
-			return equipment.Limit
-		}
-		if profile.Family != reading.Family || profile.Revision != device.Revision || profile.CredentialRevision != credential || profile.Connection != reading.Connection {
-			profile.Family, profile.Confirmed = reading.Family, false
-		}
-		profile.Revision, profile.CredentialRevision, profile.Connection = device.Revision, credential, reading.Connection
-		p, _ := json.Marshal(profile)
-		if _, err = tx.ExecContext(ctx, "INSERT INTO radio_current VALUES(?,?,?,?) ON CONFLICT(device_id) DO UPDATE SET reading_id=excluded.reading_id,body=excluded.body,payload_bytes=excluded.payload_bytes", device.ID, reading.ID, string(body), len(body)); err != nil {
-			return equipment.Unavailable
-		}
-		if _, err = tx.ExecContext(ctx, "INSERT INTO radio_profiles VALUES(?,?) ON CONFLICT(device_id) DO UPDATE SET body=excluded.body", device.ID, string(p)); err != nil {
-			return equipment.Unavailable
-		}
-		return equipment.OK
+		applyRadioProfileContext(profile, reading, device, credential)
+		return writeRadioPublication(ctx, tx, device.ID, reading.ID, body, profile)
 	})
 }
-func (s *Store) ConfirmRadioFamily(ctx context.Context, company string, d equipment.Device, credential uint64, family string, warning, critical int) equipment.Code {
-	if !equipment.RadioFamily(family) || family == "unsupported" || warning < 1 || critical <= warning || critical > equipment.RadioMaxClients {
+
+func (s *Store) ConfirmRadioFamily(ctx context.Context,
+	company string,
+	d equipment.Device,
+	credential uint64,
+	family equipment.RadioFamily,
+	warning,
+	critical int) equipment.Code {
+	if !validRadioConfirmationSettings(family, warning, critical) {
 		return equipment.Invalid
 	}
 	return s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
@@ -135,7 +110,7 @@ func (s *Store) ConfirmRadioFamily(ctx context.Context, company string, d equipm
 		if c != equipment.OK {
 			return c
 		}
-		if r == nil || r.Family != family || t.Device.Revision != d.Revision || t.Credential.Metadata.Revision != credential || r.Revision != d.Revision || r.CredentialRevision != credential || r.Connection != equipment.PPConnection(t.Device) {
+		if !radioConfirmationMatches(r, t, d, credential, family) {
 			return equipment.Revision
 		}
 		p.Confirmed, p.Warning, p.Critical = true, warning, critical
@@ -155,7 +130,12 @@ func (s *Store) RadioLinks(ctx context.Context, company, concentrator, login str
 	if s.checkActive() != nil {
 		return nil, equipment.Unavailable
 	}
-	rows, err := s.unit.QueryContext(ctx, "SELECT body FROM radio_links WHERE concentrator_id=? AND scope=? AND login=?", concentrator, equipment.PPScope, login)
+	rows,
+		err := s.unit.QueryContext(ctx,
+		"SELECT body FROM radio_links WHERE concentrator_id=? AND scope=? AND login=?",
+		concentrator,
+		equipment.PPScope,
+		login)
 	if err != nil {
 		return nil, equipment.Unavailable
 	}
@@ -174,45 +154,28 @@ func (s *Store) RadioLinks(ctx context.Context, company, concentrator, login str
 	}
 	return out, equipment.OK
 }
-func (s *Store) SaveRadioLink(ctx context.Context, company string, link equipment.RadioLink, operation string, source equipment.PPInput) equipment.Code {
+func (s *Store) SaveRadioLink(ctx context.Context, company string,
+	link equipment.RadioLink, operation string, source equipment.PPInput) equipment.Code {
 	return s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
-		body, err := json.Marshal(link)
-		if err != nil || len(body) > 4096 {
-			return equipment.Invalid
+		body, stamp, code := encodeRadioLinkEffect(link)
+		if code != equipment.OK {
+			return code
 		}
-		identity := link
-		identity.At, identity.ConfirmedNow = "", false
-		canonical, _ := json.Marshal(identity)
-		stamp := "radio-link:" + string(canonical)
-		_, known, c := ppReceipt(ctx, tx, operation, stamp)
-		if c != equipment.OK || known {
-			return c
+		_, known, code := ppReceipt(ctx, tx, operation, stamp)
+		if code != equipment.OK || known {
+			return code
 		}
-		var rowJSON string
-		if tx.QueryRowContext(ctx, "SELECT r.row_json FROM pppoe_current c JOIN pppoe_rows r ON r.observation_id=c.observation_id WHERE c.device_id=? AND c.observation_id=? AND r.row_id=?", link.Concentrator, source.ObservationID, source.RowID).Scan(&rowJSON) != nil {
-			return equipment.ObservationMissing
+		row, code := readRadioLinkSource(ctx, tx, link, source)
+		if code != equipment.OK {
+			return code
 		}
-		var row equipment.PPRow
-		if json.Unmarshal([]byte(rowJSON), &row) != nil || row.Login != link.Login || row.State == "OFFLINE" {
-			return equipment.ObservationIncompatible
+		if code = enrollRadioLinkCPE(ctx, tx, link, row); code != equipment.OK {
+			return code
 		}
-		var cpeAddress string
-		if tx.QueryRowContext(ctx, "SELECT address FROM devices WHERE id=? AND role='cpe'", link.CPE).Scan(&cpeAddress) != nil || cpeAddress != row.Address {
-			return equipment.ObservationIncompatible
+		if code = validateStoredRadioLinkEndpoints(ctx, tx, link, row); code != equipment.OK {
+			return code
 		}
-		for _, id := range []string{link.Concentrator, link.CPE, link.AP} {
-			var n int
-			if tx.QueryRowContext(ctx, "SELECT count(*) FROM devices WHERE id=? AND active=1", id).Scan(&n) != nil || n != 1 {
-				return equipment.Revision
-			}
-		}
-		if _, err = tx.ExecContext(ctx, "INSERT INTO radio_links VALUES(?,?,?,?) ON CONFLICT(concentrator_id,scope,login) DO UPDATE SET body=excluded.body", link.Concentrator, link.Scope, link.Login, string(body)); err != nil {
-			return equipment.Unavailable
-		}
-		if _, err = tx.ExecContext(ctx, "INSERT INTO equipment_operations VALUES(?,?,?)", operation, stamp, link.AP); err != nil {
-			return equipment.Unavailable
-		}
-		return equipment.OK
+		return writeRadioLinkEffect(ctx, tx, link, operation, stamp, body)
 	})
 }
 func (s *Store) RadioAPReadings(ctx context.Context, company string) ([]equipment.RadioReading, equipment.Code) {
@@ -224,7 +187,12 @@ func (s *Store) RadioAPReadings(ctx context.Context, company string) ([]equipmen
 	if s.checkActive() != nil {
 		return nil, equipment.Unavailable
 	}
-	rows, err := s.unit.QueryContext(ctx, "SELECT r.body FROM radio_current r JOIN devices d ON d.id=r.device_id JOIN credentials c ON c.id=d.credential_id WHERE d.active=1 AND d.role='ap' AND json_extract(r.body,'$.revision')=d.revision AND json_extract(r.body,'$.credential_revision')=c.revision")
+	rows,
+		err := s.unit.QueryContext(ctx,
+		("SELECT r.body FROM radio_current r JOIN devices d ON d.id=r.device_id JOIN cre" +
+			"dentials c ON c.id=d.credential_id WHERE d.active=1 AND d.role='ap' AND json_e" +
+			"xtract(r.body,'$.revision')=d.revision AND json_extract(r.body,'$.credential_r" +
+			"evision')=c.revision"))
 	if err != nil {
 		return nil, equipment.Unavailable
 	}

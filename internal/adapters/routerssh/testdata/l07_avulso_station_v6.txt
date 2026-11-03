@@ -1,0 +1,85 @@
+L07-AVULSO-RESOURCE
+                   uptime: 2d22h54m38s
+                  version: 6.49.18 (long-term)
+               build-time: Feb/27/2025 15:58:10
+         factory-software: 6.44.6
+              free-memory: 38.1MiB
+             total-memory: 64.0MiB
+                      cpu: MIPS 74Kc V4.12
+                cpu-count: 1
+            cpu-frequency: 600MHz
+                 cpu-load: 5%
+           free-hdd-space: 3324.0KiB
+          total-hdd-space: 16.0MiB
+  write-sect-since-reboot: 14091
+         write-sect-total: 37904
+               bad-blocks: 0%
+        architecture-name: mipsbe
+               board-name: LHG HP5
+                 platform: MikroTik
+
+L07-AVULSO-PACKAGES
+Flags: X - disabled 
+ #   NAME                    VERSION                    SCHEDULED              
+ 0   routeros-mipsbe         6.49.18                                           
+ 1   system                  6.49.18                                           
+ 2 X ipv6                    6.49.18                                           
+ 3   wireless                6.49.18                                           
+ 4   hotspot                 6.49.18                                           
+ 5   mpls                    6.49.18                                           
+ 6   routing                 6.49.18                                           
+ 7   ppp                     6.49.18                                           
+ 8   dhcp                    6.49.18                                           
+ 9   security                6.49.18                                           
+10   advanced-tools          6.49.18                                           
+
+L07-AVULSO-BOARD
+       routerboard: yes
+        board-name: LHG HP5
+             model: RBLHG-5HPnD
+          revision: r2
+             serial-number: [omitido]
+     firmware-type: ar9344L
+  factory-firmware: 6.44.6
+  current-firmware: 6.47.9
+  upgrade-firmware: 6.49.18
+
+L07-AVULSO-HEALTH
+
+L07-AVULSO-WIRELESS
+Flags: X - disabled, R - running 
+ 0  R name="wlan1" mtu=1500 l2mtu=1600 mac-address=02:00:00:00:20:01 
+      arp=enabled interface-type=Atheros AR9300 mode=station-bridge 
+      ssid="LAB-SSID" frequency=5240 band=5ghz-a/n 
+      channel-width=20/40mhz-eC secondary-frequency="" scan-list=default 
+      wireless-protocol=nv2-nstreme-802.11 vlan-mode=no-tag vlan-id=1 
+      wds-mode=dynamic wds-default-bridge=none wds-ignore-ssid=no 
+      bridge-mode=enabled default-authentication=yes default-forwarding=yes 
+      default-ap-tx-limit=0 default-client-tx-limit=0 hide-ssid=no 
+      security-profile=default compression=no 
+
+L07-AVULSO-REGISTRATION
+ 0 interface=wlan1 radio-name="LAB-PEER" mac-address=02:00:00:00:20:02 
+   ap=yes wds=no bridge=yes rx-rate="30Mbps-40MHz/1S/SGI" 
+   tx-rate="28.8Mbps-20MHz/2S/SGI" packets=6400574,21241426 
+   bytes=2247549257,25458073239 frames=6400574,21241426 
+   frame-bytes=2209166621,25330624683 hw-frames=10194255,21295533 
+   hw-frame-bytes=3774037508,25907744928 tx-frames-timed-out=0 
+   uptime=2d22h54m12s last-activity=40ms signal-strength=-80dBm@6Mbps 
+   signal-to-noise=40dB signal-strength-ch0=-81dBm signal-strength-ch1=-85dBm 
+   tx-signal-strength-ch0=-86dBm tx-signal-strength-ch1=-84dBm 
+   strength-at-rates=-80dBm@6Mbps 90ms,-75dBm@9Mbps 2d22h54m5s850ms,-
+                  79dBm@12Mbps 47m36s330ms,-79dBm@18Mbps 15s550ms,-
+                  80dBm@24Mbps 50ms,-79dBm@36Mbps 14s860ms,-79dBm@48Mbps 
+                  6h2m30s920ms,-80dBm@HT20-0 320ms,-80dBm@HT20-1 260ms,-
+                  79dBm@HT20-2 350ms,-79dBm@HT20-3 300ms,-79dBm@HT20-4 
+                  17s270ms,-77dBm@HT20-5 6h25m1s600ms,-80dBm@HT40-0 3s940ms,-
+                  80dBm@HT40-1 50ms,-80dBm@HT40-2 90ms,-80dBm@HT40-3 28s670ms,-
+                  78dBm@HT40-4 5h19m28s780ms 
+   tx-signal-strength=-82dBm tx-ccq=64% rx-ccq=55% p-throughput=26468 
+   distance=18 nstreme=no framing-mode=none routeros-version="6.49.10" 
+   last-ip="" 802.1x-port-enabled=yes management-protection=no 
+   compression=no wmm-enabled=yes 
+   tx-rate-set="OFDM:6-54 BW:1x-2x SGI:1x-2x HT:0-15" 
+
+L07-AVULSO-DONE
