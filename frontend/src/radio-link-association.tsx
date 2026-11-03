@@ -1,6 +1,6 @@
 import type { RadioLinkState } from './radio-link-state';
-import { RadioFamilies } from './radio-contract';
-import { RadioRoles } from './radio-contract';
+import { RadioFamilies, RadioRoles } from './radio-contract';
+import { formatMacAddress, formatRadioFamily } from './network-format';
 export function RadioLinkProposal({ state }: { state: RadioLinkState }) {
   const { blocked, radio, editing, saving, confirm, link, proposal } = state;
   return (
@@ -12,11 +12,13 @@ export function RadioLinkProposal({ state }: { state: RadioLinkState }) {
             {proposal.address} ·{' '}
             {proposal.family === RadioFamilies.automatic
               ? 'Família: identificar após a confirmação'
-              : proposal.family}
+              : formatRadioFamily(proposal.family)}
           </p>
           <p>
-            Credencial {proposal.credential_alias} · {proposal.choice.mac} ·{' '}
-            {proposal.choice.interface} · BSSID {proposal.choice.bssid}
+            Credencial {proposal.credential_alias} ·{' '}
+            {formatMacAddress(proposal.choice.mac)} ·{' '}
+            {proposal.choice.interface} · BSSID{' '}
+            {formatMacAddress(proposal.choice.bssid)}
           </p>
           <button
             className="primary"

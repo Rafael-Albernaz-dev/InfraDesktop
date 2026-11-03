@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction, RefObject } from 'react';
 import { radioAPI as api } from './radio-api';
-import type { RadioLinkChoice } from './radio-api';
+import type { RadioLinkChoice, RadioResult } from './radio-api';
 import type { Device } from './equipment-api';
 import { equipmentAPI } from './equipment-api';
 import { RadioModes, RadioRoles } from './radio-contract';
@@ -17,6 +17,7 @@ export type RadioLinkPanelProps = {
   row: string;
   pppoeUptime: string;
   blocked: boolean;
+  onOpenEquipment?: (deviceID: string) => void;
 };
 type LinkContext = Pick<
   RadioLinkPanelProps,
@@ -176,6 +177,22 @@ function createRadioLinkIndexPage(
   };
 }
 
+function mergeConfirmedLinkView(
+  confirmed: RadioResult['data'],
+  refreshed?: RadioResult,
+) {
+  if (refreshed?.code !== 'OK' || !refreshed.data) return confirmed;
+  const hasStoredLink = Boolean(refreshed.data.link);
+  return {
+    ...confirmed,
+    ...refreshed.data,
+    link: refreshed.data.link || confirmed?.link,
+    reading: refreshed.data.reading || confirmed?.reading,
+    suggestions: hasStoredLink ? refreshed.data.suggestions : [],
+    proposal: hasStoredLink ? refreshed.data.proposal : undefined,
+  };
+}
+
 function useRadioLinkConfirmation(
   context: LinkContext,
   radio: RadioController,
@@ -203,7 +220,17 @@ function useRadioLinkConfirmation(
         radio.setError(radioMessage(result.code));
         return;
       }
-      radio.setView(result.data);
+      const refreshed = await api
+        .link(
+          context.profile,
+          context.activation,
+          context.device.id,
+          context.observation,
+          context.row,
+        )
+        .catch(() => undefined);
+      if (generation !== life.current) return;
+      radio.setView(mergeConfirmedLinkView(result.data, refreshed));
       setEditing(false);
     } catch {
       if (generation !== life.current) return;
@@ -251,4 +278,7 @@ export function useRadioLinkState(props: RadioLinkPanelProps) {
     proposal: radio.view?.proposal,
   };
 }
-export type RadioLinkState = Omit<ReturnType<typeof useRadioLinkState>, 'rootRef'>;
+export type RadioLinkState = Omit<
+  ReturnType<typeof useRadioLinkState>,
+  'rootRef'
+>;

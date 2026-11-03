@@ -1,10 +1,17 @@
 import { RadioFamilies } from './radio-contract';
 import { RadioCodes } from './radio-contract';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioLinkPanel } from './radio';
 import { radioAPI as api } from './radio-api';
 import { device, response, reading, link } from './radio-test-fixtures';
+import { equipmentAPI } from './equipment-api';
 
 vi.mock('./radio-api', () => ({
   radioAPI: {
@@ -35,6 +42,18 @@ beforeEach(() => {
   vi.mocked(api.cancel).mockResolvedValue(response());
   vi.mocked(api.cancelOperation).mockResolvedValue(response());
   vi.mocked(api.link).mockResolvedValue(response({ link }));
+  vi.mocked(equipmentAPI.list).mockResolvedValue({
+    code: 'OK',
+    profile_id: 'company',
+    activation_id: 'active',
+    data: {
+      devices: [],
+      credentials: [],
+      next_cursor: 0,
+      total_devices: 0,
+      vault_available: true,
+    },
+  });
 });
 
 it('suggestion needs confirmation before link query; AP result survives an independent CPE failure', async () => {
@@ -140,6 +159,37 @@ it('one-click proposal identifies AP and credential, then clears on an ambiguous
     screen.getByRole('button', { name: 'Vincular CPE e AP' }),
   ).toBeEnabled();
   expect(api.start).toHaveBeenCalledTimes(1);
+});
+
+it('automatically refetches link via api.link after confirming CPE editing without sending new SSH', async () => {
+  vi.mocked(api.link).mockResolvedValue(response({ link }));
+  vi.mocked(api.confirmLink).mockResolvedValue(
+    response({ link: { ...link, mac: '00:11:22:33:44:55' } }),
+  );
+  render(
+    <RadioLinkPanel
+      profile="company"
+      activation="active"
+      device={{ ...device, id: 'concentrator' }}
+      observation="observation"
+      row="row"
+      pppoeUptime="2 h"
+      blocked={false}
+    />,
+  );
+  const editButton = await screen.findByRole('button', {
+    name: 'Revisar vínculo',
+  });
+  fireEvent.click(editButton);
+  const form = (
+    await screen.findByRole('button', {
+      name: 'Confirmar vínculo',
+    })
+  ).closest('form')!;
+  fireEvent.submit(form);
+  await waitFor(() => expect(api.confirmLink).toHaveBeenCalledTimes(1));
+  expect(api.link).toHaveBeenCalledTimes(2);
+  expect(api.start).not.toHaveBeenCalled();
 });
 
 function prepareAmbiguousProposalRefresh() {

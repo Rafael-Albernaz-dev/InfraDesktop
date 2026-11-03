@@ -1,3 +1,8 @@
+import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
+export { formatPPUptime } from './pppoe-format';
+export { message, recoveryActionMessage } from './microcopy';
+export type { Intent } from './microcopy';
+
 /** Shared pt-BR network presentation. Inputs remain raw for sorting and CSV. */
 export type NetworkNumber = number | string | bigint | null | undefined;
 export type NumberRange = { min: number; max: number };
@@ -204,7 +209,11 @@ export function formatDate(value?: string, history = false): string {
     })
     .replace(',', '');
 }
-export function formatMetric(value: NetworkNumber, unit: string): string {
+export function formatMetric(
+  value: NetworkNumber,
+  unit: string,
+  empty = unavailable,
+): string {
   const n = numeric(value);
   // Signed physical quantities (dBm, dB and temperature) are legitimate.
   if (
@@ -215,7 +224,7 @@ export function formatMetric(value: NetworkNumber, unit: string): string {
       ['dBm', 'dB', '°C'].includes(unit)
     )
   )
-    return unavailable;
+    return empty;
   return (
     formatter(digits(Math.abs(Number(value)))).format(Number(value)) +
     ' ' +
@@ -239,9 +248,15 @@ export function formatLatencyRange(value: {
   )
     return unavailable;
   if (value.min === value.max) return formatLatency(value.min);
-  const a = value.min / 1e6,
-    b = value.max / 1e6;
-  return `${formatter(digits(a)).format(Math.floor(a * 10 ** digits(a)) / 10 ** digits(a))}–${formatter(digits(b)).format(Math.ceil(b * 10 ** digits(b)) / 10 ** digits(b))} ms`;
+  const a = value.min / 1e6;
+  const b = value.max / 1e6;
+  const low = formatter(digits(a)).format(
+    Math.floor(a * 10 ** digits(a)) / 10 ** digits(a),
+  );
+  const high = formatter(digits(b)).format(
+    Math.ceil(b * 10 ** digits(b)) / 10 ** digits(b),
+  );
+  return `${low}–${high} ms`;
 }
 export function formatClockOffset(value: NumberRange): string {
   if (
@@ -270,3 +285,228 @@ export function portLabel(port?: {
         : '-half')
   );
 }
+
+export function formatAbsent(reason = 'não coletado'): string {
+  return `Indisponível (${(reason || 'não coletado').trim()})`;
+}
+
+export function formatTextOrAbsent(
+  value?: string | null,
+  reason = 'não coletado',
+): string {
+  const clean = (value ?? '').trim();
+  if (!clean || ['—', '-', 'undefined', 'null', 'NaN'].includes(clean)) {
+    return formatAbsent(reason);
+  }
+  return sanitizeToken(clean);
+}
+
+export function formatAge(iso?: string, nowMs: number = Date.now()): string {
+  const raw = (iso || '').trim();
+  if (!raw || !Number.isFinite(Date.parse(raw)))
+    return formatAbsent('sem horário');
+  const diffSec = Math.max(0, Math.floor((nowMs - Date.parse(raw)) / 1000));
+  if (diffSec < 60) return 'agora';
+  const mins = Math.floor(diffSec / 60);
+  if (mins < 60) return `há ${formatter().format(mins)} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `há ${formatter().format(hours)} h`;
+  return `há ${formatter().format(Math.floor(hours / 24))} d`;
+}
+
+export function formatDateWithAge(
+  iso?: string,
+  nowMs: number = Date.now(),
+  history = false,
+): string {
+  const formatted = formatDate(iso, history);
+  if (formatted === unavailable) return formatAbsent('sem horário');
+  return `${formatted} (${formatAge(iso, nowMs)})`;
+}
+
+export function formatMacAddress(
+  mac?: string | null,
+  reason = 'MAC não coletado',
+): string {
+  const raw = (mac ?? '').trim();
+  if (!raw || raw === '—' || raw === '-') return formatAbsent(reason);
+  const hex = raw.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (hex.length === 12) {
+    return `${hex.slice(0, 2)}:${hex.slice(2, 4)}:${hex.slice(4, 6)}:${hex.slice(6, 8)}:${hex.slice(8, 10)}:${hex.slice(10, 12)}`;
+  }
+  return raw.toUpperCase();
+}
+
+export function formatIPAddress(
+  ip?: string | null,
+  port?: number | null,
+  reason = 'endereço não informado',
+): string {
+  const clean = (ip ?? '').trim();
+  if (!clean || clean === '—' || clean === '-') return formatAbsent(reason);
+  return typeof port === 'number' && port > 0 && !clean.includes(':')
+    ? `${clean}:${port}`
+    : clean;
+}
+
+export function formatDeviceModel(
+  model?: string | null,
+  reason = 'modelo não coletado',
+): string {
+  return formatTextOrAbsent(model, reason);
+}
+
+export function formatFirmwareVersion(
+  version?: string | null,
+  reason = 'firmware não coletado',
+): string {
+  return formatTextOrAbsent(version, reason);
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  concentrator: 'Concentrador PPPoE',
+  [RadioRoles.ap]: 'Ponto de acesso (AP)',
+  [RadioRoles.cpe]: 'Cliente rádio (CPE)',
+  [RadioRoles.ptp]: 'Enlace ponto a ponto (PTP)',
+  other: 'Outro equipamento',
+};
+
+export function formatEquipmentRole(role?: string | null): string {
+  const key = (role ?? '').trim().toLowerCase();
+  if (!key) return formatAbsent('papel não definido');
+  return ROLE_LABELS[key] || 'Papel personalizado';
+}
+
+const FAMILY_LABELS: Record<string, string> = {
+  [RadioFamilies.routerOSWirelessV6]: 'MikroTik RouterOS Wireless v6',
+  [RadioFamilies.airOSV6]: 'Ubiquiti airOS v6',
+  [RadioFamilies.intelbrasWOM]: 'Intelbras WOM',
+  [RadioFamilies.automatic]: 'Detecção automática',
+  [RadioFamilies.standalone]: 'Detecção automática',
+  [RadioFamilies.unsupported]: 'Sem driver compatível nesta versão',
+};
+
+export function formatRadioFamily(
+  family?: string | null,
+  reason = 'família não identificada',
+): string {
+  const key = (family ?? '').trim();
+  if (!key) return formatAbsent(reason);
+  return FAMILY_LABELS[key] || formatAbsent(reason);
+}
+
+const MODE_LABELS: Record<string, string> = {
+  'ap-bridge': 'Ponto de acesso (ap-bridge)',
+  'station-bridge': 'Estação (station-bridge)',
+  'station-wds': 'Estação WDS (station-wds)',
+  station: 'Estação (CPE)',
+  bridge: 'Bridge',
+  [RadioRoles.ap]: 'Ponto de acesso (AP)',
+  [RadioRoles.cpe]: 'Cliente rádio (CPE)',
+  [RadioRoles.ptp]: 'Ponto a ponto (PTP)',
+  [RadioModes.once]: 'Leitura pontual',
+  [RadioModes.measure]: 'Medição curta',
+  [RadioModes.live]: 'Tempo real',
+  [RadioModes.index]: 'Índice de estações',
+};
+
+export function formatRadioMode(
+  mode?: string | null,
+  protocol?: string | null,
+  reason = 'modo não coletado',
+): string {
+  const rawMode = (mode ?? '').trim();
+  const rawProto = (protocol ?? '').trim();
+  const label = rawMode
+    ? MODE_LABELS[rawMode.toLowerCase()] || sanitizeToken(rawMode)
+    : '';
+  const proto = rawProto ? sanitizeToken(rawProto) : '';
+  if (label && proto && label.toLowerCase() !== proto.toLowerCase()) {
+    return `${label} · ${proto}`;
+  }
+  return label || proto || formatAbsent(reason);
+}
+
+const QUALITY_LABELS: Record<string, string> = {
+  COMPLETE: 'Leitura completa',
+  PARTIAL: 'Leitura parcial',
+  UNAVAILABLE: 'Leitura indisponível',
+  FAILED: 'Falha na leitura',
+  GATED: 'Retida por proteção',
+  IDLE: 'Aguardando leitura',
+};
+
+export function formatRadioQuality(quality?: string | null): string {
+  const key = (quality ?? '').trim().toUpperCase();
+  return QUALITY_LABELS[key] || 'Estado não classificado';
+}
+
+const LINK_ORIGIN_LABELS: Record<string, string> = {
+  'sugerido-confirmado': 'Sugestão confirmada pelo operador',
+  manual: 'Confirmado manualmente',
+  sugerido: 'Sugestido pelo inventário',
+};
+
+export function formatLinkOrigin(origin?: string | null): string {
+  const key = (origin ?? '').trim().toLowerCase();
+  if (!key) return formatAbsent('origem não registrada');
+  return LINK_ORIGIN_LABELS[key] || 'Vínculo registrado';
+}
+
+const TRUST_ORIGIN_LABELS: Record<string, string> = {
+  'automatic-tofu': 'Aceita no primeiro acesso (TOFU)',
+  tofu: 'Aceita no primeiro acesso (TOFU)',
+  confirmed: 'Confirmada pelo operador',
+  manual: 'Confirmada pelo operador',
+};
+
+export function formatTrustOrigin(origin?: string | null): string {
+  const key = (origin ?? '').trim().toLowerCase();
+  if (!key) return formatAbsent('chave não verificada');
+  return TRUST_ORIGIN_LABELS[key] || 'Verificação registrada';
+}
+
+export function formatTickReason(reason?: string | null): {
+  summary: string;
+  action: string;
+  technical?: string;
+} {
+  const raw = (reason ?? '').trim();
+  if (!raw) {
+    return {
+      summary: 'Amostra parcial neste ciclo.',
+      action:
+        'Aguarde o próximo ciclo ou repita a leitura se o estado persistir.',
+    };
+  }
+  const lower = raw.toLowerCase();
+  if (lower.includes('tick-parse') || lower.includes('parse')) {
+    return {
+      summary: 'O equipamento respondeu com campos incompletos neste ciclo.',
+      action: 'Aguarde o próximo ciclo ou repita a leitura manual.',
+      technical: raw,
+    };
+  }
+  if (lower.includes('deadline') || lower.includes('timeout')) {
+    return {
+      summary:
+        'O equipamento demorou além do limite para responder neste ciclo.',
+      action: 'Verifique a latência até o equipamento e tente novamente.',
+      technical: raw,
+    };
+  }
+  return {
+    summary: 'Amostra parcial registrada neste ciclo.',
+    action: 'Consulte o detalhe técnico abaixo caso precise investigar.',
+    technical: raw,
+  };
+}
+
+import {
+  sanitizeToken,
+  scrubSecrets,
+  sanitizeVisibleText,
+  TechnicalDetail,
+} from './network-sanitize';
+
+export { sanitizeToken, scrubSecrets, sanitizeVisibleText, TechnicalDetail };

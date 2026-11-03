@@ -1,7 +1,12 @@
 import type { RadioCost } from './radio-api';
 import type { RadioLinkState } from './radio-link-state';
 import { RadioModes } from './radio-contract';
-import { formatDate, formatMetric } from './network-format';
+import {
+  TechnicalDetail,
+  formatDate,
+  formatMetric,
+  sanitizeVisibleText,
+} from './network-format';
 import { Reading } from './radio-reading';
 export function RadioLinkRunActions({ state }: { state: RadioLinkState }) {
   const { blocked, radio, editing, link, cost } = state;
@@ -154,6 +159,7 @@ function RadioTickRow({
   tick: NonNullable<RadioCost['series']>[number];
   apOnly: boolean | undefined;
 }) {
+  const sanitized = sanitizeVisibleText(tick.reason, 'Amostra parcial');
   return (
     <li>
       <p>
@@ -180,8 +186,9 @@ function RadioTickRow({
               .map((v) => formatMetric(v, 'ms'))
               .join(' / ')
           : 'indisponível'}{' '}
-        · {tick.reason}
+        · {sanitized.visible}
       </p>
+      <TechnicalDetail detail={sanitized.technical} />
     </li>
   );
 }
