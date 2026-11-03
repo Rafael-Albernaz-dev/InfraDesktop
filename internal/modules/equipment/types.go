@@ -1,14 +1,10 @@
-// Package equipment owns inventory, reusable read credentials and finite queries.
+// Package equipment defines the shared domain contract types across inventory, pppoe, radio, and monitoring.
 package equipment
 
 import (
 	"context"
 	"infradesktop/internal/modules/access"
-	"net/netip"
-	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 )
 
 type Code = access.Code
@@ -51,6 +47,7 @@ type Credential struct {
 	Revision uint64 `json:"revision"`
 	Links    int    `json:"links"`
 }
+
 type InterfaceReading struct {
 	Name     string `json:"name"`
 	Kind     string `json:"kind"`
@@ -61,7 +58,7 @@ type InterfaceReading struct {
 // InterfacePart describes a bounded static-interface snapshot separately from summary.
 type InterfacePart struct {
 	CountsKnown bool   `json:"counts_known"`
-	Status      string `json:"status"` // complete, limited, failed, stale
+	Status      string `json:"status"`
 	Code        Code   `json:"code"`
 	At          string `json:"observed_at"`
 	Source      string `json:"source"`
@@ -69,6 +66,7 @@ type InterfacePart struct {
 	Eligible    int    `json:"eligible"`
 	Dynamic     int    `json:"dynamic"`
 }
+
 type TrustAcceptance struct {
 	Mode        string `json:"mode"`
 	At          string `json:"accepted_at"`
@@ -80,12 +78,14 @@ type TrustAcceptance struct {
 	Revision    uint64 `json:"revision"`
 	Fingerprint string `json:"fingerprint"`
 }
+
 type Attempt struct {
 	JobID string `json:"job_id"`
 	State string `json:"state"`
 	Code  Code   `json:"code"`
 	At    string `json:"at"`
 }
+
 type Observation struct {
 	InterfacePart *InterfacePart     `json:"interface_part,omitempty"`
 	Identity      string             `json:"identity"`
@@ -101,6 +101,7 @@ type Observation struct {
 	Source        string             `json:"source"`
 	Quality       string             `json:"quality"`
 }
+
 type Device struct {
 	Monitoring      *DeviceHealth    `json:"monitoring,omitempty"`
 	MonitoringAt    string           `json:"monitoring_at,omitempty"`
@@ -120,16 +121,20 @@ type Device struct {
 	TrustOrigin     string           `json:"trust_origin"`
 	Result          *Observation     `json:"result,omitempty"`
 }
+
 type PPSummary struct {
 	Online  int    `json:"online"`
 	Offline int    `json:"offline"`
 	At      string `json:"at"`
 }
+
 type SealedCredential struct {
 	Metadata Credential
 	Envelope []byte
 }
+
 type Operation struct{ ID, Stamp, Entity string }
+
 type State struct {
 	CredentialDefaults    map[string]string
 	Installation, Company string
@@ -138,13 +143,16 @@ type State struct {
 	Devices               []Device
 	Operations            []Operation
 }
+
 type Store interface {
 	ReadEquipment(context.Context, string) (State, Code)
 	UpdateEquipment(context.Context, string, func(*State) Code) Code
 }
+
 type Authorizer interface {
 	WithAuthorization(context.Context, uint32, access.Command, func(uint64) Code) Code
 }
+
 type Vault interface {
 	Available() bool
 	Ready(string, string, []byte) bool
@@ -152,11 +160,14 @@ type Vault interface {
 	Open(installation, company, id string, revision uint64, envelope, wrapped []byte) (string, Code)
 	Stamp(string) (string, Code)
 }
+
 type Remote interface {
 	Inspect(context.Context, Device) (string, Code)
 	Query(context.Context, Device, string, string, func() Code) (*Observation, Code)
 }
+
 type IDs interface{ ID() (string, Code) }
+
 type Job struct {
 	Failure     *RadioFailure `json:"failure,omitempty"`
 	PPPoE       *PPAttempt    `json:"pppoe,omitempty"`
@@ -168,6 +179,7 @@ type Job struct {
 	Fingerprint string        `json:"fingerprint,omitempty"`
 	Result      *Observation  `json:"result,omitempty"`
 }
+
 type View struct {
 	CredentialDefaults map[string]string `json:"credential_defaults,omitempty"`
 	Total              int               `json:"total_devices"`
@@ -179,72 +191,4 @@ type View struct {
 	Job                *Job              `json:"job,omitempty"`
 	Next               int               `json:"next_cursor"`
 	VaultAvailable     bool              `json:"vault_available"`
-}
-
-func ValidText(s string, max int) bool {
-	if strings.TrimSpace(s) != s || !utf8.ValidString(s) || utf8.RuneCountInString(s) < 1 || utf8.RuneCountInString(s) > max {
-		return false
-	}
-	for _, r := range s {
-		if unicode.IsControl(r) {
-			return false
-		}
-	}
-	return true
-}
-
-// ValidateDevice reports safe field codes; values and secrets never enter errors.
-func ValidateDevice(d Device) Code {
-	if !ValidText(d.Name, 80) {
-		return InvalidDeviceName
-	}
-	ip, e := netip.ParseAddr(d.Address)
-	if e != nil || ip.Zone() != "" || ip.String() != d.Address || ip.IsUnspecified() || ip.IsMulticast() {
-		return InvalidDeviceAddress
-	}
-	if d.Port < 1 || d.Port > 65535 {
-		return InvalidDevicePort
-	}
-	if !access.ValidCompanyID(d.ID) || d.Transport != "ssh" || (d.CredentialID != "" && !access.ValidCompanyID(d.CredentialID)) || d.Revision == 0 {
-		return Invalid
-	}
-	return OK
-}
-func ValidDevice(d Device) bool { return ValidateDevice(d) == OK }
-func validateCredential(alias, user, secret string) Code {
-	if !ValidText(alias, 80) {
-		return InvalidCredentialAlias
-	}
-	if !ValidText(user, 80) {
-		return InvalidCredentialUser
-	}
-	if len(secret) < 1 || len(secret) > 1024 {
-		return InvalidCredentialSecret
-	}
-	return OK
-}
-func credential(st *State, id string) *SealedCredential {
-	for i := range st.Credentials {
-		if st.Credentials[i].Metadata.ID == id {
-			return &st.Credentials[i]
-		}
-	}
-	return nil
-}
-func device(st *State, id string) *Device {
-	for i := range st.Devices {
-		if st.Devices[i].ID == id {
-			return &st.Devices[i]
-		}
-	}
-	return nil
-}
-func links(st *State, id string) int {
-	n := 0
-	for _, d := range st.Devices {
-		if d.CredentialID == id {
-			n++
-		}
-	}
-	return n
 }

@@ -5,10 +5,8 @@ import (
 	"github.com/google/uuid"
 	"infradesktop/internal/adapters/ipc"
 	"infradesktop/internal/adapters/presentation"
-	"infradesktop/internal/adapters/routerssh"
 	"infradesktop/internal/adapters/security"
 	"infradesktop/internal/adapters/storage"
-	"infradesktop/internal/adapters/vault"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
@@ -29,9 +27,12 @@ func RuntimePath() string {
 	}
 	return filepath.Join("/run", "infradesktop-"+u.Username)
 }
+
 func Desktop() *presentation.App {
-	return presentation.New(ipc.NewAccountClient(RuntimePath(), ClientStatePath(), uint32(os.Getuid())))
+	client := ipc.NewAccountClient(RuntimePath(), ClientStatePath(), uint32(os.Getuid()))
+	return presentation.New(client)
 }
+
 func StatePath() string {
 	if p := os.Getenv("INFRADESKTOP_STATE"); p != "" {
 		return p
@@ -42,6 +43,7 @@ func StatePath() string {
 	}
 	return filepath.Join("/var/lib", "infradesktop-"+u.Username)
 }
+
 func ClientStatePath() string {
 	if p := os.Getenv("INFRADESKTOP_CLIENT_STATE"); p != "" {
 		return p
@@ -65,6 +67,7 @@ func (equipmentIDs) ID() (string, equipment.Code) {
 	}
 	return id.String(), equipment.OK
 }
+
 func Daemon(dir string) (*ipc.Server, error) {
 	instance, e := ipc.RandomID()
 	if e != nil {
@@ -80,17 +83,12 @@ func Daemon(dir string) (*ipc.Server, error) {
 		return nil, e
 	}
 	service := access.New(store, security.Crypto{}, time.Now, uid, activation, store)
-	server, e := ipc.ListenAccess(dir, uid, service, foundation.Status{Instance: instance, Activation: activation}, store.Close)
+	status := foundation.Status{Instance: instance, Activation: activation}
+	server, e := ipc.ListenAccess(dir, uid, service, status, store.Close)
 	if e != nil {
 		store.Close()
+		return server, e
 	}
-	if e == nil {
-		provider := vault.Provider(vault.Systemd)
-		if path := os.Getenv("INFRADESKTOP_DEV_VAULT_KEY"); path != "" && devVaultEnabled == "true" {
-			provider = func() ([]byte, error) { return vault.ReadKey(path) }
-		}
-		queries := equipment.New(service, store, vault.New(provider), routerssh.Adapter{}, equipmentIDs{}, time.Now)
-		ipc.AttachEquipment(server, queries)
-	}
-	return server, e
+	mountCapabilities(server, service, store)
+	return server, nil
 }

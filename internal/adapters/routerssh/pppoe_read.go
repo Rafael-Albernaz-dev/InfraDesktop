@@ -2,25 +2,64 @@ package routerssh
 
 import (
 	"bufio"
-	"context"
 	"encoding/json"
 	"infradesktop/internal/modules/equipment"
-	"log"
+	"infradesktop/internal/modules/pppoe"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func ppLiteral(value string) string {
-	return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`, `$`, `\$`, "\n", `\n`, "\r", `\r`, "\t", `\t`).Replace(value) + `"`
+	r := strings.NewReplacer(
+		`\`, `\\`, `"`, `\"`, `$`, `\$`, "\n", `\n`, "\r", `\r`, "\t", `\t`,
+	)
+	return `"` + r.Replace(value) + `"`
 }
 
-// Selection is generated from rows loaded by the service, never text from UI.
-// A name lookup happens only after the monitor supplies the session tuple.
+// BuildPPBandCommand generates the bounded RouterOS monitor command from service rows.
 func BuildPPBandCommand(rows []equipment.PPRow) (string, bool) {
 	if len(rows) > equipment.PageSize {
 		return "", false
 	}
+	selection, ok := buildPPBandSelection(rows)
+	if !ok {
+		return "", false
+	}
+	find := `[/interface pppoe-server find where running=yes]`
+	if selection != "" {
+		find = `[/interface pppoe-server find where running=yes and (` + selection + `)]`
+	}
+	s := ppEscapeScript +
+		`; :local up [/system resource get uptime]; :local cpu "?"; ` +
+		`:do {:set cpu [/system resource get cpu-load]} on-error={}; ` +
+		`:put ("B\t1\t".[/system resource get version]."\t".$up."\t".$cpu); :local ids ` +
+		find +
+		`; :local n 0; :local bytes 0; :local reason "complete"; ` +
+		`:if ([:len $ids]>2048) do={:set reason "rows"} else={` +
+		`:foreach i in=$ids do={:if ($reason="complete") do={:do {`
+	s += `:local m [/interface pppoe-server monitor $i once as-value]; ` +
+		`:local ppBandName [/interface pppoe-server get $i name]; :local rx "?"; :local tx "?"; ` +
+		`:local ifs [/interface find where name=$ppBandName and type="pppoe-in"]; ` +
+		`:if ([:len $ifs]=1) do={:local p [:pick $ifs 0]; ` +
+		`:do {:set rx [/interface get $p rx-byte]; :set tx [/interface get $p tx-byte]} ` +
+		`on-error={:set rx "?"; :set tx "?"}}; ` +
+		`:local after [/interface pppoe-server monitor $i once as-value]; ` +
+		`:if ((($after->"user")!=($m->"user"))||(($after->"caller-id")!=($m->"caller-id"))||` +
+		`(($after->"remote-address")!=($m->"remote-address"))||(($after->"uptime")<($m->"uptime"))) ` +
+		`do={:set rx "?"; :set tx "?"}; `
+	fields := []string{
+		`$i`, `$ppBandName`, `($m->"user")`, `($m->"caller-id")`,
+		`($m->"remote-address")`, `($m->"uptime")`, `$rx`, `$tx`,
+	}
+	expr := `"T"`
+	for _, field := range fields {
+		expr += `."\t".[$esc ` + field + `]`
+	}
+	s += pdEmit(expr) + `} on-error={}}}}; ` + pdFooter()
+	return s, true
+}
+
+func buildPPBandSelection(rows []equipment.PPRow) (string, bool) {
 	selection := ""
 	seen := map[string]bool{}
 	for _, row := range rows {
@@ -35,20 +74,9 @@ func BuildPPBandCommand(rows []equipment.PPRow) (string, bool) {
 			seen[row.Login] = true
 		}
 	}
-	find := `[/interface pppoe-server find where running=yes]`
-	if selection != "" {
-		find = `[/interface pppoe-server find where running=yes and (` + selection + `)]`
-	}
-	s := ppEscapeScript + `; :local up [/system resource get uptime]; :local cpu "?"; :do {:set cpu [/system resource get cpu-load]} on-error={}; :put ("B\t1\t".[/system resource get version]."\t".$up."\t".$cpu); :local ids ` + find + `; :local n 0; :local bytes 0; :local reason "complete"; :if ([:len $ids]>2048) do={:set reason "rows"} else={:foreach i in=$ids do={:if ($reason="complete") do={:do {`
-	s += `:local m [/interface pppoe-server monitor $i once as-value]; :local ppBandName [/interface pppoe-server get $i name]; :local rx "?"; :local tx "?"; :local ifs [/interface find where name=$ppBandName and type="pppoe-in"]; :if ([:len $ifs]=1) do={:local p [:pick $ifs 0]; :do {:set rx [/interface get $p rx-byte]; :set tx [/interface get $p tx-byte]} on-error={:set rx "?"; :set tx "?"}}; :local after [/interface pppoe-server monitor $i once as-value]; :if ((($after->"user")!=($m->"user"))||(($after->"caller-id")!=($m->"caller-id"))||(($after->"remote-address")!=($m->"remote-address"))||(($after->"uptime")<($m->"uptime"))) do={:set rx "?"; :set tx "?"}; `
-	fields := []string{`$i`, `$ppBandName`, `($m->"user")`, `($m->"caller-id")`, `($m->"remote-address")`, `($m->"uptime")`, `$rx`, `$tx`}
-	expr := `"T"`
-	for _, field := range fields {
-		expr += `."\t".[$esc ` + field + `]`
-	}
-	s += pdEmit(expr) + `} on-error={}}}}; ` + pdFooter()
-	return s, true
+	return selection, true
 }
+
 func ppCounter(v string) *uint64 {
 	n, e := strconv.ParseUint(v, 10, 64)
 	if e != nil || !ppDecimal(v) {
@@ -56,247 +84,109 @@ func ppCounter(v string) *uint64 {
 	}
 	return &n
 }
+
 func ParsePPBand(text string) ([]equipment.PPTunnel, string, equipment.Code) {
 	if len(text) > equipment.PPWireBytes {
 		return nil, "", equipment.Limit
 	}
 	scanner := bufio.NewScanner(strings.NewReader(text))
 	scanner.Buffer(make([]byte, 4096), 8192)
-	version := ""
-	up := equipment.PPInterval{}
-	var cpu *uint64
-	out := []equipment.PPTunnel{}
-	ended := false
-	seen := map[string]bool{}
+	st := &ppBandParseState{seen: map[string]bool{}, out: []equipment.PPTunnel{}}
 	for scanner.Scan() {
 		f := strings.Split(strings.TrimSuffix(scanner.Text(), "\r"), "\t")
-		if ended {
-			return nil, version, equipment.Partial
+		if code := st.consumeLine(f); code != equipment.OK {
+			return nil, st.version, code
 		}
-		if version == "" {
-			if (len(f) != 4 && len(f) != 5) || f[0] != "B" || f[1] != "1" || (!strings.HasPrefix(f[2], "6.") && !strings.HasPrefix(f[2], "7.")) {
-				return nil, version, equipment.Partial
-			}
-			version = f[2]
-			if len(version) > 128 {
-				return nil, version, equipment.Partial
-			}
-			if _, ok := ppUnescape(version); !ok {
-				return nil, version, equipment.Partial
-			}
-			up = ParsePPDuration(f[3])
-			if len(f) == 5 {
-				cpu = ppCounter(f[4])
-				if cpu != nil && *cpu > 100 {
-					cpu = nil
-				}
-			}
-			continue
-		}
-		if f[0] == "Z" {
-			if len(f) != 4 {
-				return nil, version, equipment.Partial
-			}
-			n, e := strconv.Atoi(f[1])
-			final := ParsePPDuration(f[3])
-			if e != nil || n != len(out) || f[2] != "complete" || !up.Known || !final.Known || final.Max < up.Min {
-				return nil, version, equipment.Partial
-			}
-			ended = true
-			continue
-		}
-		if len(f) != 9 || f[0] != "T" || len(out) >= equipment.PPMaxRows {
-			return nil, version, equipment.Partial
-		}
-		for i := 1; i < len(f); i++ {
-			v, ok := ppUnescape(f[i])
-			if !ok || len(v) > 256 {
-				return nil, version, equipment.Partial
-			}
-			f[i] = v
-		}
-		if f[1] == "" || seen[f[1]] {
-			return nil, version, equipment.Partial
-		}
-		seen[f[1]] = true
-		out = append(out, equipment.PPTunnel{ID: f[1], Name: f[2], Login: f[3], Caller: f[4], Address: f[5], Uptime: ParsePPDuration(f[6]), RouterUptime: up, RouterCPU: cpu, RX: ppCounter(f[7]), TX: ppCounter(f[8])})
 	}
-	if scanner.Err() != nil || !ended {
-		return nil, version, equipment.Partial
+	if scanner.Err() != nil || !st.ended {
+		return nil, st.version, equipment.Partial
 	}
-	return out, version, equipment.OK
+	return st.out, st.version, equipment.OK
 }
 
-func (Adapter) ReadPP(ctx context.Context, d equipment.Device, user, secret, scope string, target *equipment.PPReadTarget, publish func(*equipment.PPReadResult) equipment.Code, check func() equipment.Code) (returned *equipment.PPReadResult, code equipment.Code) {
-	defer func() {
-		if code != equipment.Partial && code != equipment.CollectorDefect {
-			return
-		}
-		reason := "READ:inconsistent"
-		if code == equipment.CollectorDefect {
-			reason = "READ:syntax"
-		}
-		if returned != nil && equipment.ValidCollectorReason(code, returned.FailureReason) {
-			reason = returned.FailureReason
-		}
-		returned = &equipment.PPReadResult{FailureReason: reason}
-		log.Printf("routerssh collector failure: code=%s reason=%s", code, reason)
-	}()
-	if scope == "operations" {
-		return readDeviceOperational(ctx, d, user, secret, check)
-	}
-	if scope == "health" {
-		return readPPHealth(ctx, d, user, secret, check)
-	}
-	if scope == "log" {
-		return readPPLog(ctx, d, user, secret, target, check)
-	}
-	if scope == "secret" {
-		return readPPSecret(ctx, d, user, secret, target, check)
-	}
-	if (scope != "bandwidth" && scope != "live" && scope != "traffic" && scope != "top") || target == nil {
-		return nil, equipment.Invalid
-	}
-	origin := time.Now()
-	started := equipment.PPTime(origin)
-	connection, c := openPPConnection(ctx, d, user, secret, check, equipment.PPReadBudget(scope))
-	secret = ""
-	if c != equipment.OK {
-		return nil, c
-	}
-	defer connection.close()
-	command, ok := BuildPPBandCommand(target.Rows)
-	if !ok {
-		return nil, equipment.Invalid
-	}
-	expectedVersion := target.Observation.Provenance.Version
-	sample := func() ([]equipment.PPTunnel, equipment.Code) {
-		begin := time.Since(origin).Nanoseconds()
-		ageStart := time.Since(target.Prepared).Nanoseconds()
-		text, c := connection.run(command)
-		if c != equipment.OK {
-			return nil, c
-		}
-		rows, version, c := ParsePPBand(text)
-		if c != equipment.OK {
-			return nil, c
-		}
-		if expectedVersion == "" && scope == "top" {
-			expectedVersion = version
-		}
-		if version != expectedVersion {
-			return nil, equipment.ObservationIncompatible
-		}
-		window := equipment.PPInterval{Known: true, Min: begin, Max: time.Since(origin).Nanoseconds()}
-		age := equipment.PPInterval{Known: true, Min: target.Age.Min + ageStart, Max: target.Age.Max + time.Since(target.Prepared).Nanoseconds()}
-		for i := range rows {
-			rows[i].Sample = window
-		}
-		if scope == "top" {
-			return rows, equipment.OK
-		}
-		selected := equipment.MatchPPRead(target, rows, age)
-		for i := range selected {
-			if selected[i].ID == "" {
-				selected[i].Sample = window
-			}
-		}
-		return selected, equipment.OK
-	}
-	first, c := sample()
-	if c != equipment.OK {
-		return nil, c
-	}
-	accumulators := make([]equipment.PPTrafficAccumulator, len(target.Rows))
-	var result *equipment.PPReadResult
-	interval := time.Second
-	if scope == "live" || scope == "traffic" {
-		interval = 2 * time.Second
-	}
-	for {
-		if scope == "live" || scope == "traffic" {
-			if deadline, ok := ctx.Deadline(); !ok {
-				return nil, equipment.Invalid
-			} else if time.Until(deadline) <= interval+time.Second {
-				if result == nil {
-					return nil, equipment.Partial
-				}
-				return result, equipment.OK
-			}
-		}
-		timer := time.NewTimer(interval)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return nil, equipment.Cancelled
-		case <-timer.C:
-		}
-		second, c := sample()
-		if c != equipment.OK {
-			if scope == "traffic" && result != nil {
-				snapshot := *result
-				snapshot.Rows = append([]equipment.PPReadRow{}, result.Rows...)
-				for i := range snapshot.Rows {
-					gap := equipment.PPTunnel{Sample: equipment.PPInterval{Known: true, Max: time.Since(origin).Nanoseconds()}}
-					snapshot.Rows[i].Download = nil
-					snapshot.Rows[i].Upload = nil
-					snapshot.Rows[i].Traffic = accumulators[i].Add(first[i], gap)
-				}
-				snapshot.Ended = equipment.PPTime(time.Now())
-				snapshot.Duration = time.Since(origin).Nanoseconds()
-				measured, code := ppMeasureRead(&snapshot)
-				if code == equipment.OK {
-					if code = publish(measured); code != equipment.OK {
-						return nil, code
-					}
-				}
-			}
-			return nil, c
-		}
-		commands, bytes := connection.metrics()
-		result = &equipment.PPReadResult{Version: expectedVersion, Scope: scope, Started: started, Ended: equipment.PPTime(time.Now()), Duration: time.Since(origin).Nanoseconds(), Cost: equipment.PPReadCost{Commands: commands, Bytes: bytes, FirstCount: len(first), LastCount: len(second)}}
-		if len(first) > 0 {
-			result.Cost.CPUStart = first[0].RouterCPU
-		}
-		if len(second) > 0 {
-			result.Cost.CPUEnd = second[0].RouterCPU
-		}
-		if scope == "top" {
-			previous := map[string]equipment.PPTunnel{}
-			for _, row := range first {
-				previous[row.ID] = row
-			}
-			for _, row := range second {
-				download, upload := equipment.PPBandwidth(previous[row.ID], row)
-				result.Rows = append(result.Rows, equipment.PPReadRow{Kind: "session", Name: row.Name, Login: row.Login, Download: download, Upload: upload, Uptime: row.Uptime})
-			}
-			equipment.SortPPConsumption(result.Rows)
-		} else {
-			for i, row := range target.Rows {
-				download, upload := equipment.PPBandwidth(first[i], second[i])
-				readRow := equipment.PPReadRow{Kind: "session", RowID: row.ID, Login: row.Login, Download: download, Upload: upload, Uptime: second[i].Uptime}
-				if scope == "traffic" {
-					readRow.Traffic = accumulators[i].Add(first[i], second[i])
-				}
-				result.Rows = append(result.Rows, readRow)
-			}
-		}
-		result, c = ppMeasureRead(result)
-		if c != equipment.OK {
-			return nil, c
-		}
-		if scope != "live" && scope != "traffic" {
-			return result, equipment.OK
-		}
-		if c := publish(result); c != equipment.OK {
-			return nil, c
-		}
-		first = second // Only the most recent pair is retained.
-	}
+type ppBandParseState struct {
+	version string
+	up      equipment.PPInterval
+	cpu     *uint64
+	out     []equipment.PPTunnel
+	ended   bool
+	seen    map[string]bool
 }
 
-// The protocol byte budget belongs at the adapter. Internal measurements are
-// carried to the service so it can enforce its neutral capability limits.
+func (st *ppBandParseState) consumeLine(f []string) equipment.Code {
+	if st.ended {
+		return equipment.Partial
+	}
+	if st.version == "" {
+		return st.parseHeader(f)
+	}
+	if f[0] == "Z" {
+		return st.parseFooter(f)
+	}
+	return st.parseTunnelRow(f)
+}
+
+func (st *ppBandParseState) parseHeader(f []string) equipment.Code {
+	if (len(f) != 4 && len(f) != 5) || f[0] != "B" || f[1] != "1" {
+		return equipment.Partial
+	}
+	if !strings.HasPrefix(f[2], "6.") && !strings.HasPrefix(f[2], "7.") {
+		return equipment.Partial
+	}
+	st.version = f[2]
+	if len(st.version) > 128 {
+		return equipment.Partial
+	}
+	if _, ok := ppUnescape(st.version); !ok {
+		return equipment.Partial
+	}
+	st.up = ParsePPDuration(f[3])
+	if len(f) == 5 {
+		st.cpu = ppCounter(f[4])
+		if st.cpu != nil && *st.cpu > 100 {
+			st.cpu = nil
+		}
+	}
+	return equipment.OK
+}
+
+func (st *ppBandParseState) parseFooter(f []string) equipment.Code {
+	if len(f) != 4 {
+		return equipment.Partial
+	}
+	n, e := strconv.Atoi(f[1])
+	final := ParsePPDuration(f[3])
+	if e != nil || n != len(st.out) || f[2] != "complete" || !st.up.Known || !final.Known || final.Max < st.up.Min {
+		return equipment.Partial
+	}
+	st.ended = true
+	return equipment.OK
+}
+
+func (st *ppBandParseState) parseTunnelRow(f []string) equipment.Code {
+	if len(f) != 9 || f[0] != "T" || len(st.out) >= equipment.PPMaxRows {
+		return equipment.Partial
+	}
+	for i := 1; i < len(f); i++ {
+		v, ok := ppUnescape(f[i])
+		if !ok || len(v) > 256 {
+			return equipment.Partial
+		}
+		f[i] = v
+	}
+	if f[1] == "" || st.seen[f[1]] {
+		return equipment.Partial
+	}
+	st.seen[f[1]] = true
+	st.out = append(st.out, equipment.PPTunnel{
+		ID: f[1], Name: f[2], Login: f[3], Caller: f[4], Address: f[5],
+		Uptime: ParsePPDuration(f[6]), RouterUptime: st.up, RouterCPU: st.cpu,
+		RX: ppCounter(f[7]), TX: ppCounter(f[8]),
+	})
+	return equipment.OK
+}
+
+// ppMeasureRead enforces the adapter JSON payload and row byte budgets.
 func ppMeasureRead(result *equipment.PPReadResult) (*equipment.PPReadResult, equipment.Code) {
 	if result == nil {
 		return nil, equipment.Partial
@@ -320,7 +210,7 @@ func ppMeasureRead(result *equipment.PPReadResult) (*equipment.PPReadResult, equ
 		return nil, equipment.Partial
 	}
 	result.PayloadBytes = len(body)
-	if !equipment.PPReadWithinBudget(result) {
+	if !pppoe.PPReadWithinBudget(result) {
 		return nil, equipment.Limit
 	}
 	return result, equipment.OK

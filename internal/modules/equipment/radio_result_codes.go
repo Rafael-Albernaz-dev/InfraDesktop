@@ -17,4 +17,6 @@ const (
 	RadioCodeSSHConnectionLost          Code = "SSH_CONNECTION_LOST"
 	RadioCodeSSHNegotiationFailed       Code = "SSH_NEGOTIATION_FAILED"
 	RadioCodeUnsupported                Code = "UNSUPPORTED"
+	RouterFamilyV6                           = "v6"
+	RouterFamilyV7                           = "v7"
 )

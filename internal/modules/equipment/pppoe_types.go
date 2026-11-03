@@ -2,16 +2,12 @@ package equipment
 
 import (
 	"context"
-	"net/netip"
-	"strconv"
-	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 const (
-	// Measured 2048-row atomic replacement under race takes2.35s after prepared batches.
 	PPPersistenceBudget          = 3 * time.Second
+	TrafficRetention             = 5 * time.Minute
 	PPScope                      = "pppoe-active-v1"
 	PPMaxRows                    = 2048
 	PPWireBytes                  = 448 * 1024
@@ -30,6 +26,7 @@ type PPInterval struct {
 	Max   int64 `json:"max"`
 	Known bool  `json:"known"`
 }
+
 type PPProvenance struct {
 	Projection         string     `json:"projection"`
 	Codec              string     `json:"codec"`
@@ -49,6 +46,7 @@ type PPProvenance struct {
 	Sample             PPInterval `json:"sample"`
 	RouterUptime       PPInterval `json:"router_uptime"`
 }
+
 type PPQuality struct {
 	Status            string `json:"status"`
 	Code              Code   `json:"code"`
@@ -60,6 +58,7 @@ type PPQuality struct {
 	Terminated        bool   `json:"terminated"`
 	MembershipChecked bool   `json:"membership_checked"`
 }
+
 type PPRow struct {
 	Context     *PPContext `json:"context,omitempty"`
 	State       string     `json:"state,omitempty"`
@@ -75,9 +74,8 @@ type PPRow struct {
 	Sample      PPInterval `json:"sample"`
 	Duplicates  int        `json:"duplicates"`
 }
+
 type PPObservation struct {
-	// Some optional context was omitted by a wire, row, observation or company
-	// budget. The complete base sessions remain authoritative, including absences.
 	ContextOmitted bool         `json:"context_omitted,omitempty"`
 	Online         int          `json:"online"`
 	Offline        int          `json:"offline"`
@@ -90,6 +88,7 @@ type PPObservation struct {
 	Bytes          int          `json:"bytes"`
 	Rows           []PPRow      `json:"-"`
 }
+
 type PPAttempt struct {
 	Operation         string    `json:"operation_id,omitempty"`
 	Scope             string    `json:"scope,omitempty"`
@@ -103,12 +102,14 @@ type PPAttempt struct {
 	Quality           PPQuality `json:"quality"`
 	ObservationID     string    `json:"observation_id,omitempty"`
 }
+
 type PPReference struct {
 	ID            string `json:"reference_id"`
 	ObservationID string `json:"observation_id"`
 	Created       string `json:"created_at"`
 	Count         int    `json:"count"`
 }
+
 type PPQuery struct {
 	Type       string `json:"type,omitempty"`
 	Search     string `json:"search,omitempty"`
@@ -117,6 +118,7 @@ type PPQuery struct {
 	Desc       bool   `json:"desc,omitempty"`
 	Category   string `json:"category,omitempty"`
 }
+
 type PPInput struct {
 	MonitoringGeneration string   `json:"-"`
 	RowIDs               []string `json:"row_ids,omitempty"`
@@ -139,20 +141,13 @@ type PPInput struct {
 	ExportKey            string   `json:"export_key,omitempty"`
 	Offset               int      `json:"-"`
 }
+
 type PPDeltaSession struct {
 	Login   string     `json:"login"`
 	Address string     `json:"address"`
 	Caller  string     `json:"caller_id"`
 	Uptime  PPInterval `json:"uptime"`
 	State   string     `json:"state"`
-}
-
-func ppDeltaSession(r PPRow) *PPDeltaSession {
-	state := r.State
-	if state == "" {
-		state = "ONLINE"
-	}
-	return &PPDeltaSession{r.Login, r.Address, r.Caller, r.Uptime, state}
 }
 
 type PPDelta struct {
@@ -165,6 +160,7 @@ type PPDelta struct {
 	AddressChanged bool            `json:"address_changed"`
 	CallerChanged  bool            `json:"caller_changed"`
 }
+
 type PPExportDelta struct {
 	BaseRow        string `json:"base_row,omitempty"`
 	TargetRow      string `json:"target_row,omitempty"`
@@ -173,6 +169,7 @@ type PPExportDelta struct {
 	AddressChanged bool   `json:"address_changed"`
 	CallerChanged  bool   `json:"caller_changed"`
 }
+
 type PPGroup struct {
 	Peak    *int   `json:"peak_7d,omitempty"`
 	Limited bool   `json:"history_limited,omitempty"`
@@ -180,6 +177,7 @@ type PPGroup struct {
 	VLAN    *int   `json:"vlan,omitempty"`
 	Count   int    `json:"count"`
 }
+
 type PPView struct {
 	MonitoringGeneration string          `json:"-"`
 	Read                 *PPReadResult   `json:"read,omitempty"`
@@ -205,6 +203,7 @@ type PPView struct {
 	Effect               string          `json:"effect_state,omitempty"`
 	ExportRows           []PPExportRow   `json:"export_rows,omitempty"`
 }
+
 type PPExportRow struct {
 	State       string     `json:"state"`
 	Uptime      PPInterval `json:"uptime"`
@@ -215,17 +214,18 @@ type PPExportRow struct {
 	Address     string     `json:"address"`
 	Caller      string     `json:"caller"`
 }
+
 type PPTarget struct {
 	Installation, Company string
 	Device                Device
 	Credential            SealedCredential
 	Wrapped               []byte
 }
+
 type PPRemote interface {
 	CollectPPPoE(context.Context, Device, string, string, func() Code) (*PPObservation, Code)
 }
 
-// Store methods name product effects; no SQL or transaction types escape adapters.
 type PPStore interface {
 	ReadPPTarget(context.Context, string, string, bool) (PPTarget, Code)
 	ReservePPCollection(context.Context, string, PPInput, string, string) (string, bool, Code)
@@ -238,22 +238,3 @@ type PPStore interface {
 	PPReferences(context.Context, string, PPInput) (PPView, Code)
 	DeletePPReference(context.Context, string, PPInput, string) (PPView, Code)
 }
-
-func PPConnection(d Device) string {
-	return strings.Join([]string{string(d.Transport), d.Address, fmtPort(d.Port), d.Fingerprint, d.CredentialID}, "\x00")
-}
-func fmtPort(p int) string { return strconv.Itoa(p) }
-func Endpoint(d Device) string {
-	ip, e := netip.ParseAddr(d.Address)
-	if e != nil {
-		return ""
-	}
-	return string(d.Transport) + "/" + ip.Unmap().String() + "/" + fmtPort(d.Port)
-}
-func PPValidQuery(q *PPQuery) bool {
-	if q == nil {
-		return true
-	}
-	return utf8.ValidString(q.Type) && len(q.Type) <= 64 && strings.IndexFunc(q.Type, func(r rune) bool { return r < 32 || r == 127 }) < 0 && utf8.ValidString(q.Search) && len(q.Search) <= 160 && (q.Sort == "" || q.Sort == "login" || q.Sort == "address" || q.Sort == "uptime" || q.Sort == "row") && (q.Category == "" || q.Category == "unchanged" || q.Category == "changed" || q.Category == "ambiguous" || q.Category == "new" || q.Category == "absent")
-}
-func PPTime(t time.Time) string { return t.UTC().Format(time.RFC3339Nano) }

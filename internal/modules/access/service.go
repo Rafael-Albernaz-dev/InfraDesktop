@@ -164,326 +164,43 @@ func (s *Service) view(st State) View {
 	}
 	return v
 }
-func (s *Service) open(ctx context.Context, uid uint32, owner string, remember bool, verified *Account) (View, Code) {
-	id, c := s.crypto.Token()
+func (s *Service) open(
+	ctx context.Context, uid uint32, owner string, remember bool, verified *Account,
+) (View, Code) {
+	id, grant, c := s.issueOpenTokens(remember)
 	if c != OK {
 		return View{}, c
 	}
-	grant := ""
-	if remember {
-		grant, c = s.crypto.Token()
-		if c != OK {
-			return View{}, c
-		}
-	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for k, v := range s.sessions {
-		if !s.now().Before(v.Expires) {
-			delete(s.sessions, k)
-		}
-	}
+	s.pruneExpiredSessions()
 	if len(s.sessions) >= 32 && s.ownerSession(owner) == "" {
 		return View{}, Busy
 	}
 	var state State
 	c = s.store.Update(ctx, func(st *State) Code {
-		if st.Account == nil {
-			return Unauthorized
-		}
-		if verified != nil && (st.Account.Epoch != verified.Epoch || !s.crypto.Equal(st.Account.Password.Hash, verified.Password.Hash) || !s.crypto.Equal(st.Account.Password.Salt, verified.Password.Salt)) {
-			return Unauthorized
-		}
-		st.Failures = 0
-		st.NextAttempt = time.Time{}
-		live := st.Grants[:0]
-		for _, g := range st.Grants {
-			if s.now().Before(g.Expires) && g.Epoch == st.Account.Epoch {
-				live = append(live, g)
-			}
-		}
-		st.Grants = live
-		if !remember {
-			st.Grants = nil
-		}
-		if remember {
-			if len(st.Grants) >= 32 {
-				return Busy
-			}
-			st.Grants = append(st.Grants, Grant{s.crypto.Digest(grant), st.Account.Epoch, s.now().Add(GrantTTL)})
-		}
-		state = *st
-		return OK
+		return s.commitOpenSession(st, remember, grant, verified, &state)
 	})
 	if c != OK {
 		return View{}, c
 	}
-	for k, v := range s.sessions {
-		if !s.now().Before(v.Expires) {
-			delete(s.sessions, k)
-		}
-	}
+	s.pruneExpiredSessions()
 	if len(s.sessions) >= 32 && s.ownerSession(owner) == "" {
 		return View{}, Busy
 	}
 	if existing := s.ownerSession(owner); existing != "" {
 		id = existing
 	}
-	s.sessions[id] = session{Owner: owner, UID: uid, Epoch: state.Account.Epoch, Expires: s.now().Add(SessionTTL)}
+	s.sessions[id] = session{
+		Owner:   owner,
+		UID:     uid,
+		Epoch:   state.Account.Epoch,
+		Expires: s.now().Add(SessionTTL),
+	}
 	v := s.view(state)
 	v.Authenticated = true
 	v.Session = id
 	v.Grant = grant
-	return v, OK
-}
-func (s *Service) Handle(ctx context.Context, uid uint32, q Command) (View, Code) {
-	if uid != s.uid {
-		return View{}, Unauthorized
-	}
-	if q.Op == "access.bootstrap" {
-		st, c := s.store.Read(ctx)
-		if c != OK {
-			return View{}, c
-		}
-		return View{Setup: st.Account == nil, Theme: "light", Companies: []Company{}}, OK
-	}
-	if q.Op == "access.register" || q.Op == "access.login" || q.Op == "access.recover" {
-		if !ValidName(q.Name) || !ValidPassword(q.Password) {
-			if q.Op == "access.login" {
-				return View{}, Unauthorized
-			}
-			return View{}, Invalid
-		}
-		select {
-		case s.kdf <- struct{}{}:
-			defer func() { <-s.kdf }()
-		default:
-			return View{}, Busy
-		}
-		if c := s.reserve(ctx); c != OK {
-			return View{}, c
-		}
-		st, c := s.store.Read(ctx)
-		if c != OK {
-			return View{}, c
-		}
-		if q.Op == "access.login" {
-			if st.Account == nil {
-				return View{}, Unauthorized
-			}
-			valid := s.crypto.Verify(q.Password, st.Account.Password)
-			if !valid || q.Name != st.Account.Name {
-				return View{}, Unauthorized
-			}
-			return s.open(ctx, uid, q.Owner, q.Remember, st.Account)
-		}
-		if q.Op == "access.register" && st.Account != nil {
-			return View{}, Conflict
-		}
-		if q.Op == "access.recover" && (st.Account == nil || q.Name != st.Account.Name || !s.crypto.Equal(s.crypto.Digest(q.Recovery), st.Account.Recovery)) {
-			return View{}, Unauthorized
-		}
-		password, c := s.crypto.Hash(q.Password)
-		if c != OK {
-			return View{}, c
-		}
-		recovery, c := s.crypto.Token()
-		if c != OK {
-			return View{}, c
-		}
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		c = s.store.Update(ctx, func(current *State) Code {
-			if q.Op == "access.register" {
-				if current.Account != nil {
-					return Conflict
-				}
-				current.Account = &Account{Name: q.Name, Epoch: 1, Theme: "light"}
-			}
-			if q.Op == "access.recover" {
-				if current.Account == nil || current.Account.Epoch != st.Account.Epoch || !s.crypto.Equal(s.crypto.Digest(q.Recovery), current.Account.Recovery) {
-					return Unauthorized
-				}
-				current.Account.Epoch++
-			}
-			current.Account.Password = password
-			current.Account.Recovery = s.crypto.Digest(recovery)
-			current.Grants = nil
-			current.Failures = 0
-			current.NextAttempt = time.Time{}
-			return OK
-		})
-		if c != OK {
-			return View{}, c
-		}
-		s.sessions = map[string]session{}
-		s.pendingRecovery = map[string]bool{}
-		s.issued = map[string][]byte{q.Owner: s.crypto.Digest(recovery)}
-		return View{Recovery: recovery, Theme: "light", Companies: []Company{}}, OK
-	}
-	if q.Op == "access.check-issued" || q.Op == "access.ack-issued" {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		st, c := s.store.Read(ctx)
-		if c != OK {
-			return View{}, c
-		}
-		digest, ok := s.issued[q.Owner]
-		if !ok || st.Account == nil || !s.crypto.Equal(digest, st.Account.Recovery) || len(q.Recovery) != 64 || !s.crypto.Equal(s.crypto.Digest(q.Recovery), digest) {
-			return View{}, Unauthorized
-		}
-		if q.Op == "access.ack-issued" {
-			delete(s.issued, q.Owner)
-		}
-		return View{Theme: "light", Companies: []Company{}}, OK
-	}
-	if q.Op == "access.renew-recovery" {
-		return s.renewRecovery(ctx, uid, q)
-	}
-	if q.Op == "access.resume" {
-		if len(q.Grant) != 64 {
-			return View{}, Unauthorized
-		}
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		st, c := s.store.Read(ctx)
-		if c != OK {
-			return View{}, c
-		}
-		if st.Account == nil {
-			return View{}, Unauthorized
-		}
-		found := false
-		digest := s.crypto.Digest(q.Grant)
-		for _, g := range st.Grants {
-			if s.crypto.Equal(digest, g.Digest) && g.Epoch == st.Account.Epoch && s.now().Before(g.Expires) {
-				found = true
-			}
-		}
-		if !found {
-			return View{}, Unauthorized
-		}
-		for k, v := range s.sessions {
-			if !s.now().Before(v.Expires) {
-				delete(s.sessions, k)
-			}
-		}
-		if len(s.sessions) >= 32 && s.ownerSession(q.Owner) == "" {
-			return View{}, Busy
-		}
-		id, c := s.crypto.Token()
-		if c != OK {
-			return View{}, c
-		}
-		if existing := s.ownerSession(q.Owner); existing != "" {
-			id = existing
-		}
-		s.sessions[id] = session{Owner: q.Owner, UID: uid, Epoch: st.Account.Epoch, Expires: s.now().Add(SessionTTL)}
-		v := s.view(st)
-		v.Session = id
-		v.Authenticated = true
-		return v, OK
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	st, c := s.store.Read(ctx)
-	if c != OK {
-		return View{}, c
-	}
-	if c = s.authorized(st, uid, q); c != OK {
-		return View{}, c
-	}
-	if q.Op == "company.brand-get" || q.Op == "company.brand-set" {
-		return s.brand(ctx, st, q)
-	}
-	if q.Op == "access.snapshot" {
-		v := s.view(st)
-		v.Authenticated = true
-		return v, OK
-	}
-	if len(s.pendingRecovery) > 0 && (q.Op == "company.select" || q.Op == "company.create" || q.Op == "access.logout") {
-		return View{}, Busy
-	}
-	id := ""
-	if q.Op == "company.create" {
-		if !ValidName(q.Name) {
-			return View{}, Invalid
-		}
-		id = q.Operation
-		if !ValidCompanyID(id) {
-			return View{}, Invalid
-		}
-		if c != OK {
-			return View{}, c
-		}
-	}
-	activation := s.activation
-	if q.Op == "company.select" {
-		activation, c = s.crypto.Token()
-		if c != OK {
-			return View{}, c
-		}
-	}
-	c = s.store.Update(ctx, func(current *State) Code {
-		if c := s.authorized(*current, uid, q); c != OK {
-			return c
-		}
-		switch q.Op {
-		case "access.ack-recovery":
-			// Cleared only after commit succeeds below.
-		case "access.logout":
-			current.Account.Epoch++
-			current.Grants = nil
-		case "company.create":
-			for _, existing := range current.Companies {
-				if existing.ID == id {
-					if existing.Name != q.Name {
-						return Invalid
-					}
-					st = *current
-					return OK
-				}
-			}
-			if len(current.Companies) >= 100 {
-				return Invalid
-			}
-			current.Companies = append(current.Companies, Company{id, q.Name})
-		case "company.select":
-			found := false
-			for _, v := range current.Companies {
-				if v.ID == q.Name {
-					found = true
-				}
-			}
-			if !found {
-				return Invalid
-			}
-			current.Account.Profile = q.Name
-		case "preferences.theme":
-			if q.Theme != "light" && q.Theme != "dark" {
-				return Invalid
-			}
-			current.Account.Theme = q.Theme
-		default:
-			return Invalid
-		}
-		st = *current
-		return OK
-	})
-	if c != OK {
-		return View{}, c
-	}
-	if q.Op == "access.logout" {
-		s.sessions = map[string]session{}
-		s.pendingRecovery = map[string]bool{}
-		return View{Theme: "light", Companies: []Company{}}, OK
-	}
-	if q.Op == "access.ack-recovery" {
-		delete(s.pendingRecovery, q.Session)
-	}
-	s.activation = activation
-	v := s.view(st)
-	v.Authenticated = true
 	return v, OK
 }
 

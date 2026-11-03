@@ -2,39 +2,9 @@ package equipment
 
 import (
 	"context"
-	"math"
 	"net/netip"
 	"time"
 )
-
-// PPPingBounds protects session identity after an arbitrary user delay. The
-// upper window includes the remaining bounded job, never a fixed freshness TTL.
-// Adapters only quantize/serialize these bounds in the remote technology.
-func PPPingBounds(target *PPPingTarget, elapsed time.Duration) (router, session, age PPInterval, ok bool) {
-	if target == nil || target.Row.State == "OFFLINE" || elapsed < 0 {
-		return
-	}
-	age = target.Age
-	advance := elapsed.Nanoseconds()
-	if !age.Known || age.Min < 0 || age.Max < age.Min || age.Max > math.MaxInt64-advance-int64(QueryBudget) {
-		return
-	}
-	age.Min += advance
-	age.Max += advance + int64(QueryBudget)
-	bounds := func(old PPInterval) (PPInterval, bool) {
-		if !old.Known || old.Min < 0 || old.Max < old.Min || old.Max > math.MaxInt64-age.Max-int64(time.Second) {
-			return PPInterval{}, false
-		}
-		return PPInterval{Known: true, Min: old.Min + age.Min, Max: old.Max + age.Max}, true
-	}
-	var valid bool
-	router, valid = bounds(target.Observation.Provenance.RouterUptime)
-	if !valid {
-		return
-	}
-	session, ok = bounds(target.Row.Uptime)
-	return
-}
 
 const (
 	PDCatalog    = "catalog"
@@ -54,11 +24,13 @@ type PDRadiusCounters struct {
 	BadReplies string     `json:"bad_replies"`
 	LastRTT    PPInterval `json:"last_rtt"`
 }
+
 type PDPingProbe struct {
 	Sequence int    `json:"sequence"`
 	Status   string `json:"status"`
 	RTT      *int64 `json:"rtt_ns,omitempty"`
 }
+
 type PDPingResult struct {
 	Jitter          *int64        `json:"jitter_ns,omitempty"`
 	Baseline        *int64        `json:"baseline_median_ns,omitempty"`
@@ -73,8 +45,6 @@ type PDPingResult struct {
 	Context         string        `json:"context"`
 }
 
-// The discriminant Kind closes each row's projection. No arbitrary remote map
-// or technologies escape the adapter. Nil booleans/counters mean unknown.
 type PDRow struct {
 	NotSeenSince   string            `json:"not_seen_since,omitempty"`
 	ID             string            `json:"id"`
@@ -103,6 +73,7 @@ type PDRow struct {
 	Counters       *PDRadiusCounters `json:"counters,omitempty"`
 	Ping           *PDPingResult     `json:"ping,omitempty"`
 }
+
 type PDDiagnostic struct {
 	AbsentInterfaces  int          `json:"absent_interfaces,omitempty"`
 	AbsencesLimited   bool         `json:"absences_limited,omitempty"`
@@ -117,18 +88,25 @@ type PDDiagnostic struct {
 	Bytes             int          `json:"bytes"`
 	Rows              []PDRow      `json:"-"`
 }
+
 type PPPingTarget struct {
 	Observation PPObservation
 	Row         PPRow
 	Age         PPInterval
 	Prepared    time.Time
 }
+
 type PDDiagnosticRemote interface {
-	CollectPPDiagnostic(context.Context, Device, string, string, string, *PPPingTarget, func() Code) (*PDDiagnostic, Code)
+	CollectPPDiagnostic(
+		context.Context, Device, string, string, string, *PPPingTarget, func() Code,
+	) (*PDDiagnostic, Code)
 }
+
 type PDDiagnosticStore interface {
 	ReservePPDiagnostic(context.Context, string, PPInput, string, string) (string, bool, Code)
-	FinishPPDiagnostic(context.Context, string, PPTarget, PPInput, string, PPAttempt, *PDDiagnostic) Code
+	FinishPPDiagnostic(
+		context.Context, string, PPTarget, PPInput, string, PPAttempt, *PDDiagnostic,
+	) Code
 	PPDiagnosticCurrent(context.Context, string, PPInput) (PPView, Code)
 	PPDiagnosticPage(context.Context, string, PPInput) (PPView, Code)
 }
@@ -149,15 +127,14 @@ func PPPingAddress(row PPRow) (string, bool) {
 	return ip.String(), true
 }
 
-// PPPingStable uses only the pair of remote IDs, exact canonical address, and
-// conservative uptime intervals. It never joins a session by login/name/MAC.
 func PPPingStable(target *PPPingTarget, fresh *PPObservation, elapsed time.Duration) bool {
-	if target == nil || fresh == nil || fresh.Quality.Status != "complete" || target.Observation.Provenance.Version != fresh.Provenance.Version || target.Observation.Provenance.Family != fresh.Provenance.Family {
+	if !compatiblePingObservation(target, fresh) {
 		return false
 	}
 	age := target.Age
 	advance := elapsed.Nanoseconds()
-	if !age.Known || advance < 0 || age.Min < 0 || age.Max < age.Min || age.Max > int64(^uint64(0)>>1)-advance {
+	if !age.Known || advance < 0 || age.Min < 0 || age.Max < age.Min ||
+		age.Max > int64(^uint64(0)>>1)-advance {
 		return false
 	}
 	age.Min += advance
@@ -169,13 +146,25 @@ func PPPingStable(target *PPPingTarget, fresh *PPObservation, elapsed time.Durat
 	if !ok {
 		return false
 	}
+	return uniqueStablePingRow(target.Row, fresh.Rows, address, age)
+}
+
+func compatiblePingObservation(target *PPPingTarget, fresh *PPObservation) bool {
+	return target != nil &&
+		fresh != nil &&
+		fresh.Quality.Status == "complete" &&
+		target.Observation.Provenance.Version == fresh.Provenance.Version &&
+		target.Observation.Provenance.Family == fresh.Provenance.Family
+}
+
+func uniqueStablePingRow(targetRow PPRow, rows []PPRow, address string, age PPInterval) bool {
 	matches, addresses := 0, 0
-	for _, row := range fresh.Rows {
+	for _, row := range rows {
 		if row.Address == address {
 			addresses++
 		}
-		if row.RemoteID == target.Row.RemoteID && row.SessionID == target.Row.SessionID {
-			if row.Address != address || !intervalAdvance(target.Row.Uptime, row.Uptime, age) {
+		if row.RemoteID == targetRow.RemoteID && row.SessionID == targetRow.SessionID {
+			if row.Address != address || !intervalAdvance(targetRow.Uptime, row.Uptime, age) {
 				return false
 			}
 			matches++
@@ -184,8 +173,6 @@ func PPPingStable(target *PPPingTarget, fresh *PPObservation, elapsed time.Durat
 	return matches == 1 && addresses == 1
 }
 
-// ResolvePDRelations resolves configuration references only; no session is an
-// input. Duplicate names, missing parents, VLAN cycles and deep paths stay explicit.
 func ResolvePDRelations(rows []PDRow) {
 	names := map[string][]int{}
 	vlans := map[string][]int{}
@@ -198,69 +185,74 @@ func ResolvePDRelations(rows []PDRow) {
 		}
 	}
 	for i := range rows {
-		row := &rows[i]
-		if row.Kind != "vlan" && row.Kind != "service" {
-			continue
-		}
-		row.ParentID = ""
-		parents := names[row.Parent]
-		row.Relation = "missing"
-		if len(parents) > 1 {
-			row.Relation = "ambiguous"
-			continue
-		}
-		if len(parents) == 0 {
-			continue
-		}
-		row.ParentID = rows[parents[0]].ID
-		row.Relation = "resolved"
-		seen := map[string]bool{}
-		name := row.Name
-		if row.Kind == "service" {
-			name = row.Parent
-		}
-		for depth := 0; ; depth++ {
-			if depth >= 32 {
-				row.Relation = "depth_limited"
-				break
-			}
-			if seen[name] {
-				row.Relation = "cycle"
-				break
-			}
-			seen[name] = true
-			candidates := vlans[name]
-			if len(candidates) > 1 {
-				row.Relation = "ambiguous"
-				break
-			}
-			if len(candidates) == 0 {
-				break
-			}
-			parent := rows[candidates[0]].Parent
-			if len(names[parent]) == 0 {
-				row.Relation = "missing"
-				break
-			}
-			if len(names[parent]) > 1 {
-				row.Relation = "ambiguous"
-				break
-			}
-			name = parent
-		}
-		if row.Relation != "resolved" {
-			row.ParentID = ""
-		}
+		resolveSinglePDRow(&rows[i], rows, names, vlans)
 	}
 }
 
-// PDCompatibleExport compares collection context, not projection/codec (A and B
-// deliberately have distinct projections). A ping additionally belongs to its
-// exact immutable source observation; no association by login/address is made.
+func resolveSinglePDRow(row *PDRow, rows []PDRow, names, vlans map[string][]int) {
+	if row.Kind != "vlan" && row.Kind != "service" {
+		return
+	}
+	row.ParentID = ""
+	parents := names[row.Parent]
+	row.Relation = "missing"
+	if len(parents) > 1 {
+		row.Relation = "ambiguous"
+		return
+	}
+	if len(parents) == 0 {
+		return
+	}
+	row.ParentID = rows[parents[0]].ID
+	row.Relation = walkVLANDepth(row, rows, names, vlans)
+	if row.Relation != "resolved" {
+		row.ParentID = ""
+	}
+}
+
+func walkVLANDepth(row *PDRow, rows []PDRow, names, vlans map[string][]int) string {
+	seen := map[string]bool{}
+	name := row.Name
+	if row.Kind == "service" {
+		name = row.Parent
+	}
+	for depth := 0; ; depth++ {
+		if depth >= 32 {
+			return "depth_limited"
+		}
+		if seen[name] {
+			return "cycle"
+		}
+		seen[name] = true
+		candidates := vlans[name]
+		if len(candidates) > 1 {
+			return "ambiguous"
+		}
+		if len(candidates) == 0 {
+			return "resolved"
+		}
+		parent := rows[candidates[0]].Parent
+		if len(names[parent]) == 0 {
+			return "missing"
+		}
+		if len(names[parent]) > 1 {
+			return "ambiguous"
+		}
+		name = parent
+	}
+}
+
 func PDCompatibleExport(target *PPObservation, diagnostic *PDDiagnostic) bool {
 	if target == nil || diagnostic == nil || target.DeviceID != diagnostic.DeviceID {
 		return false
 	}
 	p, q := target.Provenance, diagnostic.Provenance
-	return q.Installation == p.Installation && q.Company == p.Company && q.Connection == p.Connection && q.Revision == p.Revision && q.CredentialRevision == p.CredentialRevision && q.Family == p.Family && q.Version == p.Version && (diagnostic.Scope != PDPing || diagnostic.SourceObservation == target.ID)
+	return q.Installation == p.Installation &&
+		q.Company == p.Company &&
+		q.Connection == p.Connection &&
+		q.Revision == p.Revision &&
+		q.CredentialRevision == p.CredentialRevision &&
+		q.Family == p.Family &&
+		q.Version == p.Version &&
+		(diagnostic.Scope != PDPing || diagnostic.SourceObservation == target.ID)
 }

@@ -2,15 +2,11 @@ package storage
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"infradesktop/internal/modules/equipment"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -244,74 +240,29 @@ func recordSessionMonitoring(ctx context.Context, tx *sql.Tx, previous, next *eq
 	}
 	return bumpMonitoring(ctx, tx)
 }
-func (s *Store) SaveDeviceMonitoring(ctx context.Context, company string, d equipment.Device, credentialRevision uint64, result *equipment.PPReadResult) equipment.Code {
+func (s *Store) SaveDeviceMonitoring(
+	ctx context.Context,
+	company string,
+	d equipment.Device,
+	credentialRevision uint64,
+	result *equipment.PPReadResult,
+) equipment.Code {
 	return s.ppWrite(ctx, company, func(tx *sql.Tx) equipment.Code {
-		target, c := ppTarget(ctx, tx, s.installation, company, d.ID, false)
-		if c != equipment.OK {
-			return c
+		if code := s.verifyMonitoringSaveTarget(ctx, tx, company, d, credentialRevision); code != equipment.OK {
+			return code
 		}
-		if !target.Device.Active || target.Device.Revision != d.Revision || target.Credential.Metadata.Revision != credentialRevision || equipment.PPConnection(target.Device) != equipment.PPConnection(d) {
-			return equipment.Revision
+		health, at, insightAt, code := extractMonitoringHealth(result)
+		if code != equipment.OK {
+			return code
 		}
-		var health *equipment.DeviceHealth
-		for _, r := range result.Rows {
-			if r.Kind == "resource" {
-				health = r.Health
-				break
-			}
-		}
-		if health == nil {
-			return equipment.Partial
-		}
-		stamp := health.At
-		if stamp == "" {
-			stamp = result.Ended
-		}
-		at, e := time.Parse(time.RFC3339Nano, stamp)
-		if e != nil {
-			return equipment.Invalid
-		}
-		insightAt := at
-		if result.Ended != "" {
-			end, err := time.Parse(time.RFC3339Nano, result.Ended)
-			if err != nil || end.Before(at) {
-				return equipment.Invalid
-			}
-			insightAt = end
-		}
-		if e = saveEquipmentInsights(ctx, tx, d, credentialRevision, result, health, insightAt); e != nil {
+		if err := saveEquipmentInsights(ctx, tx, d, credentialRevision, result, health, insightAt); err != nil {
 			return equipment.Unavailable
 		}
-		body, e := json.Marshal(health)
-		if e != nil || len(body) > 2048 {
-			return equipment.Limit
+		if code = persistMonitoringPointAndPackages(ctx, tx, d.ID, at, health, result); code != equipment.OK {
+			return code
 		}
-		_, e = tx.ExecContext(ctx, "INSERT INTO device_monitoring_points ("+monitoringColumns+") VALUES(?,?,60,?,?,NULL,NULL,NULL,NULL,?,?,0,0,0)"+monitoringMerge, d.ID, at.Unix()/60*60, at.Unix(), at.Unix(), string(body), at.Unix())
-		if e != nil {
-			return equipment.Unavailable
-		}
-		status := result.Availability["packages"]
-		if status != "complete" && status != "limited" {
-			status = "unavailable"
-		}
-		if _, e = tx.ExecContext(ctx, "DELETE FROM device_monitoring_packages WHERE device_id=?", d.ID); e != nil {
-			return equipment.Unavailable
-		}
-		if status == "complete" {
-			for _, row := range result.Rows {
-				if row.Kind != "package" {
-					continue
-				}
-				if _, e = tx.ExecContext(ctx, "INSERT INTO device_monitoring_packages VALUES(?,?,?,?)", d.ID, row.Name, row.Value, row.Disabled); e != nil {
-					return equipment.Unavailable
-				}
-			}
-		}
-		if _, e = tx.ExecContext(ctx, "INSERT INTO device_monitoring_package_status VALUES(?,?,?) ON CONFLICT(device_id) DO UPDATE SET at=excluded.at,state=excluded.state", d.ID, at.Unix(), status); e != nil {
-			return equipment.Unavailable
-		}
-		if e = monitoringGC(ctx, tx, at); e != nil {
-			if errors.Is(e, errMonitoringQuota) {
+		if err := monitoringGC(ctx, tx, at); err != nil {
+			if errors.Is(err, errMonitoringQuota) {
 				return equipment.Limit
 			}
 			return equipment.Unavailable
@@ -322,291 +273,173 @@ func (s *Store) SaveDeviceMonitoring(ctx context.Context, company string, d equi
 		return equipment.OK
 	})
 }
-func (s *Store) DeviceMonitoring(ctx context.Context, company string, in equipment.PPInput) (equipment.PPView, equipment.Code) {
-	v := equipment.PPView{}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.unit == nil || s.unitID != company {
-		return v, equipment.Changed
+
+func (s *Store) verifyMonitoringSaveTarget(
+	ctx context.Context, tx *sql.Tx, company string, d equipment.Device, credentialRevision uint64,
+) equipment.Code {
+	target, c := ppTarget(ctx, tx, s.installation, company, d.ID, false)
+	if c != equipment.OK {
+		return c
 	}
-	if s.checkActive() != nil {
-		return v, equipment.Unavailable
+	sameConn := equipment.PPConnection(target.Device) == equipment.PPConnection(d)
+	if !target.Device.Active || target.Device.Revision != d.Revision ||
+		target.Credential.Metadata.Revision != credentialRevision || !sameConn {
+		return equipment.Revision
 	}
-	var active bool
-	if e := s.unit.QueryRowContext(ctx, "SELECT active FROM devices WHERE id=?", in.DeviceID).Scan(&active); e != nil {
-		return v, equipment.Invalid
-	}
-	var generation int64
-	if e := s.unit.QueryRowContext(ctx, "SELECT generation FROM device_monitoring_generation WHERE singleton=1").Scan(&generation); e != nil {
-		return v, equipment.Unavailable
-	}
-	now := monitoringNow().UTC()
-	asOf := now.Unix()
-	expectedHash := ""
-	generationText := strconv.FormatInt(generation, 10)
-	if in.MonitoringGeneration != "" {
-		fields := strings.Split(in.MonitoringGeneration, "~")
-		if len(fields) != 3 || fields[0] != generationText {
-			return v, equipment.CursorInvalid
-		}
-		var e error
-		asOf, e = strconv.ParseInt(fields[1], 10, 64)
-		if e != nil || asOf > now.Unix() || now.Unix()-asOf > int64(equipment.JobRetention/time.Second) {
-			return v, equipment.CursorInvalid
-		}
-		expectedHash = fields[2]
-	}
-	now = time.Unix(asOf, 0).UTC()
-	var versionDivergence, packageDivergence *bool
-	compared := 0
-	rows := []equipment.PPReadRow{}
-	minuteCut, hourCut, edgeCut := equipment.MonitoringRetention(now)
-	_ = minuteCut
-	switch in.Scope {
-	case "duplicates":
-		var e error
-		rows, e = crossConcentratorRows(ctx, s.unit, in.DeviceID, now)
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		if len(rows) > equipment.PPMaxRows {
-			return v, equipment.Limit
-		}
-	case "equipment", "port-history":
-		var e error
-		rows, e = readEquipmentInsights(ctx, s.unit, in.DeviceID, in.Scope, now)
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		if len(rows) > equipment.PPMaxRows {
-			return v, equipment.Limit
-		}
-	case "series":
-		q, e := s.unit.QueryContext(ctx, `SELECT bucket,resolution,session_at,min_online,max_online,last_online,health_json,health_at,gap,drop_seen,samples FROM device_monitoring_points WHERE device_id=? AND bucket>=? ORDER BY bucket DESC,resolution`, in.DeviceID, hourCut)
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		for q.Next() {
-			var bucket int64
-			var sessionAt, healthAt sql.NullInt64
-			var min, max, last sql.NullInt64
-			var raw string
-			var point equipment.DeviceMonitoringPoint
-			if e = q.Scan(&bucket, &point.Resolution, &sessionAt, &min, &max, &last, &raw, &healthAt, &point.Gap, &point.Drop, &point.Samples); e != nil {
-				q.Close()
-				return v, equipment.Unavailable
-			}
-			point.At = equipment.PPTime(time.Unix(bucket, 0))
-			if sessionAt.Valid {
-				point.SessionAt = equipment.PPTime(time.Unix(sessionAt.Int64, 0))
-			}
-			if healthAt.Valid {
-				point.HealthAt = equipment.PPTime(time.Unix(healthAt.Int64, 0))
-			}
-			ptr := func(n sql.NullInt64) *int {
-				if !n.Valid {
-					return nil
-				}
-				v := int(n.Int64)
-				return &v
-			}
-			point.OnlineMin, point.OnlineMax, point.Online = ptr(min), ptr(max), ptr(last)
-			if raw != "" {
-				var h equipment.DeviceHealth
-				if json.Unmarshal([]byte(raw), &h) != nil {
-					q.Close()
-					return v, equipment.Unavailable
-				}
-				point.Health = &h
-			}
-			rows = append(rows, equipment.PPReadRow{Kind: "point", Point: &point})
-		}
-		e = q.Err()
-		q.Close()
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-	case "flapping":
-		q, e := s.unit.QueryContext(ctx, "SELECT login,count(*),min(at),max(at) FROM device_session_transitions WHERE device_id=? AND at>=? GROUP BY login ORDER BY count(*) DESC,login LIMIT 2049", in.DeviceID, edgeCut)
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		for q.Next() {
-			var login string
-			var n uint64
-			var first, last int64
-			if q.Scan(&login, &n, &first, &last) != nil {
-				q.Close()
-				return v, equipment.Unavailable
-			}
-			rows = append(rows, equipment.PPReadRow{Kind: "flapping", Login: login, Used: &n, At: equipment.PPTime(time.Unix(first, 0)), Value: equipment.PPTime(time.Unix(last, 0))})
-		}
-		e = q.Err()
-		q.Close()
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-	case "versions":
-		q, e := s.unit.QueryContext(ctx, `SELECT d.id,d.name,p.health_json,p.health_at FROM devices d JOIN device_monitoring_points p ON p.device_id=d.id WHERE d.active=1 AND p.health_at>=? AND p.health_at=(SELECT max(q.health_at) FROM device_monitoring_points q WHERE q.device_id=d.id) GROUP BY d.id ORDER BY d.name LIMIT 257`, hourCut)
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		type versionRow struct {
-			id, name, version string
-			at                int64
-		}
-		all := []versionRow{}
-		for q.Next() {
-			var r versionRow
-			var raw string
-			var h equipment.DeviceHealth
-			if q.Scan(&r.id, &r.name, &raw, &r.at) != nil || json.Unmarshal([]byte(raw), &h) != nil {
-				q.Close()
-				return v, equipment.Unavailable
-			}
-			r.version = h.Version
-			all = append(all, r)
-		}
-		e = q.Err()
-		q.Close()
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		if len(all) > equipment.MaxDevices {
-			return v, equipment.Limit
-		}
-		versions, packages := map[string]bool{}, map[string]bool{}
-		for _, r := range all {
-			if r.version != "" {
-				versions[r.version] = true
-			}
-			row := equipment.PPReadRow{Kind: "version", Name: r.name, Value: r.version, At: equipment.PPTime(time.Unix(r.at, 0))}
-			var at int64
-			var state string
-			e = s.unit.QueryRowContext(ctx, "SELECT at,state FROM device_monitoring_package_status WHERE device_id=?", r.id).Scan(&at, &state)
-			if e == nil {
-				row.Event = state
-				row.SourceAt = equipment.PPTime(time.Unix(at, 0))
-				if state == "complete" {
-					pq, e := s.unit.QueryContext(ctx, "SELECT name,version,disabled FROM device_monitoring_packages WHERE device_id=? ORDER BY name", r.id)
-					if e != nil {
-						return v, equipment.Unavailable
-					}
-					signature := []string{}
-					var n uint64
-					for pq.Next() {
-						var name, version string
-						var disabled sql.NullBool
-						if pq.Scan(&name, &version, &disabled) != nil {
-							pq.Close()
-							return v, equipment.Unavailable
-						}
-						signature = append(signature, name+"\x00"+version+"\x00"+strconv.FormatBool(disabled.Valid)+strconv.FormatBool(disabled.Bool))
-						n++
-					}
-					e = pq.Err()
-					pq.Close()
-					if e != nil {
-						return v, equipment.Unavailable
-					}
-					packages[strings.Join(signature, "\n")] = true
-					row.Used = &n
-				}
-			} else if e != sql.ErrNoRows {
-				return v, equipment.Unavailable
-			}
-			rows = append(rows, row)
-		}
-		compared = len(all)
-		if len(all) >= 2 {
-			different := len(versions) > 1
-			versionDivergence = &different
-		}
-		packageSources := 0
-		for _, row := range rows {
-			if row.Event == "complete" {
-				packageSources++
-			}
-		}
-		if packageSources >= 2 {
-			different := len(packages) > 1
-			packageDivergence = &different
-		}
-	case "hygiene":
-		var raw string
-		e := s.unit.QueryRowContext(ctx, "SELECT o.meta_json FROM pppoe_observations o JOIN pppoe_current c ON c.observation_id=o.id WHERE c.device_id=?", in.DeviceID).Scan(&raw)
-		if e == sql.ErrNoRows {
-			rows = append(rows, equipment.PPReadRow{Kind: "availability", Name: "higiene", Value: "unavailable"})
+	return equipment.OK
+}
+
+func extractMonitoringHealth(
+	result *equipment.PPReadResult,
+) (*equipment.DeviceHealth, time.Time, time.Time, equipment.Code) {
+	var health *equipment.DeviceHealth
+	for _, r := range result.Rows {
+		if r.Kind == "resource" {
+			health = r.Health
 			break
 		}
-		if e != nil {
-			return v, equipment.Unavailable
+	}
+	if health == nil {
+		return nil, time.Time{}, time.Time{}, equipment.Partial
+	}
+	stamp := health.At
+	if stamp == "" {
+		stamp = result.Ended
+	}
+	at, e := time.Parse(time.RFC3339Nano, stamp)
+	if e != nil {
+		return nil, time.Time{}, time.Time{}, equipment.Invalid
+	}
+	insightAt := at
+	if result.Ended != "" {
+		end, err := time.Parse(time.RFC3339Nano, result.Ended)
+		if err != nil || end.Before(at) {
+			return nil, time.Time{}, time.Time{}, equipment.Invalid
 		}
-		var o equipment.PPObservation
-		if json.Unmarshal([]byte(raw), &o) != nil {
-			return v, equipment.Unavailable
-		}
-		q, e := s.unit.QueryContext(ctx, "SELECT row_json FROM pppoe_rows WHERE observation_id=?", o.ID)
-		if e != nil {
-			return v, equipment.Unavailable
-		}
-		var disabled, unknown uint64
-		for q.Next() {
-			var body string
-			var r equipment.PPRow
-			if q.Scan(&body) != nil || json.Unmarshal([]byte(body), &r) != nil {
-				q.Close()
-				return v, equipment.Unavailable
-			}
-			if r.State == "OFFLINE" {
+		insightAt = end
+	}
+	return health, at, insightAt, equipment.OK
+}
+
+func persistMonitoringPointAndPackages(
+	ctx context.Context,
+	tx *sql.Tx,
+	deviceID string,
+	at time.Time,
+	health *equipment.DeviceHealth,
+	result *equipment.PPReadResult,
+) equipment.Code {
+	body, e := json.Marshal(health)
+	if e != nil || len(body) > 2048 {
+		return equipment.Limit
+	}
+	insQuery := "INSERT INTO device_monitoring_points (" + monitoringColumns +
+		") VALUES(?,?,60,?,?,NULL,NULL,NULL,NULL,?,?,0,0,0)" + monitoringMerge
+	_, e = tx.ExecContext(
+		ctx, insQuery, deviceID, at.Unix()/60*60, at.Unix(), at.Unix(), string(body), at.Unix(),
+	)
+	if e != nil {
+		return equipment.Unavailable
+	}
+	return persistDevicePackages(ctx, tx, deviceID, at, result)
+}
+
+func persistDevicePackages(
+	ctx context.Context, tx *sql.Tx, deviceID string, at time.Time, result *equipment.PPReadResult,
+) equipment.Code {
+	status := result.Availability["packages"]
+	if status != "complete" && status != "limited" {
+		status = "unavailable"
+	}
+	_, err := tx.ExecContext(ctx, "DELETE FROM device_monitoring_packages WHERE device_id=?", deviceID)
+	if err != nil {
+		return equipment.Unavailable
+	}
+	if status == "complete" {
+		for _, row := range result.Rows {
+			if row.Kind != "package" {
 				continue
 			}
-			if r.Context == nil || r.Context.SecretState == "" || r.Context.SecretState == "unavailable" {
-				unknown++
-			} else if r.Context.SecretState == "disabled" {
-				disabled++
+			_, err = tx.ExecContext(
+				ctx, "INSERT INTO device_monitoring_packages VALUES(?,?,?,?)",
+				deviceID, row.Name, row.Value, row.Disabled,
+			)
+			if err != nil {
+				return equipment.Unavailable
 			}
 		}
-		e = q.Err()
-		q.Close()
-		if e != nil {
-			return v, equipment.Unavailable
+	}
+	statusQuery := "INSERT INTO device_monitoring_package_status VALUES(?,?,?) " +
+		"ON CONFLICT(device_id) DO UPDATE SET at=excluded.at,state=excluded.state"
+	if _, err = tx.ExecContext(ctx, statusQuery, deviceID, at.Unix(), status); err != nil {
+		return equipment.Unavailable
+	}
+	return equipment.OK
+}
+
+func (s *Store) monitoringHygieneRows(
+	ctx context.Context, deviceID string,
+) ([]equipment.PPReadRow, equipment.Code) {
+	var raw string
+	query := "SELECT o.meta_json FROM pppoe_observations o " +
+		"JOIN pppoe_current c ON c.observation_id=o.id WHERE c.device_id=?"
+	err := s.unit.QueryRowContext(ctx, query, deviceID).Scan(&raw)
+	if err == sql.ErrNoRows {
+		return []equipment.PPReadRow{
+			{Kind: "availability", Name: "higiene", Value: "unavailable"},
+		}, equipment.OK
+	}
+	if err != nil {
+		return nil, equipment.Unavailable
+	}
+	var o equipment.PPObservation
+	if json.Unmarshal([]byte(raw), &o) != nil {
+		return nil, equipment.Unavailable
+	}
+	disabled, unknown, ok := s.countSecretHygiene(ctx, o.ID)
+	if !ok {
+		return nil, equipment.Unavailable
+	}
+	return []equipment.PPReadRow{
+		{
+			Kind: "hygiene",
+			Name: "ONLINE com secret local desativado",
+			Used: &disabled,
+			Size: &unknown,
+			At:   o.Provenance.Ended,
+		},
+		{Kind: "availability", Name: "Secrets sem sessão", Value: "unavailable"},
+	}, equipment.OK
+}
+
+func (s *Store) countSecretHygiene(
+	ctx context.Context, observationID string,
+) (uint64, uint64, bool) {
+	q, err := s.unit.QueryContext(
+		ctx, "SELECT row_json FROM pppoe_rows WHERE observation_id=?", observationID,
+	)
+	if err != nil {
+		return 0, 0, false
+	}
+	defer q.Close()
+	var disabled, unknown uint64
+	for q.Next() {
+		var body string
+		var r equipment.PPRow
+		if q.Scan(&body) != nil || json.Unmarshal([]byte(body), &r) != nil {
+			return 0, 0, false
 		}
-		rows = append(rows, equipment.PPReadRow{Kind: "hygiene", Name: "ONLINE com secret local desativado", Used: &disabled, Size: &unknown, At: o.Provenance.Ended})
-		rows = append(rows, equipment.PPReadRow{Kind: "availability", Name: "Secrets sem sessão", Value: "unavailable"})
-	default:
-		return v, equipment.Invalid
+		if r.State == "OFFLINE" {
+			continue
+		}
+		if r.Context == nil || r.Context.SecretState == "" || r.Context.SecretState == "unavailable" {
+			unknown++
+		} else if r.Context.SecretState == "disabled" {
+			disabled++
+		}
 	}
-	if in.Scope == "flapping" && len(rows) > equipment.PPMaxRows {
-		return v, equipment.Limit
+	if q.Err() != nil {
+		return 0, 0, false
 	}
-	var pruned int64
-	e := s.unit.QueryRowContext(ctx, "SELECT pruned_at FROM device_monitoring_limits WHERE singleton=1").Scan(&pruned)
-	if e != nil && e != sql.ErrNoRows {
-		return v, equipment.Unavailable
-	}
-	if pruned > 0 {
-		rows = append(rows, equipment.PPReadRow{Kind: "availability", Name: "retention", Value: "limited", At: equipment.PPTime(time.Unix(pruned, 0))})
-	}
-	// Cursor fixes both the temporal cutoff and the complete relevant set.
-	// This also detects inventory rename/active changes that reorder versions.
-	snapshot, e := json.Marshal(rows)
-	if e != nil {
-		return v, equipment.Unavailable
-	}
-	digest := sha256.Sum256(snapshot)
-	fingerprint := hex.EncodeToString(digest[:])
-	if expectedHash != "" && expectedHash != fingerprint {
-		return v, equipment.CursorInvalid
-	}
-	v.MonitoringGeneration = generationText + "~" + strconv.FormatInt(asOf, 10) + "~" + fingerprint
-	v.Total = len(rows)
-	if in.Offset > v.Total {
-		return v, equipment.CursorInvalid
-	}
-	end := min(in.Offset+equipment.PageSize, v.Total)
-	v.Read = &equipment.PPReadResult{Scope: in.Scope, VersionDivergence: versionDivergence, PackageDivergence: packageDivergence, ComparedDevices: compared, Ended: equipment.PPTime(now), Rows: append([]equipment.PPReadRow{}, rows[in.Offset:end]...)}
-	v.NextOffset = end
-	v.More = end < v.Total
-	return v, equipment.OK
+	return disabled, unknown, true
 }

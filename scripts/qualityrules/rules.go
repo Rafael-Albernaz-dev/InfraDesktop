@@ -37,11 +37,19 @@ func Text(path string, spans []Span) []string {
 	if strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") {
 		return append(failures, frontendDomain(path, spans)...)
 	}
-	if !strings.HasSuffix(path, ".go") || strings.HasPrefix(path, "internal/modules/equipment/") ||
+	if !strings.HasSuffix(path, ".go") || isDomainModule(path) ||
 		strings.HasPrefix(path, "scripts/") {
 		return failures
 	}
 	return append(failures, goDomain(path, content, spans)...)
+}
+
+func isDomainModule(path string) bool {
+	return strings.HasPrefix(path, "internal/modules/equipment/") ||
+		strings.HasPrefix(path, "internal/modules/inventory/") ||
+		strings.HasPrefix(path, "internal/modules/pppoe/") ||
+		strings.HasPrefix(path, "internal/modules/radio/") ||
+		strings.HasPrefix(path, "internal/modules/monitoring/")
 }
 
 func goDomain(path string, content []byte, spans []Span) []string {
