@@ -1,14 +1,14 @@
 import type { Device } from './equipment-api';
 import {
-  formatDate,
   formatDuration,
   formatRouterDuration,
   uptimeTitle,
 } from './network-format';
 export const id = () => crypto.randomUUID();
 
-export const stamp = (d: Device) =>
-  d.result?.observed_at ? formatDate(d.result.observed_at) : 'Não consultado';
+export const readingAge = (at?: string, now = Date.now()) =>
+  at ? `há ${formatDuration((now - Date.parse(at)) / 1000)}` : '';
+export const stamp = (d: Device) => readingAge(d.result?.observed_at);
 
 export function latestSavedReading(d: Device) {
   const monitorAt = Date.parse(d.monitoring_at || ''),

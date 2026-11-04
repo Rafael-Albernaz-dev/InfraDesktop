@@ -40,8 +40,8 @@ const devices = entries.map(
           version: `RouterOS ${version}`,
           uptime,
           cpu_percent: cpu,
-          free_memory_bytes: 59,
-          total_memory_bytes: 100,
+          free_memory_bytes: 59 * 1024 ** 3,
+          total_memory_bytes: 100 * 1024 ** 3,
           observed_at: new Date(time - Number(age) * 1000).toISOString(),
           source: 'SSH',
           quality: 'complete',
@@ -210,49 +210,58 @@ function read(scope: string) {
           0.15 * Math.sin(i * 1.7))
     ).toFixed(2);
   const rows =
-    scope === 'traffic'
+    scope === 'equipment'
       ? [
           {
-            kind: 'traffic',
-            row_id: 'row-0',
-            login: 'cliente-0001',
-            traffic: {
-              points: Array.from({ length: 30 }, (_, i) => ({
-                t: i * 2000,
-                gap: i === 16 || i === 17,
-                d: wave(i, 11, 6) * 1e6,
-                u: wave(i + 4, 1.1, 0.45) * 1e6,
-              })),
-              download_bytes: '432013312',
-              upload_bytes: '38797312',
-              covered_ns: 54e9,
-              gaps: 1,
-              average_download: { min: 98e5, max: 98e5 },
-              average_upload: { min: 9e5, max: 9e5 },
-              peak_download: { min: 182e5, max: 182e5 },
-              peak_upload: { min: 16e5, max: 16e5 },
-            },
+            kind: 'restarts',
+            used: 0,
+            size: 0,
+            at: new Date(time - 12000).toISOString(),
           },
         ]
-      : scope === 'series'
-        ? curve
-            .map((online, i) => ({
-              kind: 'point',
-              point: {
-                at: new Date(
-                  (1793800000 - 86400 + i * 3600) * 1000,
-                ).toISOString(),
-                resolution: 3600,
-                online: online ?? undefined,
-                online_min: online ?? undefined,
-                online_max: online ?? undefined,
-                samples: 1,
-                gap: online == null,
-                drop: i === 15,
+      : scope === 'traffic'
+        ? [
+            {
+              kind: 'traffic',
+              row_id: 'row-0',
+              login: 'cliente-0001',
+              traffic: {
+                points: Array.from({ length: 30 }, (_, i) => ({
+                  t: i * 2000,
+                  gap: i === 16 || i === 17,
+                  d: wave(i, 11, 6) * 1e6,
+                  u: wave(i + 4, 1.1, 0.45) * 1e6,
+                })),
+                download_bytes: '432013312',
+                upload_bytes: '38797312',
+                covered_ns: 54e9,
+                gaps: 1,
+                average_download: { min: 98e5, max: 98e5 },
+                average_upload: { min: 9e5, max: 9e5 },
+                peak_download: { min: 182e5, max: 182e5 },
+                peak_upload: { min: 16e5, max: 16e5 },
               },
-            }))
-            .reverse()
-        : [];
+            },
+          ]
+        : scope === 'series'
+          ? curve
+              .map((online, i) => ({
+                kind: 'point',
+                point: {
+                  at: new Date(
+                    (1793800000 - 86400 + i * 3600) * 1000,
+                  ).toISOString(),
+                  resolution: 3600,
+                  online: online ?? undefined,
+                  online_min: online ?? undefined,
+                  online_max: online ?? undefined,
+                  samples: 1,
+                  gap: online == null,
+                  drop: i === 15,
+                },
+              }))
+              .reverse()
+          : [];
   return {
     scope,
     rows,

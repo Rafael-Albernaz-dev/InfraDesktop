@@ -1,4 +1,5 @@
 import { Fragment, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import {
@@ -27,13 +28,25 @@ function classifyInterfaceKind(kind: string): string {
     return 'vpn';
   return 'other';
 }
-function Summary({ device }: { device: Device }) {
+function Summary({
+  device,
+  statistics,
+}: {
+  device: Device;
+  statistics?: ReactNode;
+}) {
   const r = device.result!;
   const pairs = [
     ['Identidade', r.identity],
     ['Modelo', r.board],
     ['Versão', r.version],
     ['Uptime', formatRouterDuration(r.uptime)],
+    [
+      'Origem da leitura',
+      r.quality === 'complete'
+        ? 'Resumo completo'
+        : 'Leitura com parte limitada',
+    ],
   ];
   return (
     <div className="grid">
@@ -53,15 +66,6 @@ function Summary({ device }: { device: Device }) {
                   </Fragment>
                 ))}
               </dl>
-              <details className="det">
-                <summary>Origem da leitura</summary>
-                <p>{r.source}</p>
-                <p>
-                  {r.quality === 'complete'
-                    ? 'Resumo completo'
-                    : 'Leitura com parte limitada'}
-                </p>
-              </details>
             </>
           ),
         }}
@@ -86,6 +90,7 @@ function Summary({ device }: { device: Device }) {
           ),
         }}
       />
+      {statistics}
     </div>
   );
 }
@@ -214,15 +219,17 @@ function Interfaces({ device }: { device: Device }) {
 export function EquipmentReading({
   device,
   section = 'summary',
+  statistics,
 }: {
   device: Device;
   focus: boolean;
   section?: 'summary' | 'interfaces';
   separate?: boolean;
   openPPPoE?: () => void;
+  statistics?: ReactNode;
 }) {
   return section === 'summary' ? (
-    <Summary device={device} />
+    <Summary device={device} statistics={statistics} />
   ) : (
     <Interfaces device={device} />
   );

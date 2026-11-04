@@ -1,3 +1,4 @@
+import { EquipmentSummaryStatistics } from './equipment-summary-statistics';
 import { EquipmentChain } from './equipment-chain';
 import { equipmentType } from './equipment-layout';
 import { HeaderActionHost } from './ui/HeaderAction';
@@ -73,7 +74,18 @@ function AccessTab({ p }: { p: Props }) {
 }
 function SummaryTab({ p }: { p: Props }) {
   return p.selected.result ? (
-    <EquipmentReading device={p.selected} focus={false} section="summary" />
+    <EquipmentReading
+      device={p.selected}
+      focus={false}
+      section="summary"
+      statistics={
+        <EquipmentSummaryStatistics
+          profile={p.profile}
+          activation={p.activation}
+          device={p.selected}
+        />
+      }
+    />
   ) : (
     <>
       {(!p.selected.role || p.selected.role === 'other') && (
