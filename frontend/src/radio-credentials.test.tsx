@@ -12,7 +12,6 @@ import { radioAPI as api } from './radio-api';
 import type { Device } from './equipment-api';
 import { equipmentAPI } from './equipment-api';
 import { device, response, link, reading } from './radio-test-fixtures';
-
 vi.mock('./radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
@@ -25,7 +24,6 @@ vi.mock('./radio-api', () => ({
     confirmLink: vi.fn(),
   },
 }));
-
 vi.mock('./equipment-api', () => ({
   equipmentMessage: (c: string) => c,
   equipmentAPI: {
@@ -35,7 +33,6 @@ vi.mock('./equipment-api', () => ({
     save: vi.fn(),
   },
 }));
-
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(api.current).mockResolvedValue(response());
@@ -43,7 +40,6 @@ beforeEach(() => {
   vi.mocked(api.cancelOperation).mockResolvedValue(response());
   vi.mocked(api.link).mockResolvedValue(response({ link }));
 });
-
 it('credential refusal opens a dropdown and saves the explicit choice without sending another query', async () => {
   const { target } = prepareExplicitCredentialChoiceResponses(
     prepareExplicitCredentialChoiceTarget(),
@@ -57,7 +53,7 @@ it('credential refusal opens a dropdown and saves the explicit choice without se
     />,
   );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar rádio' }),
+    (await screen.findAllByRole('button', { name: 'Atualizar' }))[0],
   );
   const dropdown = await screen.findByRole('combobox', {
     name: 'Outra credencial do equipamento',
@@ -96,11 +92,11 @@ it('keeps the newer selected credential when an older device read arrives late',
     />,
   );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar rádio' }),
+    (await screen.findAllByRole('button', { name: 'Atualizar' }))[0],
   );
   await waitFor(() => expect(equipmentAPI.get).toHaveBeenCalledTimes(1));
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar rádio' }),
+    (await screen.findAllByRole('button', { name: 'Atualizar' }))[0],
   );
   const dropdown = await screen.findByRole('combobox', {
     name: 'Outra credencial do equipamento',
@@ -118,7 +114,7 @@ it('keeps the newer selected credential when an older device read arrives late',
       }),
     ).not.toBeInTheDocument(),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Consultar rádio' }));
+  fireEvent.click(screen.getAllByRole('button', { name: 'Atualizar' })[0]);
   await waitFor(() =>
     expect(api.start).toHaveBeenLastCalledWith(
       'company',
@@ -316,7 +312,7 @@ it('offers explicit credential recovery when a preserved stale reading makes the
     />,
   );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar rádio' }),
+    (await screen.findAllByRole('button', { name: 'Atualizar' }))[0],
   );
   const dropdown = await screen.findByRole('combobox', {
     name: 'Outra credencial do equipamento',
@@ -371,7 +367,7 @@ it('preserves a partial cached reading without offering credentials when no auth
     />,
   );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar rádio' }),
+    (await screen.findAllByRole('button', { name: 'Atualizar' }))[0],
   );
   await screen.findByRole('alert');
   expect(
@@ -410,7 +406,7 @@ it('does not reuse a preserved refusal code during a new running or successful q
     />,
   );
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar rádio' }),
+    (await screen.findAllByRole('button', { name: 'Atualizar' }))[0],
   );
   await waitFor(() => expect(api.status).toHaveBeenCalledTimes(1));
   expect(
@@ -418,7 +414,11 @@ it('does not reuse a preserved refusal code during a new running or successful q
   ).not.toBeInTheDocument();
   expect(equipmentAPI.credentials).not.toHaveBeenCalled();
   await waitFor(() => expect(api.status).toHaveBeenCalledTimes(2));
-  await screen.findByRole('button', { name: 'Consultar rádio' });
+  await waitFor(() =>
+    expect(
+      screen.getAllByRole('button', { name: 'Atualizar' })[0],
+    ).toBeEnabled(),
+  );
   expect(
     screen.queryByRole('combobox', { name: 'Outra credencial do equipamento' }),
   ).not.toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { DataTable } from './ui/DataTable';
 import {
   exactNumber,
   exactVolume,
@@ -9,7 +10,6 @@ import {
 } from './network-format';
 import { formatPPUptime } from './pppoe-format';
 import type { PPReadResult } from './presentation';
-
 export function DeviceHealthSection({
   health,
 }: {
@@ -74,7 +74,6 @@ export function DeviceHealthSection({
     </>
   );
 }
-
 export function DeviceOperationalTable({ result }: { result: PPReadResult }) {
   const rows = result.rows.filter(
     (r) =>
@@ -83,8 +82,8 @@ export function DeviceOperationalTable({ result }: { result: PPReadResult }) {
       r.kind === 'availability',
   );
   return (
-    <div className="table-scroll" tabIndex={0} aria-label="Tabela operacional">
-      <table className="app-table">
+    <div className="table-region" tabIndex={0} aria-label="Tabela operacional">
+      <DataTable className="data-table">
         <thead>
           <tr>
             <th>Item</th>
@@ -115,11 +114,10 @@ export function DeviceOperationalTable({ result }: { result: PPReadResult }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }
-
 const OP_LABELS: Record<string, string> = {
   services: 'Serviços telnet/ftp/www',
   packages: 'Pacotes RouterOS',
@@ -129,7 +127,6 @@ const OP_LABELS: Record<string, string> = {
   fasttrack: 'Regras FastTrack',
   ports: 'Negociação de portas físicas',
 };
-
 function availabilityText(avail?: string): string {
   if (avail === 'complete') return 'leitura completa';
   if (avail === 'partial')
@@ -137,7 +134,6 @@ function availabilityText(avail?: string): string {
   if (avail === 'limited') return 'limite atingido';
   return 'indisponível';
 }
-
 export function DeviceOperationalTables({ result }: { result: PPReadResult }) {
   const health = result.rows.find((r) => r.kind === 'resource')?.health;
   const authCount = result.rows.find(

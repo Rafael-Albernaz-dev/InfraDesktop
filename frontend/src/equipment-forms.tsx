@@ -1,3 +1,4 @@
+import { Select } from './ui/Select';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from './desktop';
 import { DeviceCredentialSection } from './equipment-form-credentials';
@@ -22,15 +23,12 @@ import {
   validEquipmentText,
 } from './equipment-validation';
 import { RadioRoles, RadioTransports } from './radio-contract';
-
 export { ProtectedDialog };
-
 const RADIO_ROLE_VALUES: string[] = [
   RadioRoles.ap,
   RadioRoles.cpe,
   RadioRoles.ptp,
 ];
-
 function validateDeviceDraft(
   draft: DeviceInput,
   existing: boolean,
@@ -51,7 +49,6 @@ function validateDeviceDraft(
   }
   return errors;
 }
-
 function UncertainEnrollmentNotice(props: {
   disabled: boolean;
   checking: boolean;
@@ -101,7 +98,6 @@ function UncertainEnrollmentNotice(props: {
     </div>
   );
 }
-
 function DeviceRoleSelect(props: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;
@@ -113,7 +109,7 @@ function DeviceRoleSelect(props: {
   return (
     <label className="field">
       Papel do equipamento
-      <select
+      <Select
         aria-label="Papel do equipamento"
         value={draft.role}
         onChange={(e) => {
@@ -134,11 +130,10 @@ function DeviceRoleSelect(props: {
         <option value={RadioRoles.ap}>AP</option>
         <option value={RadioRoles.cpe}>CPE</option>
         <option value={RadioRoles.ptp}>PTP (somente cadastro)</option>
-      </select>
+      </Select>
     </label>
   );
 }
-
 function DeviceFormFields(props: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;
@@ -201,7 +196,6 @@ function DeviceFormFields(props: {
     </fieldset>
   );
 }
-
 function isDraftDirty(
   draft: DeviceInput,
   device: Device | undefined,
@@ -220,7 +214,6 @@ function isDraftDirty(
     existing !== Boolean(device)
   );
 }
-
 function executeSaveRequest(
   request: DeviceInput,
   direct: boolean,
@@ -258,7 +251,6 @@ function executeSaveRequest(
     }
   })();
 }
-
 function submitDeviceForm(args: {
   draft: DeviceInput;
   existing: boolean;
@@ -316,7 +308,6 @@ function submitDeviceForm(args: {
     save,
   );
 }
-
 function DeviceFormFooter({
   device,
   sent,
@@ -354,17 +345,17 @@ function DeviceFormFooter({
         <Button disabled={disabled} onClick={cancel}>
           Cancelar
         </Button>
-        <button
+        <Button
+          type="submit"
           className="btn primary"
           disabled={disabled || (!device && !existing && !vault)}
         >
           {device ? 'Salvar equipamento' : 'Salvar e conectar'}
-        </button>
+        </Button>
       </div>
     </>
   );
 }
-
 function useInitialDeviceDraft(device?: Device, contextKey = '') {
   const receipt = !device ? pendingEnrollments.get(contextKey) : undefined;
   const [draft, setDraft] = useState<DeviceInput>(() => ({
@@ -383,7 +374,6 @@ function useInitialDeviceDraft(device?: Device, contextKey = '') {
   const [uncertain, setUncertain] = useState(Boolean(!device && receipt));
   return { draft, setDraft, uncertain, setUncertain };
 }
-
 function DeviceFormBody(props: {
   uncertain: boolean;
   disabled: boolean;
@@ -432,7 +422,6 @@ function DeviceFormBody(props: {
     </>
   );
 }
-
 export function DeviceForm(props: {
   defaults: Record<string, string>;
   device?: Device;

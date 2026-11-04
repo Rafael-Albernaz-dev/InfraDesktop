@@ -5,7 +5,6 @@ import { radioAPI as api } from './radio-api';
 import type { RadioReading, RadioResult } from './radio-api';
 import { equipmentAPI } from './equipment-api';
 import { device, reading, response } from './radio-test-fixtures';
-
 vi.mock('./radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
@@ -44,7 +43,6 @@ beforeEach(() => {
     },
   });
 });
-
 function deferredPage() {
   let resolve!: (value: RadioResult) => void,
     reject!: (reason: unknown) => void;
@@ -54,7 +52,6 @@ function deferredPage() {
   });
   return { promise, resolve, reject };
 }
-
 function clientReading(id: string, name: string): RadioReading {
   return {
     ...reading,
@@ -62,7 +59,6 @@ function clientReading(id: string, name: string): RadioReading {
     clients: reading.clients.map((client) => ({ ...client, name })),
   };
 }
-
 function configurePageRace(pending: ReturnType<typeof deferredPage>) {
   vi.mocked(api.current)
     .mockResolvedValueOnce(
@@ -79,7 +75,6 @@ function configurePageRace(pending: ReturnType<typeof deferredPage>) {
     }),
   );
 }
-
 async function finishOldPage(
   pending: ReturnType<typeof deferredPage>,
   kind: string,
@@ -92,7 +87,6 @@ async function finishOldPage(
     await pending.promise.catch(() => undefined);
   });
 }
-
 it.each(['success', 'error', 'rejection'])(
   'preserves newer query B and offset when an older page finishes with %s',
   async (kind) => {
@@ -100,19 +94,20 @@ it.each(['success', 'error', 'rejection'])(
     configurePageRace(pending);
     render(
       <RadioEquipment
+        tab="Clientes"
         profile="company"
         activation="active"
         device={device}
         blocked={false}
       />,
     );
-    await screen.findByText('CPE-I1');
+    await screen.findByRole('cell', { name: /CPE-I1/ });
     fireEvent.click(screen.getByRole('button', { name: 'Próximos clientes' }));
     expect(api.current).toHaveBeenCalledTimes(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Consultar rádio' }));
-    await screen.findByText('Cliente B');
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
+    await screen.findByRole('cell', { name: /Cliente B/ });
     await finishOldPage(pending, kind);
-    expect(screen.getByText('Cliente B')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: /Cliente B/ })).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Clientes anteriores' }),
     ).not.toBeInTheDocument();
@@ -124,7 +119,6 @@ it.each(['success', 'error', 'rejection'])(
     expect(api.start).toHaveBeenCalledTimes(1);
   },
 );
-
 it('accepts a legitimate page when no newer query owns the view', async () => {
   vi.mocked(api.current)
     .mockResolvedValueOnce(
@@ -138,15 +132,16 @@ it('accepts a legitimate page when no newer query owns the view', async () => {
     );
   render(
     <RadioEquipment
+      tab="Clientes"
       profile="company"
       activation="active"
       device={device}
       blocked={false}
     />,
   );
-  await screen.findByText('CPE-I1');
+  await screen.findByRole('cell', { name: /CPE-I1/ });
   fireEvent.click(screen.getByRole('button', { name: 'Próximos clientes' }));
-  await screen.findByText('Página legítima');
+  await screen.findByRole('cell', { name: /Página legítima/ });
   expect(
     screen.getByRole('button', { name: 'Clientes anteriores' }),
   ).toBeInTheDocument();

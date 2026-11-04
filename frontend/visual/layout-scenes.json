@@ -1,0 +1,310 @@
+[
+  {
+    "id": "codigo",
+    "reference": "codigo",
+    "route": "codigo"
+  },
+  {
+    "id": "config",
+    "reference": "config",
+    "route": "config"
+  },
+  {
+    "id": "credenciais",
+    "reference": "credenciais",
+    "route": "credenciais"
+  },
+  {
+    "id": "criar",
+    "reference": "criar",
+    "route": "criar"
+  },
+  {
+    "id": "curva-sessoes",
+    "reference": "curva-sessoes",
+    "route": "curva-sessoes",
+    "device": "CCR-CENTRO",
+    "tab": "Interfaces e saúde",
+    "sub": "Monitoramento",
+    "session": false
+  },
+  {
+    "id": "empresas",
+    "reference": "empresas",
+    "route": "empresas"
+  },
+  {
+    "id": "equipamentos",
+    "reference": "equipamentos",
+    "route": "equipamentos"
+  },
+  {
+    "id": "ficha-ap-norte-acesso",
+    "reference": "ficha-ap-norte-acesso",
+    "route": "ficha",
+    "device": "AP-NORTE",
+    "tab": "Acesso",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-norte-clientes",
+    "reference": "ficha-ap-norte-clientes",
+    "route": "ficha",
+    "device": "AP-NORTE",
+    "tab": "Clientes",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-norte-interfaces",
+    "reference": "ficha-ap-norte-interfaces",
+    "route": "ficha",
+    "device": "AP-NORTE",
+    "tab": "Interfaces",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-norte-ra-dio",
+    "reference": "ficha-ap-norte-ra-dio",
+    "route": "ficha",
+    "device": "AP-NORTE",
+    "tab": "Rádio",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-norte-resumo",
+    "reference": "ficha-ap-norte-resumo",
+    "route": "ficha",
+    "device": "AP-NORTE",
+    "tab": "Resumo",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-sul-acesso",
+    "reference": "ficha-ap-sul-acesso",
+    "route": "ficha",
+    "device": "AP-SUL",
+    "tab": "Acesso",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-sul-clientes",
+    "reference": "ficha-ap-sul-clientes",
+    "route": "ficha",
+    "device": "AP-SUL",
+    "tab": "Clientes",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-sul-interfaces",
+    "reference": "ficha-ap-sul-interfaces",
+    "route": "ficha",
+    "device": "AP-SUL",
+    "tab": "Interfaces",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-sul-ra-dio",
+    "reference": "ficha-ap-sul-ra-dio",
+    "route": "ficha",
+    "device": "AP-SUL",
+    "tab": "Rádio",
+    "sub": null
+  },
+  {
+    "id": "ficha-ap-sul-resumo",
+    "reference": "ficha-ap-sul-resumo",
+    "route": "ficha",
+    "device": "AP-SUL",
+    "tab": "Resumo",
+    "sub": null
+  },
+  {
+    "id": "ficha-ccr-centro-acesso",
+    "reference": "ficha-ccr-centro-acesso",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Acesso",
+    "sub": null
+  },
+  {
+    "id": "ficha-ccr-centro-interfaces-e-sau-de",
+    "reference": "ficha-ccr-centro-interfaces-e-sau-de",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Interfaces e saúde",
+    "sub": null
+  },
+  {
+    "id": "ficha-ccr-centro-interfaces-e-sau-de-monitoramento",
+    "reference": "ficha-ccr-centro-interfaces-e-sau-de-monitoramento",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Interfaces e saúde",
+    "sub": "Monitoramento"
+  },
+  {
+    "id": "ficha-ccr-centro-interfaces-e-sau-de-portas-e-sau-de",
+    "reference": "ficha-ccr-centro-interfaces-e-sau-de-portas-e-sau-de",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Interfaces e saúde",
+    "sub": "Portas e saúde"
+  },
+  {
+    "id": "ficha-ccr-centro-resumo",
+    "reference": "ficha-ccr-centro-resumo",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Resumo",
+    "sub": null
+  },
+  {
+    "id": "ficha-ccr-centro-servic-os",
+    "reference": "ficha-ccr-centro-servic-os",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Serviços",
+    "sub": null
+  },
+  {
+    "id": "ficha-ccr-centro-servic-os-radius",
+    "reference": "ficha-ccr-centro-servic-os-radius",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Serviços",
+    "sub": "RADIUS"
+  },
+  {
+    "id": "ficha-ccr-centro-sesso-es",
+    "reference": "ficha-ccr-centro-sesso-es",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": null
+  },
+  {
+    "id": "ficha-ccr-centro-sesso-es-comparac-a-o",
+    "reference": "ficha-ccr-centro-sesso-es-comparac-a-o",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Comparação"
+  },
+  {
+    "id": "ficha-ccr-centro-sesso-es-refere-ncias",
+    "reference": "ficha-ccr-centro-sesso-es-refere-ncias",
+    "route": "ficha",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Referências"
+  },
+  {
+    "id": "ficha-cpe-0001-acesso",
+    "reference": "ficha-cpe-0001-acesso",
+    "route": "ficha",
+    "device": "CPE-0001",
+    "tab": "Acesso",
+    "sub": null
+  },
+  {
+    "id": "ficha-cpe-0001-cliente",
+    "reference": "ficha-cpe-0001-cliente",
+    "route": "ficha",
+    "device": "CPE-0001",
+    "tab": "Cliente",
+    "sub": null
+  },
+  {
+    "id": "ficha-cpe-0001-enlace",
+    "reference": "ficha-cpe-0001-enlace",
+    "route": "ficha",
+    "device": "CPE-0001",
+    "tab": "Enlace",
+    "sub": null
+  },
+  {
+    "id": "ficha-cpe-0001-resumo",
+    "reference": "ficha-cpe-0001-resumo",
+    "route": "ficha",
+    "device": "CPE-0001",
+    "tab": "Resumo",
+    "sub": null
+  },
+  {
+    "id": "ficha-cpe-0001-roteador",
+    "reference": "ficha-cpe-0001-roteador",
+    "route": "ficha",
+    "device": "CPE-0001",
+    "tab": "Roteador",
+    "sub": null
+  },
+  {
+    "id": "ficha-eqp-0001-acesso",
+    "reference": "ficha-eqp-0001-acesso",
+    "route": "ficha",
+    "device": "EQP-0001",
+    "tab": "Acesso",
+    "sub": null
+  },
+  {
+    "id": "ficha-eqp-0001-resumo",
+    "reference": "ficha-eqp-0001-resumo",
+    "route": "ficha",
+    "device": "EQP-0001",
+    "tab": "Resumo",
+    "sub": null
+  },
+  {
+    "id": "ficha-ptp-0001-acesso",
+    "reference": "ficha-ptp-0001-acesso",
+    "route": "ficha",
+    "device": "PTP-0001",
+    "tab": "Acesso",
+    "sub": null
+  },
+  {
+    "id": "ficha-ptp-0001-enlace",
+    "reference": "ficha-ptp-0001-enlace",
+    "route": "ficha",
+    "device": "PTP-0001",
+    "tab": "Enlace",
+    "sub": null
+  },
+  {
+    "id": "ficha-ptp-0001-resumo",
+    "reference": "ficha-ptp-0001-resumo",
+    "route": "ficha",
+    "device": "PTP-0001",
+    "tab": "Resumo",
+    "sub": null
+  },
+  {
+    "id": "login",
+    "reference": "login",
+    "route": "login"
+  },
+  {
+    "id": "recuperar",
+    "reference": "recuperar",
+    "route": "recuperar"
+  },
+  {
+    "id": "sessao-trafego-ao-vivo",
+    "reference": "sessao-trafego-ao-vivo",
+    "route": "sessao-trafego-ao-vivo",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Lista",
+    "session": true
+  },
+  {
+    "id": "visao",
+    "reference": "visao",
+    "route": "visao"
+  },
+  {
+    "id": "vitrine",
+    "reference": "vitrine",
+    "route": "vitrine"
+  }
+]

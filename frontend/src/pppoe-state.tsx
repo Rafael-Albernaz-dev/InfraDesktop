@@ -23,10 +23,8 @@ import type {
   PPRow,
 } from './presentation';
 import { pppoeAPI as api } from './presentation';
-
 export type PPPoETab =
   'sessions' | 'compare' | 'references' | 'catalog' | 'radius' | 'monitoring';
-
 function formatAttemptStatus(r: PPResult): string {
   const a = r.data?.attempt;
   if (
@@ -46,7 +44,6 @@ function formatAttemptStatus(r: PPResult): string {
     : 'Nenhuma leitura boa disponível.';
   return `Tentativa ${kind}: ${eligible}${equipmentMessage(a.code || 'SERVICE_UNAVAILABLE')} ${suffix}`;
 }
-
 export type PPPoERefs = {
   detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
   detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -62,8 +59,11 @@ export type PPPoERefs = {
   primaryRef: React.RefObject<HTMLButtonElement | null>;
   detailIntentRef: React.MutableRefObject<number>;
 };
-
-function usePPPoEViewState(profile: string, activation: string) {
+function usePPPoEViewState(
+  profile: string,
+  activation: string,
+  initialTab: PPPoETab,
+) {
   useLayoutEffect(() => {
     acceptEquipmentAuthority(profile, activation);
   }, [profile, activation]);
@@ -72,9 +72,9 @@ function usePPPoEViewState(profile: string, activation: string) {
   >('loading');
   const [statusFailed, setStatusFailed] = useState(false);
   const [statusRetry, retryStatus] = useState(0);
-  const [detailTab, setDetailTab] = useState<'traffic' | 'information'>(
-    'traffic',
-  );
+  const [detailTab, setDetailTab] = useState<
+    'traffic' | 'information' | 'link'
+  >('traffic');
   const [pair, setPair] = useState<{ left?: PPRow; right?: PPRow }>();
   const [referencesState, setReferencesState] = useState<
     'loading' | 'ready' | 'error'
@@ -91,7 +91,7 @@ function usePPPoEViewState(profile: string, activation: string) {
   const [history, setHistory] = useState<string[]>([]);
   const [selected, select] = useState<PPRow>();
   const [base, setBase] = useState('');
-  const [tab, setTab] = useState<PPPoETab>('sessions');
+  const [tab, setTab] = useState<PPPoETab>(initialTab);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [attempt, setAttempt] = useState('');
@@ -157,7 +157,6 @@ function usePPPoEViewState(profile: string, activation: string) {
     bump,
   };
 }
-
 type ViewState = ReturnType<typeof usePPPoEViewState>;
 type SharedCtx = ViewState &
   PPPoERefs & {
@@ -176,7 +175,6 @@ type SharedCtx = ViewState &
     detailIntent: React.MutableRefObject<number>;
     refs: PPReference[];
   };
-
 function usePPPoEInitialLoad(p: SharedCtx) {
   const { context, refresh, profile, activation, device, valid, lifeRef } = p;
   useEffect(() => {
@@ -220,7 +218,6 @@ function usePPPoEInitialLoad(p: SharedCtx) {
     };
   }, [context, refresh, profile, activation, device.id, valid, lifeRef]);
 }
-
 function usePPPoEPageLoad(p: SharedCtx) {
   const {
     context,
@@ -302,7 +299,6 @@ function usePPPoEPageLoad(p: SharedCtx) {
     p.valid,
   ]);
 }
-
 function usePPPoEJobPoll(p: SharedCtx) {
   const {
     job,
@@ -372,7 +368,6 @@ function usePPPoEJobPoll(p: SharedCtx) {
     primaryRef,
   ]);
 }
-
 function usePPPoEFocusAndSurface(p: SharedCtx) {
   const {
     removedFocusRef,
@@ -455,7 +450,6 @@ function usePPPoEFocusAndSurface(p: SharedCtx) {
     };
   }, [context, lifeRef]);
 }
-
 function usePPPoERunners(p: SharedCtx) {
   const { lifeRef, focusedControlRef, detailIntentRef, valid } = p;
   async function run(
@@ -516,14 +510,14 @@ function usePPPoERunners(p: SharedCtx) {
   }
   return { run, runDetail };
 }
-
 export function usePPPoEState(
   profile: string,
   activation: string,
   device: Device,
   refs: PPPoERefs,
+  initialTab: PPPoETab = 'sessions',
 ) {
-  const s = usePPPoEViewState(profile, activation);
+  const s = usePPPoEViewState(profile, activation, initialTab);
   const context = [profile, activation, device.id].join('|');
   const valid = useCallback(
     (generation: number, r: PPResult) =>

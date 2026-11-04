@@ -3,7 +3,7 @@ import { access } from './presentation';
 import { Desktop } from './desktop';
 import type { Page } from './desktop';
 import { normalizeRoute, type RouteName } from './desktop-model';
-import './style.css';
+import './ui/tokens.css';
 import { Equipment } from './equipment';
 import { useEquipmentOperations } from './equipment-operations';
 import {
@@ -15,7 +15,6 @@ import {
   useBrandState,
 } from './app-session';
 import type { PerformFn } from './app-session';
-
 function useInventoryNavigation(profileId: string, activationId: string) {
   const [inventoryAction, addInventory] = useState(0);
   const [inventoryTarget, setInventoryTarget] = useState({ key: '', id: '' });
@@ -43,12 +42,12 @@ function useInventoryNavigation(profileId: string, activationId: string) {
     selectInventory,
   };
 }
-
 function renderInventory(
   brandKey: string,
   profileId: string,
   activationId: string,
   connected: boolean,
+  credentialsPage: boolean,
   inv: ReturnType<typeof useInventoryNavigation>,
 ) {
   return (
@@ -59,6 +58,7 @@ function renderInventory(
       connected={connected}
       createRequest={inv.inventoryAction}
       primaryInHeader
+      credentialsPage={credentialsPage}
       targetID={
         inv.inventoryTarget.key === inv.contextPair
           ? inv.inventoryTarget.id
@@ -70,7 +70,6 @@ function renderInventory(
     />
   );
 }
-
 function AuthenticatedOverlays(props: {
   session: ReturnType<typeof useAccessSession>;
   theme: string;
@@ -97,7 +96,6 @@ function AuthenticatedOverlays(props: {
     />
   );
 }
-
 function AuthenticatedShell(props: {
   theme: string;
   route: RouteName;
@@ -135,6 +133,7 @@ function AuthenticatedShell(props: {
         view.profile_id,
         view.activation_id,
         connected,
+        route === 'credentials',
         inv,
       )}
       addEquipment={() => {
@@ -145,6 +144,7 @@ function AuthenticatedShell(props: {
       navigate={(next: Page) => {
         if (session.securityLockedRef.current) return;
         session.invalidate();
+        if (normalizeRoute(next) === 'equipment') inv.selectInventory('');
         inv.addInventory(0);
         setPage(normalizeRoute(next));
         close();
@@ -186,7 +186,6 @@ function AuthenticatedShell(props: {
     </Desktop>
   );
 }
-
 export default function App() {
   const [theme, setTheme] = useState('light');
   const [page, setPage] = useState<Page>('companies');

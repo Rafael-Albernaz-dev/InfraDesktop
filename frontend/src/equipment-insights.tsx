@@ -1,3 +1,6 @@
+import { EquipmentPorts } from './equipment-health-tables';
+import { Button } from './ui/Button';
+import { DataTable } from './ui/DataTable';
 import { useEffect, useState } from 'react';
 import { deviceMonitoringAPI } from './presentation';
 import type { Device, PPReadRow } from './presentation';
@@ -5,12 +8,10 @@ import { useDisplayNow, useEquipmentSnapshot } from './equipment-snapshot';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
 import {
   exactNumber,
-  exactRate,
   formatDate,
   formatDuration,
   portLabel,
 } from './network-format';
-
 export function EquipmentInsights({
   profile,
   activation,
@@ -167,43 +168,9 @@ export function EquipmentInsights({
         Velocidade negociada de portas físicas ether. Interfaces não físicas:
         não se aplica.
       </p>
-      {!!ports.length && (
-        <div
-          className="table-scroll"
-          tabIndex={0}
-          aria-label="Portas físicas negociadas"
-        >
-          <table className="app-table">
-            <thead>
-              <tr>
-                <th>Porta</th>
-                <th>Velocidade / duplex</th>
-                <th>Quedas acumuladas</th>
-                <th>Leitura</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ports.map((r) => (
-                <tr key={r.name}>
-                  <td>{r.name}</td>
-                  <td title={exactRate(r.port?.speed_bps)}>
-                    {portLabel(r.port)}
-                    {r.port?.running &&
-                    ((r.port.speed_bps !== undefined &&
-                      r.port.speed_bps <= 100000000) ||
-                      r.port.full_duplex === false)
-                      ? ' · atenção'
-                      : ''}
-                  </td>
-                  <td>{exactNumber(r.port?.link_downs)}</td>
-                  <td title={r.at}>{formatDate(r.at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <button
+      {!!ports.length && <EquipmentPorts ports={ports} />}
+      <Button
+        type="submit"
         aria-expanded={historyOpen}
         onClick={() => {
           showHistory((v) => !v);
@@ -211,7 +178,7 @@ export function EquipmentInsights({
         }}
       >
         Histórico de portas
-      </button>
+      </Button>
       {historyOpen && (
         <section aria-label="Histórico de portas salvo">
           <h3>Histórico de portas</h3>
@@ -230,8 +197,8 @@ export function EquipmentInsights({
                 : 'Nenhuma mudança de porta detectada entre as leituras disponíveis.'}
             </p>
           ) : (
-            <div className="table-scroll" tabIndex={0}>
-              <table className="app-table">
+            <div className="table-region" tabIndex={0}>
+              <DataTable className="data-table">
                 <thead>
                   <tr>
                     <th>Quando</th>
@@ -253,18 +220,21 @@ export function EquipmentInsights({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           )}
           {currentHistory?.next && (
-            <button onClick={() => setCursor(currentHistory.next)}>
+            <Button
+              type="submit"
+              onClick={() => setCursor(currentHistory.next)}
+            >
               Próxima página do histórico de portas
-            </button>
+            </Button>
           )}
           {cursor && (
-            <button onClick={() => setCursor('')}>
+            <Button type="submit" onClick={() => setCursor('')}>
               Início do histórico de portas
-            </button>
+            </Button>
           )}
         </section>
       )}

@@ -1,4 +1,8 @@
-import { equipmentMessage } from './equipment-api';
+import { runPPExport } from './pppoe-export';
+import { DataTable } from './ui/DataTable';
+import { Select } from './ui/Select';
+import { Button } from './ui/Button';
+
 import {
   exactRate,
   formatDate,
@@ -8,68 +12,6 @@ import {
 import { ContextCounts, FRESH_QUERY } from './pppoe-context';
 import { formatPPUptime } from './pppoe-format';
 import type { PPObservation, PPQuery, PPRow } from './presentation';
-import { pppoeAPI as api } from './presentation';
-
-function runPPExport(
-  kind: 'sanitized' | 'operational',
-  p: {
-    profile: string;
-    activation: string;
-    deviceId: string;
-    observationId: string;
-    base: string;
-    tab: string;
-    setBusy: (b: boolean) => void;
-    setNotice: (s: string) => void;
-    setError: (s: string) => void;
-    lifeRef: React.MutableRefObject<{ generation: number }>;
-    exportFocusRef: React.MutableRefObject<'sanitized' | 'operational' | ''>;
-  },
-) {
-  p.exportFocusRef.current = kind;
-  p.setNotice('');
-  p.setError('');
-  const g = p.lifeRef.current.generation;
-  p.setBusy(true);
-  const task =
-    kind === 'sanitized'
-      ? api.export(
-          p.profile,
-          p.activation,
-          p.deviceId,
-          p.observationId,
-          p.tab === 'compare' ? p.base : '',
-        )
-      : api.exportOperational(
-          p.profile,
-          p.activation,
-          p.deviceId,
-          p.observationId,
-        );
-  const okMsg =
-    kind === 'sanitized'
-      ? 'Arquivo sanitizado salvo.'
-      : 'Arquivo CSV operacional salvo.';
-  void task
-    .then((code) => {
-      if (g === p.lifeRef.current.generation) {
-        p.setNotice(
-          code === 'OK'
-            ? okMsg
-            : code === 'EXPORT_CANCELLED'
-              ? ''
-              : equipmentMessage(code),
-        );
-      }
-    })
-    .catch(() => {
-      if (g === p.lifeRef.current.generation)
-        p.setError('Falha na exportação.');
-    })
-    .finally(() => {
-      if (g === p.lifeRef.current.generation) p.setBusy(false);
-    });
-}
 
 export function PPPoEObsActions(p: {
   profile: string;
@@ -133,29 +75,30 @@ export function PPPoEObsActions(p: {
         />
       )}
       <div className="pppoe-actions">
-        <button disabled={disabled} onClick={p.save}>
+        <Button type="submit" disabled={disabled} onClick={p.save}>
           Salvar referência desta leitura
-        </button>
-        <button
+        </Button>
+        <Button
+          type="submit"
           ref={exportControlRef}
           disabled={busy}
           onClick={() => onExport('sanitized')}
         >
           Exportar JSON sanitizado
-        </button>
-        <button
+        </Button>
+        <Button
+          type="submit"
           ref={csvExportControlRef}
           disabled={busy}
           onClick={() => onExport('operational')}
         >
           Exportar CSV operacional
-        </button>
+        </Button>
         <p>O CSV contém dados identificáveis de assinantes.</p>
       </div>
     </>
   );
 }
-
 function SortAndCheckFilters(p: {
   query: PPQuery;
   change: (q: Partial<PPQuery>) => void;
@@ -167,14 +110,14 @@ function SortAndCheckFilters(p: {
     <>
       <label>
         Ordenar
-        <select
+        <Select
           value={query.sort}
           onChange={(e) => change({ sort: e.target.value })}
         >
           <option value="login">Login</option>
           <option value="address">IP</option>
           <option value="uptime">Tempo conectado</option>
-        </select>
+        </Select>
       </label>
       <label>
         <input
@@ -203,7 +146,6 @@ function SortAndCheckFilters(p: {
     </>
   );
 }
-
 export function PPPoESessionFilters(p: {
   query: PPQuery;
   change: (q: Partial<PPQuery>) => void;
@@ -232,7 +174,8 @@ export function PPPoESessionFilters(p: {
         setShowPlan={setShowPlan}
       />
       {(query.search || query.duplicates_only) && (
-        <button
+        <Button
+          type="submit"
           onClick={() => {
             p.setQuery(FRESH_QUERY());
             p.setCursor('');
@@ -241,12 +184,11 @@ export function PPPoESessionFilters(p: {
           }}
         >
           Limpar filtros
-        </button>
+        </Button>
       )}
     </div>
   );
 }
-
 function SessionPlanCell({
   row,
   fastTrack,
@@ -266,7 +208,6 @@ function SessionPlanCell({
     </td>
   );
 }
-
 function PPPoESessionRowItem(p: {
   row: PPRow;
   showPlan: boolean;
@@ -302,17 +243,17 @@ function PPPoESessionRowItem(p: {
           : 'Sem duplicidade'}
       </td>
       <td>
-        <button
+        <Button
+          type="submit"
           aria-label={'Detalhar ' + row.login + ' ' + row.remote_id}
           onClick={(e) => p.onDetail(row, e.currentTarget)}
         >
           Detalhar
-        </button>
+        </Button>
       </td>
     </tr>
   );
 }
-
 export function PPPoESessionsTable(p: {
   rows: PPRow[];
   showPlan: boolean;
@@ -322,11 +263,11 @@ export function PPPoESessionsTable(p: {
 }) {
   return (
     <div
-      className="table-scroll"
+      className="table-region"
       tabIndex={0}
       aria-label="Tabela de sessões PPPoE"
     >
-      <table className="app-table">
+      <DataTable className="data-table">
         <thead>
           <tr>
             <th>Login</th>
@@ -352,11 +293,10 @@ export function PPPoESessionsTable(p: {
             />
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }
-
 export function PPPoEPaginationActions(p: {
   history: string[];
   setHistory: React.Dispatch<React.SetStateAction<string[]>>;
@@ -371,7 +311,8 @@ export function PPPoEPaginationActions(p: {
   return (
     <div className="pppoe-actions">
       {p.history.length > 0 && (
-        <button
+        <Button
+          type="submit"
           onClick={() => {
             p.setCursor(p.history[p.history.length - 1]);
             p.setHistory(p.history.slice(0, -1));
@@ -379,7 +320,7 @@ export function PPPoEPaginationActions(p: {
           }}
         >
           Página anterior
-        </button>
+        </Button>
       )}
       {p.pageState === 'ready' && (
         <span role="status" aria-label={`${p.total} resultados`}>
@@ -387,7 +328,8 @@ export function PPPoEPaginationActions(p: {
         </span>
       )}
       {p.cursor && (
-        <button
+        <Button
+          type="submit"
           onClick={() => {
             p.setCursor('');
             p.setHistory([]);
@@ -395,10 +337,11 @@ export function PPPoEPaginationActions(p: {
           }}
         >
           Início da lista
-        </button>
+        </Button>
       )}
       {p.pageState === 'ready' && p.next && (
-        <button
+        <Button
+          type="submit"
           onClick={() => {
             p.setHistory((v) => [...v, p.cursor]);
             p.setCursor(p.next);
@@ -407,7 +350,7 @@ export function PPPoEPaginationActions(p: {
           }}
         >
           Próxima página
-        </button>
+        </Button>
       )}
     </div>
   );

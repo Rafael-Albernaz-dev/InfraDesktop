@@ -1,3 +1,4 @@
+import { Button } from './ui/Button';
 import { useEffect, useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
@@ -19,7 +20,6 @@ import type {
   PPResult,
   PPRow,
 } from './presentation';
-
 export const freshQuery = (): PPQuery => ({
   search: '',
   duplicates_only: false,
@@ -28,7 +28,6 @@ export const freshQuery = (): PPQuery => ({
   category: '',
 });
 export const FRESH_QUERY = freshQuery;
-
 export const pppoeMessage = (r: PPResult) =>
   r.error?.reason === 'operation_receipts'
     ? 'Limite de 2048 alterações permanentes atingido. Salvar e excluir referências estão bloqueados. ' +
@@ -43,7 +42,6 @@ export const pppoeMessage = (r: PPResult) =>
           CURSOR_INVALID: 'A página expirou. Volte ao início da lista.',
         }[r.code] || equipmentMessage(r.code);
 export const pppoeErrorMessage = pppoeMessage;
-
 export const COMPARE_CATEGORIES: Record<string, string> = {
   unchanged: 'Sem alteração',
   changed: 'Campos alterados',
@@ -51,14 +49,12 @@ export const COMPARE_CATEGORIES: Record<string, string> = {
   new: 'Somente na atual',
   absent: 'Somente na referência',
 };
-
 const SECRET_STATE_LABELS: Record<string, string> = {
   active: 'Um secret local ativo',
   disabled: 'Secret local desativado: a autenticação não vem dele',
   ambiguous: 'Vários secrets locais ativos: perfil ambíguo',
   none: 'Nenhum secret local para este login',
 };
-
 export function OfflineEvidence({ row }: { row: PPRow }) {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -84,7 +80,6 @@ export function OfflineEvidence({ row }: { row: PPRow }) {
     </dl>
   );
 }
-
 export function SessionContext({
   row,
   omitted,
@@ -147,7 +142,6 @@ export function SessionContext({
     </dl>
   );
 }
-
 function ContextCountsPolicyInputs(p: {
   dropThreshold: string;
   setDropThreshold: (v: string) => void;
@@ -185,7 +179,6 @@ function ContextCountsPolicyInputs(p: {
     </>
   );
 }
-
 function ContextGroupsList({
   groups,
   validPolicy,
@@ -221,7 +214,6 @@ function ContextGroupsList({
     </ul>
   );
 }
-
 function useContextGroupsFetch(
   profile: string,
   activation: string,
@@ -266,7 +258,6 @@ function useContextGroupsFetch(
   }, [profile, activation, device, observation, cursor, key]);
   return { groups, next, error, key, resolvedKey };
 }
-
 export function ContextCounts({
   profile,
   activation,
@@ -326,25 +317,26 @@ export function ContextCounts({
         />
       )}
       {resolvedKey === key && next && (
-        <button onClick={() => setCursor(next)}>Próximos grupos</button>
+        <Button type="submit" onClick={() => setCursor(next)}>
+          Próximos grupos
+        </Button>
       )}
       {cursor && (
-        <button onClick={() => setCursor('')}>Primeiros grupos</button>
+        <Button type="submit" onClick={() => setCursor('')}>
+          Primeiros grupos
+        </Button>
       )}
     </section>
   );
 }
-
 export type PPRunner = (
   action: () => Promise<PPResult>,
   done?: (r: PPResult) => void,
 ) => Promise<void>;
-
 export type PPDetailRunner = (
   action: (accept: () => boolean) => Promise<PPResult>,
   done: (r: PPResult) => void,
 ) => Promise<void>;
-
 export type PPHandlerProps = {
   profile: string;
   activation: string;
@@ -362,7 +354,6 @@ export type PPHandlerProps = {
   removedFocus: React.MutableRefObject<string>;
   detailTrigger: React.MutableRefObject<HTMLElement | null>;
 };
-
 export function createUpdateHandler(p: PPHandlerProps, run: PPRunner) {
   return () => {
     const k = p.context + '|collect|' + p.device.revision;
@@ -401,7 +392,6 @@ export function createUpdateHandler(p: PPHandlerProps, run: PPRunner) {
     );
   };
 }
-
 export function createSaveHandler(p: PPHandlerProps, run: PPRunner) {
   return () => {
     if (!p.current) return;
@@ -438,7 +428,6 @@ export function createSaveHandler(p: PPHandlerProps, run: PPRunner) {
     );
   };
 }
-
 export function createRemoveHandler(p: PPHandlerProps, run: PPRunner) {
   return (ref: PPReference) => {
     const k = p.context + '|delete|' + ref.reference_id;
@@ -468,7 +457,6 @@ export function createRemoveHandler(p: PPHandlerProps, run: PPRunner) {
     );
   };
 }
-
 export function createOpenPairHandler(
   p: PPHandlerProps,
   runDetail: PPDetailRunner,

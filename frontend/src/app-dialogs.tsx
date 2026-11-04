@@ -1,10 +1,10 @@
+import { Statusbar } from './desktop';
 import { useState } from 'react';
 import { AccessScreen } from './access-screen';
-import { Statusbar } from './desktop';
+import { Button } from './ui/Button';
 import type { Intent } from './microcopy';
 import { access } from './presentation';
 import type { PerformFn, useAccessSession } from './app-session';
-
 export function UnauthenticatedShell(props: {
   theme: string;
   setTheme: (t: string) => void;
@@ -59,12 +59,11 @@ export function UnauthenticatedShell(props: {
             )
           }
         />
-        <Statusbar connected={connected} access />
+        {connected && <Statusbar connected />}
       </div>
     </div>
   );
 }
-
 export function CompanyForm({
   busy,
   error,
@@ -98,9 +97,9 @@ export function CompanyForm({
         </p>
       )}
       <div className="dialog-actions">
-        <button className="btn primary" disabled={busy} type="submit">
+        <Button className="btn primary" disabled={busy} type="submit">
           Criar empresa
-        </button>
+        </Button>
       </div>
     </form>
   );

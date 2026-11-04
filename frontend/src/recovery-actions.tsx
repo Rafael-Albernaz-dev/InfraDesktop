@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Button } from './ui/Button';
 import { access } from './presentation';
 import { recoveryActionMessage } from './microcopy';
 export function RecoveryActions({ busy }: { busy: boolean }) {
@@ -28,26 +29,23 @@ export function RecoveryActions({ busy }: { busy: boolean }) {
   }
   return (
     <div className="recovery-actions">
-      <p>
-        O arquivo contém um segredo em texto claro. Guarde-o em local seguro.
-      </p>
       <div className="dialog-actions">
-        <button
+        <Button
           type="button"
           className="btn"
           disabled={busy || pending}
           onClick={() => void act('copy')}
         >
           Copiar código
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="btn"
           disabled={busy || pending}
           onClick={() => void act('save')}
         >
           Salvar .txt
-        </button>
+        </Button>
       </div>
       {feedback && <p role="status">{feedback}</p>}
     </div>

@@ -1,92 +1,20 @@
+import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
+import { Select } from './ui/Select';
+import { Button } from './ui/Button';
+import { Tabs } from './ui/Tabs';
 import type { Device } from './equipment-api';
 import { formatDate, uptimeTitle } from './network-format';
-import {
-  COMPARE_CATEGORIES,
-  OfflineEvidence,
-  SessionContext,
-} from './pppoe-context';
-import { PPPoEPing, PPPoEReadPanel } from './pppoe-diagnostics';
+import { COMPARE_CATEGORIES } from './pppoe-context';
+import { PPPoEReadPanel } from './pppoe-diagnostics';
 import { formatPPUptime } from './pppoe-format';
 import type {
   PPDelta,
-  PPInterval,
   PPObservation,
   PPQuery,
   PPReference,
   PPRow,
 } from './presentation';
 import { RadioLinkPanel } from './radio';
-
-function SessionAuthInfo(p: {
-  selected: PPRow;
-  current: PPObservation;
-  fastTrack?: number;
-}) {
-  const { selected, current } = p;
-  return (
-    <>
-      <h3>Autenticação PPPoE</h3>
-      <p>IP: {selected.address || 'Indisponível'}</p>
-      <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
-      <p title={uptimeTitle(selected.uptime)}>
-        {selected.state === 'OFFLINE'
-          ? 'Duração da última sessão: '
-          : 'Tempo conectado: '}
-        {formatPPUptime(selected.uptime)}
-      </p>
-      <p>Estado: {selected.state || 'ONLINE'}</p>
-      <SessionContext
-        row={selected}
-        omitted={current.context_omitted}
-        fastTrack={p.fastTrack}
-      />
-      <p>ID no roteador: {selected.remote_id || 'Indisponível'}</p>
-      <p>Session ID: {selected.session_id || 'Indisponível'}</p>
-      {selected.state === 'OFFLINE' && <OfflineEvidence row={selected} />}
-    </>
-  );
-}
-
-function SessionConnectivityTab(p: {
-  profile: string;
-  activation: string;
-  device: Device;
-  observation: string;
-  row: string;
-  uptime: PPInterval;
-  disabled: boolean;
-  isOffline: boolean;
-  openEquipment?: (id: string) => void;
-}) {
-  return (
-    <>
-      {!p.isOffline && (
-        <RadioLinkPanel
-          key={[p.profile, p.activation, p.observation, p.row].join('|')}
-          profile={p.profile}
-          activation={p.activation}
-          device={p.device}
-          observation={p.observation}
-          row={p.row}
-          pppoeUptime={formatPPUptime(p.uptime)}
-          blocked={p.disabled}
-          onOpenEquipment={p.openEquipment}
-        />
-      )}
-      <h3>Conectividade</h3>
-      <PPPoEPing
-        key={p.observation + '|' + p.row}
-        profile={p.profile}
-        activation={p.activation}
-        device={p.device}
-        observation={p.observation}
-        row={p.row}
-        blocked={p.disabled || p.isOffline}
-      />
-      {p.isOffline && <p>Ping indisponível: sessão OFFLINE.</p>}
-    </>
-  );
-}
 
 function SessionInformationTab(p: {
   selected: PPRow;
@@ -131,38 +59,32 @@ function SessionInformationTab(p: {
     </>
   );
 }
-
 function SessionDetailNav({
   detailTab,
   setDetailTab,
 }: {
-  detailTab: 'traffic' | 'information';
-  setDetailTab: (t: 'traffic' | 'information') => void;
+  detailTab: 'traffic' | 'information' | 'link';
+  setDetailTab: (t: 'traffic' | 'information' | 'link') => void;
 }) {
   return (
-    <nav aria-label="Abas do detalhe PPPoE">
-      <button
-        aria-pressed={detailTab === 'traffic'}
-        onClick={() => setDetailTab('traffic')}
-      >
-        Tráfego
-      </button>
-      <button
-        aria-pressed={detailTab === 'information'}
-        onClick={() => setDetailTab('information')}
-      >
-        Informações e ping
-      </button>
-    </nav>
+    <Tabs
+      label="Detalhes da sessão"
+      items={[
+        ['traffic', 'Tráfego'],
+        ['information', 'Informações'],
+        ['link', 'Enlace'],
+      ]}
+      value={detailTab}
+      onChange={setDetailTab}
+    />
   );
 }
-
 export function PPPoESessionDetail(p: {
   selected: PPRow;
   current: PPObservation;
   detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
-  detailTab: 'traffic' | 'information';
-  setDetailTab: (t: 'traffic' | 'information') => void;
+  detailTab: 'traffic' | 'information' | 'link';
+  setDetailTab: (t: 'traffic' | 'information' | 'link') => void;
   profile: string;
   activation: string;
   device: Device;
@@ -190,25 +112,60 @@ export function PPPoESessionDetail(p: {
     openEquipment,
   } = p;
   return (
-    <aside aria-label="Detalhes da sessão">
-      <h2 tabIndex={-1} ref={detailHeadingRef}>
-        {selected.login}
-      </h2>
+    <aside className="drawer session-panel" aria-label="Detalhes da sessão">
+      <div className="dh">
+        <h2 tabIndex={-1} ref={detailHeadingRef}>
+          {selected.login}
+        </h2>
+        <Button
+          label="Fechar detalhe"
+          onClick={() => {
+            ++detailIntentRef.current;
+            select(undefined);
+            detailTriggerRef.current?.focus();
+          }}
+        >
+          ×
+        </Button>
+      </div>
       <SessionDetailNav detailTab={detailTab} setDetailTab={setDetailTab} />
       {detailTab === 'traffic' ? (
         selected.state === 'OFFLINE' ? (
-          <p>Tráfego indisponível: sessão OFFLINE.</p>
+          <p>Sem leitura: sessão OFFLINE</p>
         ) : (
-          <PPPoEReadPanel
-            profile={profile}
-            activation={activation}
-            device={device}
-            observation={current.observation_id}
-            rows={[selected.row_id]}
-            traffic
-            blocked={disabled}
-          />
+          <>
+            <PPPoEReadPanel
+              profile={profile}
+              activation={activation}
+              device={device}
+              observation={current.observation_id}
+              rows={[selected.row_id]}
+              traffic
+              blocked={disabled}
+            />
+            <PPPoEReadPanel
+              profile={profile}
+              activation={activation}
+              device={device}
+              observation={current.observation_id}
+              rows={[selected.row_id]}
+              allowTop
+              bandwidthOnly
+              blocked={disabled}
+            />
+          </>
         )
+      ) : detailTab === 'link' ? (
+        <RadioLinkPanel
+          profile={profile}
+          activation={activation}
+          device={device}
+          observation={current.observation_id}
+          row={selected.row_id}
+          pppoeUptime={formatPPUptime(selected.uptime)}
+          blocked={disabled || selected.state === 'OFFLINE'}
+          onOpenEquipment={openEquipment}
+        />
       ) : (
         <SessionInformationTab
           selected={selected}
@@ -221,19 +178,9 @@ export function PPPoESessionDetail(p: {
           openEquipment={openEquipment}
         />
       )}
-      <button
-        onClick={() => {
-          ++detailIntentRef.current;
-          select(undefined);
-          detailTriggerRef.current?.focus();
-        }}
-      >
-        Fechar detalhe
-      </button>
     </aside>
   );
 }
-
 export function PPPoEPairDetail(p: {
   pair: { left?: PPRow; right?: PPRow };
   pairHeadingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -266,7 +213,8 @@ export function PPPoEPairDetail(p: {
           )}
         </div>
       ))}
-      <button
+      <Button
+        type="submit"
         onClick={() => {
           ++detailIntentRef.current;
           setPair(undefined);
@@ -274,11 +222,10 @@ export function PPPoEPairDetail(p: {
         }}
       >
         Fechar par
-      </button>
+      </Button>
     </aside>
   );
 }
-
 function formatSideSummary(row?: Partial<PPRow>, emptyLabel = 'Ausente') {
   if (!row) return emptyLabel;
   const uptimeText = row.uptime
@@ -287,7 +234,6 @@ function formatSideSummary(row?: Partial<PPRow>, emptyLabel = 'Ausente') {
   const prefix = `${row.login || 'Indisponível'} · ${row.address || 'IP indisponível'}`;
   return `${prefix} · ${row.caller_id || 'Caller ID indisponível'} · ${uptimeText} · ${row.state || 'ONLINE'}`;
 }
-
 function CompareControls(p: {
   base: string;
   setBase: (v: string) => void;
@@ -301,7 +247,7 @@ function CompareControls(p: {
     <>
       <label>
         Referência para comparar
-        <select
+        <Select
           value={p.base}
           onChange={(e) => {
             p.setBase(e.target.value);
@@ -315,7 +261,7 @@ function CompareControls(p: {
               {formatDate(ref.created_at)} · {ref.count} sessões
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       <p>
         Ausência nesta leitura não comprova instante ou causa de queda. IDs e
@@ -323,7 +269,7 @@ function CompareControls(p: {
       </p>
       <label>
         Categoria
-        <select
+        <Select
           value={p.category}
           onChange={(e) => p.onChangeCategory(e.target.value)}
         >
@@ -333,12 +279,11 @@ function CompareControls(p: {
               {label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
     </>
   );
 }
-
 function CompareDeltaItem({
   d,
   openPair,
@@ -358,13 +303,12 @@ function CompareDeltaItem({
       </span>
       {d.address_changed ? ' · IP alterado' : ''}
       {d.caller_changed ? ' · Caller ID alterado' : ''}
-      <button onClick={(e) => void openPair(d, e.currentTarget)}>
+      <Button type="submit" onClick={(e) => void openPair(d, e.currentTarget)}>
         Detalhar par
-      </button>
+      </Button>
     </div>
   );
 }
-
 export function PPPoECompareView(p: {
   base: string;
   setBase: (v: string) => void;
@@ -399,7 +343,6 @@ export function PPPoECompareView(p: {
     </>
   );
 }
-
 function ReferenceItem({
   refItem,
   disabled,
@@ -414,17 +357,17 @@ function ReferenceItem({
       <span>
         {formatDate(refItem.created_at)} · {refItem.count} sessões
       </span>
-      <button
+      <Button
+        type="submit"
         disabled={disabled}
         aria-label={'Excluir referência ' + refItem.reference_id.slice(0, 8)}
         onClick={() => remove(refItem)}
       >
         Excluir referência
-      </button>
+      </Button>
     </div>
   );
 }
-
 export function PPPoEReferencesView(p: {
   current?: PPObservation;
   disabled: boolean;
@@ -457,9 +400,14 @@ export function PPPoEReferencesView(p: {
             Leitura atual: {formatDate(current.provenance.ended_at)} ·{' '}
             {current.count} registros
           </p>
-          <button className="primary" disabled={disabled} onClick={save}>
+          <Button
+            type="submit"
+            className="primary"
+            disabled={disabled}
+            onClick={save}
+          >
             Salvar referência desta leitura
-          </button>
+          </Button>
         </>
       )}
       <h2 tabIndex={-1} ref={referencesHeadingRef}>
@@ -469,14 +417,15 @@ export function PPPoEReferencesView(p: {
         <p role="status">Carregando referências…</p>
       )}
       {referencesState === 'error' && !initialFailed && (
-        <button
+        <Button
+          type="submit"
           onClick={() => {
             setError('');
             bump((n) => n + 1);
           }}
         >
           Recarregar referências
-        </button>
+        </Button>
       )}
       {referencesState === 'ready' && !savedReferences.length && (
         <p>Nenhuma referência salva.</p>

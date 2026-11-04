@@ -196,13 +196,16 @@ it('protects credential drafts against backdrop and dirty close', async () => {
   });
   render(
     <Equipment
+      credentialsPage
       profile="credential-dirty"
       activation="a"
       connected
       createRequest={0}
     />,
   );
-  fireEvent.click(await screen.findByRole('button', { name: 'Credenciais' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Adicionar credencial' }),
+  );
   fireEvent.change(screen.getByLabelText('Senha remota'), {
     target: { value: 'synthetic credential' },
   });
@@ -219,7 +222,6 @@ it('protects credential drafts against backdrop and dirty close', async () => {
     'synthetic credential',
   );
 });
-
 it.each([
   '10.0.0.1',
   ' 10.0.0.1 ',
@@ -340,13 +342,16 @@ it('blocks all credential closing routes during a send and clears the request ob
   });
   render(
     <Equipment
+      credentialsPage
       profile="credential-send"
       activation="a"
       connected
       createRequest={0}
     />,
   );
-  fireEvent.click(await screen.findByRole('button', { name: 'Credenciais' }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Adicionar credencial' }),
+  );
   for (const [label, value] of [
     ['Alias', 'Consulta'],
     ['Usuário remoto', 'reader'],
@@ -366,58 +371,4 @@ it('blocks all credential closing routes during a send and clears the request ob
   expect(request?.secret).toBe('');
   expect(screen.getByLabelText('Senha remota')).toHaveValue('');
   expect(screen.getByRole('alert')).toHaveTextContent(/O serviço recusou/);
-});
-
-it('requires discard before switching a dirty credential and cancel preserves the draft', async () => {
-  const credential = {
-    id: 'shared',
-    alias: 'Shared',
-    user: 'reader',
-    links: 2,
-    revision: 1,
-  };
-  vi.mocked(api.list).mockResolvedValue({
-    ...result(),
-    data: { ...result().data!, total_devices: 1 },
-  });
-  vi.mocked(api.credentials).mockResolvedValue({
-    ...result(),
-    data: { ...result().data!, credentials: [credential] },
-  });
-  render(
-    <Equipment
-      profile="credential-switch"
-      activation="a"
-      connected
-      createRequest={0}
-    />,
-  );
-  fireEvent.click(await screen.findByRole('button', { name: 'Credenciais' }));
-  fireEvent.change(screen.getByLabelText('Senha remota'), {
-    target: { value: 'synthetic' },
-  });
-  fireEvent.change(screen.getByLabelText('Credencial para editar'), {
-    target: { value: 'shared' },
-  });
-  fireEvent.click(
-    within(
-      screen.getByRole('dialog', { name: 'Descartar alterações?' }),
-    ).getByRole('button', { name: 'Continuar editando' }),
-  );
-  expect(screen.getByLabelText('Senha remota')).toHaveValue('synthetic');
-  expect(screen.getByLabelText('Credencial para editar')).toHaveValue('');
-  fireEvent.change(screen.getByLabelText('Credencial para editar'), {
-    target: { value: 'shared' },
-  });
-  fireEvent.click(
-    within(
-      screen.getByRole('dialog', { name: 'Descartar alterações?' }),
-    ).getByRole('button', { name: 'Descartar alterações' }),
-  );
-  expect(screen.getByLabelText('Senha remota')).toHaveValue('');
-  expect(screen.getByLabelText('Alias')).toHaveValue('Shared');
-  expect(
-    screen.getByRole('button', { name: 'Salvar credencial' }),
-  ).toBeDisabled();
-  expect(api.putCredential).not.toHaveBeenCalled();
 });

@@ -1,14 +1,13 @@
+import { Button } from './ui/Button';
+import { DataTable } from './ui/DataTable';
 import { Fragment } from 'react';
 import {
   exactNumber,
   exactRate,
   exactVolume,
-  formatAtScale,
-  formatDuration,
+  formatVolume,
   formatMetric,
   formatRate,
-  formatVolume,
-  networkScale,
   uptimeTitle,
 } from './network-format';
 import { formatPPUptime } from './pppoe-format';
@@ -18,111 +17,6 @@ import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
 
 export function RateValue({ rate }: { rate?: PPRate }) {
   return <span title={exactRate(rate)}>{formatRate(rate)}</span>;
-}
-
-export function PPTrafficChart({ row }: { row: PPReadRow }) {
-  const t = row.traffic;
-  if (!t) return <p>Tráfego indisponível para esta sessão.</p>;
-  const max = Math.max(
-    1,
-    ...t.points.flatMap((p) => (p.gap ? [] : [p.d || 0, p.u || 0])),
-  );
-  const end = Math.max(5000, ...t.points.map((p) => p.t));
-  const scale = networkScale(max, 'rate');
-  const paths = (field: 'd' | 'u') => {
-    const pList: string[] = [];
-    let cur = '';
-    for (const p of t.points) {
-      if (p.gap || p[field] === undefined) {
-        if (cur) pList.push(cur);
-        cur = '';
-        continue;
-      }
-      cur +=
-        (cur ? ' L ' : 'M ') +
-        (78 + (p.t / end) * 522).toFixed(1) +
-        ' ' +
-        (135 - (p[field]! / max) * 125).toFixed(1);
-    }
-    if (cur) pList.push(cur);
-    return pList;
-  };
-  return (
-    <section aria-label={'Resumo de tráfego de ' + row.login}>
-      <h4>{row.login}</h4>
-      <p title={exactRate(max)}>
-        Escala: 0–{formatAtScale(max, scale)} · download / upload
-      </p>
-      <svg
-        viewBox="0 0 600 150"
-        role="img"
-        aria-label={'Gráfico de tráfego de ' + row.login}
-        style={{ width: '100%', maxHeight: 180 }}
-      >
-        <title>
-          Download TX e upload RX; interrupções são lacunas, sem interpolação.
-        </title>
-        {[1, 0.5, 0].map((part) => (
-          <text
-            key={part}
-            x="0"
-            y={part === 1 ? 12 : part === 0 ? 147 : 77}
-            fill="var(--muted)"
-            fontSize="11"
-          >
-            {formatAtScale(max * part, scale)}
-          </text>
-        ))}
-        {paths('d').map((d, i) => (
-          <path
-            key={'d' + i}
-            d={d}
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth="2"
-          />
-        ))}
-        {paths('u').map((d, i) => (
-          <path
-            key={'u' + i}
-            d={d}
-            fill="none"
-            stroke="var(--muted)"
-            strokeWidth="2"
-            strokeDasharray="5 3"
-          />
-        ))}
-      </svg>
-      <p>
-        Download (TX): <RateValue rate={row.download} /> · Upload (RX):{' '}
-        <RateValue rate={row.upload} />
-      </p>
-      <p>
-        Média da observação: download <RateValue rate={t.average_download} /> /
-        upload <RateValue rate={t.average_upload} /> · pico amostrado: download{' '}
-        <RateValue rate={t.peak_download} /> / upload{' '}
-        <RateValue rate={t.peak_upload} />
-      </p>
-      <p>
-        Total {t.gaps ? 'parcial ' : ''}da observação:{' '}
-        <span
-          title={`${exactVolume(t.download_bytes)} download / ${exactVolume(t.upload_bytes)} upload`}
-        >
-          {t.covered_ns > 0 && !t.overflow
-            ? `${formatVolume(t.download_bytes)} download / ${formatVolume(t.upload_bytes)} upload`
-            : 'Indisponível'}
-        </span>{' '}
-        · tempo coberto{' '}
-        <span title={exactNumber(t.covered_ns / 1e9, 's')}>
-          {formatDuration(t.covered_ns / 1e9)}
-        </span>
-        {t.gaps
-          ? ` · ${t.gaps} lacuna(s); sem estimar os intervalos ausentes.`
-          : ''}
-      </p>
-      {t.overflow && <p role="alert">Limite numérico: resumo indisponível.</p>}
-    </section>
-  );
 }
 
 export function PPSecretEvidence({ result }: { result: PPReadResult }) {
@@ -191,8 +85,8 @@ export function PPHealthTables({ result }: { result: PPReadResult }) {
             : 'Pools disponíveis em outra página.'}
         </p>
       ) : (
-        <div className="table-scroll" tabIndex={0} aria-label="Pools IPv4">
-          <table className="app-table">
+        <div className="table-region" tabIndex={0} aria-label="Pools IPv4">
+          <DataTable className="data-table">
             <thead>
               <tr>
                 <th>Pool</th>
@@ -209,7 +103,7 @@ export function PPHealthTables({ result }: { result: PPReadResult }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
       <h4>Interfaces estáticas</h4>
@@ -227,11 +121,11 @@ export function PPHealthTables({ result }: { result: PPReadResult }) {
         </p>
       ) : (
         <div
-          className="table-scroll"
+          className="table-region"
           tabIndex={0}
           aria-label="Interfaces estáticas"
         >
-          <table className="app-table">
+          <DataTable className="data-table">
             <thead>
               <tr>
                 <th>Interface</th>
@@ -264,7 +158,7 @@ export function PPHealthTables({ result }: { result: PPReadResult }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         </div>
       )}
     </>
@@ -279,54 +173,76 @@ function PPReadTriggerButtons(p: {
   return (
     <>
       {pProps.monitoring && (
-        <button
+        <Button
+          type="submit"
           className={pProps.summaryOnly ? undefined : 'primary'}
           disabled={s.locked}
           onClick={() => void s.start('operations')}
         >
           Atualizar monitoramento
-        </button>
+        </Button>
       )}
       {pProps.health && (
-        <button disabled={s.locked} onClick={() => void s.start('health')}>
-          Consultar pools e interfaces
-        </button>
+        <Button
+          type="submit"
+          disabled={s.locked}
+          onClick={() => void s.start('health')}
+        >
+          Atualizar
+        </Button>
       )}
       {pProps.rows.length > 0 && !pProps.traffic && (
         <>
-          <button disabled={s.locked} onClick={() => void s.start('bandwidth')}>
-            {pProps.rows.length === 1
-              ? 'Medir banda do assinante'
-              : 'Medir banda da página'}
-          </button>
-          <button
+          <Button
+            type="submit"
             disabled={s.locked}
-            onClick={() => void s.start(RadioModes.live)}
+            onClick={() => void s.start('bandwidth')}
           >
-            Observar ao vivo por até 60 s
-          </button>
+            {pProps.rows.length === 1 ? 'Medir banda' : 'Medir banda da página'}
+          </Button>
+          {!pProps.bandwidthOnly && (
+            <Button
+              type="submit"
+              disabled={s.locked}
+              onClick={() => void s.start(RadioModes.live)}
+            >
+              Ver ao vivo
+            </Button>
+          )}
         </>
       )}
       {pProps.traffic &&
         !s.locked &&
         (s.error || s.result || s.stoppedTraffic) && (
-          <button onClick={() => void s.start('traffic')}>
-            Iniciar nova observação
-          </button>
+          <Button type="submit" onClick={() => void s.start('traffic')}>
+            Ver ao vivo
+          </Button>
         )}
       {pProps.allowTop && (
-        <button disabled={s.locked} onClick={() => void s.start('top')}>
-          Buscar top consumo
-        </button>
+        <Button
+          type="submit"
+          disabled={s.locked}
+          onClick={() => void s.start('top')}
+        >
+          Top consumo
+        </Button>
       )}
       {pProps.logRow && (
         <>
-          <button disabled={s.locked} onClick={() => void s.start('log')}>
-            Consultar log PPP
-          </button>
-          <button disabled={s.locked} onClick={() => void s.start('secret')}>
+          <Button
+            type="submit"
+            disabled={s.locked}
+            onClick={() => void s.start('log')}
+          >
+            Log PPP
+          </Button>
+          <Button
+            type="submit"
+            disabled={s.locked}
+            onClick={() => void s.start('secret')}
+          >
             Ver evidência do secret
-          </button>
+          </Button>
         </>
       )}
     </>
@@ -355,14 +271,18 @@ export function PPReadActionButtons(p: {
     <>
       <PPReadTriggerButtons s={s} pProps={pProps} />
       {(s.job || s.pending || s.starting) && (
-        <button disabled={s.cancelling} onClick={() => void s.cancel()}>
+        <Button
+          type="submit"
+          disabled={s.cancelling}
+          onClick={() => void s.cancel()}
+        >
           {cancelText}
-        </button>
+        </Button>
       )}
       {(s.error || s.deadlineReached) && s.job && (
-        <button onClick={() => s.retryPoll((n) => n + 1)}>
-          Consultar estado da leitura
-        </button>
+        <Button type="submit" onClick={() => s.retryPoll((n) => n + 1)}>
+          Conferir andamento
+        </Button>
       )}
     </>
   );
@@ -438,8 +358,8 @@ const PPP_LOG_LABELS: Record<string, string> = {
 
 export function PPReadLogTable({ rows }: { rows: PPReadResult['rows'] }) {
   return (
-    <div className="table-scroll" tabIndex={0} aria-label="Eventos PPP">
-      <table className="app-table">
+    <div className="table-region" tabIndex={0} aria-label="Eventos PPP">
+      <DataTable className="data-table">
         <thead>
           <tr>
             <th>Horário no equipamento</th>
@@ -457,7 +377,7 @@ export function PPReadLogTable({ rows }: { rows: PPReadResult['rows'] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }
@@ -506,11 +426,11 @@ export function PPReadBandwidthTable(p: {
 }) {
   return (
     <div
-      className="table-scroll"
+      className="table-region"
       tabIndex={0}
       aria-label="Tabela de banda e consumo"
     >
-      <table className="app-table">
+      <DataTable className="data-table">
         <thead>
           <tr>
             <th>Login</th>
@@ -529,7 +449,7 @@ export function PPReadBandwidthTable(p: {
             />
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }

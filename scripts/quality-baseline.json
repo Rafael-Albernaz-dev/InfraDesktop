@@ -350,6 +350,13 @@
     "MaxComplexity": 0,
     "Functions": null
   },
+  "frontend/src/pppoe-export.ts": {
+    "Lines": 64,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
   "frontend/src/pppoe-format.ts": {
     "Lines": 8,
     "LongLines": 0,

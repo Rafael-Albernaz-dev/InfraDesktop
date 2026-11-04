@@ -1,3 +1,9 @@
+import {
+  RadioLinkDeviceSelect,
+  RadioManualIdentityFields,
+} from './radio-link-fields';
+
+import { Button } from './ui/Button';
 import type { RadioLinkState } from './radio-link-state';
 import { RadioFamilies, RadioRoles } from './radio-contract';
 import { formatMacAddress, formatRadioFamily } from './network-format';
@@ -20,13 +26,14 @@ export function RadioLinkProposal({ state }: { state: RadioLinkState }) {
             {proposal.choice.interface} · BSSID{' '}
             {formatMacAddress(proposal.choice.bssid)}
           </p>
-          <button
+          <Button
+            type="submit"
             className="primary"
             disabled={blocked || saving || !proposal.credential_id}
             onClick={() => void confirm(proposal.choice)}
           >
             Confirmar enlace sugerido
-          </button>
+          </Button>
           {!proposal.credential_id && (
             <p>
               Selecione a credencial padrão de CPE em Equipamentos para
@@ -44,18 +51,19 @@ export function RadioLinkEditActions({ state }: { state: RadioLinkState }) {
   return (
     <>
       {!radio.busy && !editing && !radio.error && (
-        <button
+        <Button
+          type="submit"
           className={link || proposal ? '' : 'primary'}
           disabled={blocked || saving}
           onClick={() => void edit()}
         >
           {link ? 'Revisar vínculo' : 'Vincular CPE e AP'}
-        </button>
+        </Button>
       )}
       {!link && radio.error && !radio.busy && (
-        <button className="primary" onClick={reopen}>
+        <Button type="submit" className="primary" onClick={reopen}>
           Reabrir vínculo armazenado
-        </button>
+        </Button>
       )}
     </>
   );
@@ -74,7 +82,8 @@ export function RadioLegacySuggestions({ state }: { state: RadioLinkState }) {
               usar.
             </p>
             {radio.view.suggestions.map((s) => (
-              <button
+              <Button
+                type="submit"
                 key={s.ap_id + '|' + s.interface + '|' + s.mac}
                 disabled={blocked || saving}
                 onClick={() =>
@@ -90,7 +99,7 @@ export function RadioLegacySuggestions({ state }: { state: RadioLinkState }) {
                 }
               >
                 Confirmar sugestão {s.mac} · {s.interface}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -127,69 +136,15 @@ export function RadioManualLinkForm({ state }: { state: RadioLinkState }) {
               Use MAC e BSSID conferidos no rádio. SSID e nome não provam o
               vínculo.
             </p>
-            <button className="primary">Confirmar vínculo</button>
-            <button type="button" onClick={() => setEditing(false)}>
+            <Button type="submit" className="primary">
+              Confirmar vínculo
+            </Button>
+            <Button type="button" onClick={() => setEditing(false)}>
               Cancelar
-            </button>
+            </Button>
           </fieldset>
         </form>
       )}
-    </>
-  );
-}
-function RadioLinkDeviceSelect({
-  state,
-  field,
-  role,
-  label,
-}: {
-  state: RadioLinkState;
-  field: 'cpe_id' | 'ap_id';
-  role: string;
-  label: string;
-}) {
-  const { choice, setChoice, devices } = state;
-  return (
-    <label>
-      {label}{' '}
-      <select
-        required
-        aria-label={label + ' do vínculo'}
-        value={choice[field]}
-        onChange={(e) => setChoice({ ...choice, [field]: e.target.value })}
-      >
-        <option value="">Selecione</option>
-        {devices
-          .filter((d) => d.role === role)
-          .map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name} · {d.address}
-            </option>
-          ))}
-      </select>
-    </label>
-  );
-}
-function RadioManualIdentityFields({ state }: { state: RadioLinkState }) {
-  const { choice, setChoice } = state;
-  return (
-    <>
-      {[
-        ['mac', 'MAC wireless da CPE'],
-        ['interface', 'Interface do AP'],
-        ['bssid', 'BSSID do AP'],
-      ].map(([key, label]) => (
-        <label key={key}>
-          {label}
-          <input
-            required
-            aria-label={label}
-            maxLength={80}
-            value={choice[key as 'mac' | 'interface' | 'bssid']}
-            onChange={(e) => setChoice({ ...choice, [key]: e.target.value })}
-          />
-        </label>
-      ))}
     </>
   );
 }

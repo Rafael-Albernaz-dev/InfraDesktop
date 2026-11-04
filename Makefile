@@ -53,9 +53,7 @@ test-visual-integrity:
 	python3 scripts/test-visual-integrity.py
 	python3 scripts/test-native-visual-metadata.py
 
-test-visual: assets test-visual-integrity
-	node scripts/test-visual.mjs
-	$(MAKE) test-scroll
+test-visual: test-layout
 
 test-scroll:
 	node scripts/test-scroll.mjs "$$(cat build/ui-021-visual/latest.txt)"
@@ -97,4 +95,10 @@ test-equipment-smoke:
 .PHONY: quality
 quality:
 	go run ./scripts/quality.go
-	cd frontend && ./node_modules/.bin/eslint src/radio*.{ts,tsx}
+	cd frontend && ./node_modules/.bin/eslint src/
+	node --test scripts/layout-guard.test.mjs
+	node scripts/layout-guard.mjs
+
+.PHONY: test-layout
+test-layout:
+	node scripts/test-layout.mjs

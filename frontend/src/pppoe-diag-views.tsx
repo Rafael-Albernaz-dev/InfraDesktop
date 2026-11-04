@@ -1,16 +1,17 @@
+import { PingResultDetails } from './pppoe-ping-result';
+import { Button } from './ui/Button';
+import { Select } from './ui/Select';
+import { HeaderAction } from './ui/HeaderAction';
 import { useState } from 'react';
 import type { Device } from './equipment-api';
 import {
   exactNumber,
   formatDate,
-  formatLatency,
   formatLatencyRange,
-  formatMetric,
   uptimeTitle,
 } from './network-format';
 import type { PDRow } from './presentation';
 import { diagnosticMessage, useDiagnostic } from './pppoe-diag-state';
-
 const state = (value?: boolean) =>
   value === undefined ? 'Indisponível' : value ? 'Sim' : 'Não';
 const relation: Record<string, string> = {
@@ -20,7 +21,6 @@ const relation: Record<string, string> = {
   cycle: 'Ciclo na configuração',
   depth_limited: 'Encadeamento excede o limite',
 };
-
 function RadiusCounters({
   counters,
 }: {
@@ -54,7 +54,6 @@ function RadiusCounters({
     </dl>
   );
 }
-
 function DiagnosticRadiusRow({ row }: { row: PDRow }) {
   return (
     <article className="pppoe-diagnostic-row">
@@ -72,7 +71,6 @@ function DiagnosticRadiusRow({ row }: { row: PDRow }) {
     </article>
   );
 }
-
 function DiagnosticServiceRow({ row }: { row: PDRow }) {
   const kindLabel =
     row.kind === 'service'
@@ -116,7 +114,6 @@ function DiagnosticServiceRow({ row }: { row: PDRow }) {
     </article>
   );
 }
-
 export function DiagnosticRow({ row }: { row: PDRow }) {
   if (row.not_seen_since) {
     return (
@@ -143,9 +140,7 @@ export function DiagnosticRow({ row }: { row: PDRow }) {
   if (row.kind === 'radius') return <DiagnosticRadiusRow row={row} />;
   return <DiagnosticServiceRow row={row} />;
 }
-
 type DiagView = ReturnType<typeof useDiagnostic>;
-
 function DiagnosticListContent(p: {
   view: DiagView;
   scope: 'catalog' | 'radius';
@@ -164,7 +159,7 @@ function DiagnosticListContent(p: {
       {scope === 'catalog' && (
         <label>
           Filtrar por tipo
-          <select
+          <Select
             aria-label="Filtrar por tipo"
             value={kind}
             onChange={(e) => {
@@ -178,7 +173,7 @@ function DiagnosticListContent(p: {
             <option value="vlan">VLAN</option>
             <option value="service">Serviço PPPoE</option>
             <option value="wlan">Wireless</option>
-          </select>
+          </Select>
         </label>
       )}
       <p>
@@ -221,7 +216,6 @@ function DiagnosticListContent(p: {
     </>
   );
 }
-
 export function PPPoEDiagnostics({
   profile,
   activation,
@@ -263,25 +257,26 @@ export function PPPoEDiagnostics({
       aria-busy={view.loading || view.pageLoading}
     >
       <h2>{title}</h2>
-      <button
-        className="primary"
-        disabled={
-          blocked ||
-          view.loading ||
-          view.starting ||
-          !!view.job ||
-          !device.active ||
-          !device.fingerprint
-        }
-        onClick={() => void view.start()}
-      >
-        {actionLabel}
-      </button>
-      {view.job && (
-        <button onClick={() => void view.cancel()}>Cancelar consulta</button>
-      )}
+      <HeaderAction>
+        <Button
+          type="submit"
+          className="primary"
+          disabled={
+            blocked ||
+            view.loading ||
+            view.starting ||
+            !device.active ||
+            !device.fingerprint
+          }
+          onClick={() => (view.job ? void view.cancel() : void view.start())}
+        >
+          {view.job ? 'Parar' : actionLabel}
+        </Button>
+      </HeaderAction>
       {view.statusFailed && (
-        <button onClick={view.retryStatus}>Consultar estado novamente</button>
+        <Button type="submit" onClick={view.retryStatus}>
+          Consultar estado novamente
+        </Button>
       )}
       {view.error && <p role="alert">{view.error}</p>}
       {view.loading && <p role="status">Carregando diagnóstico armazenado…</p>}
@@ -314,79 +309,23 @@ export function PPPoEDiagnostics({
       />
       {view.pageError && <p role="alert">{view.pageError}</p>}
       {(view.error || view.pageError) && (
-        <button onClick={view.reopen}>Reabrir dados armazenados</button>
+        <Button type="submit" onClick={view.reopen}>
+          Reabrir dados armazenados
+        </Button>
       )}
       <div className="pppoe-actions">
         {view.cursor && (
-          <button onClick={view.first}>Início do diagnóstico</button>
+          <Button type="submit" onClick={view.first}>
+            Início do diagnóstico
+          </Button>
         )}
         {!view.pageLoading && !view.pageError && view.next && (
-          <button onClick={view.more}>Próxima página do diagnóstico</button>
+          <Button type="submit" onClick={view.more}>
+            Próxima página do diagnóstico
+          </Button>
         )}
       </div>
     </section>
-  );
-}
-
-function PingResultDetails(p: {
-  result: NonNullable<PDRow['ping']>;
-  metaDate: string;
-}) {
-  const { result, metaDate } = p;
-  const baselineDiff =
-    result.baseline_median_ns !== undefined &&
-    result.baseline_median_ns > 0 &&
-    result.avg_ns !== undefined
-      ? ` · RTT médio ${result.avg_ns >= result.baseline_median_ns ? '+' : '−'}` +
-        `${formatMetric((Math.abs(result.avg_ns - result.baseline_median_ns) * 100) / result.baseline_median_ns, '%')}`
-      : '';
-  const minText = formatLatency(result.min_ns);
-  const avgText = formatLatency(result.avg_ns);
-  const maxText = formatLatency(result.max_ns);
-  const jitterText = formatLatency(result.jitter_ns);
-  const baseMedText = formatLatency(result.baseline_median_ns);
-  const samplesText =
-    result.baseline_samples !== undefined
-      ? `${result.baseline_samples}/10 amostras anteriores disponíveis.`
-      : 'Histórico não registrado.';
-  return (
-    <>
-      <p>
-        Origem: {result.context} · {formatDate(metaDate)}
-      </p>
-      <p>
-        Enviados: {result.sent} · Recebidos: {result.received} · Perda:{' '}
-        {formatMetric(result.loss_percent, '%')}
-      </p>
-      <p>
-        RTT mínimo:{' '}
-        <span title={exactNumber(result.min_ns, 'ns')}>{minText}</span> · médio:{' '}
-        <span title={exactNumber(result.avg_ns, 'ns')}>{avgText}</span> ·
-        máximo: <span title={exactNumber(result.max_ns, 'ns')}>{maxText}</span>
-      </p>
-      <p>
-        Amostra de 3 probes · jitter:{' '}
-        <span title={exactNumber(result.jitter_ns, 'ns')}>{jitterText}</span>.
-      </p>
-      <p>
-        Mediana dos 10 pings anteriores bem-sucedidos deste alvo e sessão:{' '}
-        <span title={exactNumber(result.baseline_median_ns, 'ns')}>
-          {baseMedText}
-        </span>
-        {baselineDiff}. {samplesText} Histórico em memória desde o início do
-        serviço; perdas não entram na baseline.
-      </p>
-      <ol>
-        {result.probes.map((probe) => (
-          <li key={probe.sequence} value={probe.sequence + 1}>
-            {probe.status || 'Resposta ICMP'}
-            {probe.rtt_ns !== undefined
-              ? ` · ${formatLatency(probe.rtt_ns)}`
-              : ''}
-          </li>
-        ))}
-      </ol>
-    </>
   );
 }
 
@@ -429,7 +368,8 @@ export function PPPoEPing({
         3 pacotes · intervalo de 200 ms · contexto main, quando comprovado. A
         sessão é revalidada antes da sondagem.
       </p>
-      <button
+      <Button
+        type="submit"
         disabled={
           blocked ||
           view.loading ||
@@ -441,12 +381,16 @@ export function PPPoEPing({
         onClick={() => void view.start()}
       >
         {pingLabel}
-      </button>
+      </Button>
       {view.job && (
-        <button onClick={() => void view.cancel()}>Cancelar sondagem</button>
+        <Button type="submit" onClick={() => void view.cancel()}>
+          Cancelar sondagem
+        </Button>
       )}
       {view.statusFailed && (
-        <button onClick={view.retryStatus}>Consultar estado da sondagem</button>
+        <Button type="submit" onClick={view.retryStatus}>
+          Consultar estado da sondagem
+        </Button>
       )}
       {view.error && <p role="alert">{view.error}</p>}
       {view.pageError && <p role="alert">{view.pageError}</p>}
@@ -469,7 +413,9 @@ export function PPPoEPing({
         <p>Nenhuma sondagem armazenada para esta sessão.</p>
       )}
       {(view.error || view.pageError) && (
-        <button onClick={view.reopen}>Reabrir sondagem armazenada</button>
+        <Button type="submit" onClick={view.reopen}>
+          Reabrir sondagem armazenada
+        </Button>
       )}
       {result && view.meta && (
         <PingResultDetails

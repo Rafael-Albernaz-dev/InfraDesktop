@@ -1,8 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type { Credential, Device, Job } from './equipment-api';
 import { pendingStarts } from './equipment-receipts';
-
 function reconcileListedSelection(
   old: Device | undefined,
   devices: Device[],
@@ -11,7 +10,7 @@ function reconcileListedSelection(
   if (detailOpen) return old;
   const current =
     devices.find((d) => d.id === old?.id) ||
-    (old && detailOpen ? old : devices[0]);
+    (old && detailOpen ? old : undefined);
   return old &&
     current &&
     old.id === current.id &&
@@ -21,7 +20,6 @@ function reconcileListedSelection(
     ? old
     : current;
 }
-
 export function useDeviceListEffect(p: {
   profile: string;
   activation: string;
@@ -42,6 +40,10 @@ export function useDeviceListEffect(p: {
   setSelected: React.Dispatch<React.SetStateAction<Device | undefined>>;
 }) {
   const { generationRef } = p;
+  const detailOpen = useRef(p.detailOpen);
+  useEffect(() => {
+    detailOpen.current = p.detailOpen;
+  }, [p.detailOpen]);
   useEffect(() => {
     let stopped = false;
     const read = ++generationRef.current;
@@ -68,7 +70,7 @@ export function useDeviceListEffect(p: {
         p.setVault(r.data.vault_available);
         p.setReady(true);
         p.setSelected((old) =>
-          reconcileListedSelection(old, list, p.detailOpen),
+          reconcileListedSelection(old, list, detailOpen.current),
         );
       } catch {
         if (!stopped && read === generationRef.current)
@@ -86,7 +88,6 @@ export function useDeviceListEffect(p: {
     p.inactive,
     p.connected,
     p.refresh,
-    p.detailOpen,
     p.onTotal,
     generationRef,
     p.setListError,
@@ -98,7 +99,6 @@ export function useDeviceListEffect(p: {
     p.setSelected,
   ]);
 }
-
 export function useCredentialsCatalogEffect(p: {
   profile: string;
   activation: string;

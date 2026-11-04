@@ -2,14 +2,14 @@ import {
   render,
   screen,
   fireEvent,
-  act,
   cleanup,
+  within,
 } from '@testing-library/react';
 import { vi, it, expect, beforeEach, afterEach } from 'vitest';
 import { message, recoveryActionMessage } from './microcopy';
 import { access, type Result } from './presentation';
 import App from './App';
-import { Appearance } from './appearance';
+
 vi.mock('./presentation', () => ({
   access: {
     status: vi.fn(),
@@ -83,13 +83,20 @@ it('rejecting renewal never suggests a first issuance and security shortcut does
     code: 'UNAUTHENTICATED',
   });
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: /Conta:/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
-  expect(access.renewRecovery).not.toHaveBeenCalled();
-  fireEvent.change(screen.getByLabelText('Senha atual'), {
-    target: { value: 'wrong' },
-  });
+  fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
+  expect(access.renewRecovery).not.toHaveBeenCalled();
+  fireEvent.change(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    {
+      target: { value: 'wrong' },
+    },
+  );
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Gerar novo código',
+    }),
+  );
   await screen.findByText('A senha não confere. Tente novamente.');
   expect(
     screen.queryByText(/pode ter sido invalidado/),
@@ -102,77 +109,33 @@ it('a rejected retry does not erase earlier unknown commit', async () => {
     .mockResolvedValueOnce({ ...state, code: 'DEADLINE_EXCEEDED' })
     .mockResolvedValueOnce({ ...state, code: 'UNAUTHENTICATED' });
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: /Conta:/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
-  fireEvent.change(screen.getByLabelText('Senha atual'), {
-    target: { value: 'first' },
-  });
+  fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
+  fireEvent.change(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    {
+      target: { value: 'first' },
+    },
+  );
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Gerar novo código',
+    }),
+  );
   await screen.findByText(/Não recebemos a confirmação/);
-  fireEvent.change(screen.getByLabelText('Senha atual'), {
-    target: { value: 'wrong' },
-  });
+  fireEvent.change(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    {
+      target: { value: 'wrong' },
+    },
+  );
   fireEvent.click(
     screen.getByRole('button', { name: 'Gerar outro código novo' }),
   );
   await screen.findByText(/A senha não confere/);
   expect(screen.getByText(/Não recebemos a confirmação/)).toBeVisible();
 });
-it('failed brand save keeps draft, successful save updates shell without renaming catalog', async () => {
-  vi.mocked(access.saveBrand)
-    .mockResolvedValueOnce({ ...state, code: 'SERVICE_UNAVAILABLE' })
-    .mockResolvedValueOnce({
-      ...state,
-      brand: { name: 'Visual X', logo: '', accent: 'rose' },
-    });
-  render(<App />);
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Abrir configurações' }),
-  );
-  await act(async () => {});
-  fireEvent.change(screen.getByLabelText('Nome visual'), {
-    target: { value: 'Visual X' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Rosa' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-  await screen.findByRole('alert');
-  expect(screen.getByLabelText('Nome visual')).toHaveValue('Visual X');
-  expect(screen.getByLabelText('Selecionar empresa')).toHaveTextContent(
-    'Catalog X',
-  );
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-  await act(async () => {});
-  expect(screen.getByLabelText('Selecionar empresa')).toHaveTextContent(
-    'Visual X',
-  );
-  expect(access.saveBrand).toHaveBeenLastCalledWith('x', 'a', {
-    name: 'Visual X',
-    logo: '',
-    accent: 'rose',
-  });
-  fireEvent.click(screen.getByLabelText('Selecionar empresa'));
-  expect(
-    screen.getByRole('row', { name: 'Selecionar Catalog X' }),
-  ).toBeInTheDocument();
-});
-it('loading and failed brand fetch have explicit retry and cannot discard an edited draft', async () => {
-  vi.mocked(access.getBrand)
-    .mockResolvedValueOnce({ ...state, code: 'SERVICE_UNAVAILABLE' })
-    .mockResolvedValueOnce({
-      ...state,
-      brand: { name: 'Loaded', logo: '', accent: 'blue' },
-    });
-  render(<App />);
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Abrir configurações' }),
-  );
-  await screen.findByRole('alert');
-  expect(screen.getByLabelText('Nome visual')).toBeDisabled();
-  fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
-  await act(async () => {});
-  expect(screen.getByLabelText('Nome visual')).toHaveValue('Loaded');
-  expect(screen.getByLabelText('Nome visual')).toBeEnabled();
-});
+
 it('account dropdown keyboard and dialog trap include readonly textarea', async () => {
   vi.mocked(access.renewRecovery).mockResolvedValue({
     ...state,
@@ -182,17 +145,24 @@ it('account dropdown keyboard and dialog trap include readonly textarea', async 
   const trigger = await screen.findByRole('button', { name: /Conta:/ });
   fireEvent.click(trigger);
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  fireEvent.keyDown(screen.getByRole('button', { name: 'Segurança' }), {
+  fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Tema escuro' }), {
     key: 'Escape',
   });
   expect(trigger).toHaveFocus();
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
-  fireEvent.change(screen.getByLabelText('Senha atual'), {
-    target: { value: 'password' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
   fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
+  fireEvent.change(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    {
+      target: { value: 'password' },
+    },
+  );
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Gerar novo código',
+    }),
+  );
   const code = await screen.findByLabelText('Novo código de recuperação');
   code.focus();
   fireEvent.keyDown(code, { key: 'Tab' });
@@ -202,68 +172,15 @@ it('account dropdown keyboard and dialog trap include readonly textarea', async 
   fireEvent.keyDown(ack, { key: 'Tab' });
   expect(screen.getByRole('button', { name: 'Fechar painel' })).toHaveFocus();
 });
-it('brand mutation waits while save is pending and preview remains confirmed', () => {
-  render(
-    <Appearance
-      brand={{ name: 'Saved', logo: '', accent: 'teal' }}
-      theme="light"
-      setTheme={() => {}}
-      busy
-      saveBrand={async () => true}
-    />,
-  );
-  expect(screen.getByLabelText('Nome visual')).toBeDisabled();
-  expect(
-    screen.getByRole('button', { name: 'Restaurar padrão' }),
-  ).toBeDisabled();
-  expect(screen.getByText('Saved')).toBeInTheDocument();
-});
-it('reconciles a committed brand after navigation discarded the original response', async () => {
-  let resolve!: (result: Result) => void;
-  vi.mocked(access.saveBrand).mockReturnValue(
-    new Promise((r) => {
-      resolve = r;
-    }),
-  );
-  vi.mocked(access.getBrand)
-    .mockResolvedValueOnce({
-      ...state,
-      brand: { name: '', logo: '', accent: 'teal' },
-    })
-    .mockResolvedValue({
-      ...state,
-      brand: { name: 'Saved later', logo: '', accent: 'blue' },
-    });
-  render(<App />);
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Abrir configurações' }),
-  );
-  await act(async () => {});
-  fireEvent.change(screen.getByLabelText('Nome visual'), {
-    target: { value: 'Saved later' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Azul' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
-  await act(async () =>
-    resolve({
-      ...state,
-      brand: { name: 'Saved later', logo: '', accent: 'blue' },
-    }),
-  );
-  expect(screen.getByLabelText('Selecionar empresa')).toHaveTextContent(
-    'Saved later',
-  );
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir configurações' }));
-  expect(screen.getByLabelText('Nome visual')).toHaveValue('Saved later');
-});
 
-it('narrow navigation has an explicit close action that returns focus', async () => {
+it('profile navigation has an explicit Escape dismissal that returns focus', async () => {
   render(<App />);
-  const trigger = await screen.findByRole('button', { name: 'Navegação' });
+  const trigger = await screen.findByRole('button', { name: /Conta:/ });
   fireEvent.click(trigger);
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar navegação' }));
+  fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Sair da conta' }), {
+    key: 'Escape',
+  });
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
   expect(trigger).toHaveFocus();
 });

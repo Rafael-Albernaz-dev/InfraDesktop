@@ -1,3 +1,4 @@
+import { beginAdd, openDeviceSheet } from './test-navigation';
 import {
   act,
   fireEvent,
@@ -127,7 +128,7 @@ for (const active of [true, false]) {
       render(
         <Equipment profile="X" activation="a" connected createRequest={0} />,
       );
-      await screen.findByRole('heading', { name: 'Router X' });
+      await openDeviceSheet('Router X');
       fireEvent.click(
         screen.getByRole('button', { name: 'Editar equipamento' }),
       );
@@ -173,9 +174,7 @@ for (const failure of ['SERVICE_UNAVAILABLE', 'reject']) {
       screen.queryByRole('heading', { name: 'Nenhum equipamento cadastrado' }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
-    expect(
-      await screen.findByRole('heading', { name: 'Router X' }),
-    ).toBeVisible();
+    expect(await openDeviceSheet('Router X')).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(api.list).toHaveBeenCalledTimes(2);
     expect(api.start).not.toHaveBeenCalled();
@@ -209,9 +208,9 @@ for (const changeSurface of [true, false]) {
     render(
       <Equipment profile="late" activation="a" connected createRequest={0} />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
+    await openDeviceSheet('Router X');
     fireEvent.click(
-      screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+      screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
     );
     await waitFor(() => expect(api.get).toHaveBeenCalled());
     if (changeSurface) {
@@ -303,7 +302,7 @@ it('persists a real form request with stable operation ID and explicit company c
     })
     .mockResolvedValueOnce(data());
   render(<Equipment profile="X" activation="a" connected createRequest={1} />);
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.change(screen.getByLabelText('Nome'), {
     target: { value: 'New destination' },
   });
@@ -351,9 +350,17 @@ it('shared credential replacement requires affected-link acknowledgement and cle
     ...data(),
     code: 'SERVICE_UNAVAILABLE',
   });
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
-  await screen.findByRole('heading', { name: 'Router X' });
-  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  render(
+    <Equipment
+      credentialsPage
+      profile="X"
+      activation="a"
+      connected
+      createRequest={0}
+    />,
+  );
+  await screen.findByRole('heading', { name: 'Credenciais' });
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar credencial' }));
   fireEvent.change(screen.getByLabelText('Credencial para editar'), {
     target: { value: 'credential' },
   });
@@ -374,15 +381,15 @@ it('shared credential replacement requires affected-link acknowledgement and cle
 });
 it('inactive filtering stays explicit; no remote work happens while listing or editing', async () => {
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   expect(api.start).not.toHaveBeenCalled();
   expect(api.inspect).not.toHaveBeenCalled();
-  fireEvent.change(screen.getByLabelText('Estado dos equipamentos'), {
-    target: { value: 'inactive' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));
   await waitFor(() =>
     expect(api.list).toHaveBeenLastCalledWith('X', 'a', '', 0, true),
   );
+  await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
   expect(api.start).not.toHaveBeenCalled();
 });
@@ -455,9 +462,7 @@ it('Q03 late X inventory and credential responses cannot populate the remounted 
   expect(api.credentials).toHaveBeenCalledTimes(2);
   expect(api.credentials).toHaveBeenCalledWith('X', 'a', 0);
   expect(api.credentials).toHaveBeenCalledWith('Y', 'b', 0);
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Adicionar equipamento' }),
-  );
+  await beginAdd();
   fireEvent.click(
     screen.getByRole('button', { name: 'Usar credencial existente' }),
   );
@@ -486,7 +491,7 @@ it('first acceptance is deliberate without an invented origin and failed accepta
     code: 'TRUST_CHANGED',
   });
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByRole('dialog', { name: 'Primeira conexão' });
   expect(api.start).not.toHaveBeenCalled();
@@ -510,7 +515,7 @@ it('first acceptance is deliberate without an invented origin and failed accepta
   expect(screen.getAllByRole('alert')).toHaveLength(1);
   expect(api.start).not.toHaveBeenCalled();
 });
-it('navigation opens into sidebar and returns focus after selection and Escape', () => {
+it('sidebar routes remain keyboard accessible and profile Escape restores its trigger', () => {
   const navigate = vi.fn();
   render(
     <Desktop
@@ -530,26 +535,23 @@ it('navigation opens into sidebar and returns focus after selection and Escape',
       unavailable={() => {}}
     />,
   );
-  const trigger = screen.getByRole('button', { name: 'Navegação' });
-  fireEvent.click(trigger);
-  expect(
-    screen.getByRole('button', { name: 'Selecionar empresa' }),
-  ).toHaveFocus();
-  fireEvent.click(screen.getByRole('button', { name: 'Equipamentos' }));
-  expect(trigger).toHaveFocus();
-  expect(navigate).toHaveBeenCalledWith(4);
-  fireEvent.click(trigger);
-  fireEvent.keyDown(
-    screen.getByRole('button', { name: 'Selecionar empresa' }),
-    { key: 'Escape' },
-  );
+  const equipment = screen.getByRole('link', { name: 'Equipamentos' });
+  fireEvent.click(equipment);
+  expect(navigate).toHaveBeenCalledWith('equipment');
+  fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
+  expect(navigate).toHaveBeenCalledWith('settings');
+  const trigger = screen.getByRole('button', { name: /Conta:/ });
+  fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+  expect(screen.getByRole('menuitem', { name: 'Tema escuro' })).toHaveFocus();
+  fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Tema escuro' }), {
+    key: 'End',
+  });
+  expect(screen.getByRole('menuitem', { name: 'Sair da conta' })).toHaveFocus();
+  fireEvent.keyDown(screen.getByRole('menuitem', { name: 'Sair da conta' }), {
+    key: 'Escape',
+  });
   expect(trigger).toHaveFocus();
   expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  fireEvent.click(trigger);
-  fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Aparência' }));
-  expect(trigger).toHaveFocus();
-  expect(navigate).toHaveBeenCalledWith(7);
 });
 it('an uncertain query start reuses its ID and never retries authentication by itself', async () => {
   const trusted = { ...device, fingerprint: 'SHA256:fixture' };
@@ -570,7 +572,7 @@ it('an uncertain query start reuses its ID and never retries authentication by i
       },
     });
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
       name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
@@ -621,27 +623,28 @@ it('full detail interfaces survive a subsequent list projection and a new contex
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir equipamento' }));
+  await openDeviceSheet('Router X');
+  fireEvent.click(screen.getByRole('tab', { name: 'Resumo' }));
   fireEvent.click(
-    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+    await screen.findByRole('tab', { name: 'Interfaces e saúde' }),
   );
   await screen.findByText('ether1');
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Voltar aos equipamentos' }),
-  );
-  fireEvent.change(screen.getByLabelText('Buscar equipamento'), {
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  fireEvent.change(screen.getByLabelText('Buscar'), {
     target: { value: 'Router' },
   });
   await waitFor(() =>
     expect(api.list).toHaveBeenLastCalledWith('X', 'a', 'Router', 0, false),
   );
-  expect(screen.getByText('ether1')).toBeInTheDocument();
+  await openDeviceSheet('Router X');
+  fireEvent.click(screen.getByRole('tab', { name: 'Interfaces e saúde' }));
+  expect(await screen.findByText('ether1')).toBeInTheDocument();
   let resolve!: (r: EquipmentResult) => void;
   vi.mocked(api.get).mockImplementationOnce(
     () => new Promise((r) => (resolve = r)),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir equipamento' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  fireEvent.click(screen.getByRole('cell', { name: 'Router X' }));
   vi.mocked(api.list).mockResolvedValue(data([]));
   view.rerender(
     <Equipment
@@ -672,7 +675,6 @@ it('clearing a consumed create request during navigation never opens a new form'
   );
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
-
 it.each(['OK', 'REVISION_CONFLICT'])(
   'late %s save cannot close or mark a reopened dialog',
   async (code) => {
@@ -688,7 +690,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         createRequest={0}
       />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
+    await openDeviceSheet('Router X');
     fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
     fireEvent.click(
       screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
@@ -707,7 +709,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         createRequest={0}
       />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
+    await openDeviceSheet('Router X');
     fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
     await act(async () => resolve({ ...data(), code }));
     expect(
@@ -739,12 +741,10 @@ it('late detail cannot restore an old selected device', async () => {
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir equipamento' }));
-  if (screen.queryByRole('button', { name: 'Voltar aos equipamentos' }))
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Voltar aos equipamentos' }),
-    );
+  await openDeviceSheet('Router X');
+  fireEvent.click(screen.getByRole('tab', { name: 'Resumo' }));
+  if (screen.queryByRole('button', { name: 'Voltar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(screen.getByRole('row', { name: /Router B/ }));
   await act(async () =>
     resolve({ ...data(), data: { ...data().data!, device } }),
@@ -760,14 +760,22 @@ it.each(['OK', 'REVISION_CONFLICT'])(
     );
     const view = render(
       <Equipment
+        credentialsPage
         profile="credential-late"
         activation="surface"
         connected
         createRequest={0}
       />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
-    fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+    await screen.findByRole('heading', { name: 'Credenciais' });
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Adicionar credencial' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Adicionar credencial' }),
+    );
     fireEvent.change(screen.getByLabelText('Alias'), {
       target: { value: 'Read' },
     });
@@ -786,14 +794,22 @@ it.each(['OK', 'REVISION_CONFLICT'])(
     view.unmount();
     render(
       <Equipment
+        credentialsPage
         profile="credential-late"
         activation="surface"
         connected
         createRequest={0}
       />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
-    fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+    await screen.findByRole('heading', { name: 'Credenciais' });
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Adicionar credencial' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Adicionar credencial' }),
+    );
     await act(async () => resolve({ ...data(), code }));
     expect(
       screen.getByRole('dialog', { name: 'Credenciais de consulta' }),
@@ -838,7 +854,7 @@ it.each(['reject', 'reply'])(
         createRequest={0}
       />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
+    await openDeviceSheet('Router X');
     fireEvent.click(
       screen.getByRole('button', {
         name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
@@ -870,7 +886,7 @@ it('exhausted status recovery unlocks UI and deliberate retry reconciles the sam
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
       name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
@@ -917,7 +933,7 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
       />,
     );
   const view = mount();
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
       name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
@@ -933,11 +949,9 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
       }),
     ).toBeEnabled(),
   );
-  if (screen.queryByRole('button', { name: 'Voltar aos equipamentos' }))
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Voltar aos equipamentos' }),
-    );
-  fireEvent.click(screen.getByRole('row', { name: /Router B/ }));
+  if (screen.queryByRole('button', { name: 'Voltar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  await openDeviceSheet('Router B');
   fireEvent.click(
     screen.getByRole('button', {
       name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
@@ -946,7 +960,7 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(2));
   view.unmount();
   mount();
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   vi.mocked(api.start).mockResolvedValueOnce({
     ...data(),
     code: 'JOB_INTERRUPTED',
@@ -971,8 +985,7 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
     vi.mocked(api.start).mock.calls[0][3],
   );
 });
-
-it('neutral footer remains truthful after a reading, failed refresh, navigation and context change', async () => {
+it('service status and last valid data remain truthful after a reading, failed refresh, navigation and context change', async () => {
   const observation = {
     identity: 'Last valid reading',
     version: '7',
@@ -990,6 +1003,10 @@ it('neutral footer remains truthful after a reading, failed refresh, navigation 
   vi.mocked(api.list).mockResolvedValue(
     data([{ ...device, result: observation }]),
   );
+  vi.mocked(api.get).mockResolvedValue({
+    ...data(),
+    data: { ...data().data!, device: { ...device, result: observation } },
+  });
   const view = render(
     <>
       <Statusbar connected />
@@ -1002,22 +1019,22 @@ it('neutral footer remains truthful after a reading, failed refresh, navigation 
       />
     </>,
   );
-  await screen.findByRole('heading', { name: 'Last valid reading' });
-  expect(screen.getByText('Inventário por empresa')).toBeInTheDocument();
-  expect(
-    screen.getByText('Consultas sob demanda · Equipamentos'),
-  ).toBeInTheDocument();
+  await openDeviceSheet('Router X');
+  fireEvent.click(screen.getByRole('tab', { name: 'Resumo' }));
+  expect(await screen.findByText('Last valid reading')).toBeVisible();
+  expect(screen.getByText('Serviço ativo')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   vi.mocked(api.list).mockResolvedValue({
     ...data(),
     code: 'SERVICE_UNAVAILABLE',
   });
-  fireEvent.change(screen.getByLabelText('Buscar equipamento'), {
+  fireEvent.change(screen.getByLabelText('Buscar'), {
     target: { value: 'refresh' },
   });
   await screen.findByText(/O serviço está indisponível/);
-  expect(
-    screen.getByRole('heading', { name: 'Last valid reading' }),
-  ).toBeInTheDocument();
+  await openDeviceSheet('Router X');
+  fireEvent.click(screen.getByRole('tab', { name: 'Resumo' }));
+  expect(await screen.findByText('Last valid reading')).toBeVisible();
   view.rerender(<Statusbar connected />);
   expect(screen.queryByText('Sem coletas')).not.toBeInTheDocument();
   vi.mocked(api.list).mockResolvedValue(data([]));
@@ -1035,9 +1052,7 @@ it('neutral footer remains truthful after a reading, failed refresh, navigation 
   );
   await screen.findByText('Nenhum equipamento cadastrado');
   expect(screen.queryByText('Rede não consultada')).not.toBeInTheDocument();
-  expect(
-    screen.getByText('Consultas sob demanda · Equipamentos'),
-  ).toBeInTheDocument();
+  expect(screen.getByText('Serviço ativo')).toBeInTheDocument();
 });
 it('an uncertain inspection retains its own ID across unmount and another operation kind', async () => {
   vi.mocked(api.list).mockResolvedValue(
@@ -1058,7 +1073,7 @@ it('an uncertain inspection retains its own ID across unmount and another operat
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByText(/O serviço está indisponível/);
   fireEvent.click(
@@ -1076,7 +1091,7 @@ it('an uncertain inspection retains its own ID across unmount and another operat
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByText(/interrompida ou expirou/);
   expect(api.inspect).toHaveBeenCalledTimes(2);
@@ -1112,15 +1127,13 @@ it('cancel reconciles the running job without another authentication', async () 
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
       name: /^(Conectar|Atualizar|Consultar resumo|Atualizar resumo)$/,
     }),
   );
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Cancelar consulta' }),
-  );
+  fireEvent.click(await screen.findByRole('button', { name: 'Parar' }));
   await waitFor(() =>
     expect(screen.queryByText(/Consulta SSH em curso/)).not.toBeInTheDocument(),
   );
@@ -1131,13 +1144,14 @@ it('cancel reconciles the running job without another authentication', async () 
   );
   expect(api.start).toHaveBeenCalledTimes(1);
 });
-
-it('first enrollment is direct and the initial empty state has exactly one CTA without irrelevant controls', async () => {
+it('first enrollment retains one CTA and the frozen empty inventory layout', async () => {
   vi.mocked(api.list).mockResolvedValue(data([]));
   vi.mocked(api.credentials).mockResolvedValue(data([]));
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
-  await screen.findByRole('heading', { name: 'Nenhum equipamento cadastrado' });
-  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  await screen.findByText('Nenhum equipamento cadastrado');
+  expect(
+    screen.getByRole('table', { name: 'Lista de equipamentos' }),
+  ).toBeVisible();
   expect(screen.queryByLabelText('Buscar equipamento')).not.toBeInTheDocument();
   expect(
     screen.queryByLabelText('Estado dos equipamentos'),
@@ -1158,7 +1172,6 @@ it('first enrollment is direct and the initial empty state has exactly one CTA w
     screen.getByRole('button', { name: 'Usar credencial existente' }),
   ).toBeInTheDocument();
 });
-
 it('lost direct response clears the password, blocks blind resend and reconciles after closing/reopening', async () => {
   let submitted: Record<string, unknown> | undefined;
   vi.mocked(api.save).mockImplementation(async (_p, _a, d) => {
@@ -1177,7 +1190,7 @@ it('lost direct response clears the password, blocks blind resend and reconciles
       createRequest={1}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   for (const [label, value] of [
     ['Nome', 'New direct'],
     ['IP de gerenciamento', '127.0.0.1'],
@@ -1211,9 +1224,7 @@ it('lost direct response clears the password, blocks blind resend and reconciles
       screen.getByRole('dialog', { name: 'Descartar alterações?' }),
     ).getByRole('button', { name: 'Descartar alterações' }),
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Adicionar equipamento' }),
-  );
+  await beginAdd();
   fireEvent.click(screen.getByRole('button', { name: 'Conferir cadastro' }));
   await waitFor(() =>
     expect(api.enrollmentStatus).toHaveBeenCalledWith(
@@ -1232,7 +1243,6 @@ it('lost direct response clears the password, blocks blind resend and reconciles
     'transient fixture secret',
   );
 });
-
 it('a missing receipt permits only a deliberate retry with the original IDs, never a fresh duplicate', async () => {
   const sent: Record<string, unknown>[] = [];
   vi.mocked(api.save).mockImplementation(async (_p, _a, d) => {
@@ -1251,7 +1261,7 @@ it('a missing receipt permits only a deliberate retry with the original IDs, nev
       createRequest={1}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   const fill = () => {
     for (const [label, value] of [
       ['Nome', 'Retry'],
@@ -1278,8 +1288,7 @@ it('a missing receipt permits only a deliberate retry with the original IDs, nev
   expect(sent[1].id).toBe(sent[0].id);
   expect(sent[1].operation_id).toBe(sent[0].operation_id);
 });
-
-it('no active devices keeps inactive filtering, while an empty search is recoverable without a table or inspector', async () => {
+it('inactive filtering and an empty search recover through the frozen list and explicit sheet', async () => {
   vi.mocked(api.list).mockImplementation(
     async (_p, _a, search, _cursor, inactive) => ({
       ...data(search || !inactive ? [] : [{ ...device, active: false }]),
@@ -1298,22 +1307,30 @@ it('no active devices keeps inactive filtering, while an empty search is recover
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Nenhum equipamento ativo' });
-  expect(screen.getByLabelText('Estado dos equipamentos')).toBeInTheDocument();
-  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  await screen.findByText('Nenhum equipamento cadastrado');
+  expect(screen.getByLabelText('Estado')).toBeDisabled();
+  expect(screen.getByRole('table')).toBeVisible();
   expect(screen.getAllByRole('button', { name: /Adicionar/ })).toHaveLength(1);
-  fireEvent.click(screen.getByRole('button', { name: 'Mostrar inativos' }));
-  await screen.findByRole('button', { name: 'Reativar' });
-  fireEvent.change(screen.getByLabelText('Buscar equipamento'), {
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));
+  await openDeviceSheet('Router X');
+  expect(screen.getByRole('button', { name: 'Reativar' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  fireEvent.change(screen.getByLabelText('Buscar'), {
     target: { value: 'absent' },
   });
-  await screen.findByRole('heading', { name: 'Nenhum resultado' });
-  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  await screen.findByText('Nenhum equipamento encontrado');
+  expect(screen.getByRole('table')).toBeVisible();
   expect(screen.queryByText('Detalhes do equipamento')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Limpar busca' }));
-  await screen.findByRole('button', { name: 'Reativar' });
+  fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+  await screen.findByText('Nenhum equipamento cadastrado');
+  expect(screen.getByLabelText('Buscar')).toHaveValue('');
+  expect(
+    screen.getByRole('checkbox', { name: 'Mostrar inativos' }),
+  ).not.toBeChecked();
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));
+  await openDeviceSheet('Router X');
+  expect(screen.getByRole('button', { name: 'Reativar' })).toBeEnabled();
 });
-
 it('the full desktop owns only one Add action in empty and populated inventory states', async () => {
   const view = render(
     <Desktop
@@ -1336,7 +1353,7 @@ it('the full desktop owns only one Add action in empty and populated inventory s
       }
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await screen.findByRole('cell', { name: 'Router X' });
   expect(screen.getAllByRole('button', { name: /Adicionar/ })).toHaveLength(1);
   vi.mocked(api.list).mockResolvedValue(data([]));
   view.rerender(
@@ -1366,10 +1383,9 @@ it('the full desktop owns only one Add action in empty and populated inventory s
       }
     />,
   );
-  await screen.findByRole('heading', { name: 'Nenhum equipamento cadastrado' });
+  await screen.findByText('Nenhum equipamento cadastrado');
   expect(screen.getAllByRole('button', { name: /Adicionar/ })).toHaveLength(1);
 });
-
 it('an uncertain enrollment never lends its operation ID to an unrelated edit', async () => {
   const sent: Record<string, unknown>[] = [];
   vi.mocked(api.save).mockImplementation(async (_p, _a, d) => {
@@ -1384,7 +1400,7 @@ it('an uncertain enrollment never lends its operation ID to an unrelated edit', 
       createRequest={1}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   for (const [label, value] of [
     ['Nome', 'Uncertain'],
     ['IP de gerenciamento', '127.0.0.1'],
@@ -1402,6 +1418,7 @@ it('an uncertain enrollment never lends its operation ID to an unrelated edit', 
       screen.getByRole('dialog', { name: 'Descartar alterações?' }),
     ).getByRole('button', { name: 'Descartar alterações' }),
   );
+  await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
   expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
   fireEvent.click(
@@ -1417,7 +1434,6 @@ it('an uncertain enrollment never lends its operation ID to an unrelated edit', 
     user: '',
   });
 });
-
 it('creation with an existing credential also reconciles a lost response without changing identity', async () => {
   let sent: Record<string, unknown> | undefined;
   vi.mocked(api.save).mockImplementation(async (_p, _a, d) => {
@@ -1436,7 +1452,7 @@ it('creation with an existing credential also reconciles a lost response without
       createRequest={1}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', { name: 'Usar credencial existente' }),
   );
@@ -1464,9 +1480,7 @@ it('creation with an existing credential also reconciles a lost response without
       screen.getByRole('dialog', { name: 'Descartar alterações?' }),
     ).getByRole('button', { name: 'Descartar alterações' }),
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Adicionar equipamento' }),
-  );
+  await beginAdd();
   fireEvent.click(screen.getByRole('button', { name: 'Conferir cadastro' }));
   await waitFor(() =>
     expect(api.enrollmentStatus).toHaveBeenCalledWith(
@@ -1481,7 +1495,6 @@ it('creation with an existing credential also reconciles a lost response without
   );
   expect(api.save).toHaveBeenCalledTimes(1);
 });
-
 it('direct creation exposes user and password without an earlier credential form', async () => {
   render(
     <Equipment
@@ -1496,7 +1509,6 @@ it('direct creation exposes user and password without an earlier credential form
   expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password');
   expect(screen.queryByLabelText('Alias')).not.toBeInTheDocument();
 });
-
 it('a blocked vault explains the disabled direct form inside its dialog exactly once', async () => {
   vi.mocked(api.list).mockResolvedValue({
     ...data(),
@@ -1513,9 +1525,7 @@ it('a blocked vault explains the disabled direct form inside its dialog exactly 
   await screen.findByText(
     'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Adicionar equipamento' }),
-  );
+  await beginAdd();
   const dialog = screen.getByRole('dialog', { name: 'Adicionar equipamento' });
   expect(
     within(dialog).getByText(
@@ -1538,7 +1548,6 @@ it('a blocked vault explains the disabled direct form inside its dialog exactly 
   );
   expect(within(dialog).getByLabelText('Credencial de consulta')).toBeEnabled();
 });
-
 it.each(['OK', 'TRUST_CHANGED'])(
   'late inspection status %s cannot open a second dialog or place an error on a newer form',
   async (code) => {
@@ -1570,14 +1579,12 @@ it.each(['OK', 'TRUST_CHANGED'])(
         createRequest={0}
       />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
+    await openDeviceSheet('Router X');
     fireEvent.click(
       screen.getByRole('button', { name: 'Verificar identidade' }),
     );
     await waitFor(() => expect(api.status).toHaveBeenCalledTimes(1));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Adicionar equipamento' }),
-    );
+    await beginAdd();
     await screen.findByRole('dialog', { name: 'Adicionar equipamento' });
     await act(async () =>
       resolve({
@@ -1606,7 +1613,6 @@ it.each(['OK', 'TRUST_CHANGED'])(
     expect(api.start).not.toHaveBeenCalled();
   },
 );
-
 it('completed inspection polling on its original surface still offers deliberate trust confirmation', async () => {
   const job = {
     id: 'original-inspect-job',
@@ -1634,7 +1640,7 @@ it('completed inspection polling on its original surface still offers deliberate
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   const panel = await screen.findByRole('dialog', {
     name: 'Primeira conexão',
@@ -1649,7 +1655,6 @@ it('completed inspection polling on its original surface still offers deliberate
   expect(api.start).not.toHaveBeenCalled();
   expect(api.confirm).not.toHaveBeenCalled();
 });
-
 it('Q01 retires abandoned activations, preserves same-activation uncertain IDs and ignores late starts', async () => {
   const current = { ...device, fingerprint: 'SHA256:accepted' };
   vi.mocked(api.list).mockResolvedValue(data([current]));
@@ -1666,8 +1671,9 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   const view = render(<Equipment {...props} />);
   for (let i = 0; i < 130; i++) {
     view.rerender(<Equipment {...props} activation={'a' + i} />);
+    await openDeviceSheet('Router X');
     const connect = await screen.findByRole('button', {
-      name: /^(Conectar|Consultar resumo)$/,
+      name: /^(Conectar|Atualizar)$/,
     });
     await act(async () => {
       fireEvent.click(connect);
@@ -1678,39 +1684,39 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   const operation = vi.mocked(api.start).mock.calls.at(-1)![3];
   view.unmount();
   render(<Equipment {...props} activation="a129" />);
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
   );
   await waitFor(() => expect(api.start).toHaveBeenCalledTimes(131));
   expect(vi.mocked(api.start).mock.calls.at(-1)![3]).toBe(operation);
   expect(api.inspect).not.toHaveBeenCalled();
 });
-
 it('Q03 inventory filters and refresh do not reload an independent credential catalog', async () => {
   render(
     <Equipment profile="Q03" activation="q03" connected createRequest={0} />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
+  await openDeviceSheet('Router X');
   await waitFor(() => expect(api.credentials).toHaveBeenCalledTimes(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   const search = screen.getByPlaceholderText(/Buscar/);
   fireEvent.change(search, { target: { value: 'Router' } });
   await waitFor(() => expect(api.list).toHaveBeenCalledTimes(2));
   expect(api.credentials).toHaveBeenCalledTimes(1);
 });
-
 it('Q03 updates the credential catalog after successful replacement and recovers catalog failure locally', async () => {
   vi.mocked(api.putCredential).mockResolvedValue(data());
   render(
     <Equipment
+      credentialsPage
       profile="Q03-edit"
       activation="catalog"
       connected
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Router X' });
-  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  await screen.findByRole('heading', { name: 'Credenciais' });
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar credencial' }));
   fireEvent.change(screen.getByLabelText('Credencial para editar'), {
     target: { value: 'credential' },
   });
@@ -1745,27 +1751,31 @@ it('Q03 updates the credential catalog after successful replacement and recovers
     screen.getByRole('button', { name: 'Recarregar credenciais' }),
   );
   await waitFor(() => expect(api.credentials).toHaveBeenCalledTimes(3));
-  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar credencial' }));
   expect(
     await screen.findByRole('option', { name: 'Updated catalog · 2 vínculos' }),
   ).toBeInTheDocument();
   expect(api.list).toHaveBeenCalledTimes(inventoryCalls);
   expect(api.start).not.toHaveBeenCalled();
 });
-
 it('L06C: credentials remain accessible for an empty company', async () => {
   vi.mocked(api.list).mockResolvedValue(data([]));
   render(
-    <Equipment profile="X" activation="a" connected={true} createRequest={0} />,
+    <Equipment
+      credentialsPage
+      profile="X"
+      activation="a"
+      connected={true}
+      createRequest={0}
+    />,
   );
-  await screen.findByText('Nenhum equipamento cadastrado');
-  expect(screen.getAllByRole('button', { name: 'Credenciais' })).toHaveLength(
-    1,
-  );
-  fireEvent.click(screen.getByRole('button', { name: 'Credenciais' }));
+  await screen.findByRole('heading', { name: 'Credenciais' });
+  expect(
+    screen.getAllByRole('button', { name: 'Adicionar credencial' }),
+  ).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar credencial' }));
   await screen.findByRole('dialog');
 });
-
 it('L06D-S6: concentrator detail exposes one health entry without a saved reading', async () => {
   vi.mocked(readAPI.start).mockResolvedValue({
     code: 'OK',
@@ -1811,7 +1821,6 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
         job: { id: 'health-job', state: 'FAILED', code: 'PARTIAL' },
       },
     });
-
   vi.mocked(api.list).mockResolvedValue(
     data([{ ...device, fingerprint: 'pinned' }]),
   );
@@ -1824,20 +1833,18 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
       targetID={device.id}
     />,
   );
-  await waitFor(() =>
-    expect(
-      screen.getAllByRole('button', { name: 'Consultar pools e interfaces' }),
-    ).toHaveLength(1),
+  fireEvent.click(
+    await screen.findByRole('tab', { name: 'Interfaces e saúde' }),
   );
-  expect(
-    screen.getByRole('button', { name: 'Consultar pools e interfaces' }),
-  ).toBeEnabled();
+  fireEvent.click(screen.getByRole('tab', { name: 'Portas e saúde' }));
+  const health = () =>
+    within(
+      screen.getByRole('region', { name: 'Pools e interfaces estáticas' }),
+    );
   expect(
     screen.queryByRole('button', { name: 'Medir banda da página' }),
   ).not.toBeInTheDocument();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Consultar pools e interfaces' }),
-  );
+  fireEvent.click(health().getByRole('button', { name: 'Atualizar' }));
   expect(
     await screen.findByText('pool-from-real-composition'),
   ).toBeInTheDocument();
@@ -1851,9 +1858,7 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
     [],
     device.revision,
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Consultar pools e interfaces' }),
-  );
+  fireEvent.click(health().getByRole('button', { name: 'Atualizar' }));
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Não foi possível concluir esta leitura. Tente novamente.',
   );
@@ -1861,7 +1866,6 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
     screen.queryByText('pool-from-real-composition'),
   ).not.toBeInTheDocument();
 });
-
 it('L06T3: equipment list projects saved health with role and explicit reading age', async () => {
   const at = new Date(Date.now() - 60000).toISOString();
   vi.mocked(api.list).mockResolvedValue(
@@ -1880,17 +1884,14 @@ it('L06T3: equipment list projects saved health with role and explicit reading a
   );
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
   const row = await screen.findByRole('row', { name: /Router X/ });
-  expect(within(row).getByText('Concentrador PPPoE')).toBeInTheDocument();
+  expect(within(row).getByText('Concentrador')).toBeInTheDocument();
   expect(within(row).getByText('37 %')).toBeInTheDocument();
   expect(within(row).getByText('2 d')).toHaveAttribute(
     'title',
     '172.800–172.801 s (intervalo observado)',
   );
-  expect(
-    within(row).getByText(/Últimos dados conhecidos · há 1 min/),
-  ).toBeInTheDocument();
+  expect(within(row).getByText('há 1 min')).toBeInTheDocument();
 });
-
 it.each(['cpe', 'ap', 'concentrator'])(
   'queued pin confirmation routes %s without a foreign collector',
   async (role) => {
@@ -1924,7 +1925,7 @@ it.each(['cpe', 'ap', 'concentrator'])(
     render(
       <Equipment profile="X" activation="a" connected createRequest={0} />,
     );
-    await screen.findByRole('heading', { name: 'Router X' });
+    await openDeviceSheet('Router X');
     fireEvent.click(
       screen.getByRole('button', { name: 'Verificar identidade' }),
     );
@@ -1962,7 +1963,6 @@ it.each(['cpe', 'ap', 'concentrator'])(
     else expect(api.start).not.toHaveBeenCalled();
   },
 );
-
 it('radio enrollment uses the chosen class default and allows an explicit per-device override', async () => {
   const credentials = [
     {

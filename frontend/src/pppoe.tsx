@@ -1,3 +1,5 @@
+import { PPPoEHeader, PPPoEStatusBanners } from './pppoe-header';
+
 import { useRef } from 'react';
 import type { Device } from './equipment-api';
 import {
@@ -19,9 +21,9 @@ import {
 } from './pppoe-sessions-view';
 import type { PPPoERefs, PPPoETab } from './pppoe-state';
 import { usePPPoEState } from './pppoe-state';
-import './pppoe.css';
-import { pppoeAPI as api } from './presentation';
 
+import { DataBlock } from './ui/DataBlock';
+import { pppoeAPI as api } from './presentation';
 const PPPOE_TABS: readonly [PPPoETab, string][] = [
   ['sessions', 'Sessões'],
   ['compare', 'Comparação'],
@@ -30,104 +32,7 @@ const PPPOE_TABS: readonly [PPPoETab, string][] = [
   ['radius', 'RADIUS'],
   ['monitoring', 'Monitoramento'],
 ];
-
 type State = ReturnType<typeof usePPPoEState>;
-
-function PPPoEHeader(p: {
-  s: State;
-  primaryRef: React.RefObject<HTMLButtonElement | null>;
-  device: Device;
-  disabled: boolean;
-  back: () => void;
-}) {
-  const { s, primaryRef, device, disabled } = p;
-  return (
-    <>
-      <button onClick={p.back}>Voltar ao equipamento</button>
-      <div className="pppoe-head">
-        <div>
-          <h1>Sessões PPPoE</h1>
-          <p>{device.name} · Logins dos clientes</p>
-        </div>
-        {!s.initialFailed && (s.tab === 'sessions' || s.tab === 'compare') && (
-          <button
-            ref={primaryRef}
-            className="primary"
-            disabled={
-              disabled || s.loading || !device.active || !device.fingerprint
-            }
-            onClick={s.update}
-          >
-            {s.job ? 'Atualizando…' : 'Atualizar sessões'}
-          </button>
-        )}
-      </div>
-      <div role="tablist" aria-label="Leitura PPPoE">
-        {PPPOE_TABS.map(([id, label]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={s.tab === id}
-            onClick={() => {
-              s.setTab(id);
-              s.setCursor('');
-              s.setHistory([]);
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function PPPoEStatusBanners({ s }: { s: State }) {
-  const isObsTab =
-    s.tab === 'sessions' || s.tab === 'compare' || s.tab === 'references';
-  const isListTab = s.tab === 'sessions' || s.tab === 'compare';
-  return (
-    <>
-      {s.job && (
-        <button
-          onClick={() =>
-            void s.run(() => api.cancel(s.profile, s.activation, s.job))
-          }
-        >
-          Cancelar atualização
-        </button>
-      )}
-      {s.statusFailed && s.job && (
-        <button onClick={() => s.retryStatus((n) => n + 1)}>
-          Consultar estado novamente
-        </button>
-      )}
-      {s.error && isObsTab && <p role="alert">{s.error}</p>}
-      {s.notice && <p role="status">{s.notice}</p>}
-      {s.attempt && isListTab && <p role="status">{s.attempt}</p>}
-      {s.initialFailed && !s.loading && isObsTab && (
-        <button
-          className="primary"
-          onClick={() => {
-            s.setError('');
-            s.bump((n) => n + 1);
-          }}
-        >
-          Reabrir leitura armazenada
-        </button>
-      )}
-      {s.loading && isListTab && (
-        <p role="status">Carregando leitura armazenada…</p>
-      )}
-      {!s.loading && !s.initialFailed && !s.current && isListTab && (
-        <p>
-          Nenhuma leitura de sessões disponível. Atualize para consultar este
-          concentrador.
-        </p>
-      )}
-    </>
-  );
-}
 
 function PPPoESessionsSection(p: {
   s: State;
@@ -204,7 +109,6 @@ function PPPoESessionsSection(p: {
     </>
   );
 }
-
 function PPPoEObsBody(p: {
   s: State;
   refs: PPPoERefs;
@@ -249,7 +153,6 @@ function PPPoEObsBody(p: {
     </>
   );
 }
-
 function PPPoETabContent(p: {
   s: State;
   refs: PPPoERefs;
@@ -318,18 +221,18 @@ function PPPoETabContent(p: {
     </>
   );
 }
-
 export function PPPoE({
   profile,
   activation,
   device,
-  back,
   openEquipment,
+  section = 'sessions',
 }: {
   profile: string;
   activation: string;
   device: Device;
   back: () => void;
+  section?: 'sessions' | 'services';
   openEquipment?: (id: string) => void;
 }) {
   const detailTriggerRef = useRef<HTMLElement | null>(null);
@@ -360,7 +263,13 @@ export function PPPoE({
     primaryRef,
     detailIntentRef,
   };
-  const s = usePPPoEState(profile, activation, device, refs);
+  const s = usePPPoEState(
+    profile,
+    activation,
+    device,
+    refs,
+    section === 'services' ? 'catalog' : 'sessions',
+  );
   const disabled = s.busy || Boolean(s.job);
   return (
     <section
@@ -381,19 +290,27 @@ export function PPPoE({
       aria-label="Diagnóstico PPPoE"
       tabIndex={0}
     >
-      <PPPoEHeader
-        s={s}
-        primaryRef={primaryRef}
-        device={device}
-        disabled={disabled}
-        back={back}
-      />
+      <PPPoEHeader s={s} section={section} />
       <PPPoEStatusBanners s={s} />
-      <PPPoETabContent
-        s={s}
-        refs={refs}
-        disabled={disabled}
-        openEquipment={openEquipment}
+      <DataBlock
+        title={
+          s.tab === 'sessions'
+            ? 'Sessões PPPoE'
+            : PPPOE_TABS.find(([id]) => id === s.tab)?.[1] || 'Sessões'
+        }
+        source="SSH"
+        age={s.current?.provenance.ended_at || ''}
+        data={{
+          state: 'ready',
+          content: (
+            <PPPoETabContent
+              s={s}
+              refs={refs}
+              disabled={disabled}
+              openEquipment={openEquipment}
+            />
+          ),
+        }}
       />
     </section>
   );

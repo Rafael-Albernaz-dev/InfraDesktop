@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react';
-
 export type RouteName =
-  'companies' | 'overview' | 'equipment' | 'pppoe' | 'topology' | 'settings';
-
+  | 'companies'
+  | 'overview'
+  | 'equipment'
+  | 'vitrine'
+  | 'credentials'
+  | 'pppoe'
+  | 'topology'
+  | 'settings';
 export type LegacyPage = 2 | 3 | 4 | 5 | 6 | 7;
 export type Page = RouteName | LegacyPage;
-
 const LEGACY_TO_ROUTE: Record<LegacyPage, RouteName> = {
   2: 'companies',
   3: 'overview',
@@ -14,77 +18,24 @@ const LEGACY_TO_ROUTE: Record<LegacyPage, RouteName> = {
   6: 'topology',
   7: 'settings',
 };
-
 const ROUTE_TO_LEGACY: Record<RouteName, LegacyPage> = {
   companies: 2,
   overview: 3,
   equipment: 4,
+  credentials: 4,
+  vitrine: 4,
   pppoe: 5,
   topology: 6,
   settings: 7,
 };
-
 export function normalizeRoute(page: Page): RouteName {
   if (typeof page === 'number') {
     return LEGACY_TO_ROUTE[page] || 'overview';
   }
   return page;
 }
-
 export function routeLegacyPageNumber(page: Page): LegacyPage {
   return ROUTE_TO_LEGACY[normalizeRoute(page)];
-}
-
-export function routeTitle(route: RouteName): string {
-  const titles: Record<RouteName, string> = {
-    companies: 'Empresas',
-    overview: 'Visão geral',
-    equipment: 'Equipamentos',
-    pppoe: 'Sessões PPPoE',
-    topology: 'Topologia',
-    settings: 'Aparência',
-  };
-  return titles[route];
-}
-
-export function routeBackTarget(route: RouteName): RouteName | undefined {
-  if (route === 'companies' || route === 'overview') return undefined;
-  if (route === 'pppoe') return 'equipment';
-  return 'overview';
-}
-
-export function routeBreadcrumbs(
-  route: RouteName,
-  companyName: string,
-): Array<{ label: string; route?: RouteName }> {
-  const base = companyName || 'Empresa';
-  if (route === 'companies') {
-    return [{ label: 'Empresas' }];
-  }
-  if (route === 'overview') {
-    return [{ label: base, route: 'companies' }, { label: 'Visão geral' }];
-  }
-  if (route === 'pppoe') {
-    return [
-      { label: base, route: 'companies' },
-      { label: 'Visão geral', route: 'overview' },
-      { label: 'Equipamentos', route: 'equipment' },
-      { label: 'Sessões PPPoE' },
-    ];
-  }
-  const labels: Record<RouteName, string> = {
-    companies: 'Empresas',
-    overview: 'Visão geral',
-    equipment: 'Equipamentos',
-    pppoe: 'Sessões PPPoE',
-    topology: 'Topologia',
-    settings: 'Configurações',
-  };
-  return [
-    { label: base, route: 'companies' },
-    { label: 'Visão geral', route: 'overview' },
-    { label: labels[route] },
-  ];
 }
 
 export type Branding = { name: string; accent: string; logo: string };
@@ -157,7 +108,6 @@ export const emptyOperations: Operations = {
   alerts: [],
   activity: [],
 };
-
 export type DesktopProps = {
   page: Page;
   navigate: (page: Page) => void;

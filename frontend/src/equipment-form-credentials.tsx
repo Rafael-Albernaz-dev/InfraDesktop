@@ -1,10 +1,9 @@
+import { Select } from './ui/Select';
 import { Button } from './desktop';
 import type { Credential, Device, DeviceInput } from './equipment-api';
 import type { useFieldErrors } from './equipment-draft';
 import { RadioRoles } from './radio-contract';
-
 const RADIO_ROLE_VALUES: string[] = Object.values(RadioRoles);
-
 export function ExistingCredentialSelect(props: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;
@@ -18,7 +17,7 @@ export function ExistingCredentialSelect(props: {
     <>
       <label className="field">
         Credencial de consulta
-        <select
+        <Select
           aria-label="Credencial de consulta"
           {...attrs('credential_id')}
           value={draft.credential_id}
@@ -31,14 +30,13 @@ export function ExistingCredentialSelect(props: {
               {c.alias} · {c.user}
             </option>
           ))}
-        </select>
+        </Select>
         {message('credential_id')}
       </label>
       {!device && <p className="muted">Somente credenciais desta empresa.</p>}
     </>
   );
 }
-
 export function InlineCredentialInputs(props: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;
@@ -80,7 +78,6 @@ export function InlineCredentialInputs(props: {
     </>
   );
 }
-
 export function DeviceCredentialSection(props: {
   existing: boolean;
   setExisting: (v: boolean) => void;

@@ -1,312 +1,155 @@
-import { Button } from './desktop';
-import { equipmentAPI as api, equipmentMessage } from './equipment-api';
-import type { Credential, Device, Job } from './equipment-api';
-import type { EquipmentPerformFn } from './equipment-dialogs';
+import { EquipmentChain } from './equipment-chain';
+import { equipmentType } from './equipment-layout';
+import { HeaderActionHost } from './ui/HeaderAction';
+import { useState } from 'react';
+import type { useEquipmentState } from './equipment-state';
+import type { Device } from './equipment-api';
+import { equipmentAPI as api } from './equipment-api';
+import {
+  EquipmentAccessDetails,
+  EquipmentSecondaryActions,
+} from './equipment-access';
+import { EquipmentReading, latestSavedReading } from './equipment-reading';
 import { EquipmentInsights } from './equipment-insights';
-import { EquipmentReading, id, stamp } from './equipment-reading';
-import { formatDate, formatTrustOrigin } from './network-format';
-import { PPPoEReadPanel } from './pppoe-diagnostics';
+import { formatDuration } from './network-format';
+import { DeviceMonitoring, PPPoEReadPanel } from './pppoe-diagnostics';
+import { PPPoE } from './pppoe';
 import { RadioEquipment } from './radio';
 import { RadioRoles } from './radio-contract';
+import { Button } from './ui/Button';
+import { DataBlock } from './ui/DataBlock';
+import { PageHeader } from './ui/PageHeader';
+import { Tabs } from './ui/Tabs';
 
-const ROLE_LABELS: Record<string, string> = {
-  concentrator: 'Concentrador',
-  [RadioRoles.ap]: 'AP',
-  [RadioRoles.cpe]: 'CPE',
-  [RadioRoles.ptp]: 'PTP',
-  other: 'Outro',
+type Props = ReturnType<typeof useEquipmentState> & {
+  selected: Device;
+  profile: string;
+  activation: string;
+  connected: boolean;
+  locked: boolean;
 };
-
-function SSHKeyDetails(p: {
-  selected: Device;
-  locked: boolean;
-  job?: Job;
-  resetOperationRef: React.MutableRefObject<string>;
-  setResetTrust: (v: boolean) => void;
-}) {
-  const { selected, locked, job, resetOperationRef, setResetTrust } = p;
-  if (!selected.fingerprint) return null;
+function equipmentReadBlocked(p: Props) {
   return (
-    <details className="equipment-help">
-      <summary>Detalhes da chave SSH</summary>
-      <p className="fingerprint mono">{selected.fingerprint}</p>
-      <p>
-        {formatTrustOrigin(
-          selected.trust_acceptance?.mode || selected.trust_origin,
-        )}{' '}
-        ·{' '}
-        {selected.trust_acceptance?.accepted_at
-          ? formatDate(selected.trust_acceptance.accepted_at)
-          : 'Data não registrada'}
-      </p>
-      <Button
-        disabled={locked || job?.state === 'RUNNING'}
-        onClick={() => {
-          resetOperationRef.current = id();
-          setResetTrust(true);
+    p.locked ||
+    !p.vault ||
+    !p.selected.active ||
+    !p.selected.credential_id ||
+    p.job?.state === 'RUNNING'
+  );
+}
+const TABS: Record<string, string[]> = {
+  concentrator: [
+    'Resumo',
+    'Sessões',
+    'Interfaces e saúde',
+    'Serviços',
+    'Acesso',
+  ],
+  [RadioRoles.ap]: ['Resumo', 'Clientes', 'Rádio', 'Interfaces', 'Acesso'],
+  [RadioRoles.cpe]: ['Resumo', 'Enlace', 'Cliente', 'Roteador', 'Acesso'],
+  [RadioRoles.ptp]: ['Resumo', 'Enlace', 'Acesso'],
+  other: ['Resumo', 'Acesso'],
+};
+function AccessTab({ p }: { p: Props }) {
+  return (
+    <div className="grid">
+      <DataBlock
+        title="Acesso"
+        source="cadastro local"
+        data={{
+          state: 'ready',
+          content: (
+            <>
+              <EquipmentAccessDetails {...p} />
+              <div className="actions">
+                <EquipmentSecondaryActions {...p} />
+              </div>
+            </>
+          ),
         }}
-      >
-        Redefinir confiança
-      </Button>
-    </details>
-  );
-}
-
-export function EquipmentAccessDetails(p: {
-  selected: Device;
-  credentials: Credential[];
-  locked: boolean;
-  job?: Job;
-  detailOpen: boolean;
-  resetOperationRef: React.MutableRefObject<string>;
-  setResetTrust: (v: boolean) => void;
-  startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
-}) {
-  const { selected, credentials, locked, job, detailOpen } = p;
-  const alias =
-    credentials.find((c) => c.id === selected.credential_id)?.alias ||
-    (selected.credential_id ? 'Acesso salvo' : 'Não vinculada');
-  return (
-    <>
-      <div className="kv">
-        <span className="key">Endereço</span>
-        <span className="mono">
-          {selected.address}:{selected.port}
-        </span>
-      </div>
-      <div className="kv">
-        <span className="key">Credencial de consulta</span>
-        <span>{alias}</span>
-      </div>
-      <div className="kv">
-        <span className="key">Última leitura válida</span>
-        <span>{stamp(selected)}</span>
-      </div>
-      <div className="kv">
-        <span className="key">Identidade do destino</span>
-        <span>
-          {selected.fingerprint ? 'Chave salva' : 'Primeira conexão pendente'}
-        </span>
-      </div>
-      <SSHKeyDetails {...p} />
-      {detailOpen && (
-        <Button
-          disabled={locked || !selected.active || job?.state === 'RUNNING'}
-          onClick={() => void p.startOperation('inspect', selected)}
-        >
-          Verificar identidade
-        </Button>
-      )}
-    </>
-  );
-}
-
-function PrimaryQueryButton(p: {
-  selected: Device;
-  detailOpen: boolean;
-  locked: boolean;
-  vault: boolean;
-  job?: Job;
-  setDetailOpen: (v: boolean) => void;
-  startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
-}) {
-  const { selected, detailOpen, locked, vault, job } = p;
-  if (selected.role === RadioRoles.ptp) return null;
-  if (
-    (selected.role === RadioRoles.ap || selected.role === RadioRoles.cpe) &&
-    selected.fingerprint
-  ) {
-    if (detailOpen) return null;
-    return (
-      <Button kind="primary" onClick={() => p.setDetailOpen(true)}>
-        Abrir rádio
-      </Button>
-    );
-  }
-  return (
-    <Button
-      kind={
-        detailOpen && selected.role !== 'concentrator' ? 'primary' : undefined
-      }
-      disabled={
-        locked ||
-        !vault ||
-        !selected.active ||
-        !selected.credential_id ||
-        job?.state === 'RUNNING'
-      }
-      onClick={() => {
-        p.setDetailOpen(true);
-        void p.startOperation(
-          selected.fingerprint ? 'query' : 'inspect',
-          selected,
-        );
-      }}
-    >
-      {detailOpen
-        ? selected.result
-          ? 'Atualizar resumo'
-          : 'Consultar resumo'
-        : selected.result
-          ? 'Atualizar'
-          : 'Conectar'}
-    </Button>
-  );
-}
-
-function EquipmentSecondaryActions(p: {
-  selected: Device;
-  detailOpen: boolean;
-  connected: boolean;
-  locked: boolean;
-  job?: Job;
-  profile: string;
-  activation: string;
-  startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
-  openDevice: (d: Device) => void;
-  setError: (v: string) => void;
-  setForm: (d: Device | 'new' | undefined) => void;
-  setSelected: (d: Device | undefined) => void;
-  perform: EquipmentPerformFn;
-}) {
-  const { selected, detailOpen, connected, locked } = p;
-  return (
-    <>
-      {!detailOpen && selected.role !== RadioRoles.ptp && (
-        <Button
-          disabled={locked || !selected.active || p.job?.state === 'RUNNING'}
-          onClick={() => void p.startOperation('inspect', selected)}
-        >
-          Verificar identidade
-        </Button>
-      )}
-      {!detailOpen && (
-        <Button
-          kind="flat"
-          disabled={locked}
-          onClick={() => p.openDevice(selected)}
-        >
-          Abrir equipamento
-        </Button>
-      )}
-      <Button
-        kind="flat"
-        disabled={!connected}
-        onClick={() => {
-          p.setError('');
-          p.setForm(selected);
-        }}
-      >
-        Editar equipamento
-      </Button>
-      <Button
-        kind="flat"
-        disabled={locked}
-        onClick={() =>
-          void p.perform(
-            () =>
-              api.active(
-                p.profile,
-                p.activation,
-                selected.id,
-                id(),
-                selected.revision,
-                !selected.active,
-              ),
-            (r) => {
-              if (r.data?.device) p.setSelected(r.data.device);
-            },
-          )
-        }
-      >
-        {selected.active ? 'Desativar' : 'Reativar'}
-      </Button>
-    </>
-  );
-}
-
-function EquipmentActionsBar(p: {
-  selected: Device;
-  detailOpen: boolean;
-  connected: boolean;
-  locked: boolean;
-  vault: boolean;
-  job?: Job;
-  profile: string;
-  activation: string;
-  setDetailOpen: (v: boolean) => void;
-  setPPOpen: (v: boolean) => void;
-  startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
-  openDevice: (d: Device) => void;
-  setError: (v: string) => void;
-  setForm: (d: Device | 'new' | undefined) => void;
-  setSelected: (d: Device | undefined) => void;
-  perform: EquipmentPerformFn;
-}) {
-  const { selected, detailOpen, connected } = p;
-  return (
-    <div className="bottom-actions equipment-actions">
-      {selected.role === 'concentrator' &&
-        (!detailOpen || !selected.result) && (
-          <Button
-            kind={detailOpen ? 'primary' : undefined}
-            disabled={!connected || !selected.fingerprint}
-            onClick={() => {
-              p.setDetailOpen(true);
-              p.setPPOpen(true);
-            }}
-          >
-            Abrir sessões PPPoE
-          </Button>
-        )}
-      <PrimaryQueryButton {...p} />
-      <EquipmentSecondaryActions {...p} />
+      />
     </div>
   );
 }
-
-function EquipmentExtendedPanels(p: {
-  selected: Device;
-  detailOpen: boolean;
-  profile: string;
-  activation: string;
-  locked: boolean;
-  vault: boolean;
-  setPPOpen: (v: boolean) => void;
-}) {
-  const { selected, detailOpen, profile, activation, locked, vault } = p;
-  const isRadio =
-    selected.role === RadioRoles.ap ||
-    selected.role === RadioRoles.cpe ||
-    selected.role === RadioRoles.ptp;
-  const blocked = locked || !vault || !selected.active || !selected.fingerprint;
+function SummaryTab({ p }: { p: Props }) {
+  return p.selected.result ? (
+    <EquipmentReading device={p.selected} focus={false} section="summary" />
+  ) : (
+    <>
+      {(!p.selected.role || p.selected.role === 'other') && (
+        <div className="note">
+          Declare o tipo deste equipamento para ver o restante.
+        </div>
+      )}
+      <div className="grid">
+        <DataBlock
+          title="Identidade e sistema"
+          source="SSH"
+          data={{
+            state: p.job?.state === 'RUNNING' ? 'loading' : 'unread',
+            action: () =>
+              void p.startOperation(
+                p.selected.fingerprint ? 'query' : 'inspect',
+                p.selected,
+              ),
+            disabled: equipmentReadBlocked(p),
+          }}
+        />
+      </div>
+    </>
+  );
+}
+function HealthTab({ p }: { p: Props }) {
+  const [sub, setSub] = useState('Interfaces');
+  const blocked = equipmentReadBlocked(p) || !p.selected.fingerprint;
   return (
     <>
-      {selected.result && (
-        <EquipmentReading
-          key={selected.id + selected.result.observed_at}
-          device={selected}
-          focus={false}
-          separate={detailOpen}
-          openPPPoE={
-            selected.role === 'concentrator'
-              ? () => p.setPPOpen(true)
-              : undefined
-          }
+      <Tabs
+        label="Interfaces e saúde"
+        sub
+        items={['Interfaces', 'Portas e saúde', 'Monitoramento'].map((s) => [
+          s,
+          s,
+        ])}
+        value={sub}
+        onChange={setSub}
+      />
+      {sub === 'Interfaces' ? (
+        p.selected.result ? (
+          <EquipmentReading
+            device={p.selected}
+            focus={false}
+            section="interfaces"
+          />
+        ) : (
+          <DataBlock
+            title="Interfaces"
+            source="SSH"
+            data={{
+              state: 'unread',
+              action: () => void p.startOperation('query', p.selected),
+              disabled: blocked,
+            }}
+          />
+        )
+      ) : sub === 'Monitoramento' ? (
+        <DeviceMonitoring
+          profile={p.profile}
+          activation={p.activation}
+          device={p.selected}
         />
-      )}
-      {detailOpen && selected.role === 'concentrator' && (
+      ) : (
         <>
           <EquipmentInsights
-            profile={profile}
-            activation={activation}
-            device={selected}
+            profile={p.profile}
+            activation={p.activation}
+            device={p.selected}
             blocked={blocked}
           />
           <PPPoEReadPanel
-            profile={profile}
-            activation={activation}
-            device={selected}
+            profile={p.profile}
+            activation={p.activation}
+            device={p.selected}
             observation=""
             rows={[]}
             health
@@ -314,132 +157,149 @@ function EquipmentExtendedPanels(p: {
           />
         </>
       )}
-      {detailOpen && isRadio && (
-        <RadioEquipment
-          key={[profile, activation, selected.id, selected.revision].join('|')}
-          profile={profile}
-          activation={activation}
-          device={selected}
-          blocked={locked || !vault || !selected.active}
-        />
-      )}
     </>
   );
 }
-
-function EquipmentDetailHeader(p: {
-  selected: Device;
-  detailOpen: boolean;
-  surfaceRef: React.MutableRefObject<number>;
-  detailReadRef: React.MutableRefObject<number>;
-  setDetailOpen: (v: boolean) => void;
-  setJob: (j: Job | undefined) => void;
-}) {
-  const {
-    selected,
-    detailOpen,
-    surfaceRef,
-    detailReadRef,
-    setDetailOpen,
-    setJob,
-  } = p;
+function SheetContent({ p, tab }: { p: Props; tab: string }) {
+  if (tab === 'Acesso') return <AccessTab p={p} />;
+  if (tab === 'Resumo') return <SummaryTab p={p} />;
+  if (tab === 'Interfaces e saúde') return <HealthTab p={p} />;
+  if (tab === 'Sessões' || tab === 'Serviços')
+    return (
+      <PPPoE
+        key={tab}
+        profile={p.profile}
+        activation={p.activation}
+        device={p.selected}
+        section={tab === 'Sessões' ? 'sessions' : 'services'}
+        back={() => p.setDetailOpen(false)}
+        openEquipment={p.openById}
+      />
+    );
   return (
-    <>
-      {detailOpen && (
-        <Button
-          kind="flat"
-          onClick={() => {
-            surfaceRef.current++;
-            detailReadRef.current++;
-            setDetailOpen(false);
-            setJob(undefined);
-          }}
-        >
-          Voltar aos equipamentos
-        </Button>
-      )}
-      <p className="inspector-heading">Detalhes do equipamento</p>
-      <h2>{selected.name}</h2>
-      <p>Papel declarado: {ROLE_LABELS[selected.role || 'other']}</p>
-      {(!selected.role || selected.role === 'other') && (
-        <p>
-          Para ver os logins de clientes PPPoE, edite o cadastro e declare o
-          papel Concentrador.
-        </p>
-      )}
-      <p className="subtitle">
-        SSH · {selected.result?.family || 'Sistema desconhecido'}
-      </p>
-    </>
+    <DataBlock
+      title={tab}
+      source="cadastro local"
+      data={{
+        state: 'unbuilt',
+        slice: tab === 'Roteador' ? 'L-ROT' : 'L-BASE-2',
+      }}
+    />
   );
 }
-
-export function EquipmentDetailPane(p: {
-  selected: Device;
-  detailOpen: boolean;
-  detailSurfaceRef: React.RefObject<HTMLElement | null>;
-  surfaceRef: React.MutableRefObject<number>;
-  detailReadRef: React.MutableRefObject<number>;
-  setDetailOpen: (v: boolean) => void;
-  setJob: (j: Job | undefined) => void;
-  setPPOpen: (v: boolean) => void;
-  credentials: Credential[];
-  connected: boolean;
-  locked: boolean;
-  vault: boolean;
-  job?: Job;
-  profile: string;
-  activation: string;
-  resetOperationRef: React.MutableRefObject<string>;
-  setResetTrust: (v: boolean) => void;
-  startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
-  openDevice: (d: Device) => void;
-  setError: (v: string) => void;
-  setForm: (d: Device | 'new' | undefined) => void;
-  setSelected: (d: Device | undefined) => void;
-  perform: EquipmentPerformFn;
-}) {
-  const {
-    detailSurfaceRef,
-    surfaceRef,
-    detailReadRef,
-    resetOperationRef,
-    ...rest
-  } = p;
-  const { selected, detailOpen } = rest;
-  const accessDetails = (
-    <EquipmentAccessDetails {...rest} resetOperationRef={resetOperationRef} />
+export function EquipmentDetailPane(p: Props) {
+  const { surfaceRef, detailReadRef, detailSurfaceRef } = p;
+  const [tab, setTab] = useState('Resumo');
+  const [radioActions, setRadioActions] = useState<HTMLDivElement | null>(null);
+  const [chainHost, setChainHost] = useState<HTMLDivElement | null>(null);
+  const device = p.selected,
+    role = device.role || 'other';
+  const isRadio = [RadioRoles.ap, RadioRoles.cpe, RadioRoles.ptp].some(
+    (r) => r === role,
   );
+  const saved = latestSavedReading(device);
+  const readingAge = saved.at
+    ? `há ${formatDuration((p.displayNow - Date.parse(saved.at)) / 1000)}`
+    : 'Ainda sem leitura';
+  const back = () => {
+    const inventory = detailSurfaceRef.current?.closest(
+      '.equipment-capability',
+    );
+    surfaceRef.current++;
+    detailReadRef.current++;
+    p.setDetailOpen(false);
+    p.setJob(undefined);
+    queueMicrotask(() => {
+      const row = Array.from(
+        inventory?.querySelectorAll<HTMLElement>('[data-device-id]') || [],
+      ).find((element) => element.dataset.deviceId === device.id);
+      row?.focus({ preventScroll: true });
+    });
+  };
   return (
-    <aside
+    <section
       ref={detailSurfaceRef}
       tabIndex={-1}
-      className={detailOpen ? 'equipment-detail' : 'inspector'}
+      className="equipment-sheet"
+      aria-label="Ficha do equipamento"
     >
-      <EquipmentDetailHeader
-        {...rest}
-        surfaceRef={surfaceRef}
-        detailReadRef={detailReadRef}
+      <PageHeader
+        title={device.name}
+        meta={
+          <>
+            {device.name} · {equipmentType(role)} ·{' '}
+            {saved.version || 'Não informado nesta leitura'} ·{' '}
+            {saved.at ? `atualizado ${readingAge}` : readingAge}
+          </>
+        }
+      >
+        <Button onClick={back}>Voltar</Button>
+        {isRadio || tab === 'Sessões' || tab === 'Serviços' ? (
+          <div ref={setRadioActions} className="actions header-actions" />
+        ) : (
+          <Button
+            kind="primary"
+            disabled={
+              p.job?.state === 'RUNNING' ? p.locked : equipmentReadBlocked(p)
+            }
+            onClick={() =>
+              p.job?.state === 'RUNNING'
+                ? void p.perform(
+                    () => api.cancel(p.profile, p.activation, p.job!.id),
+                    (r) => p.setJob(r.data?.job),
+                    false,
+                  )
+                : void p.startOperation(
+                    device.fingerprint ? 'query' : 'inspect',
+                    device,
+                  )
+            }
+          >
+            {p.job?.state === 'RUNNING'
+              ? 'Parar'
+              : device.fingerprint
+                ? 'Atualizar'
+                : 'Conectar'}
+          </Button>
+        )}
+      </PageHeader>
+      <div className="chain" ref={setChainHost}>
+        {!isRadio && (
+          <EquipmentChain
+            device={device}
+            devices={p.devices}
+            open={p.openById}
+          />
+        )}
+      </div>
+      <Tabs
+        label="Ficha do equipamento"
+        items={(TABS[role] || TABS.other).map((t) => [t, t])}
+        value={tab}
+        onChange={setTab}
       />
-      {!detailOpen && accessDetails}
-      <EquipmentActionsBar {...rest} />
-      {selected.last_attempt && (
-        <p className="inventory-notice" role="status">
-          Última tentativa: {formatDate(selected.last_attempt.at)} ·{' '}
-          {selected.last_attempt.state === 'SUCCEEDED'
-            ? 'Leitura concluída'
-            : selected.last_attempt.state === 'STARTED'
-              ? 'Iniciada; conclusão ainda não registrada'
-              : equipmentMessage(selected.last_attempt.code)}
-        </p>
-      )}
-      <EquipmentExtendedPanels {...rest} />
-      {detailOpen && (
-        <details className="equipment-access">
-          <summary>Acesso e identidade</summary>
-          {accessDetails}
-        </details>
-      )}
-    </aside>
+      <HeaderActionHost value={radioActions}>
+        {isRadio && (
+          <RadioEquipment
+            key={[p.profile, p.activation, device.id, device.revision].join(
+              '|',
+            )}
+            profile={p.profile}
+            activation={p.activation}
+            device={device}
+            blocked={p.locked || !p.vault || !device.active}
+            tab={tab}
+            actionHost={radioActions}
+            chainHost={chainHost}
+            devices={p.devices}
+            openEquipment={p.openById}
+          />
+        )}
+        {(!isRadio ||
+          tab === 'Acesso' ||
+          tab === 'Cliente' ||
+          tab === 'Roteador') && <SheetContent p={p} tab={tab} />}
+      </HeaderActionHost>
+    </section>
   );
 }

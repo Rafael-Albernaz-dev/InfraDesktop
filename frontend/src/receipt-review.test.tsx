@@ -1,3 +1,4 @@
+import { openDeviceSheet } from './test-navigation';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { Equipment } from './equipment';
@@ -94,13 +95,13 @@ for (const revision of [2, 3]) {
     render(
       <Equipment profile="c" activation="a" connected createRequest={0} />,
     );
-    await screen.findByRole('heading', { name: 'Receipt router' });
+    await openDeviceSheet('Receipt router');
     pendingStarts.clear();
     for (const kind of ['query', 'inspect'])
       for (const r of [2, 3])
         pendingStarts.set(`c|a|${kind}|device|${r}`, `${kind}-revision${r}`);
     await act(async () =>
-      fireEvent.click(screen.getByRole('button', { name: 'Conectar' })),
+      fireEvent.click(screen.getByRole('button', { name: 'Atualizar' })),
     );
     for (const kind of ['query', 'inspect']) {
       expect(pendingStarts.get(`c|a|${kind}|device|3`)).toBe(
@@ -133,9 +134,7 @@ for (const revision of [2, 3]) {
       operation: 'delete-reference',
     });
     await act(async () =>
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Atualizar sessões' }),
-      ),
+      fireEvent.click(screen.getByRole('button', { name: 'Atualizar' })),
     );
     expect(pendingPPPoE.get('c|a|device|collect|3')?.operation).toBe(
       'collection-revision3',

@@ -35,7 +35,7 @@ export function Security({
       </p>
       <div className="security-theme" aria-label="Tema da janela">
         {(['light', 'dark'] as const).map((id) => (
-          <button
+          <Button
             type="button"
             key={id}
             className={'btn ' + (theme === id ? 'primary' : '')}
@@ -44,7 +44,7 @@ export function Security({
             onClick={() => setTheme(id)}
           >
             {id === 'light' ? 'Claro' : 'Escuro'}
-          </button>
+          </Button>
         ))}
       </div>
       {recovery ? (
@@ -100,9 +100,9 @@ export function Security({
             </p>
           )}
           <div className="dialog-actions">
-            <button className="btn primary" type="submit" disabled={busy}>
+            <Button className="btn primary" type="submit" disabled={busy}>
               {uncertain ? 'Gerar outro código novo' : 'Gerar novo código'}
-            </button>
+            </Button>
           </div>
         </form>
       )}

@@ -169,18 +169,13 @@ function useQueuedConnectEffect(
   }, [connectRequest, busy, connected]);
 }
 
-function useEquipmentStore(
-  profile: string,
-  activation: string,
-  targetID?: string,
-) {
+function useEquipmentStore(profile: string, activation: string) {
   const [credentialRefresh, reloadCredentials] = useState(0);
   const [credentialDefaults, setCredentialDefaults] = useState<
     Record<string, string>
   >({});
   const [defaultBusy, setDefaultBusy] = useState(false);
   const [credentialError, setCredentialError] = useState('');
-  const [ppOpen, setPPOpen] = useState(false);
   const displayNow = useDisplayNow();
   const [devices, setDevices] = useState<Device[]>([]);
   const [credentialCatalog, setCredentialCatalog] = useState<{
@@ -206,8 +201,7 @@ function useEquipmentStore(
   const [form, setForm] = useState<Device | 'new'>(),
     [credentialForm, setCredentialForm] = useState<Credential | 'new'>(),
     [job, setJob] = useState<Job>();
-  const [detailOpen, setDetailOpen] = useState(Boolean(targetID)),
-    [connectRequest, setConnectRequest] = useState<Device>(),
+  const [connectRequest, setConnectRequest] = useState<Device>(),
     [resetTrust, setResetTrust] = useState(false),
     [jobDevice, setJobDevice] = useState<Device>(),
     [consumedCreate, consumeCreate] = useState(0);
@@ -220,8 +214,6 @@ function useEquipmentStore(
     setDefaultBusy,
     credentialError,
     setCredentialError,
-    ppOpen,
-    setPPOpen,
     displayNow,
     devices,
     setDevices,
@@ -257,8 +249,10 @@ function useEquipmentStore(
     setCredentialForm,
     job,
     setJob,
-    detailOpen,
-    setDetailOpen,
+    detailOpen: Boolean(selected),
+    setDetailOpen: useCallback((open: boolean) => {
+      if (!open) setSelected(undefined);
+    }, []),
     connectRequest,
     setConnectRequest,
     resetTrust,
@@ -348,17 +342,17 @@ export function useEquipmentState(props: {
   const surfaceRef = useRef(0);
   const mountedRef = useRef(true);
   const generationRef = useRef(0);
-  const s = useEquipmentStore(profile, activation, targetID);
+  const s = useEquipmentStore(profile, activation);
   useLayoutEffect(() => {
     acceptEquipmentAuthority(profile, activation);
     defaultContextRef.current = [profile, activation].join('|');
   }, [profile, activation]);
   useLayoutEffect(() => {
-    if (s.detailOpen && s.selected?.id && !s.ppOpen) {
+    if (s.detailOpen && s.selected?.id) {
       detailSurfaceRef.current?.focus({ preventScroll: true });
       detailSurfaceRef.current?.scrollIntoView?.({ block: 'start' });
     }
-  }, [s.detailOpen, s.selected?.id, s.ppOpen]);
+  }, [s.detailOpen, s.selected?.id]);
   useEffect(() => {
     mountedRef.current = true;
     return () => {

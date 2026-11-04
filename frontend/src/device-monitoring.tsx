@@ -1,3 +1,6 @@
+import { Button } from './ui/Button';
+import { DataTable } from './ui/DataTable';
+import { Chart } from './ui/Chart';
 import { useCallback, useEffect, useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
@@ -9,76 +12,42 @@ import { deviceMonitoringAPI as monitoringAPI } from './presentation';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
 export { DeviceOperationalTables } from './device-operational';
 
-function SessionCurveSvg({ points }: { points: DeviceMonitoringPoint[] }) {
+function SessionCurve({ points }: { points: DeviceMonitoringPoint[] }) {
   const ordered = [...points].reverse();
-  const maximum = Math.max(
-    1,
-    ...ordered.flatMap((p) =>
-      p.online_max === undefined ? [] : [p.online_max],
-    ),
-  );
-  const first = Math.min(...ordered.map((p) => Date.parse(p.at)));
-  const last = Math.max(...ordered.map((p) => Date.parse(p.at)));
-  const x = (p: DeviceMonitoringPoint) =>
-    ((Date.parse(p.at) - first) / Math.max(1, last - first)) * 600;
-  const paths: string[] = [];
-  let path = '';
-  for (let i = 0; i < ordered.length; i++) {
-    const p = ordered[i];
+  const values = ordered.map((p, i) => {
     const prev = ordered[i - 1];
-    const gapTime = prev ? Date.parse(p.at) - Date.parse(prev.at) : 0;
-    const maxRes = prev ? Math.max(p.resolution, prev.resolution) * 1000 : 0;
-    if (p.gap || p.online === undefined || (prev && gapTime > maxRes)) {
-      if (path) paths.push(path);
-      path = '';
-      continue;
-    }
-    path +=
-      (path ? ' L ' : 'M ') +
-      x(p).toFixed(1) +
-      ' ' +
-      (135 - (p.online / maximum) * 125).toFixed(1);
-  }
-  if (path) paths.push(path);
+    const missingInterval =
+      prev &&
+      Date.parse(p.at) - Date.parse(prev.at) >
+        Math.max(p.resolution, prev.resolution) * 1000;
+    return p.gap || missingInterval ? null : (p.online ?? null);
+  });
   return (
-    <svg
-      viewBox="0 0 600 150"
-      role="img"
-      aria-label="Curva de sessões online observadas"
-      style={{ width: '100%', maxHeight: 180 }}
-    >
-      <title>
-        Sessões online; lacunas não são zero. Página atual da série.
-      </title>
-      {paths.map((d, i) => (
-        <path
-          key={i}
-          d={d}
-          fill="none"
-          stroke="var(--accent, #466bd2)"
-          strokeWidth="2"
-        />
-      ))}
-      {ordered.map((p, i) => {
-        if (p.online === undefined) return null;
-        const cy = 135 - (p.online / maximum) * 125;
-        const fill = p.drop
-          ? 'var(--danger, #b94b4b)'
-          : 'var(--accent, #466bd2)';
-        return <circle key={i} cx={x(p)} cy={cy} r={3} fill={fill} />;
-      })}
-    </svg>
+    <Chart
+      x={ordered.map((p) => Date.parse(p.at) / 1000)}
+      series={[{ label: 'Sessões online', token: '--chart-down', values }]}
+      format={(value) => (value == null ? '—' : String(Math.round(value)))}
+      formatX={(value) =>
+        new Date(value * 1000).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      }
+      xSteps={[60, 300, 900, 3600, 10800, 21600, 43200, 86400]}
+      markers={ordered.flatMap((p, i) => (p.drop ? [i] : []))}
+      label="Curva de sessões online observadas"
+    />
   );
 }
 
 function SessionPointsTable({ points }: { points: DeviceMonitoringPoint[] }) {
   return (
     <div
-      className="table-scroll"
+      className="table-region"
       tabIndex={0}
       aria-label="Pontos de sessões online"
     >
-      <table className="app-table">
+      <DataTable className="data-table">
         <thead>
           <tr>
             <th>Período</th>
@@ -121,7 +90,7 @@ function SessionPointsTable({ points }: { points: DeviceMonitoringPoint[] }) {
             );
           })}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }
@@ -133,7 +102,7 @@ function SessionMonitoringCurve({
 }) {
   return (
     <>
-      <SessionCurveSvg points={points} />
+      <SessionCurve points={points} />
       <SessionPointsTable points={points} />
     </>
   );
@@ -153,8 +122,8 @@ function MonitoringDuplicatesTable({
         idade de até 15 min e janelas de coleta sobrepostas. Sem essas
         condições: não comparável (leituras distantes).
       </p>
-      <div className="table-scroll" tabIndex={0}>
-        <table className="app-table">
+      <div className="table-region" tabIndex={0}>
+        <DataTable className="data-table">
           <thead>
             <tr>
               <th>Login</th>
@@ -186,7 +155,7 @@ function MonitoringDuplicatesTable({
                 </tr>
               ))}
           </tbody>
-        </table>
+        </DataTable>
       </div>
     </>
   );
@@ -481,21 +450,23 @@ function DeviceMonitoringContent({
       />
       <nav role="tablist" aria-label="Dados locais do monitoramento">
         {MON_TABS.map(([val, label]) => (
-          <button
+          <Button
+            type="submit"
             key={val}
             role="tab"
             aria-selected={scope === val}
             onClick={() => change(val)}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </nav>
       {state === 'loading' && <p role="status">Lendo dados armazenados…</p>}
       {state === 'error' && (
         <>
           <p role="alert">{error}</p>
-          <button
+          <Button
+            type="submit"
             onClick={() => {
               setCursor('');
               setRows([]);
@@ -505,7 +476,7 @@ function DeviceMonitoringContent({
             }}
           >
             Reabrir série local
-          </button>
+          </Button>
         </>
       )}
       {state === 'ready' && (
@@ -525,7 +496,8 @@ function DeviceMonitoringContent({
               </div>
             ))}
           {next && (
-            <button
+            <Button
+              type="submit"
               onClick={() => {
                 setCursor(next);
                 setRows([]);
@@ -533,10 +505,11 @@ function DeviceMonitoringContent({
               }}
             >
               Próxima página dos dados locais
-            </button>
+            </Button>
           )}
           {cursor && (
-            <button
+            <Button
+              type="submit"
               onClick={() => {
                 setCursor('');
                 setRows([]);
@@ -544,7 +517,7 @@ function DeviceMonitoringContent({
               }}
             >
               Início dos dados locais
-            </button>
+            </Button>
           )}
         </>
       )}

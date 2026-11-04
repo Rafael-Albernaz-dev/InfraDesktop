@@ -1,3 +1,6 @@
+import { RadioRecoveryPicker } from './radio-recovery-picker';
+import { Button } from './ui/Button';
+
 import {
   createRecoveryChoice,
   createRecoverySave,
@@ -5,37 +8,21 @@ import {
   useRecoveryState,
 } from './radio-credential-state';
 import type { RadioRecoveryProps } from './radio-credential-state';
-
 export function RadioCredentialRecovery(props: RadioRecoveryProps) {
   const state = useRecoveryState(props);
   const choose = createRecoveryChoice(state),
     save = createRecoverySave(state);
   useRecoveryAutoload(state, choose);
-  const { message, open, busy, target, credentials } = state;
+  const { message, open, busy } = state;
   return (
     <div>
       {message && <p role="status">{message}</p>}
       {open ? (
-        <label>
-          Credencial de consulta
-          <select
-            aria-label="Outra credencial do equipamento"
-            disabled={busy}
-            value={target?.credential_id || ''}
-            onChange={(event) => void save(event.target.value)}
-          >
-            <option value="">Selecione</option>
-            {credentials.map((credential) => (
-              <option key={credential.id} value={credential.id}>
-                {credential.alias} · {credential.user}
-              </option>
-            ))}
-          </select>
-        </label>
+        <RadioRecoveryPicker state={state} save={save} />
       ) : (
-        <button disabled={busy} onClick={() => void choose()}>
+        <Button type="submit" disabled={busy} onClick={() => void choose()}>
           Escolher outra
-        </button>
+        </Button>
       )}
     </div>
   );

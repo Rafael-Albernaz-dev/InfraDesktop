@@ -1,8 +1,7 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { vi, describe, it, expect, afterEach, beforeEach } from 'vitest';
 import App from './App';
 import { access, equipmentAPI, type Result } from './presentation';
-
 const accessMock = vi.hoisted(() => {
   const s =
     'status,register,login,recover,logout,createCompany,selectCompany,' +
@@ -13,7 +12,6 @@ vi.mock('./presentation', () => ({
   equipmentAPI: { list: vi.fn() },
   access: accessMock,
 }));
-
 const snapshot = (authenticated = false): Result => ({
   code: 'OK',
   request_id: 'test',
@@ -30,7 +28,6 @@ const snapshot = (authenticated = false): Result => ({
     ? [{ id: 'company-one', name: 'Fixture Alpha' }]
     : [],
 });
-
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(equipmentAPI.list).mockResolvedValue({
@@ -63,7 +60,6 @@ function defer<T>() {
   });
   return { p, resolve, reject };
 }
-
 async function enterCredentials() {
   fireEvent.change(screen.getByLabelText('Usuário'), {
     target: { value: 'technical' },
@@ -71,10 +67,12 @@ async function enterCredentials() {
   fireEvent.change(screen.getByLabelText('Senha', { exact: true }), {
     target: { value: 'isolated test password' },
   });
+  if (screen.queryByLabelText('Confirmar senha'))
+    fireEvent.change(screen.getByLabelText('Confirmar senha'), {
+      target: { value: 'isolated test password' },
+    });
 }
-
-const emptyHeading = 'Nenhum equipamento cadastrado';
-
+const emptyHeading = 'Visão geral';
 describe('BF01 real-use presentation', () => {
   it('shows service status and prevents login while disconnected without synthetic controls', async () => {
     statusMock('SERVICE_UNAVAILABLE');
@@ -95,7 +93,7 @@ describe('BF01 real-use presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
     await enterCredentials();
     fireEvent.click(screen.getByRole('button', { name: 'Criar conta local' }));
-    await screen.findByText('Guarde seu código');
+    await screen.findByText('Guarde seu novo código');
     expect(access.register).toHaveBeenCalledWith(
       'technical',
       'isolated test password',
@@ -112,11 +110,12 @@ describe('BF01 real-use presentation', () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     render(<App />);
     await screen.findByRole('heading', { name: emptyHeading });
+    fireEvent.click(screen.getByRole('link', { name: 'Equipamentos' }));
     expect(
-      screen.getByRole('button', { name: 'Adicionar equipamento' }),
+      await screen.findByRole('button', { name: 'Adicionar equipamento' }),
     ).toBeVisible();
     expect(screen.queryByText('412')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Selecionar empresa'));
+    fireEvent.click(screen.getByRole('link', { name: /Fixture Alpha/ }));
     expect(screen.getByRole('heading', { name: 'Empresas' })).toBeVisible();
   });
   it('keeps login failure readable across successful polls and clears secrets', async () => {
@@ -161,7 +160,7 @@ describe('BF01 real-use presentation', () => {
     render(<App />);
     await act(async () => {});
     fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sair da conta' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
     await act(async () => {});
     vi.mocked(access.status).mockResolvedValue({
@@ -172,7 +171,7 @@ describe('BF01 real-use presentation', () => {
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent('serviço local');
     expect(
       screen.getByRole('heading', {
-        name: 'Nenhum equipamento cadastrado',
+        name: 'Visão geral',
       }),
     ).toBeVisible();
     expect(
@@ -201,20 +200,22 @@ describe('BF01 real-use presentation', () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     const deferred = defer<Result>();
     vi.mocked(access.setTheme).mockReturnValue(deferred.p);
-    render(<App />);
+    const { container } = render(<App />);
     await screen.findByRole('heading', { name: emptyHeading });
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Abrir configurações' }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Escuro' }));
-    expect(screen.getByRole('button', { name: 'Escuro' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Tema escuro' }));
+    fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
+    expect(
+      screen.getByRole('menuitem', { name: 'Tema escuro' }),
+    ).toBeDisabled();
     await act(async () =>
       deferred.resolve({ ...snapshot(true), theme: 'dark' }),
     );
-    expect(screen.getByRole('button', { name: 'Escuro' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
+    expect(container.querySelector('.app')).toHaveAttribute(
+      'data-theme',
+      'dark',
     );
+    expect(access.setTheme).toHaveBeenCalledOnce();
     expect(access.setTheme).toHaveBeenCalledWith('dark');
   });
   it('discards a rejected login after switching to recovery context', async () => {
@@ -232,30 +233,6 @@ describe('BF01 real-use presentation', () => {
     ).toBeVisible();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Nova senha')).toHaveValue('');
-  });
-  it('keeps branding draft local until confirmed save, cancel restores saved values', async () => {
-    vi.mocked(access.status).mockResolvedValue(snapshot(true));
-    render(<App />);
-    await screen.findByRole('heading', { name: emptyHeading });
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Abrir configurações' }),
-    );
-    const visual = screen.getByLabelText('Nome visual', { exact: true });
-    fireEvent.change(visual, { target: { value: 'Draft only' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Violeta' }));
-    expect(screen.getByRole('button', { name: 'Salvar' })).toBeEnabled();
-    expect(access.saveBrand).not.toHaveBeenCalled();
-    expect(screen.getByLabelText('Selecionar empresa')).toHaveTextContent(
-      'Fixture Alpha',
-    );
-    expect(screen.queryByText('412')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    expect(visual).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Turquesa' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
-    expect(access.setTheme).not.toHaveBeenCalled();
   });
   it('keeps the one-time recovery code until acknowledgement across a daemon restart', async () => {
     vi.useFakeTimers();
@@ -290,7 +267,6 @@ describe('BF01 real-use presentation', () => {
     expect(recoveryCode()).not.toBeInTheDocument();
   });
 });
-
 it('C01b confirmed unauthentication clears expired receipts; transport failure retains them before same-context login', async () => {
   const { pendingStarts } = await import('./equipment-receipts');
   vi.useFakeTimers();
@@ -316,34 +292,32 @@ it('C01b confirmed unauthentication clears expired receipts; transport failure r
   expect(access.login).toHaveBeenCalledOnce();
   expect(pendingStarts.size).toBe(0);
 });
-
-it('supports named route navigation across companies, overview, equipment, pppoe, topology, settings and back navigation', async () => {
+it('supports company, overview, equipment, credential and settings routes with coherent paths', async () => {
   vi.mocked(access.status).mockResolvedValue(snapshot(true));
   render(<App />);
-  await screen.findByRole('button', { name: 'Selecionar empresa' });
-  const nav = () => screen.getByRole('navigation', { name: 'Caminho da tela' });
-  const btn = (name: string) => screen.getByRole('button', { name });
-  const step = (target: string, exp: string, bk = false) => {
-    fireEvent.click(btn(target));
-    expect(nav()).toHaveTextContent(exp);
-    if (bk) expect(btn('Voltar à tela anterior')).toBeInTheDocument();
-  };
-
-  expect(nav()).toHaveTextContent('Visão geral');
-  step('Equipamentos', 'Equipamentos', true);
-  step('Voltar à tela anterior', 'Visão geral');
-  step('Sessões PPPoE', 'Sessões PPPoE', true);
-  step('Voltar à tela anterior', 'Equipamentos', true);
-  step('Voltar à tela anterior', 'Visão geral');
-  step('Topologia', 'Topologia', true);
-  step('Voltar à tela anterior', 'Visão geral');
-  fireEvent.click(btn('Configurações'));
-  fireEvent.click(btn('Aparência'));
-  expect(nav()).toHaveTextContent('Configurações');
-  expect(btn('Voltar à tela anterior')).toBeInTheDocument();
-  step('Voltar à tela anterior', 'Visão geral');
-  step('Selecionar empresa', 'Empresas');
+  await screen.findByRole('heading', { name: 'Visão geral' });
+  const path = () => screen.getByRole('navigation', { name: 'Caminho' });
+  fireEvent.click(screen.getByRole('link', { name: 'Equipamentos' }));
+  expect(path()).toHaveTextContent('Equipamentos');
+  fireEvent.click(screen.getByRole('link', { name: 'Credenciais' }));
+  expect(path()).toHaveTextContent('Equipamentos›Credenciais');
+  fireEvent.click(within(path()).getByRole('link', { name: 'Equipamentos' }));
+  expect(path()).toHaveTextContent('Equipamentos');
+  fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
+  expect(path()).toHaveTextContent('Configurações');
   expect(
-    screen.queryByRole('button', { name: 'Voltar à tela anterior' }),
+    screen.queryByRole('button', { name: 'Aparência' }),
   ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('link', { name: 'Topologia' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('link', { name: 'Sessões PPPoE' }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('link', { name: 'Visão geral' }));
+  expect(path()).toHaveTextContent('Visão geral');
+  fireEvent.click(screen.getByRole('link', { name: /Fixture Alpha/ }));
+  expect(
+    await screen.findByRole('heading', { name: 'Empresas' }),
+  ).toBeVisible();
 });

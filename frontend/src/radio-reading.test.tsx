@@ -11,7 +11,6 @@ import {
   reading,
   link,
 } from './radio-test-fixtures';
-
 vi.mock('./radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
@@ -24,7 +23,6 @@ vi.mock('./radio-api', () => ({
     confirmLink: vi.fn(),
   },
 }));
-
 vi.mock('./equipment-api', () => ({
   equipmentMessage: (c: string) => c,
   equipmentAPI: {
@@ -34,7 +32,6 @@ vi.mock('./equipment-api', () => ({
     save: vi.fn(),
   },
 }));
-
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(api.current).mockResolvedValue(response());
@@ -99,7 +96,7 @@ it('opens saved radio without SSH, has one primary query, and preserves absent C
   expect(screen.getByText('CCQ rx').nextElementSibling).toHaveTextContent(
     'não disponível nesta família',
   );
-  expect(screen.getByRole('button', { name: 'Consultar rádio' })).toHaveClass(
+  expect(screen.getByRole('button', { name: 'Atualizar' })).toHaveClass(
     'primary',
   );
   expect(
@@ -335,6 +332,7 @@ it('consults a standalone PTP automatically and shows local-only peer and unavai
       blocked={false}
     />,
   );
+  fireEvent.click(await screen.findByText('Detalhes da leitura'));
   expect(
     await screen.findByText(/visto pelo lado local, não cadastrado/),
   ).toBeVisible();
@@ -349,7 +347,9 @@ it('consults a standalone PTP automatically and shows local-only peer and unavai
   expect(
     screen.queryByRole('button', { name: 'Confirmar família detectada' }),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Consultar rádio' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
+  );
   await waitFor(() =>
     expect(api.start).toHaveBeenCalledWith(
       'company',

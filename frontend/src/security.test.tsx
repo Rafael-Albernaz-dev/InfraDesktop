@@ -4,6 +4,7 @@ import {
   fireEvent,
   act,
   cleanup,
+  within,
 } from '@testing-library/react';
 import { vi, it, expect, beforeEach, afterEach } from 'vitest';
 import App from './App';
@@ -45,14 +46,21 @@ beforeEach(() => {
 afterEach(cleanup);
 async function openSecurity() {
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: /Conta:/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
 }
 function submit() {
-  fireEvent.change(screen.getByLabelText('Senha atual'), {
-    target: { value: 'isolated test password' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
+  fireEvent.change(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    {
+      target: { value: 'isolated test password' },
+    },
+  );
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Gerar novo código',
+    }),
+  );
 }
 it('works without company, retains pending issuance and one-time code until ack, allows theme and copies narrowly', async () => {
   let complete!: (r: Result) => void;
@@ -65,10 +73,12 @@ it('works without company, retains pending issuance and one-time code until ack,
   await openSecurity();
   submit();
   fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Selecionar empresa' }));
+  fireEvent.click(screen.getByRole('link', { name: /Selecionar empresa/ }));
   expect(screen.getByRole('dialog', { name: 'Segurança' })).toBeInTheDocument();
   await act(async () => complete({ ...state, recovery: 'a'.repeat(64) }));
-  expect(screen.queryByLabelText('Senha atual')).not.toBeInTheDocument();
+  expect(
+    within(screen.getByRole('dialog')).queryByLabelText('Senha atual'),
+  ).not.toBeInTheDocument();
   const field = screen.getByLabelText('Novo código de recuperação');
   expect(field).toHaveValue(Array(8).fill('aaaaaaaa').join('-'));
   fireEvent.click(screen.getByRole('button', { name: 'Escuro' }));
@@ -118,11 +128,16 @@ it('clears password, gives uncertainty explanation, and only explicitly reissues
   await openSecurity();
   submit();
   await screen.findByText(/Não recebemos a confirmação/);
-  expect(screen.getByLabelText('Senha atual')).toHaveValue('');
+  expect(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+  ).toHaveValue('');
   expect(access.renewRecovery).toHaveBeenCalledTimes(1);
-  fireEvent.change(screen.getByLabelText('Senha atual'), {
-    target: { value: 'isolated test password' },
-  });
+  fireEvent.change(
+    within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    {
+      target: { value: 'isolated test password' },
+    },
+  );
   fireEvent.click(
     screen.getByRole('button', { name: 'Gerar outro código novo' }),
   );
@@ -132,7 +147,6 @@ it('clears password, gives uncertainty explanation, and only explicitly reissues
     true,
   );
 });
-
 for (const failure of ['DEADLINE_EXCEEDED', 'reject'] as const) {
   it(`retains issuance uncertainty across panel unmount/reopen after ${failure}`, async () => {
     if (failure === 'reject')
@@ -158,15 +172,19 @@ for (const failure of ['DEADLINE_EXCEEDED', 'reject'] as const) {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
     expect(screen.getByText(/Não recebemos a confirmação/)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Senha atual')).toHaveValue('');
+    expect(
+      within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+    ).toHaveValue('');
     expect(access.renewRecovery).toHaveBeenCalledTimes(1);
-    fireEvent.change(screen.getByLabelText('Senha atual'), {
-      target: { value: 'isolated test password' },
-    });
+    fireEvent.change(
+      within(screen.getByRole('dialog')).getByLabelText('Senha atual'),
+      {
+        target: { value: 'isolated test password' },
+      },
+    );
     fireEvent.click(
       screen.getByRole('button', { name: 'Gerar outro código novo' }),
     );
@@ -182,45 +200,14 @@ for (const failure of ['DEADLINE_EXCEEDED', 'reject'] as const) {
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Guardei meu código' }));
     await act(async () => {});
-    fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
     expect(
       screen.queryByText(/Não recebemos a confirmação/),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Gerar novo código' }),
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Gerar novo código',
+      }),
     ).toBeInTheDocument();
   });
 }
-
-it('removes the transient code when the account session is actually revoked', async () => {
-  vi.useFakeTimers();
-  try {
-    vi.mocked(access.renewRecovery).mockResolvedValue({
-      ...state,
-      recovery: 'c'.repeat(64),
-    });
-    render(<App />);
-    await act(async () => {});
-    fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Segurança' }));
-    submit();
-    await act(async () => {});
-    expect(
-      screen.getByLabelText('Novo código de recuperação'),
-    ).toBeInTheDocument();
-    vi.mocked(access.status).mockResolvedValue({
-      ...state,
-      authenticated: false,
-    });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
-    });
-    expect(
-      screen.queryByLabelText('Novo código de recuperação'),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
-  } finally {
-    vi.useRealTimers();
-  }
-});

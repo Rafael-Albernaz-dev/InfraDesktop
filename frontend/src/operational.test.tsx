@@ -1,3 +1,4 @@
+import { openDeviceSheet } from './test-navigation';
 import {
   fireEvent,
   render,
@@ -37,6 +38,7 @@ vi.mock('./presentation', () => ({
 }));
 const device = {
   id: 'router',
+  role: 'concentrator',
   name: 'Saved router',
   address: '127.0.0.1',
   port: 22,
@@ -120,38 +122,34 @@ it('L06C-UX: equipment summary and interfaces are separate, with a visible PPPoE
       targetID="router"
     />,
   );
-  await screen.findByRole('heading', { name: 'Resumo' });
+  await screen.findByRole('heading', { name: 'Saved router' });
   expect(screen.queryByText('ether1')).not.toBeInTheDocument();
   expect(
     screen
       .getAllByRole('button')
       .filter((button) => button.classList.contains('primary')),
   ).toHaveLength(1);
-  fireEvent.click(screen.getByRole('tab', { name: 'Interfaces físicas' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Interfaces e saúde' }));
   expect(await screen.findByText('ether1')).toBeVisible();
-  expect(
-    screen.queryByRole('heading', { name: 'Resumo' }),
-  ).not.toBeInTheDocument();
+  expect(screen.queryByText('Observed router')).not.toBeInTheDocument();
   expect(screen.queryByText('VLAN100')).not.toBeInTheDocument();
   expect(screen.queryByText('WG-VPN')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: 'VLANs' }));
+  fireEvent.click(screen.getByRole('button', { name: 'VLANs' }));
   expect(screen.getByText('VLAN100')).toBeVisible();
   expect(screen.queryByText('ether1')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: 'VPNs e túneis' }));
+  fireEvent.click(screen.getByRole('button', { name: 'VPNs e túneis' }));
   expect(screen.getByText('WG-VPN')).toBeVisible();
   expect(screen.queryByText('VLAN100')).not.toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Sessões' })).toBeVisible();
+  fireEvent.click(screen.getByRole('tab', { name: 'Sessões' }));
+  await screen.findByText('Sessões PPPoE');
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   expect(
-    screen.getByRole('button', { name: 'Abrir sessões PPPoE' }),
-  ).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Abrir sessões PPPoE' }));
-  await screen.findByRole('heading', { name: 'Sessões PPPoE' });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Voltar ao equipamento' }),
-  );
-  expect(await screen.findByRole('complementary')).toHaveFocus();
+    await screen.findByRole('row', { name: /Saved router/ }),
+  ).toHaveFocus();
   expect(sessions.start).not.toHaveBeenCalled();
 });
-it('dashboard reads the normal company inventory and reopens its full detail', async () => {
+it('list reads the normal company inventory and reopens its full detail', async () => {
   vi.mocked(api.list).mockResolvedValue(
     result({
       ...device,
@@ -178,15 +176,11 @@ it('dashboard reads the normal company inventory and reopens its full detail', a
     brand: { name: '', accent: 'teal', logo: '' },
   } as Awaited<ReturnType<typeof access.getBrand>>);
   render(<App />);
-  const summary = await screen.findByText(/53 ONLINE · 2 OFFLINE/);
-  expect(summary).toHaveTextContent(
-    new Date('2026-10-26T12:00:00Z').toLocaleString('pt-BR'),
-  );
-  const open = await screen.findByRole('button', { name: /Saved router/ });
-  fireEvent.click(open);
-  await screen.findByRole('heading', { name: 'Resumo' });
+  fireEvent.click(await screen.findByRole('link', { name: 'Equipamentos' }));
+  await openDeviceSheet('Saved router');
+  await openDeviceSheet('Saved router');
   fireEvent.click(
-    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+    await screen.findByRole('tab', { name: 'Interfaces e saúde' }),
   );
   expect(await screen.findByText('ether1')).toBeVisible();
   expect(api.get).toHaveBeenCalledWith('X', 'a', 'router');
@@ -207,13 +201,13 @@ it('successful query automatically opens full result without a second action', a
     },
   });
   render(<Equipment profile="X" activation="a" connected createRequest={0} />);
-  await screen.findByRole('heading', { name: 'Saved router' });
+  await openDeviceSheet('Saved router');
   fireEvent.click(
     screen.getByRole('button', { name: /^(Atualizar|Consultar)$/ }),
   );
   await waitFor(() => expect(api.get).toHaveBeenCalled());
   fireEvent.click(
-    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+    await screen.findByRole('tab', { name: 'Interfaces e saúde' }),
   );
   expect(await screen.findByText('ether1')).toBeVisible();
   expect(
@@ -296,14 +290,14 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
   expect(
     screen.queryByLabelText('Origem da conferência'),
   ).not.toBeInTheDocument();
-  expect(trust.querySelectorAll('.btn.primary')).toHaveLength(1);
+  expect(trust.querySelectorAll('button.primary')).toHaveLength(1);
   fireEvent.click(
     within(trust).getByRole('button', {
       name: 'Confiar neste equipamento e conectar',
     }),
   );
   fireEvent.click(
-    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+    await screen.findByRole('tab', { name: 'Interfaces e saúde' }),
   );
   expect(await screen.findByText('ether1')).toBeVisible();
   expect(api.start).toHaveBeenCalledTimes(1);
@@ -316,7 +310,7 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
     ...result(current),
     code: 'CONNECT_FAILED',
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Atualizar resumo' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('porta SSH');
   expect(screen.getByText('ether1')).toBeVisible();
   expect(api.save).toHaveBeenCalledTimes(1);
@@ -360,9 +354,9 @@ it('cancel first acceptance never authenticates and leaves a resumable saved dev
       createRequest={0}
     />,
   );
-  await screen.findByRole('heading', { name: 'Saved router' });
+  await openDeviceSheet('Saved router');
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
   );
   fireEvent.click(
     within(
@@ -380,12 +374,12 @@ it('cancel first acceptance never authenticates and leaves a resumable saved dev
   expect(api.start).not.toHaveBeenCalled();
   expect(api.confirm).not.toHaveBeenCalled();
   fireEvent.click(
-    screen.getByRole('button', { name: /^(Conectar|Consultar resumo)$/ }),
+    screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
   );
   await screen.findByRole('dialog', { name: 'Primeira conexão' });
   expect(api.save).not.toHaveBeenCalled();
 });
-it('dashboard return preserves target while Back exposes the inventory list', async () => {
+it('overview and list navigation retain saved data while Back exposes the list', async () => {
   vi.mocked(access.status).mockResolvedValue({
     code: 'OK',
     request_id: 't',
@@ -405,24 +399,24 @@ it('dashboard return preserves target while Back exposes the inventory list', as
     brand: { name: '', accent: 'teal', logo: '' },
   } as Awaited<ReturnType<typeof access.getBrand>>);
   render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: /Saved router/ }));
-  await screen.findByRole('heading', { name: 'Resumo' });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Voltar aos equipamentos' }),
-  );
-  expect(await screen.findByLabelText('Buscar equipamento')).toBeVisible();
+  fireEvent.click(await screen.findByRole('link', { name: 'Equipamentos' }));
+  await openDeviceSheet('Saved router');
+  await openDeviceSheet('Saved router');
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  expect(await screen.findByLabelText('Buscar')).toBeVisible();
   expect(
-    screen.queryByRole('button', { name: 'Voltar aos equipamentos' }),
+    screen.queryByRole('button', { name: 'Voltar' }),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
-  fireEvent.click(await screen.findByRole('button', { name: /Saved router/ }));
+  fireEvent.click(screen.getByRole('link', { name: 'Visão geral' }));
+  fireEvent.click(screen.getByRole('link', { name: 'Equipamentos' }));
+  await openDeviceSheet('Saved router');
   fireEvent.click(
-    await screen.findByRole('tab', { name: 'Interfaces físicas' }),
+    await screen.findByRole('tab', { name: 'Interfaces e saúde' }),
   );
   expect(await screen.findByText('ether1')).toBeVisible();
 });
 
-it('dashboard read error offers retry without claiming an empty inventory', async () => {
+it('inventory read error offers retry without claiming an empty inventory', async () => {
   vi.mocked(access.status).mockResolvedValue({
     code: 'OK',
     request_id: 't',
@@ -441,16 +435,20 @@ it('dashboard read error offers retry without claiming an empty inventory', asyn
     code: 'OK',
     brand: { name: '', accent: 'teal', logo: '' },
   } as Awaited<ReturnType<typeof access.getBrand>>);
-  vi.mocked(api.list)
-    .mockRejectedValueOnce(new Error('transport'))
-    .mockResolvedValue(result());
+  let fail = true;
+  vi.mocked(api.list).mockImplementation(async () => {
+    if (fail) throw new Error('transport');
+    return result();
+  });
   render(<App />);
+  fireEvent.click(await screen.findByRole('link', { name: 'Equipamentos' }));
   await screen.findByRole('alert');
   expect(
     screen.queryByRole('heading', { name: 'Nenhum equipamento cadastrado' }),
   ).not.toBeInTheDocument();
+  fail = false;
   fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
   expect(
-    await screen.findByRole('button', { name: /Saved router/ }),
+    await screen.findByRole('cell', { name: 'Saved router' }),
   ).toBeVisible();
 });

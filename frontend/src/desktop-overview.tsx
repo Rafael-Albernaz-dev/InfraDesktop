@@ -1,3 +1,4 @@
+import { DataTable } from './ui/DataTable';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Logo } from './desktop-controls';
@@ -9,7 +10,6 @@ import type {
   Page,
 } from './desktop-model';
 import { exactNumber, formatAge } from './network-format';
-
 function State({
   children,
   kind = '',
@@ -19,7 +19,6 @@ function State({
 }) {
   return <span className={'text-state ' + kind}>{children}</span>;
 }
-
 function KV({
   label,
   children,
@@ -36,7 +35,6 @@ function KV({
     </div>
   );
 }
-
 function Empty({
   title = 'Nenhum equipamento',
   children,
@@ -51,7 +49,6 @@ function Empty({
     </div>
   );
 }
-
 function CompanyRow({
   c,
   isSelected,
@@ -86,13 +83,12 @@ function CompanyRow({
           {c.connection || 'Ainda não consultada'}
         </State>
       </td>
-      <td style={{ textAlign: 'right' }}>
+      <td className="numeric">
         {c.count !== undefined ? exactNumber(c.count) : 'Ainda não consultado'}
       </td>
     </tr>
   );
 }
-
 function CompanyTable({
   companies,
   selectedId,
@@ -103,12 +99,12 @@ function CompanyTable({
   onSelect: (id: string) => void;
 }) {
   return (
-    <table className="app-table company-table">
+    <DataTable className="data-table company-table">
       <thead>
         <tr>
           <th>Empresa</th>
           <th>Conexão</th>
-          <th style={{ textAlign: 'right' }}>Equipamentos</th>
+          <th className="numeric">Equipamentos</th>
         </tr>
       </thead>
       <tbody>
@@ -121,10 +117,9 @@ function CompanyTable({
           />
         ))}
       </tbody>
-    </table>
+    </DataTable>
   );
 }
-
 function CompanyDetail({
   selected,
   p,
@@ -157,7 +152,6 @@ function CompanyDetail({
     </aside>
   );
 }
-
 export function Companies(p: DesktopProps) {
   const [chosen, setChosen] = useState('');
   const selected =
@@ -191,7 +185,6 @@ export function Companies(p: DesktopProps) {
     </>
   );
 }
-
 function DashboardInventoryTable(props: {
   ops: Operations;
   openEquipment?: (id: string) => void;
@@ -199,11 +192,11 @@ function DashboardInventoryTable(props: {
   const { ops, openEquipment } = props;
   return (
     <div
-      className="table-scroll"
+      className="table-region"
       tabIndex={0}
       aria-label="Equipamentos da empresa"
     >
-      <table className="app-table">
+      <DataTable className="data-table">
         <thead>
           <tr>
             <th>Equipamento</th>
@@ -238,11 +231,10 @@ function DashboardInventoryTable(props: {
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </div>
   );
 }
-
 function DashboardStatusView(props: {
   ops: Operations;
   brand: Branding;
@@ -284,7 +276,6 @@ function DashboardStatusView(props: {
     </>
   );
 }
-
 export function Dashboard({
   ops,
   brand,
@@ -339,7 +330,6 @@ export function Dashboard({
     </section>
   );
 }
-
 export function PPPoERouteView(props: {
   ops: Operations;
   navigate: (p: Page) => void;
@@ -372,7 +362,6 @@ export function PPPoERouteView(props: {
     </div>
   );
 }
-
 export function TopologyRouteView(props: {
   ops: Operations;
   navigate: (p: Page) => void;

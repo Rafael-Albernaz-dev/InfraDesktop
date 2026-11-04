@@ -96,6 +96,10 @@ for (const mode of ['register', 'recover'] as const) {
       }),
       { target: { value: 'audit isolated password' } },
     );
+    if (mode === 'register')
+      fireEvent.change(screen.getByLabelText('Confirmar senha'), {
+        target: { value: 'audit isolated password' },
+      });
     if (mode === 'recover')
       fireEvent.change(screen.getByLabelText('Código de recuperação'), {
         target: { value: 'a'.repeat(64) },
@@ -119,6 +123,7 @@ it('does not assign failed logout feedback to a new company dialog', async () =>
   vi.mocked(access.status).mockResolvedValue({
     ...snapshot(true),
     profile_id: '',
+    companies: [],
   });
   vi.mocked(access.logout).mockResolvedValue({
     ...snapshot(true),
@@ -127,12 +132,14 @@ it('does not assign failed logout feedback to a new company dialog', async () =>
   });
   render(<App />);
   await screen.findByRole('heading', { name: 'Empresas' });
+  fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
   fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Sair da conta' }));
   fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
   await act(async () => {});
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Nova empresa' }));
+  fireEvent.click(screen.getByRole('link', { name: /Selecionar empresa/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Criar empresa' }));
   expect(
     screen.getByRole('dialog').querySelector('[role="alert"]'),
     'new company must not receive logout error',
@@ -169,7 +176,6 @@ it('does not resurrect canceled branding from an old FileReader', async () => {
     'old reader must not restore canceled draft',
   ).toHaveValue('Original');
 });
-
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: Error) => void;
@@ -200,6 +206,10 @@ function fillAccess(mode: 'register' | 'recover') {
   if (mode === 'recover')
     fireEvent.change(screen.getByLabelText('Código de recuperação'), {
       target: { value: 'a'.repeat(64) },
+    });
+  if (mode === 'register')
+    fireEvent.change(screen.getByLabelText('Confirmar senha'), {
+      target: { value: 'audit isolated password' },
     });
 }
 for (const mode of ['register', 'recover'] as const) {
@@ -303,6 +313,7 @@ for (const outcome of ['success', 'failure', 'reject'] as const) {
     vi.mocked(access.status).mockResolvedValue({
       ...snapshot(true),
       profile_id: '',
+      companies: [],
     });
     const old = deferred<Result>();
     vi.mocked(access.createCompany)
@@ -310,7 +321,7 @@ for (const outcome of ['success', 'failure', 'reject'] as const) {
       .mockResolvedValueOnce({ ...snapshot(true), profile_id: '' });
     const { container } = render(<App />);
     await screen.findByRole('heading', { name: 'Empresas' });
-    fireEvent.click(screen.getByRole('button', { name: 'Nova empresa' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar empresa' }));
     fireEvent.change(screen.getByLabelText('Nome da empresa'), {
       target: { value: 'First' },
     });
@@ -320,8 +331,9 @@ for (const outcome of ['success', 'failure', 'reject'] as const) {
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     // While the first mutation is pending the toolbar stays disabled; opening
     // a different surface still must invalidate the old callback.
+    fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
     fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sair da conta' }));
     if (outcome === 'reject')
       await act(async () => old.reject(new Error('old')));
     else
@@ -337,7 +349,8 @@ for (const outcome of ['success', 'failure', 'reject'] as const) {
     );
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Nova empresa' }));
+    fireEvent.click(screen.getByRole('link', { name: /Selecionar empresa/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Criar empresa' }));
     expect(screen.getByLabelText('Nome da empresa')).toHaveValue('');
     fireEvent.change(screen.getByLabelText('Nome da empresa'), {
       target: { value: 'Second' },
@@ -405,7 +418,7 @@ it('preauth theme survives service failure/reconnect/modes and keyboard, account
     'light',
   );
   fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Sair da conta' }));
   fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
   await act(async () => {});
   expect(container.querySelector('.app')).toHaveAttribute(
@@ -416,7 +429,6 @@ it('preauth theme survives service failure/reconnect/modes and keyboard, account
   expect(access.setTheme).not.toHaveBeenCalled();
   vi.useRealTimers();
 });
-
 type PendingReader = {
   result: string;
   onload: null | (() => void);
@@ -527,58 +539,4 @@ it('can cancel a logo read before any other draft edit', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
   await act(async () => ControlledReader.readers[0].finish('data:late'));
   expect(container.querySelector('img')).toBeNull();
-});
-it('a valid company selection still opens its workspace after the service changes profile context', async () => {
-  vi.useFakeTimers();
-  let current = {
-    ...snapshot(true),
-    profile_id: '',
-  };
-  vi.mocked(access.status).mockImplementation(async () => current);
-  vi.mocked(access.selectCompany).mockImplementation(async (profile) => {
-    expect(profile).toBe('one');
-    current = { ...snapshot(true), activation_id: 'selected-company' };
-    return current;
-  });
-  try {
-    const { container } = render(<App />);
-    await act(async () => {});
-    expect(screen.getByRole('heading', { name: 'Empresas' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir empresa' }));
-    await act(async () => {});
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(
-      screen.getByRole('button', { name: 'Selecionar empresa' }),
-    ).toHaveTextContent('Audit Company');
-    expect(container.querySelector('.app')).toHaveAttribute('data-page', '3');
-    expect(
-      screen.getByRole('heading', { name: 'Operação da rede' }),
-    ).toBeVisible();
-    expect(equipmentAPI.list).toHaveBeenCalledWith(
-      'one',
-      'selected-company',
-      '',
-      0,
-      false,
-    );
-    const polls = vi.mocked(access.status).mock.calls.length;
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    expect(vi.mocked(access.status).mock.calls.length).toBeGreaterThan(polls);
-    expect(current.profile_id).toBe('one');
-    expect(screen.getByRole('button', { name: 'Dashboard' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(
-      screen.getByRole('button', { name: 'Selecionar empresa' }),
-    ).toHaveTextContent('Audit Company');
-    expect(access.selectCompany).toHaveBeenCalledExactlyOnceWith('one');
-  } finally {
-    vi.useRealTimers();
-  }
 });

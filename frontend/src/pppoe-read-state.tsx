@@ -4,7 +4,6 @@ import { equipmentMessage } from './equipment-api';
 import { RadioCodes, RadioModes } from './radio-contract';
 import type { PPReadResult, PPResult } from './presentation';
 import { pppoeReadAPI as readAPI } from './presentation';
-
 export type PPReadPanelProps = {
   profile: string;
   activation: string;
@@ -19,8 +18,8 @@ export type PPReadPanelProps = {
   onRead?: () => void;
   summaryOnly?: boolean;
   traffic?: boolean;
+  bandwidthOnly?: boolean;
 };
-
 export function ppReadMessage(code: string) {
   if (code === 'PARTIAL')
     return 'Não foi possível concluir esta leitura. Tente novamente.';

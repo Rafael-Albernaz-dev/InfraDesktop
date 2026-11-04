@@ -1,4 +1,7 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { CredentialFormFields } from './equipment-credential-fields';
+import { Select } from './ui/Select';
+import { DataBlock } from './ui/DataBlock';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Button } from './desktop';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type {
@@ -6,11 +9,7 @@ import type {
   CredentialInput,
   EquipmentResult,
 } from './equipment-api';
-import {
-  DraftProtection,
-  useDraftProtection,
-  useFieldErrors,
-} from './equipment-draft';
+import { useDraftProtection, useFieldErrors } from './equipment-draft';
 import { id } from './equipment-reading';
 import {
   fieldForEquipmentCode,
@@ -19,13 +18,11 @@ import {
   validEquipmentText,
 } from './equipment-validation';
 import { RadioRoles } from './radio-contract';
-
 const DEFAULT_CREDENTIAL_ROLES = [
   RadioRoles.ap,
   RadioRoles.cpe,
   RadioRoles.ptp,
 ] as const;
-
 export function DefaultCredentialDetails(props: {
   profile: string;
   activation: string;
@@ -51,77 +48,56 @@ export function DefaultCredentialDetails(props: {
     setCredentialError,
   } = props;
   return (
-    <details className="equipment-help">
-      <summary>Credencial padrão por classe</summary>
-      {DEFAULT_CREDENTIAL_ROLES.map((role) => (
-        <label className="field" key={role}>
-          {role.toUpperCase()}
-          <select
-            aria-label={'Credencial padrão ' + role.toUpperCase()}
-            disabled={locked || defaultBusy}
-            value={credentialDefaults[role] || ''}
-            onChange={(e) => {
-              const selected = e.target.value,
-                context = [profile, activation].join('|');
-              if (!selected) return;
-              setDefaultBusy(true);
-              void api
-                .setDefault(profile, activation, role, selected, id())
-                .then((r) => {
-                  if (defaultContextRef.current !== context) return;
-                  if (r.code === 'OK') reloadCredentials((n) => n + 1);
-                  else setCredentialError(equipmentMessage(r.code));
-                })
-                .catch(() => {
-                  if (defaultContextRef.current === context)
-                    setCredentialError(equipmentMessage('SERVICE_UNAVAILABLE'));
-                })
-                .finally(() => setDefaultBusy(false));
-            }}
-          >
-            <option value="">Selecione no cofre</option>
-            {credentials.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.alias} · {c.user}
-              </option>
+    <DataBlock
+      title="Credencial padrão por tipo"
+      source="cadastro local"
+      data={{
+        state: 'ready',
+        content: (
+          <dl className="kv">
+            {DEFAULT_CREDENTIAL_ROLES.map((role) => (
+              <Fragment key={role}>
+                <dt>{role.toUpperCase()}</dt>
+                <dd>
+                  <Select
+                    aria-label={'Credencial padrão ' + role.toUpperCase()}
+                    disabled={locked || defaultBusy}
+                    value={credentialDefaults[role] || ''}
+                    onChange={(e) => {
+                      const selected = e.target.value,
+                        context = [profile, activation].join('|');
+                      if (!selected) return;
+                      setDefaultBusy(true);
+                      void api
+                        .setDefault(profile, activation, role, selected, id())
+                        .then((r) => {
+                          if (defaultContextRef.current !== context) return;
+                          if (r.code === 'OK') reloadCredentials((n) => n + 1);
+                          else setCredentialError(equipmentMessage(r.code));
+                        })
+                        .catch(() => {
+                          if (defaultContextRef.current === context)
+                            setCredentialError(
+                              equipmentMessage('SERVICE_UNAVAILABLE'),
+                            );
+                        })
+                        .finally(() => setDefaultBusy(false));
+                    }}
+                  >
+                    <option value="">Selecione no cofre</option>
+                    {credentials.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.alias}
+                      </option>
+                    ))}
+                  </Select>
+                </dd>
+              </Fragment>
             ))}
-          </select>
-        </label>
-      ))}
-    </details>
-  );
-}
-
-export function CredentialPicker({
-  disabled,
-  credentials,
-  selected,
-  select,
-}: {
-  disabled: boolean;
-  credentials: Credential[];
-  selected: Credential | 'new';
-  select: (value: Credential | 'new') => void;
-}) {
-  const protection = useContext(DraftProtection);
-  return (
-    <select
-      disabled={disabled}
-      aria-label="Credencial para editar"
-      value={selected === 'new' ? '' : selected.id}
-      onChange={(e) => {
-        const target =
-          credentials.find((c) => c.id === e.target.value) || 'new';
-        protection?.attempt(() => select(target));
+          </dl>
+        ),
       }}
-    >
-      <option value="">Nova credencial</option>
-      {credentials.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.alias} · {c.links} vínculos
-        </option>
-      ))}
-    </select>
+    />
   );
 }
 
@@ -165,86 +141,6 @@ function submitCredentialForm(args: {
   })();
 }
 
-function CredentialFormFields(props: {
-  draft: CredentialInput;
-  setDraft: (d: CredentialInput) => void;
-  credential?: Credential;
-  confirmed: boolean;
-  setConfirmed: (v: boolean) => void;
-  disabled: boolean;
-  attrs: ReturnType<typeof useFieldErrors>['attrs'];
-  message: ReturnType<typeof useFieldErrors>['message'];
-}) {
-  const {
-    draft,
-    setDraft,
-    credential,
-    confirmed,
-    setConfirmed,
-    disabled,
-    attrs,
-    message,
-  } = props;
-  return (
-    <>
-      <label className="field">
-        Alias
-        <input
-          required
-          maxLength={80}
-          disabled={disabled}
-          aria-label="Alias"
-          {...attrs('alias')}
-          value={draft.alias}
-          onChange={(e) => setDraft({ ...draft, alias: e.target.value })}
-        />
-        {message('alias')}
-      </label>
-      <label className="field">
-        Usuário remoto
-        <input
-          required
-          maxLength={80}
-          disabled={disabled}
-          aria-label="Usuário remoto"
-          {...attrs('user')}
-          value={draft.user}
-          autoComplete="off"
-          onChange={(e) => setDraft({ ...draft, user: e.target.value })}
-        />
-        {message('user')}
-      </label>
-      <label className="field">
-        Senha remota
-        <input
-          type="password"
-          required
-          maxLength={1024}
-          autoComplete="new-password"
-          disabled={disabled}
-          aria-label="Senha remota"
-          {...attrs('secret')}
-          value={draft.secret}
-          onChange={(e) => setDraft({ ...draft, secret: e.target.value })}
-        />
-        {message('secret')}
-      </label>
-      {credential && (
-        <label className="check">
-          <input
-            disabled={disabled}
-            type="checkbox"
-            checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
-          />
-          Substituir o acesso usado por {credential.links} equipamentos,
-          inclusive inativos.
-        </label>
-      )}
-    </>
-  );
-}
-
 function useInitialCredentialDraft(credential?: Credential) {
   const [draft, setDraft] = useState<CredentialInput>(() => ({
     id: credential?.id || id(),
@@ -259,7 +155,6 @@ function useInitialCredentialDraft(credential?: Credential) {
   const [sent, setSent] = useState(false);
   return { draft, setDraft, confirmed, setConfirmed, sent, setSent };
 }
-
 export function CredentialForm({
   credential,
   disabled,
@@ -327,13 +222,16 @@ export function CredentialForm({
         <Button disabled={disabled} onClick={cancel}>
           Cancelar
         </Button>
-        <button
+        <Button
+          type="submit"
           className="btn primary"
           disabled={disabled || Boolean(credential && !confirmed)}
         >
           Salvar credencial
-        </button>
+        </Button>
       </div>
     </form>
   );
 }
+
+export { CredentialPicker } from './equipment-credential-fields';

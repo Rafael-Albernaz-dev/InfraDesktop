@@ -1,270 +1,161 @@
-import { Button } from './desktop';
-import type { Credential, Device } from './equipment-api';
+import { equipmentType } from './equipment-layout';
+import type { Device } from './equipment-api';
 import { latestSavedReading } from './equipment-reading';
-import {
-  formatDate,
-  formatDuration,
-  formatEquipmentRole,
-  formatMetric,
-} from './network-format';
+import { formatDate, formatDuration, formatMetric } from './network-format';
+import type { useEquipmentState } from './equipment-state';
+import { Button } from './ui/Button';
+import { DataTable } from './ui/DataTable';
+import { Pager } from './ui/Pager';
+import { Select } from './ui/Select';
 
-function EquipmentInventoryRow(p: {
-  d: Device;
-  selected?: Device;
-  displayNow: number;
-  openDevice: (d: Device) => void;
+type Props = ReturnType<typeof useEquipmentState> & {
+  connected: boolean;
+  primaryInHeader: boolean;
+  locked: boolean;
+};
+function InventoryRow({
+  device: d,
+  now,
+  open,
+}: {
+  device: Device;
+  now: number;
+  open: (device: Device) => void;
 }) {
-  const { d, selected, displayNow, openDevice } = p;
   const saved = latestSavedReading(d);
   return (
     <tr
-      className={'selectable ' + (selected?.id === d.id ? 'selected' : '')}
+      data-device-id={d.id}
+      className="click"
       tabIndex={0}
-      aria-selected={selected?.id === d.id}
-      onClick={() => openDevice(d)}
+      onClick={() => open(d)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          openDevice(d);
+          open(d);
         }
       }}
     >
       <td>
-        <span className="cell-name">{d.name}</span>
+        {d.name}
+        {!d.active && <span className="muted"> (inativo)</span>}
       </td>
-      <td className="mono">{d.address}</td>
-      <td className="os-cell">{saved.version || 'Desconhecido'}</td>
-      <td>{d.role ? formatEquipmentRole(d.role) : 'Não definido'}</td>
-      <td title={saved.exactUptime}>{saved.uptime}</td>
-      <td>{formatMetric(saved.cpu, '%')}</td>
+      <td>{d.address}</td>
+      <td>{saved.version || 'Não informado nesta leitura'}</td>
+      <td>{equipmentType(d.role)}</td>
+      <td title={saved.exactUptime}>{saved.at ? saved.uptime : '—'}</td>
       <td>
-        <span
-          className={
-            'text-state ' + (d.result || d.monitoring ? 'good' : 'muted')
-          }
-        >
-          {d.active
-            ? d.result || d.monitoring
-              ? 'Leitura disponível'
-              : 'Não consultado'
-            : 'Inativo'}
-        </span>
+        {saved.at && saved.cpu !== undefined
+          ? formatMetric(saved.cpu, '%')
+          : '—'}
       </td>
-      <td className="reading-time" title={saved.at}>
-        {saved.at ? formatDate(saved.at) : 'Não consultado'}
-        {saved.at && (
-          <small className="cell-sub">
-            Últimos dados conhecidos · há{' '}
-            {formatDuration((displayNow - Date.parse(saved.at)) / 1000)}
-          </small>
-        )}
+      <td>SSH</td>
+      <td title={saved.at ? formatDate(saved.at) : ''}>
+        {saved.at
+          ? `há ${formatDuration((now - Date.parse(saved.at)) / 1000)}`
+          : 'Ainda sem leitura'}
       </td>
     </tr>
   );
 }
-
-function EquipmentInventoryTable(p: {
-  devices: Device[];
-  selected?: Device;
-  displayNow: number;
-  openDevice: (d: Device) => void;
-}) {
+export function EquipmentInventoryPane(p: Props) {
+  const clear = () => {
+    p.setSearch('');
+    p.setInactive(false);
+    p.setCursor(0);
+  };
   return (
-    <div
-      className="table-scroll"
-      tabIndex={0}
-      aria-label="Lista de equipamentos"
-    >
-      <table className="app-table inventory-table">
+    <section hidden={p.detailOpen}>
+      <h1>Equipamentos</h1>
+      <div className="toolbar">
+        <input
+          aria-label="Buscar"
+          placeholder="Buscar"
+          value={p.search}
+          onChange={(e) => {
+            p.setSearch(e.target.value);
+            p.setCursor(0);
+          }}
+        />
+        <Select
+          aria-label="Estado"
+          disabled
+          title="Estado de conectividade: Ainda não existe (L-BASE-2)"
+        >
+          <option>Todos</option>
+        </Select>
+        <label>
+          <input
+            type="checkbox"
+            checked={p.inactive}
+            onChange={(e) => {
+              p.setInactive(e.target.checked);
+              p.setCursor(0);
+            }}
+          />{' '}
+          Mostrar inativos
+        </label>
+        <span className="grow" />
+        <Button
+          kind="primary"
+          disabled={p.locked}
+          onClick={() => p.setForm('new')}
+        >
+          Adicionar equipamento
+        </Button>
+      </div>
+      {!p.ready && !p.listError && (
+        <p role="status">Carregando equipamentos…</p>
+      )}
+      <DataTable aria-label="Lista de equipamentos">
         <thead>
           <tr>
-            <th>Equipamento</th>
-            <th>Endereço</th>
-            <th className="os-cell">Sistema</th>
-            <th>Papel</th>
-            <th>Uptime</th>
-            <th>CPU</th>
-            <th>Consulta</th>
-            <th>Última leitura</th>
+            {[
+              'Equipamento',
+              'Endereço',
+              'Sistema',
+              'Papel',
+              'Uptime',
+              'CPU',
+              'Consulta',
+              'Última leitura',
+            ].map((label) => (
+              <th key={label}>{label}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
-          {p.devices.map((d) => (
-            <EquipmentInventoryRow key={d.id} {...p} d={d} />
+          {p.devices.map((device) => (
+            <InventoryRow
+              key={device.id}
+              device={device}
+              now={p.displayNow}
+              open={p.openDevice}
+            />
           ))}
+          {p.ready && !p.listError && !p.devices.length && (
+            <tr>
+              <td colSpan={8}>
+                {p.search || p.inactive ? (
+                  <>
+                    Nenhum equipamento encontrado{' '}
+                    <Button onClick={clear}>Limpar filtros</Button>
+                  </>
+                ) : (
+                  'Nenhum equipamento cadastrado'
+                )}
+              </td>
+            </tr>
+          )}
         </tbody>
-      </table>
-    </div>
-  );
-}
-
-function EquipmentInventoryEmpty(p: {
-  search: string;
-  inactive: boolean;
-  total: number;
-  locked: boolean;
-  setSearch: (v: string) => void;
-  setInactive: (v: boolean) => void;
-  setCursor: (v: number) => void;
-  setForm: (v: Device | 'new' | undefined) => void;
-}) {
-  return (
-    <div className="empty-state">
-      <h2>
-        {p.search
-          ? 'Nenhum resultado'
-          : p.inactive
-            ? 'Nenhum equipamento inativo'
-            : p.total
-              ? 'Nenhum equipamento ativo'
-              : 'Nenhum equipamento cadastrado'}
-      </h2>
-      {p.search ? (
-        <Button
-          onClick={() => {
-            p.setSearch('');
-            p.setCursor(0);
-          }}
-        >
-          Limpar busca
-        </Button>
-      ) : p.total > 0 && !p.inactive ? (
-        <Button
-          onClick={() => {
-            p.setInactive(true);
-            p.setCursor(0);
-          }}
-        >
-          Mostrar inativos
-        </Button>
-      ) : !p.total && !p.inactive ? (
-        <Button
-          kind="primary"
-          onClick={() => p.setForm('new')}
-          disabled={p.locked}
-        >
-          Adicionar equipamento
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
-function EquipmentInventoryToolbar(p: {
-  primaryInHeader: boolean;
-  locked: boolean;
-  search: string;
-  inactive: boolean;
-  connected: boolean;
-  vault: boolean;
-  setForm: (v: Device | 'new' | undefined) => void;
-  setSearch: (v: string) => void;
-  setInactive: (v: boolean) => void;
-  setCursor: (v: number) => void;
-  setError: (v: string) => void;
-  setCredentialForm: (v: Credential | 'new' | undefined) => void;
-}) {
-  return (
-    <div className="inventory-tools">
-      {!p.primaryInHeader && (
-        <Button
-          kind="primary"
-          onClick={() => p.setForm('new')}
-          disabled={p.locked}
-        >
-          Adicionar equipamento
-        </Button>
-      )}
-      <input
-        aria-label="Buscar equipamento"
-        placeholder="Buscar equipamento"
-        value={p.search}
-        onChange={(e) => {
-          p.setSearch(e.target.value);
-          p.setCursor(0);
-        }}
+      </DataTable>
+      <Pager
+        page={p.cursor ? 2 : 1}
+        total={p.next ? undefined : p.cursor ? 2 : 1}
+        hasNext={Boolean(p.next)}
+        first={() => p.setCursor(0)}
+        next={() => p.setCursor(p.next)}
       />
-      <select
-        aria-label="Estado dos equipamentos"
-        value={p.inactive ? 'inactive' : 'active'}
-        onChange={(e) => {
-          p.setInactive(e.target.value === 'inactive');
-          p.setCursor(0);
-        }}
-      >
-        <option value="active">Ativos</option>
-        <option value="inactive">Inativos</option>
-      </select>
-      <Button
-        onClick={() => {
-          p.setError('');
-          p.setCredentialForm('new');
-        }}
-        disabled={!p.connected || !p.vault}
-      >
-        Credenciais
-      </Button>
-    </div>
-  );
-}
-
-export function EquipmentInventoryPane(p: {
-  detailOpen: boolean;
-  total: number;
-  search: string;
-  inactive: boolean;
-  connected: boolean;
-  vault: boolean;
-  primaryInHeader: boolean;
-  locked: boolean;
-  devices: Device[];
-  selected?: Device;
-  displayNow: number;
-  ready: boolean;
-  listError: string;
-  cursor: number;
-  next: number;
-  setError: (v: string) => void;
-  setCredentialForm: (v: Credential | 'new' | undefined) => void;
-  setForm: (v: Device | 'new' | undefined) => void;
-  setSearch: (v: string) => void;
-  setInactive: (v: boolean) => void;
-  setCursor: (v: number) => void;
-  openDevice: (d: Device) => void;
-}) {
-  return (
-    <section className="pane-main" hidden={p.detailOpen}>
-      {p.ready && p.total === 0 && !p.search && !p.inactive && (
-        <Button
-          onClick={() => {
-            p.setError('');
-            p.setCredentialForm('new');
-          }}
-          disabled={!p.connected || !p.vault}
-        >
-          Credenciais
-        </Button>
-      )}
-      {(p.total > 0 || p.search || p.inactive) && (
-        <EquipmentInventoryToolbar {...p} />
-      )}
-      {p.devices.length > 0 && <EquipmentInventoryTable {...p} />}
-      {!p.devices.length && p.ready && !p.listError && (
-        <EquipmentInventoryEmpty {...p} />
-      )}
-      {(p.cursor > 0 || p.next > 0) && (
-        <div className="list-footer">
-          <span>{p.devices.length} equipamentos nesta página</span>
-          <div>
-            <Button disabled={p.cursor === 0} onClick={() => p.setCursor(0)}>
-              Início
-            </Button>
-            <Button disabled={!p.next} onClick={() => p.setCursor(p.next)}>
-              Próxima
-            </Button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
