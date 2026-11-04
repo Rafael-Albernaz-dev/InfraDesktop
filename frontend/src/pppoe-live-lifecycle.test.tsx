@@ -354,9 +354,9 @@ it('L06D ajuste2: selected secret is ephemeral, explicit about unavailable field
     within(evidence).getByText('Texto de teste <script>literal</script>'),
   ).toBeInTheDocument();
   expect(within(evidence).getAllByText('Sim')).toHaveLength(2);
-  expect(within(evidence).getAllByText('Indisponível').length).toBeGreaterThan(
-    0,
-  );
+  expect(
+    within(evidence).getAllByText('Não informado nesta leitura').length,
+  ).toBeGreaterThan(0);
   expect(within(evidence).getByText('Sem texto informado')).toBeInTheDocument();
   expect(screen.queryByText(/túneis nas amostras/)).not.toBeInTheDocument();
   expect(readAPI.start).toHaveBeenCalledWith(
@@ -435,7 +435,9 @@ it('L06D-S6: pools keep unknown separate from zero and interfaces have their own
   expect(
     within(int).getByText('18.446.744.073.709.551.615'),
   ).toBeInTheDocument();
-  expect(within(int).getAllByText('Indisponível').length).toBeGreaterThan(0);
+  expect(
+    within(int).getAllByText('Não informado nesta leitura').length,
+  ).toBeGreaterThan(0);
   expect(
     screen.getByRole('columnheader', { name: 'TX da interface' }),
   ).toBeInTheDocument();

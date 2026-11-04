@@ -19,8 +19,8 @@ export function validateSceneCoverage(scenes, names) {
 
 export function checkLayoutGuard() {
   const read = (name) => JSON.parse(fs.readFileSync(name, 'utf8'));
-  const legacy = read('frontend/layout-exceptions.json');
-  assertShrinking(legacy, read('frontend/layout-exceptions.baseline.json'), 'Exceções');
+  for (const name of ['frontend/layout-exceptions.json', 'frontend/layout-exceptions.baseline.json'])
+    if (fs.existsSync(name)) throw Error('Lista de exceções de layout não é mais permitida');
   assertShrinking(read('frontend/visual/layout-pending.json').map((x) => x.id),
     read('frontend/visual/layout-pending.baseline.json').map((x) => x.id), 'Cenas pendentes');
   function check(dir) {
@@ -28,12 +28,12 @@ export function checkLayoutGuard() {
       const file = path.join(dir, item.name);
       if (item.isDirectory()) check(file);
       else if (file.endsWith('.css') && file !== 'frontend/src/ui/tokens.css' &&
-        !legacy.includes(file.slice('frontend/'.length)) && /#[\da-f]{3,8}\b/i.test(fs.readFileSync(file, 'utf8')))
+        /#[\da-f]{3,8}\b/i.test(fs.readFileSync(file, 'utf8')))
         throw Error(`Cor fora dos tokens: ${file}`);
     }
   }
   check('frontend/src');
-  console.log(`layout guard: PASS (${legacy.length} arquivos antigos pendentes)`);
+  console.log('layout guard: PASS (zero exceções)');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) checkLayoutGuard();

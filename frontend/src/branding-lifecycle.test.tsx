@@ -15,7 +15,7 @@ import {
   createBrandSaver,
   createPerformAction,
 } from './app-session';
-import { Appearance } from './appearance';
+import { BrandDraftHarness as Appearance } from './test-brand-draft';
 vi.mock('./presentation', () => ({
   access: {
     status: vi.fn(),

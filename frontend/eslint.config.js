@@ -1,8 +1,3 @@
-import fs from 'node:fs';
-import { URL } from 'node:url';
-const legacyLayout = JSON.parse(
-  fs.readFileSync(new URL('./layout-exceptions.json', import.meta.url)),
-);
 import radioDomain from './eslint-radio-domain.mjs';
 import js from '@eslint/js';
 import ts from 'typescript-eslint';
@@ -22,7 +17,7 @@ export default [
   { ignores: ['dist/**', 'wailsjs/**'] },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/ui/**', 'src/**/*.test.tsx', ...legacyLayout],
+    ignores: ['src/ui/**', 'src/**/*.test.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',

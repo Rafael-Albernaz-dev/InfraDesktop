@@ -25,7 +25,7 @@ export function latestSavedReading(d: Device) {
       cpu: d.monitoring.cpu,
       uptime: d.monitoring.uptime.known
         ? formatDuration(d.monitoring.uptime.min / 1e9)
-        : 'Indisponível',
+        : 'Não informado nesta leitura',
       exactUptime: uptimeTitle(d.monitoring.uptime),
     };
   return {

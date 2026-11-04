@@ -210,7 +210,7 @@ it('L06D-S2: one bandwidth action, explicit direction, unknown rate and legitima
     within(screen.getByText('synthetic').closest('tr')!).getAllByRole(
       'cell',
     )[1],
-  ).toHaveTextContent('Indisponível');
+  ).toHaveTextContent('Não informado nesta leitura');
   expect(readAPI.start).toHaveBeenCalledTimes(1);
 });
 it('L06D-S2: leaving before start response cancels the late job', async () => {

@@ -6,7 +6,7 @@ export type { Intent } from './microcopy';
 /** Shared pt-BR network presentation. Inputs remain raw for sorting and CSV. */
 export type NetworkNumber = number | string | bigint | null | undefined;
 export type NumberRange = { min: number; max: number };
-const unavailable = 'Indisponível';
+const unavailable = 'Não informado nesta leitura';
 const volumeUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
 const rateUnits = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
 const formatter = (digits = 0, minimum = 0) =>
@@ -287,7 +287,7 @@ export function portLabel(port?: {
 }
 
 export function formatAbsent(reason = 'não coletado'): string {
-  return `Indisponível (${(reason || 'não coletado').trim()})`;
+  return `${unavailable} (${(reason || 'não coletado').trim()})`;
 }
 
 export function formatTextOrAbsent(

@@ -22,7 +22,7 @@ export function DeviceHealthSection({
   const endText = health.at ? formatDate(health.at) : 'Instante indisponível';
   const ntpStatus =
     health.ntp_enabled === undefined
-      ? 'Indisponível'
+      ? 'Não informado nesta leitura'
       : health.ntp_enabled
         ? 'Ativado'
         : 'Desativado';
@@ -47,25 +47,25 @@ export function DeviceHealthSection({
           {formatPPUptime(health.uptime)}
         </dd>
         <dt>RouterOS</dt>
-        <dd>{health.version || 'Indisponível'}</dd>
+        <dd>{health.version || 'Não informado nesta leitura'}</dd>
         <dt>Temperatura</dt>
         <dd>
           {health.temperature === undefined
-            ? 'Indisponível'
+            ? 'Não informado nesta leitura'
             : formatMetric(health.temperature, '°C')}
         </dd>
         <dt>Diferença relógio roteador × PC</dt>
         <dd>
           {health.clock_offset.known
             ? formatClockOffset(health.clock_offset)
-            : 'Indisponível'}
+            : 'Não informado nesta leitura'}
         </dd>
         <dt>NTP</dt>
         <dd>
           {ntpStatus} · {health.ntp_status || 'Estado indisponível'}
         </dd>
         <dt>Erros no buffer de log</dt>
-        <dd>{health.error_count ?? 'Indisponível'}</dd>
+        <dd>{health.error_count ?? 'Não informado nesta leitura'}</dd>
       </dl>
       {showFastTrackNotice &&
         health.fasttrack_rules !== undefined &&

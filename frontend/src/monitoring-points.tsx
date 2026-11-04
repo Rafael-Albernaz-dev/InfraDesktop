@@ -37,9 +37,9 @@ export function SessionPointsTable({
                   {p.resolution === 3600 ? 'hora' : 'minuto'}
                 </td>
                 <td>
-                  {p.online_min ?? 'Indisponível'} /{' '}
-                  {p.online_max ?? 'Indisponível'} /{' '}
-                  {p.online ?? 'Indisponível'}
+                  {p.online_min ?? 'Não informado nesta leitura'} /{' '}
+                  {p.online_max ?? 'Não informado nesta leitura'} /{' '}
+                  {p.online ?? 'Não informado nesta leitura'}
                 </td>
                 <td>
                   {p.session_at

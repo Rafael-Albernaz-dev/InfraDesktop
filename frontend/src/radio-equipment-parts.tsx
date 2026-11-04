@@ -132,7 +132,7 @@ function RadioInterfaceOccupancy({ iface, warning, critical }: InterfaceProps) {
       <p>
         Clientes:{' '}
         {iface.clients === undefined
-          ? 'Indisponível'
+          ? 'Não informado nesta leitura'
           : exactNumber(iface.clients)}
       </p>
       {iface.clients !== undefined && iface.clients >= critical ? (

@@ -56,7 +56,7 @@ test-visual-integrity:
 test-visual: test-layout
 
 test-scroll:
-	node scripts/test-scroll.mjs "$$(cat build/ui-021-visual/latest.txt)"
+	node scripts/test-scroll.mjs
 
 icon-check:
 	python3 scripts/generate-infradesktop-icon.py --check

@@ -22,8 +22,10 @@ export function SessionAuthInfo(p: {
         state: 'ready',
         content: (
           <>
-            <p>IP: {selected.address || 'Indisponível'}</p>
-            <p>Caller ID: {selected.caller_id || 'Indisponível'}</p>
+            <p>IP: {selected.address || 'Não informado nesta leitura'}</p>
+            <p>
+              Caller ID: {selected.caller_id || 'Não informado nesta leitura'}
+            </p>
             <p title={uptimeTitle(selected.uptime)}>
               {selected.state === 'OFFLINE'
                 ? 'Duração da última sessão: '
@@ -36,8 +38,13 @@ export function SessionAuthInfo(p: {
               omitted={current.context_omitted}
               fastTrack={p.fastTrack}
             />
-            <p>ID no roteador: {selected.remote_id || 'Indisponível'}</p>
-            <p>Session ID: {selected.session_id || 'Indisponível'}</p>
+            <p>
+              ID no roteador:{' '}
+              {selected.remote_id || 'Não informado nesta leitura'}
+            </p>
+            <p>
+              Session ID: {selected.session_id || 'Não informado nesta leitura'}
+            </p>
             {selected.state === 'OFFLINE' && <OfflineEvidence row={selected} />}
           </>
         ),

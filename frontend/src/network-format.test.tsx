@@ -30,6 +30,7 @@ import {
   sanitizeVisibleText,
 } from './network-format';
 import { RadioFamilies, RadioRoles } from './radio-contract';
+const absent = 'Não informado nesta leitura';
 
 describe('L06T3 units and exact audit values', () => {
   it.each([
@@ -62,12 +63,12 @@ describe('L06T3 units and exact audit values', () => {
     [11700, '3 h 15 min'],
     [1569600, '18 d 4 h'],
   ])('duration boundary %s', (n, text) => expect(formatDuration(n)).toBe(text));
-  it.each([undefined, null, -1, NaN, Infinity, 'Indisponível'])(
+  it.each([undefined, null, -1, NaN, Infinity, absent])(
     'missing/invalid %s stays unavailable',
     (n) => {
-      expect(formatVolume(n)).toBe('Indisponível');
-      expect(formatRate(n)).toBe('Indisponível');
-      expect(formatDuration(n)).toBe('Indisponível');
+      expect(formatVolume(n)).toBe(absent);
+      expect(formatRate(n)).toBe(absent);
+      expect(formatDuration(n)).toBe(absent);
     },
   );
   it('interval and graph use maximum scale, with raw values preserved', () => {
@@ -77,7 +78,7 @@ describe('L06T3 units and exact audit values', () => {
     expect(formatRange({ min: 1000000, max: 1000001 }, 'rate')).toBe(
       '1–1,01 Mbps',
     );
-    expect(formatRange({ min: -1, max: 100 }, 'rate')).toBe('Indisponível');
+    expect(formatRange({ min: -1, max: 100 }, 'rate')).toBe(absent);
     const small = networkScale(900000, 'rate'),
       grown = networkScale(1200000, 'rate');
     expect(formatAtScale(500000, small)).toBe('500 Kbps');
@@ -98,23 +99,23 @@ it('L07 formats observed wireless last-activity milliseconds through the common 
   expect(formatRouterDuration('90ms')).toBe('90 ms');
   expect(formatRouterDuration('3s50ms')).toBe('3 s');
   expect(formatRouterDuration('1d22h27m58s')).toBe('1 d 22 h');
-  expect(formatRouterDuration('unavailable')).toBe('Indisponível');
+  expect(formatRouterDuration('unavailable')).toBe(absent);
 });
 
 describe('unified absence, age, metadata and sanitization formatters', () => {
   it('formats absent values with explicit short reason and rejects bare dashes or NaN/undefined', () => {
-    expect(formatAbsent('não coletado')).toBe('Indisponível (não coletado)');
+    expect(formatAbsent('não coletado')).toBe(`${absent} (não coletado)`);
     expect(formatTextOrAbsent('', 'SSID não exposto')).toBe(
-      'Indisponível (SSID não exposto)',
+      `${absent} (SSID não exposto)`,
     );
     expect(formatTextOrAbsent('—', 'sem leitura')).toBe(
-      'Indisponível (sem leitura)',
+      `${absent} (sem leitura)`,
     );
     expect(formatTextOrAbsent('undefined', 'sem leitura')).toBe(
-      'Indisponível (sem leitura)',
+      `${absent} (sem leitura)`,
     );
     expect(formatTextOrAbsent('NaN', 'sem leitura')).toBe(
-      'Indisponível (sem leitura)',
+      `${absent} (sem leitura)`,
     );
   });
 
@@ -127,18 +128,16 @@ describe('unified absence, age, metadata and sanitization formatters', () => {
     expect(formatDateWithAge('2026-11-03T14:07:00Z', now)).toContain(
       '(há 3 min)',
     );
-    expect(formatDateWithAge('', now)).toBe('Indisponível (sem horário)');
+    expect(formatDateWithAge('', now)).toBe(`${absent} (sem horário)`);
   });
 
   it('formats MAC/BSSID, IP, model, firmware, roles and radio families consistently', () => {
     expect(formatMacAddress('aa-bb-cc-dd-ee-ff')).toBe('AA:BB:CC:DD:EE:FF');
-    expect(formatMacAddress('')).toBe('Indisponível (MAC não coletado)');
+    expect(formatMacAddress('')).toBe(`${absent} (MAC não coletado)`);
     expect(formatIPAddress('10.20.30.1', 22)).toBe('10.20.30.1:22');
-    expect(formatIPAddress('')).toBe('Indisponível (endereço não informado)');
-    expect(formatDeviceModel('')).toBe('Indisponível (modelo não coletado)');
-    expect(formatFirmwareVersion('')).toBe(
-      'Indisponível (firmware não coletado)',
-    );
+    expect(formatIPAddress('')).toBe(`${absent} (endereço não informado)`);
+    expect(formatDeviceModel('')).toBe(`${absent} (modelo não coletado)`);
+    expect(formatFirmwareVersion('')).toBe(`${absent} (firmware não coletado)`);
     expect(formatEquipmentRole(RadioRoles.ap)).toBe('Ponto de acesso (AP)');
     expect(formatEquipmentRole(RadioRoles.cpe)).toBe('Cliente rádio (CPE)');
     expect(formatEquipmentRole('concentrator')).toBe('Concentrador PPPoE');

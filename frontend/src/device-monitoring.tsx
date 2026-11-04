@@ -122,11 +122,12 @@ function MonitoringDuplicatesTable({
 }
 
 function MonitoringHygieneItem({ r }: { r: PPReadResult['rows'][number] }) {
-  const hAt = r.at ? formatDate(r.at) : 'Indisponível';
+  const hAt = r.at ? formatDate(r.at) : 'Não informado nesta leitura';
   return (
     <p>
-      {r.name}: {r.used ?? 'Indisponível'} · {r.size ?? 'Indisponível'} ONLINE
-      sem evidência disponível · origem {hAt}
+      {r.name}: {r.used ?? 'Não informado nesta leitura'} ·{' '}
+      {r.size ?? 'Não informado nesta leitura'} ONLINE sem evidência disponível
+      · origem {hAt}
     </p>
   );
 }

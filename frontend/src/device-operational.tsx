@@ -58,7 +58,7 @@ export function DeviceOperationalTable({
                     ? exactNumber(r.used)
                     : r.size !== undefined
                       ? exactNumber(r.size)
-                      : r.event || 'Indisponível'}
+                      : r.event || 'Não informado nesta leitura'}
               </td>
               <td>
                 {r.source_at

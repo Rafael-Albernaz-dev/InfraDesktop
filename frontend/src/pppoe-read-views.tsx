@@ -45,7 +45,7 @@ export function PPSecretEvidence({ result }: { result: PPReadResult }) {
               <dt>Desativado</dt>
               <dd>
                 {secret?.disabled === undefined
-                  ? 'Indisponível'
+                  ? 'Não informado nesta leitura'
                   : secret.disabled
                     ? 'Sim'
                     : 'Não'}
@@ -55,7 +55,7 @@ export function PPSecretEvidence({ result }: { result: PPReadResult }) {
                   <dt>{label}</dt>
                   <dd>
                     {value === undefined
-                      ? 'Indisponível'
+                      ? 'Não informado nesta leitura'
                       : value || 'Sem texto informado'}
                   </dd>
                 </Fragment>
@@ -78,7 +78,7 @@ export function PPHealthTables({
   const pools = result.rows.filter((r) => r.kind === 'pool');
   const uplinks = result.rows.filter((r) => r.kind === 'uplink');
   const flag = (v?: boolean) =>
-    v === undefined ? 'Indisponível' : v ? 'Sim' : 'Não';
+    v === undefined ? 'Não informado nesta leitura' : v ? 'Sim' : 'Não';
   return (
     <>
       {view !== 'uplinks' && (
@@ -106,8 +106,8 @@ export function PPHealthTables({
                   {pools.map((r, i) => (
                     <tr key={i}>
                       <td>{r.name}</td>
-                      <td>{r.used ?? 'Indisponível'}</td>
-                      <td>{r.size ?? 'Indisponível'}</td>
+                      <td>{r.used ?? 'Não informado nesta leitura'}</td>
+                      <td>{r.size ?? 'Não informado nesta leitura'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -425,7 +425,7 @@ function BandwidthRow({
   return (
     <tr>
       <td>
-        {r.login || 'Indisponível'}
+        {r.login || 'Não informado nesta leitura'}
         {r.name && <small className="cell-sub">{r.name}</small>}
       </td>
       <td>

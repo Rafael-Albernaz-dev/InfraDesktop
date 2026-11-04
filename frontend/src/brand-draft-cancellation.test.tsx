@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { it, expect, vi } from 'vitest';
-import { Appearance } from './appearance';
+import { BrandDraftHarness as Appearance } from './test-brand-draft';
 const access = { saveBrand: vi.fn(), setTheme: vi.fn() };
 it('keeps retained branding data editor isolated and cancellation restores its draft', async () => {
   render(

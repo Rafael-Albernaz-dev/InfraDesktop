@@ -9,7 +9,6 @@ import { DialogHost } from './ui/Dialog';
 export { Button } from './ui/Button';
 export { Dialog } from './ui/Dialog';
 export { Logo } from './desktop-controls';
-export { Appearance } from './appearance';
 export type {
   Page,
   RouteName,

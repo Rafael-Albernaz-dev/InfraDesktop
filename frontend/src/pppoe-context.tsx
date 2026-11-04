@@ -79,7 +79,7 @@ export function OfflineEvidence({ row }: { row: PPRow }) {
     <dl className="pppoe-diagnostic-values pppoe-context-values">
       <dt>Offline desde (intervalo)</dt>
       <dd
-        title={`${row.absent_start || 'Indisponível'} → ${row.absent_end || 'Indisponível'}`}
+        title={`${row.absent_start || 'Não informado nesta leitura'} → ${row.absent_end || 'Não informado nesta leitura'}`}
       >
         {formatDate(row.absent_start, true)} →{' '}
         {formatDate(row.absent_end, true)}. Última leitura ONLINE → primeira
@@ -118,21 +118,29 @@ export function SessionContext({
   const planText =
     c.upload_limit !== undefined && c.download_limit !== undefined
       ? `${formatRate(c.download_limit)} / ${formatRate(c.upload_limit)}`
-      : 'Indisponível';
+      : 'Não informado nesta leitura';
   return (
     <dl className="pppoe-diagnostic-values pppoe-context-values">
       <dt>Interface de origem</dt>
-      <dd>{c.interface || 'Indisponível'}</dd>
+      <dd>{c.interface || 'Não informado nesta leitura'}</dd>
       <dt>VLAN</dt>
-      <dd>{c.vlan ?? 'Indisponível'}</dd>
+      <dd>{c.vlan ?? 'Não informado nesta leitura'}</dd>
       <dt>Serviço</dt>
-      <dd>{c.service || 'Indisponível'}</dd>
+      <dd>{c.service || 'Não informado nesta leitura'}</dd>
       <dt>IPv6 negociado</dt>
-      <dd>{c.ipv6 === undefined ? 'Indisponível' : c.ipv6 ? 'Sim' : 'Não'}</dd>
+      <dd>
+        {c.ipv6 === undefined
+          ? 'Não informado nesta leitura'
+          : c.ipv6
+            ? 'Sim'
+            : 'Não'}
+      </dd>
       <dt>Prefixo delegado</dt>
       <dd>
         {c.delegated_prefix ||
-          (c.pd_status === 'none' ? 'Sem prefixo delegado' : 'Indisponível')}
+          (c.pd_status === 'none'
+            ? 'Sem prefixo delegado'
+            : 'Não informado nesta leitura')}
       </dd>
       <dt>Secret local</dt>
       <dd>
@@ -142,7 +150,7 @@ export function SessionContext({
       {c.secret_state === 'active' && (
         <>
           <dt>Perfil do secret ativo</dt>
-          <dd>{c.profile || 'Indisponível'}</dd>
+          <dd>{c.profile || 'Não informado nesta leitura'}</dd>
         </>
       )}
       <dt>Limite de plano (fila dinâmica) — download / upload</dt>

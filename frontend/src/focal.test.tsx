@@ -7,7 +7,7 @@ import {
 } from '@testing-library/react';
 import { vi, it, expect, beforeEach, afterEach } from 'vitest';
 import App from './App';
-import { Appearance } from './desktop';
+import { BrandDraftHarness as Appearance } from './test-brand-draft';
 import { access, equipmentAPI, type Result } from './presentation';
 vi.mock('./presentation', () => ({
   equipmentAPI: { list: vi.fn() },

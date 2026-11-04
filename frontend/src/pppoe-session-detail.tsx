@@ -228,8 +228,11 @@ export function PPPoEPairDetail(p: {
           {pair[side] ? (
             <>
               <p>Login: {pair[side]!.login}</p>
-              <p>IP: {pair[side]!.address || 'Indisponível'}</p>
-              <p>Caller ID: {pair[side]!.caller_id || 'Indisponível'}</p>
+              <p>IP: {pair[side]!.address || 'Não informado nesta leitura'}</p>
+              <p>
+                Caller ID:{' '}
+                {pair[side]!.caller_id || 'Não informado nesta leitura'}
+              </p>
               <p title={uptimeTitle(pair[side]!.uptime)}>
                 Tempo conectado: {formatPPUptime(pair[side]!.uptime)}
               </p>
