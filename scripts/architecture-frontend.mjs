@@ -64,7 +64,9 @@ function inspect(name, code) {
       return;
     }
     if (!spec.startsWith(".")) {
-      if (!externalModules.has(spec))
+      const chartImport = filename === path.join(sourceRoot, "ui/Chart.tsx") &&
+        (spec === "uplot" || (sideEffect && spec === "uplot/dist/uPlot.min.css"));
+      if (!chartImport && !externalModules.has(spec))
         problems.push("external capability: " + spec);
       return;
     }
