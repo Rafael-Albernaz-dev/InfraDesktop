@@ -19,7 +19,7 @@ vi.mock('./presentation', () => ({
     page: vi.fn(),
   },
 }));
-it('L06T3: saved equipment has one remote action, FastTrack, negotiated ports, exact history and scoped context', async () => {
+it('saved equipment has one remote action, FastTrack, negotiated ports, exact history and scoped context', async () => {
   const uptime = { known: false, min: 0, max: 0 },
     at = '2026-10-28T17:00:00Z';
   const respond = (rows: PPReadRow[], scope = 'equipment'): PPResult => ({
@@ -102,19 +102,20 @@ it('L06T3: saved equipment has one remote action, FastTrack, negotiated ports, e
     revision: 2,
     active: true,
     fingerprint: 'pinned',
-    name: 'Synthetic',
   } as Device;
   const view = render(
     <EquipmentInsights profile="company" activation="active" device={device} />,
   );
   await screen.findByText('Sem controle de banda: FastTrack ativo');
-  expect(screen.getByText('100Mbps-half · atenção')).toHaveAttribute(
+  expect(screen.getByText('100 Mbps · half · atenção')).toHaveAttribute(
     'title',
     '100.000.000 bit/s',
   );
-  expect(screen.getByText('100Mbps-full · atenção')).toBeInTheDocument();
-  expect(screen.getByText('DOWN')).toBeInTheDocument();
-  expect(screen.getByText(/Reinícios 7 d: 1 · 30 d: 2/)).toHaveTextContent(
+  expect(screen.getByText('100 Mbps · full · atenção')).toBeInTheDocument();
+  expect(screen.getByText('Parada')).toBeInTheDocument();
+  const restarts = screen.getByTitle(/Reinícios 7 d: 1 · 30 d: 2/);
+  expect(restarts).toHaveTextContent('1');
+  expect(restarts.title).toContain(
     'reinícios múltiplos no mesmo intervalo contam como um',
   );
   expect(
@@ -126,7 +127,7 @@ it('L06T3: saved equipment has one remote action, FastTrack, negotiated ports, e
     name: 'Histórico de portas salvo',
   });
   await within(history).findByText(
-    '100Mbps-full (33 quedas) → 100Mbps-half (34 quedas)',
+    '100 Mbps · full (33 quedas) → 100 Mbps · half (34 quedas)',
   );
   expect(pppoeReadAPI.start).not.toHaveBeenCalled();
   vi.mocked(deviceMonitoringAPI.current).mockImplementation(
@@ -146,8 +147,7 @@ it('L06T3: saved equipment has one remote action, FastTrack, negotiated ports, e
   );
   expect(screen.queryByText('X-half')).not.toBeInTheDocument();
 });
-
-it('L06T3: pruned history is explicit and a retention marker never becomes a fake port event', async () => {
+it('pruned history is explicit and a retention marker never becomes a fake port event', async () => {
   vi.resetAllMocks();
   const marker = {
     kind: 'availability',

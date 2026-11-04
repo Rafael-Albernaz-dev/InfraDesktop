@@ -6,7 +6,18 @@ import {
   formatDate,
   portLabel,
 } from './network-format';
-export function EquipmentPorts({ ports }: { ports: PPReadRow[] }) {
+export const displayPort = (port?: PPReadRow['port']) =>
+  portLabel(port)
+    .replace(/^DOWN$/, 'Parada')
+    .replace(/(\d)([KMG]bps)/g, '$1 $2')
+    .replace(/-(full|half)/, ' · $1');
+export function EquipmentPorts({
+  ports,
+  compact = false,
+}: {
+  ports: PPReadRow[];
+  compact?: boolean;
+}) {
   return (
     <div
       className="table-region"
@@ -19,7 +30,7 @@ export function EquipmentPorts({ ports }: { ports: PPReadRow[] }) {
             <th>Porta</th>
             <th>Velocidade / duplex</th>
             <th>Quedas acumuladas</th>
-            <th>Leitura</th>
+            {!compact && <th>Leitura</th>}
           </tr>
         </thead>
         <tbody>
@@ -27,7 +38,7 @@ export function EquipmentPorts({ ports }: { ports: PPReadRow[] }) {
             <tr key={r.name}>
               <td>{r.name}</td>
               <td title={exactRate(r.port?.speed_bps)}>
-                {portLabel(r.port)}
+                {displayPort(r.port)}
                 {r.port?.running &&
                 ((r.port.speed_bps !== undefined &&
                   r.port.speed_bps <= 100000000) ||
@@ -36,7 +47,7 @@ export function EquipmentPorts({ ports }: { ports: PPReadRow[] }) {
                   : ''}
               </td>
               <td>{exactNumber(r.port?.link_downs)}</td>
-              <td title={r.at}>{formatDate(r.at)}</td>
+              {!compact && <td title={r.at}>{formatDate(r.at)}</td>}
             </tr>
           ))}
         </tbody>

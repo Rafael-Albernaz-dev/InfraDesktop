@@ -1,3 +1,4 @@
+import savedReadings from './layout-readings.json';
 import {
   RadioRoles,
   RadioTransports,
@@ -45,9 +46,19 @@ const devices = entries.map(
           observed_at: new Date(time - Number(age) * 1000).toISOString(),
           source: 'SSH',
           quality: 'complete',
+          interface_part: {
+            status: 'complete',
+            observed_at: new Date(time - 360000).toISOString(),
+            counts_known: true,
+            eligible: 2,
+            dynamic: 23,
+            total: 25,
+            source: 'SSH',
+            code: 'OK',
+          },
           interfaces: [
             { name: 'ether1', kind: 'ether', running: true, disabled: false },
-            { name: 'wlan1', kind: 'wlan', running: true, disabled: false },
+            { name: 'ether2', kind: 'ether', running: false, disabled: false },
           ],
         }
       : undefined,
@@ -201,6 +212,8 @@ const curve = [
   99,
 ];
 function read(scope: string) {
+  const at = new Date(time - 360000).toISOString();
+  const extra = savedReadings as Record<string, object[]>;
   const wave = (i: number, base: number, amp: number) =>
     +(
       base +
@@ -210,74 +223,68 @@ function read(scope: string) {
           0.15 * Math.sin(i * 1.7))
     ).toFixed(2);
   const rows =
-    scope === 'bandwidth'
+    extra[scope] ||
+    (scope === 'traffic'
       ? [
           {
-            kind: 'bandwidth',
-            row_id: 'row-2',
-            login: 'cliente-0003',
-            download: { min: 78e6, max: 78e6 },
-            upload: { min: 10e6, max: 10e6 },
-            uptime: { known: true, min: 11 * 86400e9, max: 11 * 86400e9 },
+            kind: 'traffic',
+            row_id: 'row-0',
+            login: 'cliente-0001',
+            traffic: {
+              points: Array.from({ length: 30 }, (_, i) => ({
+                t: i * 2000,
+                gap: i === 16 || i === 17,
+                d: wave(i, 11, 6) * 1e6,
+                u: wave(i + 4, 1.1, 0.45) * 1e6,
+              })),
+              download_bytes: '432013312',
+              upload_bytes: '38797312',
+              covered_ns: 54e9,
+              gaps: 1,
+              average_download: { min: 98e5, max: 98e5 },
+              average_upload: { min: 9e5, max: 9e5 },
+              peak_download: { min: 182e5, max: 182e5 },
+              peak_upload: { min: 16e5, max: 16e5 },
+            },
           },
         ]
-      : scope === 'equipment'
-        ? [
-            {
-              kind: 'restarts',
-              used: 0,
-              size: 0,
-              at: new Date(time - 12000).toISOString(),
-            },
-          ]
-        : scope === 'traffic'
-          ? [
-              {
-                kind: 'traffic',
-                row_id: 'row-0',
-                login: 'cliente-0001',
-                traffic: {
-                  points: Array.from({ length: 30 }, (_, i) => ({
-                    t: i * 2000,
-                    gap: i === 16 || i === 17,
-                    d: wave(i, 11, 6) * 1e6,
-                    u: wave(i + 4, 1.1, 0.45) * 1e6,
-                  })),
-                  download_bytes: '432013312',
-                  upload_bytes: '38797312',
-                  covered_ns: 54e9,
-                  gaps: 1,
-                  average_download: { min: 98e5, max: 98e5 },
-                  average_upload: { min: 9e5, max: 9e5 },
-                  peak_download: { min: 182e5, max: 182e5 },
-                  peak_upload: { min: 16e5, max: 16e5 },
-                },
+      : scope === 'series'
+        ? curve
+            .map((online, i) => ({
+              kind: 'point',
+              point: {
+                at: new Date(
+                  (1793800000 - 86400 + i * 3600) * 1000,
+                ).toISOString(),
+                resolution: 3600,
+                online: online ?? undefined,
+                online_min: online ?? undefined,
+                online_max: online ?? undefined,
+                samples: 1,
+                gap: online == null,
+                drop: i === 15,
               },
-            ]
-          : scope === 'series'
-            ? curve
-                .map((online, i) => ({
-                  kind: 'point',
-                  point: {
-                    at: new Date(
-                      (1793800000 - 86400 + i * 3600) * 1000,
-                    ).toISOString(),
-                    resolution: 3600,
-                    online: online ?? undefined,
-                    online_min: online ?? undefined,
-                    online_max: online ?? undefined,
-                    samples: 1,
-                    gap: online == null,
-                    drop: i === 15,
-                  },
-                }))
-                .reverse()
-            : [];
+            }))
+            .reverse()
+        : []);
   return {
     scope,
     rows,
     started_at: new Date(time - 60000).toISOString(),
-    ended_at: new Date(time).toISOString(),
+    ended_at: scope === 'traffic' ? new Date(time).toISOString() : at,
+    pools_available: true,
+    uplinks_available: true,
+    pool_total: 1,
+    uplink_total: 1,
+    availability: {
+      services: 'complete',
+      packages: 'complete',
+      interfaces: 'complete',
+      pools: 'complete',
+      auth: 'complete',
+      fasttrack: 'complete',
+      ports: 'complete',
+    },
     duration_ns: 60e9,
   };
 }
@@ -457,7 +464,7 @@ export function installFixture() {
                 diagnostic_id: scope,
                 device_id: 'CCR-CENTRO',
                 scope,
-                count: 1,
+                count: scope === 'radius' ? 2 : 3,
                 provenance: {
                   ended_at: new Date(time - 1200000).toISOString(),
                   version: '6.49',
@@ -477,6 +484,12 @@ export function installFixture() {
                 scope === 'radius'
                   ? [
                       {
+                        id: 'aaa',
+                        kind: 'aaa',
+                        use_radius: true,
+                        accounting: true,
+                      },
+                      {
                         id: 'radius',
                         kind: 'radius',
                         address: '192.0.2.10',
@@ -485,6 +498,16 @@ export function installFixture() {
                         accounting_port: 1813,
                         disabled: false,
                         protocol: 'udp',
+                        counters: {
+                          pending: '0',
+                          requests: '0',
+                          accepts: '0',
+                          rejects: '0',
+                          resends: '0',
+                          timeouts: '0',
+                          bad_replies: '0',
+                          last_rtt: { known: true, min: 4e6, max: 4e6 },
+                        },
                       },
                     ]
                   : [
@@ -493,10 +516,23 @@ export function installFixture() {
                         kind: 'service',
                         name: 'pppoe-0001',
                         parent: 'ether1',
-                        vlan: 100,
-                        count: 23,
+                        range: '',
                         disabled: false,
                         relation: 'resolved',
+                      },
+                      {
+                        id: 'vlan',
+                        kind: 'vlan',
+                        name: 'vlan100',
+                        parent: 'ether1',
+                        vlan_id: 100,
+                        disabled: false,
+                      },
+                      {
+                        id: 'absent',
+                        kind: 'ether',
+                        name: 'pppoe-out7',
+                        not_seen_since: '2026-11-04T10:12:00Z',
                       },
                     ],
               total: 1,

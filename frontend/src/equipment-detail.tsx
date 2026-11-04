@@ -127,23 +127,35 @@ function HealthTab({ p }: { p: Props }) {
         onChange={setSub}
       />
       {sub === 'Interfaces' ? (
-        p.selected.result ? (
-          <EquipmentReading
+        <>
+          {p.selected.result ? (
+            <EquipmentReading
+              device={p.selected}
+              focus={false}
+              section="interfaces"
+            />
+          ) : (
+            <DataBlock
+              title="Interfaces"
+              source="SSH"
+              data={{
+                state: 'unread',
+                action: () => void p.startOperation('query', p.selected),
+                disabled: blocked,
+              }}
+            />
+          )}
+          <PPPoEReadPanel
+            profile={p.profile}
+            activation={p.activation}
             device={p.selected}
-            focus={false}
-            section="interfaces"
+            observation=""
+            rows={[]}
+            health
+            healthView="uplinks"
+            blocked={blocked}
           />
-        ) : (
-          <DataBlock
-            title="Interfaces"
-            source="SSH"
-            data={{
-              state: 'unread',
-              action: () => void p.startOperation('query', p.selected),
-              disabled: blocked,
-            }}
-          />
-        )
+        </>
       ) : sub === 'Monitoramento' ? (
         <DeviceMonitoring
           profile={p.profile}
@@ -156,15 +168,6 @@ function HealthTab({ p }: { p: Props }) {
             profile={p.profile}
             activation={p.activation}
             device={p.selected}
-            blocked={blocked}
-          />
-          <PPPoEReadPanel
-            profile={p.profile}
-            activation={p.activation}
-            device={p.selected}
-            observation=""
-            rows={[]}
-            health
             blocked={blocked}
           />
         </>

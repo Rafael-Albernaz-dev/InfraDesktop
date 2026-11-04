@@ -1123,3 +1123,26 @@ body.com-painel .col {
 .small-number {
   width: 91px;
 }
+.inline-details {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: top;
+}
+.inline-details[open] {
+  display: block;
+  margin: 8px 0;
+}
+.block-actions button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 12px;
+  text-decoration: underline;
+}
+/* Reserve the approved two-metric card footprint while its projection is pending. */
+.monitoring-grid .block[data-state='unbuilt'] {
+  min-height: 124px;
+}
+.grid > .pppoe-read-panel > .block {
+  height: 100%;
+}

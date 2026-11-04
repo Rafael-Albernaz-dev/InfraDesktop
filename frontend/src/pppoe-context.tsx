@@ -1,3 +1,4 @@
+import { RadioCodes } from './radio-contract';
 import {
   ContextCountsPolicyInputs,
   ContextGroupsList,
@@ -25,6 +26,13 @@ import type {
   PPResult,
   PPRow,
 } from './presentation';
+export function ppReadMessage(code: string) {
+  if (code === 'PARTIAL')
+    return 'Não foi possível concluir esta leitura. Tente novamente.';
+  return code === RadioCodes.UNSUPPORTED
+    ? 'Esta leitura não está disponível neste formato, versão ou permissão.'
+    : equipmentMessage(code);
+}
 export const freshQuery = (): PPQuery => ({
   search: '',
   duplicates_only: false,

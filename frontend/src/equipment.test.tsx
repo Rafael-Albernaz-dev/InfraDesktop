@@ -1838,9 +1838,7 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
   );
   fireEvent.click(screen.getByRole('tab', { name: 'Portas e saúde' }));
   const health = () =>
-    within(
-      screen.getByRole('region', { name: 'Pools e interfaces estáticas' }),
-    );
+    within(screen.getByRole('region', { name: 'Pools IPv4' }));
   expect(
     screen.queryByRole('button', { name: 'Medir banda da página' }),
   ).not.toBeInTheDocument();

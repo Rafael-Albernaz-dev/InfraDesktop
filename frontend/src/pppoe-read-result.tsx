@@ -1,3 +1,9 @@
+import {
+  exactNumber,
+  formatDate,
+  formatDuration,
+  formatLatency,
+} from './network-format';
 import { Button } from './ui/Button';
 import { SessionTraffic } from './session-traffic';
 import { DeviceOperationalTables } from './device-monitoring';
@@ -5,6 +11,7 @@ import { DeviceOperationalTables } from './device-monitoring';
 import type { PPReadPanelProps } from './pppoe-read-state';
 import { usePPReadState } from './pppoe-read-state';
 import {
+  PPReadCostInfo,
   PPHealthTables,
   PPReadBandwidthTable,
   PPReadLogTable,
@@ -33,7 +40,8 @@ export function PPReadScopeBody(p: { s: ReadState; pProps: PPReadPanelProps }) {
     );
   }
   if (result.scope === 'secret') return <PPSecretEvidence result={result} />;
-  if (result.scope === 'health') return <PPHealthTables result={result} />;
+  if (result.scope === 'health')
+    return <PPHealthTables result={result} view={pProps.healthView} />;
   if (result.rows.length === 0) {
     const emptyMsg =
       result.scope === 'operations'
@@ -98,6 +106,67 @@ export function PPReadResultPagination(p: {
           {firstLabel}
         </Button>
       )}
+    </>
+  );
+}
+
+export function PPReadResultMetadata({ s }: { s: ReadState }) {
+  const result = s.result!;
+  return (
+    <>
+      <p>
+        {s.error || s.deadlineReached ? 'Último resultado de ' : 'Leitura de '}
+        {formatDate(result.ended_at)} · duração{' '}
+        <span title={exactNumber(result.duration_ns / 1e9, 's')}>
+          {formatDuration(result.duration_ns / 1e9)}
+        </span>
+      </p>
+    </>
+  );
+}
+
+export function PPReadResultView({
+  s,
+  pProps,
+}: {
+  s: ReadState;
+  pProps: PPReadPanelProps;
+}) {
+  const result = s.result!;
+  return (
+    <>
+      {result.scope === 'operations' && (
+        <dl className="pppoe-diagnostic-values">
+          <dt>Handshake SSH</dt>
+          <dd title={exactNumber(result.cost?.ssh_handshake_ns, 'ns')}>
+            {formatLatency(result.cost?.ssh_handshake_ns)}
+          </dd>
+          <dt>Coletores</dt>
+          <dd title={exactNumber(result.cost?.collector_ns, 'ns')}>
+            {formatLatency(result.cost?.collector_ns)}
+          </dd>
+        </dl>
+      )}
+      {result.scope === 'top' && (
+        <p>
+          Consumo ordenado pelo limite inferior de download + upload. Valores
+          indisponíveis aparecem ao final.
+        </p>
+      )}
+      {result.scope !== 'log' &&
+        result.scope !== 'secret' &&
+        result.scope !== 'operations' &&
+        result.cost && (
+          <PPReadCostInfo cost={result.cost} scope={result.scope} />
+        )}
+      {result.scope === 'log' && (
+        <p>
+          Até 50 eventos PPP, sem depuração. Horários informados pelo
+          equipamento; categorias não comprovam a causa da falha.
+        </p>
+      )}
+      <PPReadScopeBody s={s} pProps={pProps} />
+      <PPReadResultPagination s={s} pProps={pProps} />
     </>
   );
 }

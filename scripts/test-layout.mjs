@@ -48,7 +48,7 @@ try {
       if (scene.sub) await page.getByRole('tab', { name: scene.sub, exact: true }).click();
       for (const step of scene.prepare || []) {
         if (step.select) await page.getByLabel(step.select, { exact: true }).selectOption(step.value);
-        else await page.getByRole('button', { name: step.button, exact: true }).click();
+        else await (step.within ? page.getByRole('region', { name: step.within, exact: true }) : page).getByRole('button', { name: step.button, exact: true }).click();
         await page.getByRole('cell', { name: step.ready, exact: true }).waitFor();
       }
       if (scene.session) {

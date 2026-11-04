@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { Device } from './equipment-api';
-import { equipmentMessage } from './equipment-api';
+import { ppReadMessage } from './pppoe-context';
+export { ppReadMessage } from './pppoe-context';
 import { RadioCodes, RadioModes } from './radio-contract';
 import type { PPReadResult, PPResult } from './presentation';
 import { pppoeReadAPI as readAPI } from './presentation';
@@ -22,14 +23,9 @@ export type PPReadPanelProps = {
   pageBandwidth?: boolean;
   panel?: boolean;
   evidence?: 'log' | 'secret';
+  actionsOnly?: boolean;
+  healthView?: 'pools' | 'uplinks';
 };
-export function ppReadMessage(code: string) {
-  if (code === 'PARTIAL')
-    return 'Não foi possível concluir esta leitura. Tente novamente.';
-  return code === RadioCodes.UNSUPPORTED
-    ? 'Esta leitura não está disponível neste formato, versão ou permissão.'
-    : equipmentMessage(code);
-}
 const READ_REJECTED = [
   'BUSY',
   'REVISION_CONFLICT',

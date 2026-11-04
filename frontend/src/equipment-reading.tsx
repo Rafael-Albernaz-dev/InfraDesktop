@@ -9,7 +9,7 @@ import {
   formatVolumePair,
   exactVolume,
 } from './network-format';
-import { stamp } from './equipment-reading-format';
+import { readingAge, stamp } from './equipment-reading-format';
 import { DataBlock } from './ui/DataBlock';
 import { DataTable } from './ui/DataTable';
 import { Pager } from './ui/Pager';
@@ -199,9 +199,19 @@ function Interfaces({ device }: { device: Device }) {
         ))}
       </div>
       <DataBlock
-        title="Interfaces"
+        title={`Interfaces · ${
+          [
+            ['physical', 'Físicas'],
+            ['vlan', 'VLANs'],
+            ['vpn', 'VPNs e túneis'],
+            ['other', 'Outras'],
+          ].find(([id]) => id === filter)?.[1]
+        }`}
         source="SSH"
-        age={stamp(device)}
+        age={
+          readingAge(device.result?.interface_part?.observed_at) ||
+          stamp(device)
+        }
         data={
           rows.length
             ? { state: 'ready', content }

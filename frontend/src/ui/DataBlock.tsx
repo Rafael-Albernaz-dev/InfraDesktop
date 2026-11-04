@@ -76,17 +76,20 @@ export function DataBlock({
   source,
   age = '',
   data,
+  actions,
 }: {
   title: string;
   source: string;
   age?: string;
   data: DataState;
+  actions?: ReactNode;
 }) {
   const showAge = data.state !== 'unread' && data.state !== 'loading' && age;
   return (
     <div className="block" data-state={data.state}>
       <div className="bh">
         <b>{title}</b>
+        {actions && <div className="block-actions">{actions}</div>}
         <span>
           {source}
           {showAge ? ` · ${age}` : ''}

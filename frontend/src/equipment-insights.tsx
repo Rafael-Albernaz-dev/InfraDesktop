@@ -1,28 +1,30 @@
+import { EquipmentPortHistory } from './equipment-port-history';
+import { DataBlock } from './ui/DataBlock';
+import { KeyValues } from './ui/KeyValues';
+import {
+  DeviceHealthSection,
+  DeviceOperationalTables,
+} from './device-operational';
+import { usePPReadState } from './pppoe-read-state';
+import { PPReadActionButtons, PPReadStatusBanners } from './pppoe-read-views';
+import { PPReadResultPagination } from './pppoe-read-result';
+import { readingAge, formatRestarts } from './equipment-reading-format';
+import { formatClockOffset, formatDuration } from './network-format';
 import { EquipmentPorts } from './equipment-health-tables';
 import { Button } from './ui/Button';
-import { DataTable } from './ui/DataTable';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { deviceMonitoringAPI } from './presentation';
 import type { Device, PPReadRow } from './presentation';
 import { useDisplayNow, useEquipmentSnapshot } from './equipment-snapshot';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
-import {
-  exactNumber,
-  formatDate,
-  formatDuration,
-  portLabel,
-} from './network-format';
-export function EquipmentInsights({
-  profile,
-  activation,
-  device,
-  blocked = false,
-}: {
+import { formatDate } from './network-format';
+export function EquipmentInsights(p: {
   profile: string;
   activation: string;
   device: Device;
   blocked?: boolean;
 }) {
+  const { profile, activation, device, blocked = false } = p;
   const displayNow = useDisplayNow();
   const [refresh, bump] = useState(0),
     [historyOpen, showHistory] = useState(false);
@@ -82,6 +84,19 @@ export function EquipmentInsights({
     refresh,
     key,
   ]);
+  const completed = useCallback(() => bump((n) => n + 1), []);
+  const readProps = {
+    profile,
+    activation,
+    device,
+    observation: '',
+    rows: [],
+    monitoring: true,
+    summaryOnly: true,
+    blocked,
+    onRead: completed,
+  };
+  const read = usePPReadState(readProps);
   const resource = snapshot?.rows.find((r) => r.kind === 'resource');
   const health = resource?.health,
     restarts = snapshot?.rows.find((r) => r.kind === 'restarts');
@@ -101,50 +116,74 @@ export function EquipmentInsights({
         r.name === 'retention' &&
         r.value === 'limited',
     );
-  const historyChanges =
-    currentHistory?.rows.filter((r) => r.kind === 'port_change') || [];
+  const healthRows: [string, React.ReactNode][] = [
+    [
+      'Reinícios 7 d',
+      <span key="restarts" title={formatRestarts(restarts)}>
+        {restarts?.used ?? 'Não informado nesta leitura'}
+      </span>,
+    ],
+    [
+      'Regras FastTrack habilitadas',
+      health?.fasttrack_rules ?? 'Não informado nesta leitura',
+    ],
+    [
+      'Relógio roteador × PC',
+      health?.clock_offset.known
+        ? health.clock_offset.min === health.clock_offset.max
+          ? formatDuration(health.clock_offset.min / 1e9)
+          : formatClockOffset(health.clock_offset)
+        : 'Não informado nesta leitura',
+    ],
+    [
+      'NTP',
+      <span key="ntp">
+        {health?.ntp_enabled === undefined
+          ? 'Não informado nesta leitura'
+          : health.ntp_enabled
+            ? 'Ativado'
+            : 'Desativado'}
+        {health && (
+          <details className="inline-details">
+            <summary>Detalhes</summary>
+            <DeviceHealthSection health={health} showFastTrackNotice={false} />
+          </details>
+        )}
+      </span>,
+    ],
+  ];
   return (
-    <section
-      className="pppoe-diagnostics"
-      aria-label="Saúde e portas do equipamento"
-    >
-      <h2>Saúde e portas</h2>
-      <PPPoEReadPanel
-        profile={profile}
-        activation={activation}
-        device={device}
-        observation=""
-        rows={[]}
-        monitoring
-        summaryOnly
-        blocked={blocked}
-        onRead={() => bump((n) => n + 1)}
+    <section aria-label="Saúde e portas do equipamento">
+      <div className="bar">
+        <span className="muted">
+          {resource?.at
+            ? `Snapshot salvo de ${formatDate(resource.at)}.`
+            : 'Ainda sem leitura salva.'}
+        </span>
+        <span className="grow" />
+        <PPReadActionButtons s={read} pProps={readProps} />
+        {!historyOpen && (
+          <Button
+            aria-expanded={historyOpen}
+            onClick={() => {
+              showHistory((v) => !v);
+              setCursor('');
+            }}
+          >
+            Histórico de portas
+          </Button>
+        )}
+      </div>
+      <PPReadStatusBanners
+        s={{ ...read, firstStatus: undefined }}
+        pProps={readProps}
       />
       {snapshot?.failed && (
         <p role="alert">Leitura salva do equipamento indisponível.</p>
       )}
-      {resource?.at && (
-        <p title={resource.at}>
-          Snapshot salvo: {formatDate(resource.at)} · há{' '}
-          {formatDuration((displayNow - Date.parse(resource.at)) / 1000)}.
-          Últimos dados conhecidos.
-        </p>
-      )}
       {health?.fasttrack_rules !== undefined && health.fasttrack_rules > 0 && (
         <p role="status" className="inventory-notice">
           Sem controle de banda: FastTrack ativo
-        </p>
-      )}
-      {health && (
-        <p>
-          Regras FastTrack habilitadas: {exactNumber(health.fasttrack_rules)}.
-        </p>
-      )}
-      {restarts && (
-        <p>
-          Reinícios 7 d: {exactNumber(restarts.used)} · 30 d:{' '}
-          {exactNumber(restarts.size)}. Detectados entre leituras; reinícios
-          múltiplos no mesmo intervalo contam como um.
         </p>
       )}
       {snapshotLimited && (
@@ -154,89 +193,75 @@ export function EquipmentInsights({
           retidos.
         </p>
       )}
-      {!snapshot ? (
-        <p role="status">Lendo snapshot salvo…</p>
-      ) : (
-        !snapshot.rows.length &&
-        !snapshot.failed && (
-          <p>
-            Nenhuma leitura salva de saúde e portas. Atualize o monitoramento.
-          </p>
-        )
-      )}
-      <p>
-        Velocidade negociada de portas físicas ether. Interfaces não físicas:
-        não se aplica.
-      </p>
-      {!!ports.length && <EquipmentPorts ports={ports} />}
-      <Button
-        type="submit"
-        aria-expanded={historyOpen}
-        onClick={() => {
-          showHistory((v) => !v);
-          setCursor('');
+      <div className="grid">
+        <DataBlock
+          title="Saúde"
+          source="SSH"
+          age={readingAge(resource?.at, displayNow)}
+          data={
+            !snapshot
+              ? { state: 'loading' }
+              : { state: 'ready', content: <KeyValues rows={healthRows} /> }
+          }
+        />
+        <DataBlock
+          title="Portas físicas negociadas"
+          source="SSH"
+          age={readingAge(resource?.at, displayNow)}
+          data={
+            ports.length
+              ? {
+                  state: 'ready',
+                  content: <EquipmentPorts ports={ports} compact />,
+                }
+              : {
+                  state: 'empty',
+                  message: 'Nenhuma leitura salva de portas físicas.',
+                }
+          }
+        />
+        <PPPoEReadPanel
+          profile={profile}
+          activation={activation}
+          device={device}
+          observation=""
+          rows={[]}
+          health
+          healthView="pools"
+          blocked={blocked}
+        />
+      </div>
+      <div className="sp10" />
+      <DataBlock
+        title="Leitura operacional"
+        source="SSH"
+        age={readingAge(read.result?.ended_at)}
+        data={{
+          state: 'ready',
+          content: (
+            <>
+              {read.result ? (
+                <DeviceOperationalTables result={read.result} />
+              ) : (
+                <p>Ainda sem leitura</p>
+              )}
+              {read.result && (
+                <PPReadResultPagination s={read} pProps={readProps} />
+              )}
+            </>
+          ),
         }}
-      >
-        Histórico de portas
-      </Button>
+      />
       {historyOpen && (
-        <section aria-label="Histórico de portas salvo">
-          <h3>Histórico de portas</h3>
-          <p>
-            Mudanças entre leituras salvas; janela de 30 dias. Abrir este
-            histórico não consulta o roteador.
-          </p>
-          {!currentHistory ? (
-            <p role="status">Lendo histórico salvo…</p>
-          ) : currentHistory.error ? (
-            <p role="alert">Histórico indisponível.</p>
-          ) : !historyChanges.length ? (
-            <p>
-              {historyLimited
-                ? 'Sem eventos de porta entre os registros retidos; histórico parcial.'
-                : 'Nenhuma mudança de porta detectada entre as leituras disponíveis.'}
-            </p>
-          ) : (
-            <div className="table-region" tabIndex={0}>
-              <DataTable className="data-table">
-                <thead>
-                  <tr>
-                    <th>Quando</th>
-                    <th>Porta</th>
-                    <th>De → Para</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyChanges.map((r, i) => (
-                    <tr key={i}>
-                      <td title={r.at}>{formatDate(r.at, true)}</td>
-                      <td>{r.name}</td>
-                      <td>
-                        {portLabel(r.before_port)} (
-                        {exactNumber(r.before_port?.link_downs)} quedas) →{' '}
-                        {portLabel(r.port)} ({exactNumber(r.port?.link_downs)}{' '}
-                        quedas)
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DataTable>
-            </div>
-          )}
-          {currentHistory?.next && (
-            <Button
-              type="submit"
-              onClick={() => setCursor(currentHistory.next)}
-            >
-              Próxima página do histórico de portas
-            </Button>
-          )}
-          {cursor && (
-            <Button type="submit" onClick={() => setCursor('')}>
-              Início do histórico de portas
-            </Button>
-          )}
-        </section>
+        <EquipmentPortHistory
+          read={currentHistory}
+          limited={historyLimited}
+          at={resource?.at}
+          now={displayNow}
+          cursor={cursor}
+          setCursor={setCursor}
+          close={() => showHistory(false)}
+        />
       )}
     </section>
   );

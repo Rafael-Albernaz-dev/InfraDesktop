@@ -1,3 +1,8 @@
+import { SessionPointsTable } from './monitoring-points';
+import { DataBlock } from './ui/DataBlock';
+import type { DataState } from './ui/DataBlock';
+import { KeyValues } from './ui/KeyValues';
+import { readingAge } from './equipment-reading-format';
 import { Button } from './ui/Button';
 import { DataTable } from './ui/DataTable';
 import { Chart } from './ui/Chart';
@@ -40,74 +45,29 @@ function SessionCurve({ points }: { points: DeviceMonitoringPoint[] }) {
   );
 }
 
-function SessionPointsTable({ points }: { points: DeviceMonitoringPoint[] }) {
-  return (
-    <div
-      className="table-region"
-      tabIndex={0}
-      aria-label="Pontos de sessões online"
-    >
-      <DataTable className="data-table">
-        <thead>
-          <tr>
-            <th>Período</th>
-            <th>Online mínimo / máximo / último</th>
-            <th>Origem das sessões</th>
-            <th>Qualidade</th>
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((p, i) => {
-            const qualityLabels = [
-              p.gap ? 'Lacuna de continuidade' : '',
-              p.drop ? 'Queda brusca observada' : '',
-              !p.gap && !p.drop ? 'Leitura compatível' : '',
-            ]
-              .filter(Boolean)
-              .join(' · ');
-            return (
-              <tr key={i}>
-                <td>
-                  {formatDate(p.at)} ·{' '}
-                  {p.resolution === 3600 ? 'hora' : 'minuto'}
-                </td>
-                <td>
-                  {p.online_min ?? 'Indisponível'} /{' '}
-                  {p.online_max ?? 'Indisponível'} /{' '}
-                  {p.online ?? 'Indisponível'}
-                </td>
-                <td>
-                  {p.session_at
-                    ? formatDate(p.session_at)
-                    : 'Sem leitura de sessões neste ponto'}
-                </td>
-                <td>
-                  {p.online === undefined
-                    ? 'Sem leitura de sessões'
-                    : qualityLabels}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </DataTable>
-    </div>
-  );
-}
-
 function SessionMonitoringCurve({
   points,
 }: {
   points: DeviceMonitoringPoint[];
 }) {
+  const valid = points.filter((p) => !p.gap && p.online !== undefined);
+  const values = valid.map((p) => p.online!);
   return (
     <>
       <SessionCurve points={points} />
-      <SessionPointsTable points={points} />
+      <p className="muted">
+        Online mínimo / máximo / último:{' '}
+        {values.length ? Math.min(...values) : '—'} /{' '}
+        {values.length ? Math.max(...values) : '—'} / {values[0] ?? '—'} ·
+        lacunas não são zero. Ponto vermelho: queda brusca.
+      </p>
+      <details className="det">
+        <summary>Pontos da curva</summary>
+        <SessionPointsTable points={points} />
+      </details>
     </>
   );
 }
-
 function MonitoringDuplicatesTable({
   rows,
   displayNow,
@@ -161,29 +121,6 @@ function MonitoringDuplicatesTable({
   );
 }
 
-function MonitoringFlappingItem({ r }: { r: PPReadResult['rows'][number] }) {
-  const pAt = r.at ? formatDate(r.at) : 'Indisponível';
-  const pVal = r.value ? formatDate(r.value) : 'Indisponível';
-  return (
-    <p>
-      {r.login}: {r.used} transições · primeira {pAt} · última {pVal}
-    </p>
-  );
-}
-
-function MonitoringVersionItem({ r }: { r: PPReadResult['rows'][number] }) {
-  const vVal = r.value || 'Indisponível';
-  const vAt = r.at ? formatDate(r.at) : 'Data indisponível';
-  const vPk =
-    r.event === 'complete' ? (r.used ?? 'Indisponível') : 'Indisponível';
-  const vSrc = r.source_at ? formatDate(r.source_at) : 'Indisponível';
-  return (
-    <p>
-      {r.name}: {vVal} · {vAt} · pacotes {vPk} · origem {vSrc}
-    </p>
-  );
-}
-
 function MonitoringHygieneItem({ r }: { r: PPReadResult['rows'][number] }) {
   const hAt = r.at ? formatDate(r.at) : 'Indisponível';
   return (
@@ -192,29 +129,6 @@ function MonitoringHygieneItem({ r }: { r: PPReadResult['rows'][number] }) {
       sem evidência disponível · origem {hAt}
     </p>
   );
-}
-
-function MonitoringRowItem({
-  r,
-  scope,
-}: {
-  r: PPReadResult['rows'][number];
-  scope: string;
-}) {
-  if (r.kind === 'flapping') return <MonitoringFlappingItem r={r} />;
-  if (r.kind === 'version') return <MonitoringVersionItem r={r} />;
-  if (r.kind === 'hygiene') return <MonitoringHygieneItem r={r} />;
-  if (r.name === 'retention') {
-    return <p>Parte da série foi removida pelo limite de armazenamento.</p>;
-  }
-  if (scope === 'duplicates') {
-    return (
-      <p>
-        {r.name}: {r.value || 'não comparável (leitura indisponível)'}
-      </p>
-    );
-  }
-  return <p>{r.name}: indisponível nesta fonte.</p>;
 }
 
 function useDeviceMonitoringLoad(p: {
@@ -233,6 +147,7 @@ function useDeviceMonitoringLoad(p: {
   }) => void;
   setRows: (r: PPReadResult['rows']) => void;
   setNext: (n: string) => void;
+  setAt: (at: string) => void;
 }) {
   const {
     profile,
@@ -246,9 +161,11 @@ function useDeviceMonitoringLoad(p: {
     setComparison,
     setRows,
     setNext,
+    setAt,
   } = p;
   useEffect(() => {
     let alive = true;
+    setState('loading');
     void (async () => {
       const r = await monitoringAPI.current(
         profile,
@@ -277,6 +194,7 @@ function useDeviceMonitoringLoad(p: {
         packages: r.data.read.package_divergence,
         count: r.data.read.compared_devices,
       });
+      setAt(r.data.read.ended_at);
       setRows(r.data.read.rows);
       setNext(r.data.next_cursor || '');
       setState('ready');
@@ -302,6 +220,7 @@ function useDeviceMonitoringLoad(p: {
     setComparison,
     setRows,
     setNext,
+    setAt,
   ]);
 }
 
@@ -344,45 +263,190 @@ function emptyMonitoringNotice(scope: string): string {
   return 'Nenhuma leitura disponível para este grupo.';
 }
 
-function MonitoringScopeBody(p: {
+function MonitoringCardBody(p: {
   scope: string;
   rows: PPReadResult['rows'];
   comparison: { version?: boolean; packages?: boolean; count?: number };
   displayNow: number;
 }) {
-  const { scope, rows, comparison, displayNow } = p;
-  if (scope === 'series') {
+  if (p.scope === 'series')
+    return (
+      <SessionMonitoringCurve
+        points={p.rows.flatMap((r) => (r.point ? [r.point] : []))}
+      />
+    );
+  if (p.scope === 'flapping')
+    return (
+      <DataTable>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Transições 24 h</th>
+          </tr>
+        </thead>
+        <tbody>
+          {p.rows
+            .filter((r) => r.kind === 'flapping')
+            .map((r, i) => (
+              <tr key={i}>
+                <td title={`${r.at || ''} → ${r.value || ''}`}>{r.login}</td>
+                <td>{r.used}</td>
+              </tr>
+            ))}
+        </tbody>
+      </DataTable>
+    );
+  if (p.scope === 'versions') {
+    const versions = [
+      ...new Set(
+        p.rows
+          .filter((r) => r.kind === 'version')
+          .map((r) => r.value || 'Não informado nesta leitura'),
+      ),
+    ];
     return (
       <>
-        <p>
-          Pontos por minuto durante 24 h; depois, mínimo, máximo e último por
-          hora até 7 dias. Quebras de continuidade não comprovam queda. Queda
-          brusca: pelo menos 5 sessões e 20% entre leituras compatíveis.
-        </p>
-        <SessionMonitoringCurve
-          points={rows.flatMap((r) => (r.point ? [r.point] : []))}
+        <KeyValues
+          rows={versions.map((version) => [
+            version,
+            <span
+              key={version}
+              title={p.rows
+                .map(
+                  (r) =>
+                    `${r.name}: ${r.value} · ${r.at} · pacotes ${r.used ?? 'Não informado nesta leitura'} · origem ${r.source_at || ''}`,
+                )
+                .join(' / ')}
+            >
+              {p.rows.filter((r) => r.value === version).length} equipamento
+              {p.rows.filter((r) => r.value === version).length === 1
+                ? ''
+                : 's'}
+            </span>,
+          ])}
         />
+        {(p.comparison.version || p.comparison.packages) && (
+          <MonitoringVersionsView comparison={p.comparison} />
+        )}
       </>
     );
   }
-  if (scope === 'flapping') {
+  if (p.scope === 'hygiene')
     return (
-      <p>
-        Transições ONLINE ↔ OFFLINE observadas nas últimas 24 h. Leituras
-        duplicadas, falhas, reboot e contexto incompatível não contam como
-        oscilação.
-      </p>
+      <>
+        {p.rows
+          .filter((r) => r.kind === 'hygiene')
+          .map((r, i) => (
+            <MonitoringHygieneItem key={i} r={r} />
+          ))}
+      </>
     );
-  }
-  if (scope === 'duplicates') {
-    return <MonitoringDuplicatesTable rows={rows} displayNow={displayNow} />;
-  }
-  if (scope === 'versions') {
-    return <MonitoringVersionsView comparison={comparison} />;
-  }
-  return null;
+  return <MonitoringDuplicatesTable rows={p.rows} displayNow={p.displayNow} />;
 }
-
+function MonitoringScopeCard(p: {
+  profile: string;
+  activation: string;
+  device: Device;
+  scope: string;
+  title: string;
+  refresh: number;
+}) {
+  const displayNow = useDisplayNow();
+  const [cursor, setCursor] = useState(''),
+    [next, setNext] = useState(''),
+    [rows, setRows] = useState<PPReadResult['rows']>([]);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading'),
+    [error, setError] = useState(''),
+    [at, setAt] = useState('');
+  const [local, bump] = useState(0),
+    [comparison, setComparison] = useState<{
+      version?: boolean;
+      packages?: boolean;
+      count?: number;
+    }>({});
+  const [seenRefresh, setSeenRefresh] = useState(p.refresh);
+  if (seenRefresh !== p.refresh) {
+    setSeenRefresh(p.refresh);
+    setCursor('');
+  }
+  useDeviceMonitoringLoad({
+    profile: p.profile,
+    activation: p.activation,
+    deviceId: p.device.id,
+    scope: p.scope,
+    cursor,
+    refresh: p.refresh + local,
+    setState,
+    setError,
+    setComparison,
+    setRows,
+    setNext,
+    setAt,
+  });
+  const retry = () => {
+    setCursor('');
+    bump((n) => n + 1);
+  };
+  const content = (
+    <>
+      {!rows.length && <p>{emptyMonitoringNotice(p.scope)}</p>}
+      <MonitoringCardBody
+        {...p}
+        rows={rows}
+        comparison={comparison}
+        displayNow={displayNow}
+      />
+      {next && (
+        <Button onClick={() => setCursor(next)}>
+          Próxima página dos dados locais
+        </Button>
+      )}
+      {cursor && (
+        <Button onClick={() => setCursor('')}>Início dos dados locais</Button>
+      )}
+      {rows
+        .filter((r) => r.kind === 'availability')
+        .map((r, i) => (
+          <p key={i}>
+            {r.name === 'retention'
+              ? 'Parte da série foi removida pelo limite de armazenamento.'
+              : `${r.name}: ${r.value || 'Não informado nesta leitura'}`}
+          </p>
+        ))}
+    </>
+  );
+  let data: DataState = { state: 'ready', content };
+  if (state === 'loading')
+    data = rows.length
+      ? { state: 'refreshing', content }
+      : { state: 'loading' };
+  else if (state === 'error')
+    data = {
+      state: 'failed',
+      reason: error,
+      technical: 'Leitura local do monitoramento',
+      retry,
+      previous: rows.length ? content : undefined,
+    };
+  else if (p.scope === 'hygiene' && !rows.some((r) => r.kind === 'hygiene'))
+    data = { state: 'unbuilt', slice: 'L-BASE-2' };
+  else if (!rows.length && !next)
+    data = {
+      state: 'empty',
+      message:
+        p.scope === 'duplicates'
+          ? 'Nenhuma duplicidade encontrada'
+          : emptyMonitoringNotice(p.scope),
+    };
+  return (
+    <DataBlock
+      title={p.title}
+      source="local"
+      age={readingAge(at)}
+      data={data}
+    />
+  );
+}
 function DeviceMonitoringContent({
   profile,
   activation,
@@ -392,135 +456,50 @@ function DeviceMonitoringContent({
   activation: string;
   device: Device;
 }) {
-  const displayNow = useDisplayNow();
-  const [scope, setScope] = useState('series');
-  const [cursor, setCursor] = useState('');
-  const [next, setNext] = useState('');
-  const [rows, setRows] = useState<PPReadResult['rows']>([]);
-  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [error, setError] = useState('');
   const [refresh, bump] = useState(0);
-  const [comparison, setComparison] = useState<{
-    version?: boolean;
-    packages?: boolean;
-    count?: number;
-  }>({});
-  const completed = useCallback(() => {
-    setCursor('');
-    bump((n) => n + 1);
-  }, []);
-  useDeviceMonitoringLoad({
-    profile,
-    activation,
-    deviceId: device.id,
-    scope,
-    cursor,
-    refresh,
-    setState,
-    setError,
-    setComparison,
-    setRows,
-    setNext,
-  });
-  function change(val: string) {
-    setScope(val);
-    setCursor('');
-    setNext('');
-    setRows([]);
-    setState('loading');
-  }
+  const completed = useCallback(() => bump((n) => n + 1), []);
   return (
-    <section
-      className="pppoe-diagnostics"
-      aria-label="Monitoramento operacional"
-    >
-      <h2>Monitoramento operacional</h2>
-      <p>
-        Atualização sob demanda. Ler a série armazenada não consulta o
-        equipamento. Dados ausentes continuam indisponíveis.
-      </p>
-      <PPPoEReadPanel
+    <section aria-label="Monitoramento operacional">
+      <div className="bar">
+        <span className="muted">
+          Atualização sob demanda. Ler a série salva não consulta o equipamento.
+        </span>
+        <span className="grow" />
+        <PPPoEReadPanel
+          profile={profile}
+          activation={activation}
+          device={device}
+          observation=""
+          rows={[]}
+          monitoring
+          summaryOnly
+          actionsOnly
+          onRead={completed}
+        />
+        <Button onClick={completed}>Reabrir série local</Button>
+      </div>
+      <MonitoringScopeCard
         profile={profile}
         activation={activation}
         device={device}
-        observation=""
-        rows={[]}
-        monitoring
-        onRead={completed}
+        scope="series"
+        title="Curva de sessões"
+        refresh={refresh}
       />
-      <nav role="tablist" aria-label="Dados locais do monitoramento">
-        {MON_TABS.map(([val, label]) => (
-          <Button
-            type="submit"
-            key={val}
-            role="tab"
-            aria-selected={scope === val}
-            onClick={() => change(val)}
-          >
-            {label}
-          </Button>
-        ))}
-      </nav>
-      {state === 'loading' && <p role="status">Lendo dados armazenados…</p>}
-      {state === 'error' && (
-        <>
-          <p role="alert">{error}</p>
-          <Button
-            type="submit"
-            onClick={() => {
-              setCursor('');
-              setRows([]);
-              setNext('');
-              setState('loading');
-              bump((n) => n + 1);
-            }}
-          >
-            Reabrir série local
-          </Button>
-        </>
-      )}
-      {state === 'ready' && (
-        <>
-          <MonitoringScopeBody
+      <div className="sp10" />
+      <div className="grid monitoring-grid">
+        {MON_TABS.slice(1).map(([scope, title]) => (
+          <MonitoringScopeCard
+            key={scope}
+            profile={profile}
+            activation={activation}
+            device={device}
             scope={scope}
-            rows={rows}
-            comparison={comparison}
-            displayNow={displayNow}
+            title={title}
+            refresh={refresh}
           />
-          {!rows.length && <p>{emptyMonitoringNotice(scope)}</p>}
-          {rows
-            .filter((r) => !r.point && !r.duplicate)
-            .map((r, i) => (
-              <div key={i}>
-                <MonitoringRowItem r={r} scope={scope} />
-              </div>
-            ))}
-          {next && (
-            <Button
-              type="submit"
-              onClick={() => {
-                setCursor(next);
-                setRows([]);
-                setState('loading');
-              }}
-            >
-              Próxima página dos dados locais
-            </Button>
-          )}
-          {cursor && (
-            <Button
-              type="submit"
-              onClick={() => {
-                setCursor('');
-                setRows([]);
-                setState('loading');
-              }}
-            >
-              Início dos dados locais
-            </Button>
-          )}
-        </>
-      )}
+        ))}
+      </div>
     </section>
   );
 }

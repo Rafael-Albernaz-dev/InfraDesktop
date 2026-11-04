@@ -132,7 +132,14 @@
     "route": "ficha",
     "device": "CCR-CENTRO",
     "tab": "Interfaces e saúde",
-    "sub": null
+    "sub": null,
+    "prepare": [
+      {
+        "button": "Atualizar",
+        "within": "Interfaces estáticas",
+        "ready": "84 Mbps"
+      }
+    ]
   },
   {
     "id": "ficha-ccr-centro-interfaces-e-sau-de-monitoramento",
@@ -148,7 +155,22 @@
     "route": "ficha",
     "device": "CCR-CENTRO",
     "tab": "Interfaces e saúde",
-    "sub": "Portas e saúde"
+    "sub": "Portas e saúde",
+    "prepare": [
+      {
+        "button": "Atualizar monitoramento",
+        "ready": "telnet"
+      },
+      {
+        "button": "Atualizar",
+        "within": "Pools IPv4",
+        "ready": "pool-0001"
+      },
+      {
+        "button": "Histórico de portas",
+        "ready": "02/11 14:02"
+      }
+    ]
   },
   {
     "id": "ficha-ccr-centro-resumo",

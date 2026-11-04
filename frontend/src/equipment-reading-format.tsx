@@ -1,3 +1,4 @@
+import type { PPReadRow } from './presentation';
 import type { Device } from './equipment-api';
 import {
   formatDuration,
@@ -34,4 +35,11 @@ export function latestSavedReading(d: Device) {
     uptime: formatRouterDuration(d.result?.uptime),
     exactUptime: d.result?.uptime,
   };
+}
+
+export function formatRestarts(row?: PPReadRow) {
+  return (
+    `Reinícios 7 d: ${row?.used ?? 'Não informado nesta leitura'} · 30 d: ${row?.size ?? 'Não informado nesta leitura'}. ` +
+    'Detectados entre leituras; reinícios múltiplos no mesmo intervalo contam como um.'
+  );
 }

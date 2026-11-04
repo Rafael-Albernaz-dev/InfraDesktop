@@ -68,98 +68,114 @@ export function PPSecretEvidence({ result }: { result: PPReadResult }) {
   );
 }
 
-export function PPHealthTables({ result }: { result: PPReadResult }) {
+export function PPHealthTables({
+  result,
+  view,
+}: {
+  result: PPReadResult;
+  view?: 'pools' | 'uplinks';
+}) {
   const pools = result.rows.filter((r) => r.kind === 'pool');
   const uplinks = result.rows.filter((r) => r.kind === 'uplink');
   const flag = (v?: boolean) =>
     v === undefined ? 'Indisponível' : v ? 'Sim' : 'Não';
   return (
     <>
-      <h4>Pools IPv4</h4>
-      {result.pools_available !== true ? (
-        <p>Leitura de pools indisponível nesta versão ou permissão.</p>
-      ) : !pools.length ? (
-        <p>
-          {result.pool_total === 0
-            ? 'Nenhum pool configurado.'
-            : 'Pools disponíveis em outra página.'}
-        </p>
-      ) : (
-        <div className="table-region" tabIndex={0} aria-label="Pools IPv4">
-          <DataTable className="data-table">
-            <thead>
-              <tr>
-                <th>Pool</th>
-                <th>Endereços em uso</th>
-                <th>Endereços configurados</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pools.map((r, i) => (
-                <tr key={i}>
-                  <td>{r.name}</td>
-                  <td>{r.used ?? 'Indisponível'}</td>
-                  <td>{r.size ?? 'Indisponível'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </DataTable>
-        </div>
+      {view !== 'uplinks' && (
+        <>
+          {!view && <h4>Pools IPv4</h4>}
+          {result.pools_available !== true ? (
+            <p>Leitura de pools indisponível nesta versão ou permissão.</p>
+          ) : !pools.length ? (
+            <p>
+              {result.pool_total === 0
+                ? 'Nenhum pool configurado.'
+                : 'Pools disponíveis em outra página.'}
+            </p>
+          ) : (
+            <div className="table-region" tabIndex={0} aria-label="Pools IPv4">
+              <DataTable className="data-table">
+                <thead>
+                  <tr>
+                    <th>Pool</th>
+                    <th>Em uso</th>
+                    <th>Configurados</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pools.map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.name}</td>
+                      <td>{r.used ?? 'Indisponível'}</td>
+                      <td>{r.size ?? 'Indisponível'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            </div>
+          )}
+        </>
       )}
-      <h4>Interfaces estáticas</h4>
-      <p>
-        TX e RX são vistos pela interface do concentrador. Tráfego e contadores
-        não identificam a causa de uma falha.
-      </p>
-      {result.uplinks_available !== true ? (
-        <p>Leitura de interfaces indisponível nesta versão ou permissão.</p>
-      ) : !uplinks.length ? (
-        <p>
-          {result.uplink_total === 0
-            ? 'Nenhuma interface estática disponível.'
-            : 'Interfaces disponíveis em outra página.'}
-        </p>
-      ) : (
-        <div
-          className="table-region"
-          tabIndex={0}
-          aria-label="Interfaces estáticas"
-        >
-          <DataTable className="data-table">
-            <thead>
-              <tr>
-                <th>Interface</th>
-                <th>TX da interface</th>
-                <th>RX da interface</th>
-                <th>Em execução</th>
-                <th>Desativada</th>
-                <th>Erros RX</th>
-                <th>Erros TX</th>
-                <th>Descartes RX</th>
-                <th>Descartes TX</th>
-              </tr>
-            </thead>
-            <tbody>
-              {uplinks.map((r, i) => (
-                <tr key={i}>
-                  <td>{r.name}</td>
-                  <td>
-                    <RateValue rate={r.tx} />
-                  </td>
-                  <td>
-                    <RateValue rate={r.rx} />
-                  </td>
-                  <td>{flag(r.running)}</td>
-                  <td>{flag(r.disabled)}</td>
-                  <td>{exactNumber(r.rx_errors)}</td>
-                  <td>{exactNumber(r.tx_errors)}</td>
-                  <td>{exactNumber(r.rx_drops)}</td>
-                  <td>{exactNumber(r.tx_drops)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </DataTable>
-        </div>
+      {view !== 'pools' && (
+        <>
+          {!view && <h4>Interfaces estáticas</h4>}
+          {!view && (
+            <p>
+              TX e RX são vistos pela interface do concentrador. Tráfego e
+              contadores não identificam a causa de uma falha.
+            </p>
+          )}
+          {result.uplinks_available !== true ? (
+            <p>Leitura de interfaces indisponível nesta versão ou permissão.</p>
+          ) : !uplinks.length ? (
+            <p>
+              {result.uplink_total === 0
+                ? 'Nenhuma interface estática disponível.'
+                : 'Interfaces disponíveis em outra página.'}
+            </p>
+          ) : (
+            <div
+              className="table-region"
+              tabIndex={0}
+              aria-label="Interfaces estáticas"
+            >
+              <DataTable className="data-table">
+                <thead>
+                  <tr>
+                    <th>Interface</th>
+                    <th title="TX da interface">TX</th>
+                    <th title="RX da interface">RX</th>
+                    <th>Em execução</th>
+                    <th>Desativada</th>
+                    <th>Erros RX</th>
+                    <th>Erros TX</th>
+                    <th>Descartes RX</th>
+                    <th>Descartes TX</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uplinks.map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.name}</td>
+                      <td>
+                        <RateValue rate={r.tx} />
+                      </td>
+                      <td>
+                        <RateValue rate={r.rx} />
+                      </td>
+                      <td>{flag(r.running)}</td>
+                      <td>{flag(r.disabled)}</td>
+                      <td>{exactNumber(r.rx_errors)}</td>
+                      <td>{exactNumber(r.tx_errors)}</td>
+                      <td>{exactNumber(r.rx_drops)}</td>
+                      <td>{exactNumber(r.tx_drops)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </DataTable>
+            </div>
+          )}
+        </>
       )}
     </>
   );

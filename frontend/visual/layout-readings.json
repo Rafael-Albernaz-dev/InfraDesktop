@@ -1,0 +1,141 @@
+{
+  "equipment": [
+    {
+      "kind": "resource",
+      "health": {
+        "fasttrack_rules": 0,
+        "cpu": 8,
+        "uptime": {
+          "known": true,
+          "min": 1036800000000000,
+          "max": 1036800000000000
+        },
+        "clock_offset": {
+          "known": true,
+          "min": 2000000000,
+          "max": 2000000000
+        },
+        "ntp_enabled": true,
+        "version": "RouterOS 6.49"
+      },
+      "at": "2026-11-04T11:54:00.000Z"
+    },
+    {
+      "kind": "restarts",
+      "used": 0,
+      "size": 0,
+      "at": "2026-11-04T11:59:48.000Z"
+    },
+    {
+      "kind": "port",
+      "name": "ether1",
+      "port": {
+        "running": true,
+        "speed_bps": 1000000000,
+        "full_duplex": true,
+        "link_downs": "0"
+      },
+      "at": "2026-11-04T11:54:00.000Z"
+    },
+    {
+      "kind": "port",
+      "name": "ether2",
+      "port": {
+        "running": false,
+        "link_downs": "3"
+      },
+      "at": "2026-11-04T11:54:00.000Z"
+    }
+  ],
+  "port-history": [
+    {
+      "kind": "port_change",
+      "name": "ether2",
+      "at": "2026-11-02T17:02:00Z",
+      "before_port": {
+        "running": true,
+        "speed_bps": 1000000000,
+        "full_duplex": true,
+        "link_downs": "0"
+      },
+      "port": {
+        "running": false,
+        "link_downs": "3"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "kind": "resource",
+      "health": {
+        "fasttrack_rules": 0,
+        "cpu": 8,
+        "uptime": {
+          "known": true,
+          "min": 1036800000000000,
+          "max": 1036800000000000
+        },
+        "clock_offset": {
+          "known": true,
+          "min": 2000000000,
+          "max": 2000000000
+        },
+        "ntp_enabled": true,
+        "version": "RouterOS 6.49"
+      },
+      "at": "2026-11-04T11:54:00.000Z"
+    },
+    {
+      "kind": "service",
+      "name": "telnet",
+      "disabled": true,
+      "value": "Sem Available From na auditoria"
+    },
+    {
+      "kind": "service",
+      "name": "www",
+      "disabled": false,
+      "at": "2026-11-04T11:59:00.000Z"
+    }
+  ],
+  "health": [
+    {
+      "kind": "pool",
+      "name": "pool-0001",
+      "used": 120,
+      "size": 254
+    },
+    {
+      "kind": "uplink",
+      "name": "ether1",
+      "tx": {
+        "min": 84000000,
+        "max": 84000000
+      },
+      "rx": {
+        "min": 312000000,
+        "max": 312000000
+      },
+      "running": true,
+      "disabled": false,
+      "rx_errors": "0",
+      "tx_errors": "0",
+      "rx_drops": "0",
+      "tx_drops": "0"
+    }
+  ],
+  "flapping": [
+    {
+      "kind": "flapping",
+      "login": "cliente-0012",
+      "used": 7
+    }
+  ],
+  "versions": [
+    {
+      "kind": "version",
+      "name": "CCR-CENTRO",
+      "value": "RouterOS 6.49"
+    }
+  ]
+}

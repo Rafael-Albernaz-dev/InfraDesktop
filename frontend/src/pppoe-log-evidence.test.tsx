@@ -185,7 +185,9 @@ it('stored series preserves unknowns and package divergence across pages', async
   });
   expect(readAPI.start).not.toHaveBeenCalled();
   expect(screen.getByText('0 / 0 / 0')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: 'Versões' }));
+  expect(
+    screen.getByText('Pontos da curva').closest('details'),
+  ).not.toHaveAttribute('open');
   await screen.findByText(/Divergência de pacotes nos conjuntos completos/);
   expect(monitoringAPI.current).toHaveBeenCalledWith(
     'company',
@@ -212,7 +214,7 @@ it('stored series preserves unknowns and package divergence across pages', async
     2,
   );
   expect(
-    screen.getByText('Serviços telnet/ftp/www: indisponível.'),
+    screen.getAllByText('Serviços telnet/ftp/www: indisponível.')[0],
   ).toBeInTheDocument();
   expect(
     screen.getByText(/Falhas de autenticação PPP: leitura parcial/),
@@ -220,7 +222,7 @@ it('stored series preserves unknowns and package divergence across pages', async
   expect(readAPI.start).toHaveBeenCalledTimes(1);
   view.unmount();
 });
-it('L06T2: reopening an expired local page returns to the first cursor', async () => {
+it('reopening an expired local page returns to the first cursor', async () => {
   vi.mocked(monitoringAPI.current).mockImplementation(
     async (_p, _a, _d, scope, cursor) =>
       cursor
@@ -241,9 +243,11 @@ it('L06T2: reopening an expired local page returns to the first cursor', async (
     <DeviceMonitoring profile="company" activation="active" device={device} />,
   );
   fireEvent.click(
-    await screen.findByRole('button', {
-      name: 'Próxima página dos dados locais',
-    }),
+    (
+      await screen.findAllByRole('button', {
+        name: 'Próxima página dos dados locais',
+      })
+    )[0],
   );
   fireEvent.click(
     await screen.findByRole('button', { name: 'Reabrir série local' }),
@@ -251,13 +255,13 @@ it('L06T2: reopening an expired local page returns to the first cursor', async (
   await waitFor(() =>
     expect(vi.mocked(monitoringAPI.current).mock.calls.at(-1)?.[4]).toBe(''),
   );
-  await screen.findByRole('button', {
+  await screen.findAllByRole('button', {
     name: 'Próxima página dos dados locais',
   });
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   view.unmount();
 });
-it('L06T2: a minute can disclose both a gap and an observed drop', async () => {
+it('a minute can disclose both a gap and an observed drop', async () => {
   vi.mocked(monitoringAPI.current).mockResolvedValue(
     response({
       total: 1,
