@@ -86,6 +86,6 @@ func (s *Service) launchRadioJobLocked(q Command, plan radioStartPlan, key strin
 		View: Job{ID: id, DeviceID: plan.id, Kind: "radio.start", State: "RUNNING", Code: OK}}
 	s.Jobs[id] = job
 	s.WG.Add(1)
-	go s.runRadio(ctx, job, plan.link, plan.revisions, key)
+	go s.runRadioRecorded(ctx, job, plan.link, plan.revisions, key)
 	return copyJob(job), OK
 }

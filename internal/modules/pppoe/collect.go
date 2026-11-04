@@ -162,7 +162,7 @@ func (s *Service) launchPPJobLocked(
 	if diagnostic {
 		go s.runPD(jobctx, j)
 	} else {
-		go s.runPP(jobctx, j)
+		go s.runPPRecorded(jobctx, j)
 	}
 	return inventory.CopyJob(j)
 }
