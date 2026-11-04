@@ -107,7 +107,6 @@ export const access: {
   saveBrand: (profile, activation, brand) =>
     SaveBrand(profile, activation, brand.name, brand.logo, brand.accent),
 };
-
 export type Observation = Omit<equipment.Observation, 'convertValues'>;
 export type Device = Omit<
   equipment.Device,
@@ -389,6 +388,7 @@ export type PPResult = {
       pppoe?: { operation_id?: string };
     };
     attempt?: {
+      at?: string;
       job_id?: string;
       operation_id?: string;
       source_observation?: string;

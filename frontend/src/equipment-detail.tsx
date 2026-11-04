@@ -1,8 +1,13 @@
-import { EquipmentSummaryStatistics } from './equipment-summary-statistics';
+import {
+  SummaryTab,
+  equipmentReadBlocked,
+  useSummaryRefresh,
+} from './equipment-summary-tab';
 import { EquipmentChain } from './equipment-chain';
 import { equipmentType } from './equipment-layout';
 import { HeaderActionHost } from './ui/HeaderAction';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { RefreshOpening } from './use-refresh-on-open';
 import type { useEquipmentState } from './equipment-state';
 import type { Device } from './equipment-api';
 import { equipmentAPI as api } from './equipment-api';
@@ -22,22 +27,13 @@ import { DataBlock } from './ui/DataBlock';
 import { PageHeader } from './ui/PageHeader';
 import { Tabs } from './ui/Tabs';
 
-type Props = ReturnType<typeof useEquipmentState> & {
+export type Props = ReturnType<typeof useEquipmentState> & {
   selected: Device;
   profile: string;
   activation: string;
   connected: boolean;
   locked: boolean;
 };
-function equipmentReadBlocked(p: Props) {
-  return (
-    p.locked ||
-    !p.vault ||
-    !p.selected.active ||
-    !p.selected.credential_id ||
-    p.job?.state === 'RUNNING'
-  );
-}
 const TABS: Record<string, string[]> = {
   concentrator: [
     'Resumo',
@@ -70,45 +66,6 @@ function AccessTab({ p }: { p: Props }) {
         }}
       />
     </div>
-  );
-}
-function SummaryTab({ p }: { p: Props }) {
-  return p.selected.result ? (
-    <EquipmentReading
-      device={p.selected}
-      focus={false}
-      section="summary"
-      statistics={
-        <EquipmentSummaryStatistics
-          profile={p.profile}
-          activation={p.activation}
-          device={p.selected}
-        />
-      }
-    />
-  ) : (
-    <>
-      {(!p.selected.role || p.selected.role === 'other') && (
-        <div className="note">
-          Declare o tipo deste equipamento para ver o restante.
-        </div>
-      )}
-      <div className="grid">
-        <DataBlock
-          title="Identidade e sistema"
-          source="SSH"
-          data={{
-            state: p.job?.state === 'RUNNING' ? 'loading' : 'unread',
-            action: () =>
-              void p.startOperation(
-                p.selected.fingerprint ? 'query' : 'inspect',
-                p.selected,
-              ),
-            disabled: equipmentReadBlocked(p),
-          }}
-        />
-      </div>
-    </>
   );
 }
 function HealthTab({ p }: { p: Props }) {
@@ -187,6 +144,7 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
         activation={p.activation}
         device={p.selected}
         section={tab === 'Sessões' ? 'sessions' : 'services'}
+        refreshAvailable={p.connected && p.vault && !p.locked}
         back={() => p.setDetailOpen(false)}
         openEquipment={p.openById}
       />
@@ -205,6 +163,7 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
 export function EquipmentDetailPane(p: Props) {
   const { surfaceRef, detailReadRef, detailSurfaceRef } = p;
   const [tab, setTab] = useState('Resumo');
+  const radioRefreshDecision = useRef<RefreshOpening | undefined>(undefined);
   const [radioActions, setRadioActions] = useState<HTMLDivElement | null>(null);
   const [chainHost, setChainHost] = useState<HTMLDivElement | null>(null);
   const device = p.selected,
@@ -212,6 +171,7 @@ export function EquipmentDetailPane(p: Props) {
   const isRadio = [RadioRoles.ap, RadioRoles.cpe, RadioRoles.ptp].some(
     (r) => r === role,
   );
+  useSummaryRefresh(p, tab, isRadio);
   const saved = latestSavedReading(device);
   const readingAge = saved.at
     ? `há ${formatDuration((p.displayNow - Date.parse(saved.at)) / 1000)}`
@@ -303,6 +263,8 @@ export function EquipmentDetailPane(p: Props) {
             activation={p.activation}
             device={device}
             blocked={p.locked || !p.vault || !device.active}
+            refreshAvailable={p.connected && p.vault && !p.locked}
+            refreshDecision={radioRefreshDecision}
             tab={tab}
             actionHost={radioActions}
             chainHost={chainHost}

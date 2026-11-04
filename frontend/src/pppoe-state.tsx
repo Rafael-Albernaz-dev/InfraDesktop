@@ -1,3 +1,4 @@
+import { usePPPoEInitialLoad } from './pppoe-initial-load';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
@@ -25,25 +26,6 @@ import type {
 import { pppoeAPI as api } from './presentation';
 export type PPPoETab =
   'sessions' | 'compare' | 'references' | 'catalog' | 'radius' | 'monitoring';
-function formatAttemptStatus(r: PPResult): string {
-  const a = r.data?.attempt;
-  if (
-    !a ||
-    (a.quality?.status === 'complete' &&
-      a.state !== 'FAILED' &&
-      a.state !== 'CANCELLED')
-  ) {
-    return '';
-  }
-  const kind = a.quality?.status === 'limited' ? 'limitada' : 'incompleta';
-  const eligible = a.quality?.counts_known
-    ? `${a.quality.eligible} elegíveis; `
-    : '';
-  const suffix = r.data?.current
-    ? 'A tabela continua sendo a última leitura boa, na data indicada.'
-    : 'Nenhuma leitura boa disponível.';
-  return `Tentativa ${kind}: ${eligible}${equipmentMessage(a.code || 'SERVICE_UNAVAILABLE')} ${suffix}`;
-}
 export type PPPoERefs = {
   detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
   detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -94,6 +76,8 @@ function usePPPoEViewState(
   const [tab, setTab] = useState<PPPoETab>(initialTab);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [lastAttempt, setLastAttempt] =
+    useState<NonNullable<PPResult['data']>['attempt']>();
   const [attempt, setAttempt] = useState('');
   const [job, setJob] = useState('');
   const [busy, setBusy] = useState(false);
@@ -145,6 +129,8 @@ function usePPPoEViewState(
     setNotice,
     attempt,
     setAttempt,
+    lastAttempt,
+    setLastAttempt,
     job,
     setJob,
     busy,
@@ -158,7 +144,7 @@ function usePPPoEViewState(
   };
 }
 type ViewState = ReturnType<typeof usePPPoEViewState>;
-type SharedCtx = ViewState &
+export type SharedCtx = ViewState &
   PPPoERefs & {
     context: string;
     profile: string;
@@ -175,49 +161,6 @@ type SharedCtx = ViewState &
     detailIntent: React.MutableRefObject<number>;
     refs: PPReference[];
   };
-function usePPPoEInitialLoad(p: SharedCtx) {
-  const { context, refresh, profile, activation, device, valid, lifeRef } = p;
-  useEffect(() => {
-    const generation = lifeRef.current.generation;
-    let stopped = false;
-    void (async () => {
-      p.setLoading(true);
-      p.setReferencesState('loading');
-      p.setInitialFailed(false);
-      const r = await api.current(profile, activation, device.id);
-      if (stopped || !valid(generation, r)) return;
-      if (r.code !== 'OK' || !r.data) {
-        p.setError(pppoeErrorMessage(r));
-        p.setInitialFailed(true);
-        p.setReferencesState('error');
-        p.setLoading(false);
-        return;
-      }
-      p.setCurrent(r.data.current);
-      p.setAttempt(formatAttemptStatus(r));
-      const rr = await api.references(profile, activation, device.id, '');
-      if (stopped || !valid(generation, rr)) return;
-      if (rr.code === 'OK') {
-        p.setSavedReferences(rr.data?.references || []);
-        p.setReferencesState('ready');
-      } else {
-        p.setError(pppoeErrorMessage(rr));
-        p.setReferencesState('error');
-      }
-      p.setLoading(false);
-    })().catch(() => {
-      if (!stopped) {
-        p.setError('Serviço indisponível. Tente abrir novamente.');
-        p.setInitialFailed(true);
-        p.setReferencesState('error');
-        p.setLoading(false);
-      }
-    });
-    return () => {
-      stopped = true;
-    };
-  }, [context, refresh, profile, activation, device.id, valid, lifeRef]);
-}
 function usePPPoEPageLoad(p: SharedCtx) {
   const {
     context,

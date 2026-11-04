@@ -1,8 +1,9 @@
+import { useSessionsTabRefresh } from './automatic-tab-refresh';
+import { readingUpdateState } from './reading-update-state';
 import type { ReactNode } from 'react';
 import { ContextCounts } from './pppoe-context';
 import { readingAge } from './equipment-reading-format';
 import { PPPoEHeader, PPPoEStatusBanners } from './pppoe-header';
-
 import { useRef } from 'react';
 import type { Device } from './equipment-api';
 import {
@@ -24,7 +25,6 @@ import {
 } from './pppoe-sessions-view';
 import type { PPPoERefs, PPPoETab } from './pppoe-state';
 import { usePPPoEState } from './pppoe-state';
-
 import { DataBlock } from './ui/DataBlock';
 import { pppoeAPI as api } from './presentation';
 const PPPOE_TABS: readonly [PPPoETab, string][] = [
@@ -36,7 +36,6 @@ const PPPOE_TABS: readonly [PPPoETab, string][] = [
   ['monitoring', 'Monitoramento'],
 ];
 type State = ReturnType<typeof usePPPoEState>;
-
 function PPPoESessionsSection(p: {
   s: State;
   refs: PPPoERefs;
@@ -210,12 +209,14 @@ export function PPPoE({
   device,
   openEquipment,
   section = 'sessions',
+  refreshAvailable = false,
 }: {
   profile: string;
   activation: string;
   device: Device;
   back: () => void;
   section?: 'sessions' | 'services';
+  refreshAvailable?: boolean;
   openEquipment?: (id: string) => void;
 }) {
   const detailTriggerRef = useRef<HTMLElement | null>(null);
@@ -253,6 +254,7 @@ export function PPPoE({
     refs,
     section === 'services' ? 'catalog' : 'sessions',
   );
+  useSessionsTabRefresh(s, refreshAvailable);
   const disabled = s.busy || Boolean(s.job);
   return (
     <section
@@ -295,17 +297,20 @@ export function PPPoE({
               ? s.savedReferences[0]?.created_at
               : s.current?.provenance.ended_at,
           )}
-          data={{
-            state: 'ready',
-            content: (
-              <PPPoETabContent
-                s={s}
-                refs={refs}
-                disabled={disabled}
-                openEquipment={openEquipment}
-              />
-            ),
-          }}
+          data={readingUpdateState(
+            <PPPoETabContent
+              s={s}
+              refs={refs}
+              disabled={disabled}
+              openEquipment={openEquipment}
+            />,
+            {
+              refreshing: Boolean(s.job) || s.busy,
+              error: s.error,
+              retry: s.update,
+              disabled,
+            },
+          )}
         />
       )}
       {s.tab === 'sessions' && !s.loading && !s.initialFailed && (

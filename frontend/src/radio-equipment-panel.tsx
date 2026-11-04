@@ -1,3 +1,5 @@
+import type { RefreshOpeningRef } from './use-refresh-on-open';
+import { useRadioTabRefresh } from './automatic-tab-refresh';
 import { equipmentRadioError } from './radio-equipment-status';
 import { StateNotice } from './ui/StateNotice';
 import { EquipmentChain } from './equipment-chain';
@@ -24,10 +26,7 @@ import type {
   RadioEquipmentProps,
   RadioEquipmentState,
 } from './radio-equipment-state';
-
 type ReadyEquipment = RadioEquipmentState & { reading: RadioReading };
-
-// Clientes e Rádio já trazem a ação no próprio bloco; demais vistas dependem daqui.
 function viewOffersReopen(
   { reading, device }: RadioEquipmentState,
   tab: string,
@@ -69,7 +68,6 @@ function RadioEquipmentMessages({
     </>
   );
 }
-
 function RadioEquipmentReading({
   state,
   tab,
@@ -87,7 +85,6 @@ function RadioEquipmentReading({
     />
   );
 }
-
 type RadioBodyProps = {
   state: RadioEquipmentState;
   start: () => void;
@@ -165,9 +162,10 @@ function RadioEquipmentBody({ state, start, tab }: RadioBodyProps) {
     </>
   );
 }
-
 type RadioEquipmentViewProps = RadioEquipmentProps & {
   tab?: string;
+  refreshAvailable?: boolean;
+  refreshDecision?: RefreshOpeningRef;
   actionHost?: HTMLElement | null;
   chainHost?: HTMLElement | null;
   devices?: Device[];
@@ -199,6 +197,13 @@ export function RadioEquipment(props: RadioEquipmentViewProps) {
     state.setOffset(0);
     void radio.start(RadioModes.once, RadioFamilies.standalone);
   };
+  useRadioTabRefresh(
+    state,
+    props.tab || 'Rádio',
+    props.refreshAvailable === true,
+    start,
+    props.refreshDecision,
+  );
   const primary = <RadioPrimaryAction state={state} start={start} />;
   return (
     <section

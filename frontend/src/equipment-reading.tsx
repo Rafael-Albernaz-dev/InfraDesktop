@@ -1,14 +1,10 @@
-import { Fragment, useRef, useState } from 'react';
+import { Summary } from './equipment-summary-blocks';
+import type { ReadingUpdateStatus } from './reading-update-state';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
-import {
-  formatDate,
-  formatMetric,
-  formatRouterDuration,
-  formatVolumePair,
-  exactVolume,
-} from './network-format';
+import { formatDate } from './network-format';
 import { readingAge, stamp } from './equipment-reading-format';
 import { DataBlock } from './ui/DataBlock';
 import { DataTable } from './ui/DataTable';
@@ -27,72 +23,6 @@ function classifyInterfaceKind(kind: string): string {
   )
     return 'vpn';
   return 'other';
-}
-function Summary({
-  device,
-  statistics,
-}: {
-  device: Device;
-  statistics?: ReactNode;
-}) {
-  const r = device.result!;
-  const pairs = [
-    ['Identidade', r.identity],
-    ['Modelo', r.board],
-    ['Versão', r.version],
-    ['Uptime', formatRouterDuration(r.uptime)],
-    [
-      'Origem da leitura',
-      r.quality === 'complete'
-        ? 'Resumo completo'
-        : 'Leitura com parte limitada',
-    ],
-  ];
-  return (
-    <div className="grid">
-      <DataBlock
-        title="Identidade e sistema"
-        source="SSH"
-        age={stamp(device)}
-        data={{
-          state: 'ready',
-          content: (
-            <>
-              <dl className="kv">
-                {pairs.map(([key, value]) => (
-                  <Fragment key={key}>
-                    <dt>{key}</dt>
-                    <dd>{value || 'Não informado nesta leitura'}</dd>
-                  </Fragment>
-                ))}
-              </dl>
-            </>
-          ),
-        }}
-      />
-      <DataBlock
-        title="Recursos"
-        source="SSH"
-        age={stamp(device)}
-        data={{
-          state: 'ready',
-          content: (
-            <dl className="kv">
-              <dt>CPU</dt>
-              <dd>{formatMetric(r.cpu_percent, '%')}</dd>
-              <dt>Memória livre / total</dt>
-              <dd
-                title={`${exactVolume(r.free_memory_bytes)} / ${exactVolume(r.total_memory_bytes)}`}
-              >
-                {formatVolumePair(r.free_memory_bytes, r.total_memory_bytes)}
-              </dd>
-            </dl>
-          ),
-        }}
-      />
-      {statistics}
-    </div>
-  );
 }
 function InterfaceMetadata({ device }: { device: Device }) {
   const part = device.result!.interface_part;
@@ -230,6 +160,7 @@ export function EquipmentReading({
   device,
   section = 'summary',
   statistics,
+  status,
 }: {
   device: Device;
   focus: boolean;
@@ -237,9 +168,10 @@ export function EquipmentReading({
   separate?: boolean;
   openPPPoE?: () => void;
   statistics?: ReactNode;
+  status?: ReadingUpdateStatus;
 }) {
   return section === 'summary' ? (
-    <Summary device={device} statistics={statistics} />
+    <Summary device={device} statistics={statistics} status={status} />
   ) : (
     <Interfaces device={device} />
   );
