@@ -186,15 +186,7 @@ func validateRadioAPRegistration(interfaces []equipment.RadioInterface, index ma
 }
 
 func addRadioAPClientMetrics(metrics *[]equipment.RadioMetric, fields map[string]string) bool {
-	for _, field := range []struct{ k, n, u, d string }{
-		{"signal-strength", "signal", "dBm", "CPE → AP"},
-		{"signal-strength-ch0", "chain0", "dBm", "CPE → AP"},
-		{"signal-strength-ch1", "chain1", "dBm", "CPE → AP"},
-		{"signal-to-noise", "snr", "dB", "CPE → AP"},
-		{"tx-signal-strength", "remote_signal", "dBm", "AP → CPE"},
-		{"tx-ccq", "ccq_tx", "%", "AP → CPE"}, {"rx-ccq", "ccq_rx", "%", "CPE → AP"},
-		{"tx-rate", "rate_tx", "Mbps", "AP → CPE"}, {"rx-rate", "rate_rx", "Mbps", "CPE → AP"},
-	} {
+	for _, field := range radioAPClientMetricFields {
 		if !addRadioMetric(metrics, fields, field.k, field.n, field.u, field.d, 1) {
 			return false
 		}

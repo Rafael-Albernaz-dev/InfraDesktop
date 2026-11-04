@@ -1,3 +1,4 @@
+import { tickFieldReason } from './radio-tick-reason';
 import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
 export { formatPPUptime } from './pppoe-format';
 export { message, recoveryActionMessage } from './microcopy';
@@ -480,13 +481,8 @@ export function formatTickReason(reason?: string | null): {
     };
   }
   const lower = raw.toLowerCase();
-  if (lower.includes('tick-parse') || lower.includes('parse')) {
-    return {
-      summary: 'O equipamento respondeu com campos incompletos neste ciclo.',
-      action: 'Aguarde o próximo ciclo ou repita a leitura manual.',
-      technical: raw,
-    };
-  }
+  const fieldReason = tickFieldReason(raw);
+  if (fieldReason) return fieldReason;
   if (lower.includes('deadline') || lower.includes('timeout')) {
     return {
       summary:

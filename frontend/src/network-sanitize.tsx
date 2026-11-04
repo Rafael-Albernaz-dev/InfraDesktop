@@ -1,7 +1,7 @@
 import { RadioCodes, RadioFamilies, RadioTransports } from './radio-contract';
 
 const INTERNAL_TOKEN_REPLACEMENTS: Array<[RegExp, string]> = [
-  [/\btick-parse\b/gi, 'leitura parcial do ciclo'],
+  [/tick-(parse|frame|cpu|metric:[\w-]+)/gi, 'campo inválido no ciclo'],
   [
     new RegExp(`\\b${RadioFamilies.routerOSWirelessV6}\\b`, 'gi'),
     'MikroTik RouterOS Wireless v6',
@@ -53,7 +53,7 @@ const RAW_ERROR_TOKENS = [
 
 const RAW_TECHNICAL_PATTERN = new RegExp(
   [
-    'tick-parse',
+    'tick-(?:parse|frame|cpu|metric:[\\w-]+)',
     RadioFamilies.routerOSWirelessV6,
     RadioFamilies.airOSV6,
     RadioFamilies.intelbrasWOM,
