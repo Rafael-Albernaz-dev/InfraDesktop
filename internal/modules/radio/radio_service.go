@@ -111,19 +111,11 @@ func (s *Service) HandleRadio(ctx context.Context, q Command, in RadioInput) (Ra
 		if !ok {
 			return Unavailable
 		}
-		switch q.Op {
-		case "radio.status", "radio.cancel":
-			return s.handleRadioJob(ctx, q, in, store, &v)
-		case "radio.current", "radio.confirm-family":
-			return s.handleRadioCurrent(ctx, q, in, store, &v)
-		case "radio.link-current", "radio.index-current", "radio.link-confirm":
-			return s.handleRadioLink(ctx, q, in, store, &v)
-		case "radio.start":
-			var c Code
-			v.Job, c = s.startRadio(ctx, q, in)
+		c := s.dispatchRadioView(ctx, q, in, store, &v)
+		if c != OK {
 			return c
 		}
-		return Invalid
+		return s.enrichRadioDeviceView(ctx, q, in, &v)
 	})
 	return v, c
 }

@@ -3,7 +3,6 @@ package ipc
 import (
 	"context"
 	"crypto/subtle"
-	"encoding/json"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
@@ -43,9 +42,9 @@ func (s *Server) dispatchRadio(ctx context.Context, uid uint32, q Request, owner
 	if c != equipment.OK {
 		return r
 	}
-	body, err := json.Marshal(v)
-	if err != nil || len(body) > 48*1024 {
-		r.Code = foundation.Code(equipment.Limit)
+	_, code := encodeRadioProjection(v)
+	if code != equipment.OK {
+		r.Code = foundation.Code(code)
 		return r
 	}
 	r.Data = &Data{ContractRevision: ProductRevision,

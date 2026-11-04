@@ -76,6 +76,7 @@ type RadioInterface struct {
 }
 
 type RadioClient struct {
+	CPE          string            `json:"cpe_id,omitempty"`
 	Counters     map[string]string `json:"counters,omitempty"`
 	MAC          string            `json:"mac"`
 	Name         string            `json:"name"`
@@ -85,7 +86,6 @@ type RadioClient struct {
 	LastActivity string            `json:"last_activity,omitempty"`
 	Metrics      []RadioMetric     `json:"metrics"`
 }
-
 type RadioFailure struct {
 	Reason string `json:"reason"`
 	Bytes  int    `json:"bytes"`

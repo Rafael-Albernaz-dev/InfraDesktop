@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"infradesktop/internal/modules/access"
+	"infradesktop/internal/modules/equipment"
 	"strings"
 )
 
@@ -15,7 +16,6 @@ func ppStamp(kind string, in PPInput) string {
 	parts := []string{kind, in.DeviceID, fmt.Sprint(in.Revision), in.ObservationID, in.ReferenceID}
 	return fmt.Sprintf("ppref:%q", parts)
 }
-
 func (s *Service) HandlePP(ctx context.Context, q Command, in PPInput) (PPView, Code) {
 	v := PPView{}
 	c := s.inv.Authorized(ctx, q, func(version uint64) Code {
@@ -290,7 +290,7 @@ func (s *Service) handleCompare(
 	filtered := make([]PPDelta, 0, len(ds))
 	for _, d := range ds {
 		v.Counts[d.Category]++
-		if in.Query == nil || in.Query.Category == "" || in.Query.Category == d.Category {
+		if equipment.PPDeltaMatchesQuery(d, in.Query) {
 			filtered = append(filtered, d)
 		}
 	}

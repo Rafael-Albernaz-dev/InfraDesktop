@@ -237,8 +237,7 @@ func PPValidQuery(q *PPQuery) bool {
 	if strings.IndexFunc(q.Type, func(r rune) bool { return r < 32 || r == 127 }) >= 0 {
 		return false
 	}
-	validSort := q.Sort == "" || q.Sort == "login" || q.Sort == "address" || q.Sort == "uptime" || q.Sort == "row"
-	return validSort && validPPCategory(q.Category)
+	return PPValidSort(q.Sort) && validPPCategory(q.Category) && PPValidState(q.State)
 }
 
 func validPPCategory(cat string) bool {

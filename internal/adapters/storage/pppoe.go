@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"infradesktop/internal/modules/equipment"
-	"strings"
 )
 
 type ppTx func(*sql.Tx) equipment.Code
@@ -192,75 +191,6 @@ func (s *Store) PPCurrent(ctx context.Context, company, device string) (equipmen
 	} else if e != sql.ErrNoRows {
 		return v, equipment.Unavailable
 	}
-	return v, equipment.OK
-}
-func (s *Store) PPPage(ctx context.Context, company string, in equipment.PPInput) (equipment.PPView, equipment.Code) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	v := equipment.PPView{Rows: []equipment.PPRow{}}
-	if s.unit == nil || s.unitID != company {
-		return v, equipment.Changed
-	}
-	if s.checkActive() != nil {
-		return v, equipment.Unavailable
-	}
-	o, c := ppMeta(ctx, s.unit, in.DeviceID, in.ObservationID)
-	if c != equipment.OK {
-		return v, c
-	}
-	v.Current = o
-	q := in.Query
-	if q == nil {
-		q = &equipment.PPQuery{}
-	}
-	if !equipment.PPValidQuery(q) || in.Offset < 0 || in.Offset > equipment.PPMaxRows {
-		return v, equipment.Invalid
-	}
-	where := "r.observation_id=? AND instr(r.search_text,?)>0"
-	args := []any{in.ObservationID, strings.ToLower(q.Search)}
-	if q.Duplicates {
-		where += " AND COALESCE(json_extract(r.row_json,'$.state'),'ONLINE')='ONLINE' AND r.login<>'' AND (SELECT count(*) FROM pppoe_rows d WHERE d.observation_id=r.observation_id AND d.login=r.login AND COALESCE(json_extract(d.row_json,'$.state'),'ONLINE')='ONLINE')>1"
-	}
-	if s.unit.QueryRowContext(ctx, "SELECT count(*) FROM pppoe_rows r WHERE "+where, args...).Scan(&v.Total) != nil {
-		return v, equipment.Unavailable
-	}
-	if in.Offset > v.Total {
-		return v, equipment.CursorInvalid
-	}
-	column := map[string]string{"": "login", "login": "login", "address": "address", "uptime": "uptime_ns", "row": "row_id"}[q.Sort]
-	direction := " ASC"
-	if q.Desc {
-		direction = " DESC"
-	}
-	args = append(args, equipment.PageSize, in.Offset)
-	rows, e := s.unit.QueryContext(ctx, "SELECT r.row_json,(SELECT count(*) FROM pppoe_rows d WHERE d.observation_id=r.observation_id AND d.login=r.login AND COALESCE(json_extract(d.row_json,'$.state'),'ONLINE')='ONLINE') FROM pppoe_rows r WHERE "+where+" ORDER BY r."+column+" IS NULL,r."+column+direction+",r.row_id"+direction+" LIMIT ? OFFSET ?", args...)
-	if e != nil {
-		return v, equipment.Unavailable
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var b string
-		var count int
-		if rows.Scan(&b, &count) != nil {
-			return v, equipment.Unavailable
-		}
-		var r equipment.PPRow
-		if json.Unmarshal([]byte(b), &r) != nil {
-			return v, equipment.Unavailable
-		}
-		if r.Login != "" && r.State != "OFFLINE" {
-			r.Duplicates = count
-		}
-		if r.State == "" {
-			r.State = "ONLINE"
-		}
-		v.Rows = append(v.Rows, r)
-	}
-	if rows.Err() != nil {
-		return v, equipment.Unavailable
-	}
-	v.NextOffset = in.Offset + len(v.Rows)
-	v.More = v.NextOffset < v.Total
 	return v, equipment.OK
 }
 func (s *Store) PPSession(ctx context.Context, company string, in equipment.PPInput) (equipment.PPView, equipment.Code) {

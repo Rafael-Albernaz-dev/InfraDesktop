@@ -111,6 +111,7 @@ type PPReference struct {
 }
 
 type PPQuery struct {
+	State      string `json:"state,omitempty"`
 	Type       string `json:"type,omitempty"`
 	Search     string `json:"search,omitempty"`
 	Duplicates bool   `json:"duplicates_only,omitempty"`
@@ -118,7 +119,6 @@ type PPQuery struct {
 	Desc       bool   `json:"desc,omitempty"`
 	Category   string `json:"category,omitempty"`
 }
-
 type PPInput struct {
 	MonitoringGeneration string   `json:"-"`
 	RowIDs               []string `json:"row_ids,omitempty"`
