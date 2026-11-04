@@ -2,6 +2,7 @@ import { runPPExport } from './pppoe-export';
 import { DataTable } from './ui/DataTable';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
+import { SessionCPE } from './session-cpe';
 
 import {
   exactRate,
@@ -9,7 +10,7 @@ import {
   formatRate,
   uptimeTitle,
 } from './network-format';
-import { ContextCounts, FRESH_QUERY } from './pppoe-context';
+import { FRESH_QUERY } from './pppoe-context';
 import { formatPPUptime } from './pppoe-format';
 import type { PPObservation, PPQuery, PPRow } from './presentation';
 
@@ -31,14 +32,7 @@ export function PPPoEObsActions(p: {
   csvExportControlRef: React.RefObject<HTMLButtonElement | null>;
   save: () => void;
 }) {
-  const {
-    current,
-    tab,
-    disabled,
-    busy,
-    exportControlRef,
-    csvExportControlRef,
-  } = p;
+  const { current, disabled, busy, exportControlRef, csvExportControlRef } = p;
   const onExport = (kind: 'sanitized' | 'operational') =>
     runPPExport(kind, {
       profile: p.profile,
@@ -53,30 +47,33 @@ export function PPPoEObsActions(p: {
       lifeRef: p.lifeRef,
       exportFocusRef: p.exportFocusRef,
     });
+  const offline = current.offline || 0;
+  const online = current.online || Math.max(0, current.count - offline);
   return (
     <>
-      <p>
-        Leitura de {formatDate(current.provenance.ended_at)} · {current.count}{' '}
-        registros
-      </p>
-      {current.context_omitted && (
-        <p role="status">
-          Contexto não incluído por limite. As sessões e seus estados foram
-          preservados.
-        </p>
-      )}
-      {tab === 'sessions' && !current.context_omitted && (
-        <ContextCounts
-          key={current.observation_id}
-          profile={p.profile}
-          activation={p.activation}
-          device={p.deviceId}
-          observation={current.observation_id}
-        />
-      )}
-      <div className="pppoe-actions">
-        <Button type="submit" disabled={disabled} onClick={p.save}>
-          Salvar referência desta leitura
+      <div className="bar">
+        <span className="muted">
+          <span>{online} ONLINE</span> · <span>{offline} OFFLINE</span> ·
+          leitura de {formatDate(current.provenance.ended_at)}
+        </span>
+        <span className="grow" />
+        <Button
+          type="submit"
+          disabled={disabled}
+          onClick={p.save}
+          aria-label="Salvar referência desta leitura"
+        >
+          Salvar referência
+        </Button>
+        <Button
+          type="submit"
+          ref={csvExportControlRef}
+          disabled={busy}
+          onClick={() => onExport('operational')}
+          aria-label="Exportar CSV operacional"
+          title="O CSV contém dados identificáveis de assinantes."
+        >
+          Exportar CSV
         </Button>
         <Button
           type="submit"
@@ -86,16 +83,13 @@ export function PPPoEObsActions(p: {
         >
           Exportar JSON sanitizado
         </Button>
-        <Button
-          type="submit"
-          ref={csvExportControlRef}
-          disabled={busy}
-          onClick={() => onExport('operational')}
-        >
-          Exportar CSV operacional
-        </Button>
-        <p>O CSV contém dados identificáveis de assinantes.</p>
       </div>
+      {current.context_omitted && (
+        <p role="status">
+          Contexto não incluído por limite. As sessões e seus estados foram
+          preservados.
+        </p>
+      )}
     </>
   );
 }
@@ -114,9 +108,9 @@ function SortAndCheckFilters(p: {
           value={query.sort}
           onChange={(e) => change({ sort: e.target.value })}
         >
-          <option value="login">Login</option>
+          <option value="login">Usuário</option>
           <option value="address">IP</option>
-          <option value="uptime">Tempo conectado</option>
+          <option value="uptime">Conectado há</option>
         </Select>
       </label>
       <label>
@@ -133,7 +127,7 @@ function SortAndCheckFilters(p: {
           checked={query.duplicates_only}
           onChange={(e) => change({ duplicates_only: e.target.checked })}
         />
-        Somente logins duplicados
+        Somente duplicados
       </label>
       <label>
         <input
@@ -159,14 +153,21 @@ export function PPPoESessionFilters(p: {
   const { query, change, showPlan, setShowPlan, searchControlRef } = p;
   return (
     <div className="pppoe-filters">
-      <label>
+      <label className="sr-only" htmlFor="session-search">
         Buscar sessões
-        <input
-          ref={searchControlRef}
-          value={query.search}
-          onChange={(e) => change({ search: e.target.value })}
-        />
       </label>
+      <input
+        id="session-search"
+        placeholder="Buscar sessões"
+        ref={searchControlRef}
+        value={query.search}
+        onChange={(e) => change({ search: e.target.value })}
+      />
+      <Select aria-label="Estado" disabled title="Ainda não existe (L-BASE-2)">
+        <option>Todos</option>
+        <option>ONLINE</option>
+        <option>OFFLINE</option>
+      </Select>
       <SortAndCheckFilters
         query={query}
         change={change}
@@ -192,105 +193,100 @@ export function PPPoESessionFilters(p: {
 function SessionPlanCell({
   row,
   fastTrack,
+  showPlan,
 }: {
   row: PPRow;
   fastTrack?: number;
+  showPlan: boolean;
 }) {
-  const dl = row.context?.download_limit;
-  const ul = row.context?.upload_limit;
-  const hasLimits = dl !== undefined && ul !== undefined;
+  const dl = row.context?.download_limit,
+    ul = row.context?.upload_limit;
   return (
     <td title={`${exactRate(dl)} download / ${exactRate(ul)} upload`}>
-      {hasLimits ? `${formatRate(dl)} / ${formatRate(ul)}` : 'Indisponível'}
-      {fastTrack !== undefined && fastTrack > 0 && (
-        <small className="cell-sub">limite lido, não garantido</small>
+      {row.context?.profile || 'Não informado nesta leitura'}
+      {showPlan && (
+        <small className="cell-sub">
+          {dl !== undefined && ul !== undefined
+            ? `${formatRate(dl)} / ${formatRate(ul)}`
+            : 'Não informado nesta leitura'}
+          {fastTrack !== undefined &&
+            fastTrack > 0 &&
+            ' · limite lido, não garantido'}
+        </small>
       )}
     </td>
   );
 }
-function PPPoESessionRowItem(p: {
-  row: PPRow;
-  showPlan: boolean;
-  fastTrack?: number;
-  contextOmitted?: boolean;
-  onDetail: (row: PPRow, trigger: HTMLElement) => void;
-}) {
-  const { row, showPlan, fastTrack } = p;
-  const ctx = row.context;
-  const assocText =
-    ctx?.association === 'associated'
-      ? `${ctx.vlan ?? 'VLAN indisponível'} / ${ctx.service || 'Serviço indisponível'} / ${ctx.interface || 'Interface indisponível'}`
-      : p.contextOmitted
-        ? 'Contexto não incluído por limite'
-        : 'Não associado';
-  return (
-    <tr>
-      <td>{row.login || 'Indisponível'}</td>
-      <td>{row.address || 'Indisponível'}</td>
-      <td>{row.caller_id || 'Indisponível'}</td>
-      <td title={uptimeTitle(row.uptime)}>
-        {formatPPUptime(row.uptime, true)}
-        {row.state === 'OFFLINE' && (
-          <small className="cell-sub">Última sessão</small>
-        )}
-      </td>
-      <td>{row.state || 'ONLINE'}</td>
-      {showPlan && <SessionPlanCell row={row} fastTrack={fastTrack} />}
-      <td>{assocText}</td>
-      <td>
-        {row.duplicates > 1
-          ? `${row.duplicates} sessões do mesmo login`
-          : 'Sem duplicidade'}
-      </td>
-      <td>
-        <Button
-          type="submit"
-          aria-label={'Detalhar ' + row.login + ' ' + row.remote_id}
-          onClick={(e) => p.onDetail(row, e.currentTarget)}
-        >
-          Detalhar
-        </Button>
-      </td>
-    </tr>
-  );
-}
-export function PPPoESessionsTable(p: {
+type SessionsTableProps = {
   rows: PPRow[];
   showPlan: boolean;
   fastTrack?: number;
   contextOmitted?: boolean;
+  profile?: string;
+  activation?: string;
+  deviceId?: string;
+  observation?: string;
+  openEquipment?: (id: string) => void;
   onDetail: (row: PPRow, trigger: HTMLElement) => void;
-}) {
+};
+function PPPoESessionRowItem(
+  p: Omit<SessionsTableProps, 'rows'> & { row: PPRow },
+) {
+  const { row } = p;
+  return (
+    <tr className="click">
+      <td>
+        <Button
+          className="row-trigger"
+          aria-label={'Detalhar ' + row.login + ' ' + row.remote_id}
+          onClick={(e) => p.onDetail(row, e.currentTarget)}
+        >
+          {row.login || 'Não informado nesta leitura'}
+        </Button>
+      </td>
+      <td>{row.address || 'Não informado nesta leitura'}</td>
+      <SessionPlanCell
+        row={row}
+        fastTrack={p.fastTrack}
+        showPlan={p.showPlan}
+      />
+      <td title={uptimeTitle(row.uptime)}>
+        {row.state === 'OFFLINE' ? '—' : formatPPUptime(row.uptime, true)}
+      </td>
+      <td>{row.state || 'ONLINE'}</td>
+      <td>
+        <SessionCPE
+          profile={p.profile || ''}
+          activation={p.activation || ''}
+          deviceId={p.deviceId || ''}
+          observation={p.observation || ''}
+          row={row.row_id}
+          open={p.openEquipment}
+        />
+      </td>
+    </tr>
+  );
+}
+export function PPPoESessionsTable(p: SessionsTableProps) {
   return (
     <div
       className="table-region"
       tabIndex={0}
       aria-label="Tabela de sessões PPPoE"
     >
-      <DataTable className="data-table">
+      <DataTable>
         <thead>
           <tr>
-            <th>Login</th>
-            <th>IP</th>
-            <th>Caller ID</th>
-            <th>Tempo conectado</th>
-            <th>Estado</th>
-            {p.showPlan && <th>Plano · download / upload</th>}
-            <th>VLAN / serviço / interface</th>
-            <th>Duplicidade</th>
-            <th>Detalhe</th>
+            {['Usuário', 'IP', 'Plano', 'Conectado há', 'Estado', 'CPE'].map(
+              (label) => (
+                <th key={label}>{label}</th>
+              ),
+            )}
           </tr>
         </thead>
         <tbody>
           {p.rows.map((row) => (
-            <PPPoESessionRowItem
-              key={row.row_id}
-              row={row}
-              showPlan={p.showPlan}
-              fastTrack={p.fastTrack}
-              contextOmitted={p.contextOmitted}
-              onDetail={p.onDetail}
-            />
+            <PPPoESessionRowItem key={row.row_id} {...p} row={row} />
           ))}
         </tbody>
       </DataTable>
@@ -309,10 +305,35 @@ export function PPPoEPaginationActions(p: {
   searchControlRef: React.RefObject<HTMLInputElement | null>;
 }) {
   return (
-    <div className="pppoe-actions">
+    <div className="pager">
+      <Button
+        aria-label="Início da lista"
+        disabled={!p.cursor}
+        onClick={() => {
+          p.setCursor('');
+          p.setHistory([]);
+          p.searchControlRef.current?.focus();
+        }}
+      >
+        Início
+      </Button>
+      <span role="status" aria-label={`${p.total} resultados`}>
+        Página {p.history.length + 1}
+      </span>
+      <Button
+        aria-label="Próxima página"
+        disabled={p.pageState !== 'ready' || !p.next}
+        onClick={() => {
+          p.setHistory((v) => [...v, p.cursor]);
+          p.setCursor(p.next);
+          p.select(undefined);
+          p.searchControlRef.current?.focus();
+        }}
+      >
+        Próxima
+      </Button>
       {p.history.length > 0 && (
         <Button
-          type="submit"
           onClick={() => {
             p.setCursor(p.history[p.history.length - 1]);
             p.setHistory(p.history.slice(0, -1));
@@ -320,36 +341,6 @@ export function PPPoEPaginationActions(p: {
           }}
         >
           Página anterior
-        </Button>
-      )}
-      {p.pageState === 'ready' && (
-        <span role="status" aria-label={`${p.total} resultados`}>
-          {p.total} resultados
-        </span>
-      )}
-      {p.cursor && (
-        <Button
-          type="submit"
-          onClick={() => {
-            p.setCursor('');
-            p.setHistory([]);
-            p.searchControlRef.current?.focus();
-          }}
-        >
-          Início da lista
-        </Button>
-      )}
-      {p.pageState === 'ready' && p.next && (
-        <Button
-          type="submit"
-          onClick={() => {
-            p.setHistory((v) => [...v, p.cursor]);
-            p.setCursor(p.next);
-            p.select(undefined);
-            p.searchControlRef.current?.focus();
-          }}
-        >
-          Próxima página
         </Button>
       )}
     </div>

@@ -210,58 +210,69 @@ function read(scope: string) {
           0.15 * Math.sin(i * 1.7))
     ).toFixed(2);
   const rows =
-    scope === 'equipment'
+    scope === 'bandwidth'
       ? [
           {
-            kind: 'restarts',
-            used: 0,
-            size: 0,
-            at: new Date(time - 12000).toISOString(),
+            kind: 'bandwidth',
+            row_id: 'row-2',
+            login: 'cliente-0003',
+            download: { min: 78e6, max: 78e6 },
+            upload: { min: 10e6, max: 10e6 },
+            uptime: { known: true, min: 11 * 86400e9, max: 11 * 86400e9 },
           },
         ]
-      : scope === 'traffic'
+      : scope === 'equipment'
         ? [
             {
-              kind: 'traffic',
-              row_id: 'row-0',
-              login: 'cliente-0001',
-              traffic: {
-                points: Array.from({ length: 30 }, (_, i) => ({
-                  t: i * 2000,
-                  gap: i === 16 || i === 17,
-                  d: wave(i, 11, 6) * 1e6,
-                  u: wave(i + 4, 1.1, 0.45) * 1e6,
-                })),
-                download_bytes: '432013312',
-                upload_bytes: '38797312',
-                covered_ns: 54e9,
-                gaps: 1,
-                average_download: { min: 98e5, max: 98e5 },
-                average_upload: { min: 9e5, max: 9e5 },
-                peak_download: { min: 182e5, max: 182e5 },
-                peak_upload: { min: 16e5, max: 16e5 },
-              },
+              kind: 'restarts',
+              used: 0,
+              size: 0,
+              at: new Date(time - 12000).toISOString(),
             },
           ]
-        : scope === 'series'
-          ? curve
-              .map((online, i) => ({
-                kind: 'point',
-                point: {
-                  at: new Date(
-                    (1793800000 - 86400 + i * 3600) * 1000,
-                  ).toISOString(),
-                  resolution: 3600,
-                  online: online ?? undefined,
-                  online_min: online ?? undefined,
-                  online_max: online ?? undefined,
-                  samples: 1,
-                  gap: online == null,
-                  drop: i === 15,
+        : scope === 'traffic'
+          ? [
+              {
+                kind: 'traffic',
+                row_id: 'row-0',
+                login: 'cliente-0001',
+                traffic: {
+                  points: Array.from({ length: 30 }, (_, i) => ({
+                    t: i * 2000,
+                    gap: i === 16 || i === 17,
+                    d: wave(i, 11, 6) * 1e6,
+                    u: wave(i + 4, 1.1, 0.45) * 1e6,
+                  })),
+                  download_bytes: '432013312',
+                  upload_bytes: '38797312',
+                  covered_ns: 54e9,
+                  gaps: 1,
+                  average_download: { min: 98e5, max: 98e5 },
+                  average_upload: { min: 9e5, max: 9e5 },
+                  peak_download: { min: 182e5, max: 182e5 },
+                  peak_upload: { min: 16e5, max: 16e5 },
                 },
-              }))
-              .reverse()
-          : [];
+              },
+            ]
+          : scope === 'series'
+            ? curve
+                .map((online, i) => ({
+                  kind: 'point',
+                  point: {
+                    at: new Date(
+                      (1793800000 - 86400 + i * 3600) * 1000,
+                    ).toISOString(),
+                    resolution: 3600,
+                    online: online ?? undefined,
+                    online_min: online ?? undefined,
+                    online_max: online ?? undefined,
+                    samples: 1,
+                    gap: online == null,
+                    drop: i === 15,
+                  },
+                }))
+                .reverse()
+            : [];
   return {
     scope,
     rows,
@@ -345,7 +356,7 @@ export function installFixture() {
                 {
                   reference_id: 'reference',
                   observation_id: 'old',
-                  created_at: new Date(time - 86400000).toISOString(),
+                  created_at: '2026-11-02T17:00:00Z',
                   count: 23,
                 },
               ],
@@ -354,18 +365,44 @@ export function installFixture() {
           ComparePPPoE: async () =>
             result({
               deltas: [
-                {
+                ...[1, 4].map((i) => ({
                   category: 'changed',
-                  login: 'cliente-0002',
-                  left: sessions[1],
-                  right: { ...sessions[1], address: '192.0.2.230' },
-                },
+                  base: sessions[i],
+                  target: sessions[i],
+                  base_row: sessions[i].row_id,
+                  target_row: sessions[i].row_id,
+                  address_changed: i === 1,
+                  caller_changed: i === 4,
+                })),
+                ...[
+                  [8, 'ambiguous'],
+                  [19, 'new'],
+                  [29, 'absent'],
+                ].map(([i, category]) => ({
+                  category,
+                  target: {
+                    ...sessions[0],
+                    login: `cliente-${String(Number(i) + 1).padStart(4, '0')}`,
+                  },
+                })),
               ],
-              total: 1,
+              total: 5,
+            }),
+          GetRadioLink: async (
+            _p: string,
+            _a: string,
+            _d: string,
+            _o: string,
+            row: string,
+          ) =>
+            result({
+              link: row === 'row-0' ? { cpe_id: 'CPE-0001' } : undefined,
             }),
           PPPoEContextCounts: async () =>
             result({
-              groups: [{ service: 'pppoe-0001', vlan: 100, count: 23 }],
+              groups: [
+                { service: 'pppoe-0001', vlan: 100, count: 23, peak_7d: 25 },
+              ],
               total: 1,
             }),
           GetDeviceMonitoring: async (
@@ -474,7 +511,11 @@ export function installFixture() {
           PPPoEReadStatus: async (_p: string, _a: string, job: string) =>
             result({
               read: read(job),
-              job: { id: job, state: 'RUNNING', code: 'OK' },
+              job: {
+                id: job,
+                state: job === 'traffic' ? 'RUNNING' : 'SUCCEEDED',
+                code: 'OK',
+              },
               total: 1,
             }),
           StopPPPoETraffic: async () =>

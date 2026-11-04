@@ -1,3 +1,6 @@
+import type { ReactNode } from 'react';
+import { ContextCounts } from './pppoe-context';
+import { readingAge } from './equipment-reading-format';
 import { PPPoEHeader, PPPoEStatusBanners } from './pppoe-header';
 
 import { useRef } from 'react';
@@ -40,31 +43,24 @@ function PPPoESessionsSection(p: {
   detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
   disabled: boolean;
   openEquipment?: (id: string) => void;
+  actions: ReactNode;
 }) {
   const { s, refs, detailTriggerRef, disabled } = p;
   if (!s.current) return null;
-  const offlineCount = s.current.offline || 0;
-  let onlineCount =
-    s.current.online ?? Math.max(0, (s.current.count || 0) - offlineCount);
-  if (onlineCount === 0 && offlineCount === 0 && s.current.count)
-    onlineCount = s.current.count;
   return (
     <>
-      <p className="pppoe-state-explanation">
-        ONLINE: vista na última leitura concluída. OFFLINE: vista antes, mas
-        ausente nessa leitura; mantém os últimos dados até reconectar ou por 24
-        h.
-      </p>
-      <p>
-        <strong>{onlineCount} ONLINE</strong> ·{' '}
-        <strong>{offlineCount} OFFLINE</strong>
-      </p>
       <PPPoESessionFilters {...s} searchControlRef={refs.searchControlRef} />
+      {p.actions}
       {s.pageState === 'loading' && (
         <p role="status">Carregando página armazenada…</p>
       )}
       <PPPoESessionsTable
         rows={s.rows}
+        profile={s.profile}
+        activation={s.activation}
+        deviceId={s.device.id}
+        observation={s.current.observation_id}
+        openEquipment={p.openEquipment}
         showPlan={s.showPlan}
         fastTrack={s.fastTrack}
         contextOmitted={s.current.context_omitted}
@@ -94,6 +90,11 @@ function PPPoESessionsSection(p: {
             : 'Nenhuma sessão corresponde aos filtros.'}
         </p>
       )}
+      <PPPoEPaginationActions {...s} searchControlRef={refs.searchControlRef} />
+      <p className="muted">
+        ONLINE: vista na última leitura concluída. OFFLINE: vista antes e
+        ausente nesta leitura.
+      </p>
       {s.selected && (
         <PPPoESessionDetail
           {...s}
@@ -119,16 +120,6 @@ function PPPoEObsBody(p: {
   if (!s.current || (s.tab !== 'sessions' && s.tab !== 'compare')) return null;
   return (
     <>
-      <PPPoEObsActions
-        {...s}
-        deviceId={s.device.id}
-        current={s.current}
-        disabled={disabled}
-        exportControlRef={refs.exportControlRef}
-        csvExportControlRef={refs.csvExportControlRef}
-        lifeRef={refs.lifeRef}
-        exportFocusRef={refs.exportFocusRef}
-      />
       {s.tab === 'sessions' ? (
         <PPPoESessionsSection
           s={s}
@@ -136,6 +127,18 @@ function PPPoEObsBody(p: {
           detailTriggerRef={refs.detailTriggerRef}
           disabled={disabled}
           openEquipment={openEquipment}
+          actions={
+            <PPPoEObsActions
+              {...s}
+              deviceId={s.device.id}
+              current={s.current}
+              disabled={disabled}
+              exportControlRef={refs.exportControlRef}
+              csvExportControlRef={refs.csvExportControlRef}
+              lifeRef={refs.lifeRef}
+              exportFocusRef={refs.exportFocusRef}
+            />
+          }
         />
       ) : (
         <PPPoECompareView {...s} />
@@ -149,7 +152,12 @@ function PPPoEObsBody(p: {
           detailIntentRef={refs.detailIntentRef}
         />
       )}
-      <PPPoEPaginationActions {...s} searchControlRef={refs.searchControlRef} />
+      {s.tab === 'compare' && (
+        <PPPoEPaginationActions
+          {...s}
+          searchControlRef={refs.searchControlRef}
+        />
+      )}
     </>
   );
 }
@@ -169,31 +177,6 @@ function PPPoETabContent(p: {
           device={s.device}
         />
       )}
-      {s.tab === 'sessions' &&
-        !s.loading &&
-        !s.initialFailed &&
-        !s.selected && (
-          <PPPoEReadPanel
-            key={
-              (s.current?.observation_id || 'none') +
-              '|' +
-              s.rows.map((r) => r.row_id).join(',')
-            }
-            profile={s.profile}
-            activation={s.activation}
-            device={s.device}
-            observation={s.current?.observation_id || ''}
-            rows={
-              s.current
-                ? s.rows
-                    .filter((r) => r.state !== 'OFFLINE')
-                    .map((r) => r.row_id)
-                : []
-            }
-            blocked={disabled}
-            allowTop
-          />
-        )}
       {(s.tab === 'catalog' || s.tab === 'radius') && (
         <PPPoEDiagnostics
           key={s.context + '|' + s.tab}
@@ -298,8 +281,12 @@ export function PPPoE({
             ? 'Sessões PPPoE'
             : PPPOE_TABS.find(([id]) => id === s.tab)?.[1] || 'Sessões'
         }
-        source="SSH"
-        age={s.current?.provenance.ended_at || ''}
+        source={s.tab === 'references' ? 'cadastro local' : 'SSH'}
+        age={readingAge(
+          s.tab === 'references'
+            ? s.savedReferences[0]?.created_at
+            : s.current?.provenance.ended_at,
+        )}
         data={{
           state: 'ready',
           content: (
@@ -312,6 +299,40 @@ export function PPPoE({
           ),
         }}
       />
+      {s.tab === 'sessions' && !s.loading && !s.initialFailed && (
+        <PPPoEReadPanel
+          key={
+            (s.current?.observation_id || 'none') +
+            '|' +
+            s.rows.map((r) => r.row_id).join(',')
+          }
+          profile={s.profile}
+          activation={s.activation}
+          device={s.device}
+          observation={s.current?.observation_id || ''}
+          rows={
+            s.current
+              ? s.rows.filter((r) => r.state !== 'OFFLINE').map((r) => r.row_id)
+              : []
+          }
+          blocked={disabled}
+          allowTop
+          pageBandwidth
+        />
+      )}
+      {s.tab === 'sessions' && s.current && !s.current.context_omitted && (
+        <>
+          <div className="sp10" />
+          <ContextCounts
+            key={s.current.observation_id}
+            profile={s.profile}
+            activation={s.activation}
+            device={s.device.id}
+            observation={s.current.observation_id}
+            at={s.current.provenance.ended_at}
+          />
+        </>
+      )}
     </section>
   );
 }

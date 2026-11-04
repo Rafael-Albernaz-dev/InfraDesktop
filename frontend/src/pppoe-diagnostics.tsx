@@ -1,3 +1,7 @@
+import { RadioModes } from './radio-contract';
+import { Button } from './ui/Button';
+import { DataBlock } from './ui/DataBlock';
+import { readingAge } from './equipment-reading-format';
 import { PPReadScopeBody, PPReadResultPagination } from './pppoe-read-result';
 
 import {
@@ -17,13 +21,7 @@ export { DeviceMonitoring } from './device-monitoring';
 export { PPPoEDiagnostics, PPPoEPing } from './pppoe-diag-views';
 type ReadState = ReturnType<typeof usePPReadState>;
 
-function PPReadResultView({
-  s,
-  pProps,
-}: {
-  s: ReadState;
-  pProps: PPReadPanelProps;
-}) {
+function PPReadResultMetadata({ s }: { s: ReadState }) {
   const result = s.result!;
   return (
     <>
@@ -34,6 +32,19 @@ function PPReadResultView({
           {formatDuration(result.duration_ns / 1e9)}
         </span>
       </p>
+    </>
+  );
+}
+function PPReadResultView({
+  s,
+  pProps,
+}: {
+  s: ReadState;
+  pProps: PPReadPanelProps;
+}) {
+  const result = s.result!;
+  return (
+    <>
       {result.scope === 'operations' && (
         <dl className="pppoe-diagnostic-values">
           <dt>Handshake SSH</dt>
@@ -87,15 +98,50 @@ function PPPoEReadContent(props: PPReadPanelProps) {
       : props.health
         ? 'Pools e interfaces estáticas'
         : 'Banda por sessão';
+  const body = (
+    <>
+      <div className="bar">
+        {props.pageBandwidth && (
+          <>
+            <span className="muted">Mede as sessões desta página.</span>
+          </>
+        )}
+        {(s.result || props.pageBandwidth) && (
+          <details className="det">
+            <summary>Detalhes da leitura</summary>
+            {s.result && <PPReadResultMetadata s={s} />}
+            {props.pageBandwidth && (
+              <Button
+                disabled={s.locked}
+                onClick={() => void s.start(RadioModes.live)}
+              >
+                Ver ao vivo
+              </Button>
+            )}
+          </details>
+        )}
+        {props.pageBandwidth && <span className="grow" />}
+        <PPReadActionButtons s={s} pProps={props} />
+      </div>
+      <PPReadStatusBanners s={s} pProps={props} />
+      {s.result && <PPReadResultView s={s} pProps={props} />}
+    </>
+  );
   return (
     <section
       className="pppoe-diagnostics pppoe-read-panel"
       aria-label={heading}
     >
-      <h3>{heading}</h3>
-      <PPReadActionButtons s={s} pProps={props} />
-      <PPReadStatusBanners s={s} pProps={props} />
-      {s.result && <PPReadResultView s={s} pProps={props} />}
+      <div className="sp10" />
+      <DataBlock
+        title={heading}
+        source="SSH"
+        age={props.pageBandwidth ? '—' : readingAge(s.result?.ended_at)}
+        data={{
+          state: s.job && s.result ? 'refreshing' : 'ready',
+          content: body,
+        }}
+      />
     </section>
   );
 }

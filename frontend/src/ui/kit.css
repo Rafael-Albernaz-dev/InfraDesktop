@@ -1057,7 +1057,7 @@ body.com-painel .col {
 .pppoe-filters label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .pppoe-diagnostic-values,
 .radio-metrics {
@@ -1106,4 +1106,19 @@ body.com-painel .col {
   .radio-sides {
     grid-template-columns: 1fr;
   }
+}
+.row-trigger {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+}
+.bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.small-number {
+  width: 91px;
 }

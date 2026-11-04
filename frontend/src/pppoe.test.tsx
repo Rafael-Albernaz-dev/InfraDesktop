@@ -151,7 +151,7 @@ it('budget-omitted context preserves sessions, explains detail and avoids unknow
   ).not.toBeInTheDocument();
   expect(api.start).not.toHaveBeenCalled();
 });
-it('L06C-UX: references have their own tab and session states have an explanation', async () => {
+it('references keep their own tab and saving stays on the sessions list', async () => {
   vi.mocked(api.current).mockResolvedValue(
     result({ current: { ...obs, online: 0, offline: 0 }, total: 2 }),
   );
@@ -172,12 +172,18 @@ it('L06C-UX: references have their own tab and session states have an explanatio
     screen
       .getAllByRole('button')
       .filter((button) => button.classList.contains('primary')),
-  ).toHaveLength(2);
+  ).toHaveLength(1);
   expect(screen.getByRole('button', { name: 'Atualizar' })).toBeEnabled();
+  expect(
+    screen.queryByRole('button', { name: 'Salvar referência desta leitura' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Recarregar referências' }),
+  ).toBeEnabled();
+  fireEvent.click(screen.getByRole('tab', { name: 'Lista' }));
   expect(
     screen.getByRole('button', { name: 'Salvar referência desta leitura' }),
   ).toBeEnabled();
-  expect(screen.queryByRole('table')).not.toBeInTheDocument();
   expect(api.start).not.toHaveBeenCalled();
 });
 it('UX-R01: references can recover an initial reading failure without remote collection', async () => {
@@ -191,9 +197,7 @@ it('UX-R01: references can recover an initial reading failure without remote col
   fireEvent.click(
     screen.getByRole('button', { name: 'Reabrir leitura armazenada' }),
   );
-  await screen.findByRole('button', {
-    name: 'Salvar referência desta leitura',
-  });
+  await screen.findByText(/Leitura atual:/);
   expect(screen.getByText(/Leitura atual:/)).toHaveTextContent('2 registros');
   expect(api.start).not.toHaveBeenCalled();
 });
@@ -335,8 +339,8 @@ it.each(['none', 'loading', 'reject'] as const)(
         await act(async () => page.reject(new Error('transport')));
     }
     expect(
-      screen.queryByRole('button', { name: 'Próxima página' }),
-    ).not.toBeInTheDocument();
+      screen.getByRole('button', { name: 'Próxima página' }),
+    ).toBeDisabled();
     expect(
       screen.queryByRole('status', { name: '17 resultados' }),
     ).not.toBeInTheDocument();

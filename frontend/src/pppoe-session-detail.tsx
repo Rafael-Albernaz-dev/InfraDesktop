@@ -1,3 +1,4 @@
+import { DataTable } from './ui/DataTable';
 import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
@@ -226,14 +227,6 @@ export function PPPoEPairDetail(p: {
     </aside>
   );
 }
-function formatSideSummary(row?: Partial<PPRow>, emptyLabel = 'Ausente') {
-  if (!row) return emptyLabel;
-  const uptimeText = row.uptime
-    ? formatPPUptime(row.uptime)
-    : 'Tempo indisponível';
-  const prefix = `${row.login || 'Indisponível'} · ${row.address || 'IP indisponível'}`;
-  return `${prefix} · ${row.caller_id || 'Caller ID indisponível'} · ${uptimeText} · ${row.state || 'ONLINE'}`;
-}
 function CompareControls(p: {
   base: string;
   setBase: (v: string) => void;
@@ -245,42 +238,46 @@ function CompareControls(p: {
 }) {
   return (
     <>
-      <label>
-        Referência para comparar
-        <Select
-          value={p.base}
-          onChange={(e) => {
-            p.setBase(e.target.value);
-            p.setCursor('');
-            p.setHistory([]);
-          }}
-        >
-          <option value="">Selecione uma referência</option>
-          {p.refs.map((ref) => (
-            <option key={ref.reference_id} value={ref.observation_id}>
-              {formatDate(ref.created_at)} · {ref.count} sessões
-            </option>
-          ))}
-        </Select>
-      </label>
-      <p>
+      <div className="bar">
+        <label>
+          Referência para comparar
+          <Select
+            aria-label="Referência para comparar"
+            value={p.base}
+            onChange={(e) => {
+              p.setBase(e.target.value);
+              p.setCursor('');
+              p.setHistory([]);
+            }}
+          >
+            <option value="">Selecione uma referência</option>
+            {p.refs.map((ref) => (
+              <option key={ref.reference_id} value={ref.observation_id}>
+                Referência de {formatDate(ref.created_at)}
+              </option>
+            ))}
+          </Select>
+        </label>
+        <label>
+          Categoria
+          <Select
+            aria-label="Categoria"
+            value={p.category}
+            onChange={(e) => p.onChangeCategory(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {Object.entries(COMPARE_CATEGORIES).map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </label>
+      </div>
+      <p className="muted">
         Ausência nesta leitura não comprova instante ou causa de queda. IDs e
         logins iguais podem ser ambíguos após reboot, reuso ou lacuna.
       </p>
-      <label>
-        Categoria
-        <Select
-          value={p.category}
-          onChange={(e) => p.onChangeCategory(e.target.value)}
-        >
-          <option value="">Todas</option>
-          {Object.entries(COMPARE_CATEGORIES).map(([id, label]) => (
-            <option key={id} value={id}>
-              {label}
-            </option>
-          ))}
-        </Select>
-      </label>
     </>
   );
 }
@@ -291,22 +288,31 @@ function CompareDeltaItem({
   d: PPDelta;
   openPair: (d: PPDelta, trigger: HTMLElement) => Promise<void>;
 }) {
-  const baseTitle = d.base ? uptimeTitle(d.base.uptime) : 'Ausente';
-  const targetTitle = d.target ? uptimeTitle(d.target.uptime) : 'Ausente';
   const reasonText =
     d.reason === 'reconnected' ? 'Reconectada' : COMPARE_CATEGORIES[d.category];
   return (
-    <div>
-      <span title={`${baseTitle} → ${targetTitle}`}>
-        {formatSideSummary(d.base, 'Ausente na referência')} →{' '}
-        {formatSideSummary(d.target, 'Ausente na atual')} · {reasonText}
-      </span>
-      {d.address_changed ? ' · IP alterado' : ''}
-      {d.caller_changed ? ' · Caller ID alterado' : ''}
-      <Button type="submit" onClick={(e) => void openPair(d, e.currentTarget)}>
-        Detalhar par
-      </Button>
-    </div>
+    <tr>
+      <td>
+        {d.target?.login || d.base?.login || 'Não informado nesta leitura'}
+      </td>
+      <td>{reasonText}</td>
+      <td>
+        {[
+          d.address_changed ? 'IP alterado' : '',
+          d.caller_changed ? 'Caller ID alterado' : '',
+        ]
+          .filter(Boolean)
+          .join(' · ') || '—'}
+      </td>
+      <td>
+        <Button
+          type="submit"
+          onClick={(e) => void openPair(d, e.currentTarget)}
+        >
+          Detalhar par
+        </Button>
+      </td>
+    </tr>
   );
 }
 export function PPPoECompareView(p: {
@@ -333,13 +339,25 @@ export function PPPoECompareView(p: {
         onChangeCategory={(category) => p.change({ category })}
       />
       {p.pageState === 'loading' && <p role="status">Carregando comparação…</p>}
-      {p.deltas.map((d, i) => (
-        <CompareDeltaItem
-          key={d.base_row + '|' + d.target_row + '|' + i}
-          d={d}
-          openPair={p.openPair}
-        />
-      ))}
+      <DataTable>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Categoria</th>
+            <th>Mudança</th>
+            <th>Detalhe</th>
+          </tr>
+        </thead>
+        <tbody>
+          {p.deltas.map((d, i) => (
+            <CompareDeltaItem
+              key={d.base_row + '|' + d.target_row + '|' + i}
+              d={d}
+              openPair={p.openPair}
+            />
+          ))}
+        </tbody>
+      </DataTable>
     </>
   );
 }
@@ -353,19 +371,20 @@ function ReferenceItem({
   remove: (ref: PPReference) => void;
 }) {
   return (
-    <div className="pppoe-reference">
-      <span>
-        {formatDate(refItem.created_at)} · {refItem.count} sessões
-      </span>
-      <Button
-        type="submit"
-        disabled={disabled}
-        aria-label={'Excluir referência ' + refItem.reference_id.slice(0, 8)}
-        onClick={() => remove(refItem)}
-      >
-        Excluir referência
-      </Button>
-    </div>
+    <tr>
+      <td>Referência de {formatDate(refItem.created_at)}</td>
+      <td>{refItem.count}</td>
+      <td>
+        <Button
+          type="submit"
+          disabled={disabled}
+          aria-label={'Excluir referência ' + refItem.reference_id.slice(0, 8)}
+          onClick={() => remove(refItem)}
+        >
+          Excluir referência
+        </Button>
+      </td>
+    </tr>
   );
 }
 export function PPPoEReferencesView(p: {
@@ -383,10 +402,8 @@ export function PPPoEReferencesView(p: {
   const {
     current,
     disabled,
-    save,
     referencesHeadingRef,
     referencesState,
-    initialFailed,
     setError,
     bump,
     savedReferences,
@@ -394,31 +411,19 @@ export function PPPoEReferencesView(p: {
   } = p;
   return (
     <>
-      {current && (
-        <>
-          <p>
-            Leitura atual: {formatDate(current.provenance.ended_at)} ·{' '}
-            {current.count} registros
-          </p>
-          <Button
-            type="submit"
-            className="primary"
-            disabled={disabled}
-            onClick={save}
-          >
-            Salvar referência desta leitura
-          </Button>
-        </>
-      )}
-      <h2 tabIndex={-1} ref={referencesHeadingRef}>
+      <h2 className="sr-only" tabIndex={-1} ref={referencesHeadingRef}>
         Referências preservadas
       </h2>
-      {referencesState === 'loading' && (
-        <p role="status">Carregando referências…</p>
-      )}
-      {referencesState === 'error' && !initialFailed && (
+      <div className="bar">
+        {current && (
+          <span>
+            Leitura atual: {formatDate(current.provenance.ended_at)} ·{' '}
+            {current.count} registros
+          </span>
+        )}
+        <span className="grow" />
         <Button
-          type="submit"
+          disabled={disabled || referencesState === 'loading'}
           onClick={() => {
             setError('');
             bump((n) => n + 1);
@@ -426,18 +431,34 @@ export function PPPoEReferencesView(p: {
         >
           Recarregar referências
         </Button>
+      </div>
+      {referencesState === 'loading' && (
+        <p role="status">Carregando referências…</p>
       )}
       {referencesState === 'ready' && !savedReferences.length && (
         <p>Nenhuma referência salva.</p>
       )}
-      {savedReferences.map((ref) => (
-        <ReferenceItem
-          key={ref.reference_id}
-          refItem={ref}
-          disabled={disabled}
-          remove={remove}
-        />
-      ))}
+      {!!savedReferences.length && (
+        <DataTable>
+          <thead>
+            <tr>
+              <th>Referência</th>
+              <th>Sessões</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {savedReferences.map((ref) => (
+              <ReferenceItem
+                key={ref.reference_id}
+                refItem={ref}
+                disabled={disabled}
+                remove={remove}
+              />
+            ))}
+          </tbody>
+        </DataTable>
+      )}
     </>
   );
 }

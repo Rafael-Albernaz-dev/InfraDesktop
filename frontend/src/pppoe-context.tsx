@@ -1,3 +1,9 @@
+import {
+  ContextCountsPolicyInputs,
+  ContextGroupsList,
+} from './pppoe-context-table';
+import { DataBlock } from './ui/DataBlock';
+import { readingAge } from './equipment-reading-format';
 import { Button } from './ui/Button';
 import { useEffect, useState } from 'react';
 import type { Device } from './equipment-api';
@@ -7,7 +13,6 @@ import {
   exactRate,
   formatDate,
   formatDuration,
-  formatMetric,
   formatRate,
 } from './network-format';
 import { pppoeAPI as api } from './presentation';
@@ -142,78 +147,6 @@ export function SessionContext({
     </dl>
   );
 }
-function ContextCountsPolicyInputs(p: {
-  dropThreshold: string;
-  setDropThreshold: (v: string) => void;
-  minimumPeak: string;
-  setMinimumPeak: (v: string) => void;
-  validPolicy: boolean;
-}) {
-  return (
-    <>
-      <label>
-        Queda local (%)
-        <input
-          type="number"
-          min="1"
-          max="100"
-          value={p.dropThreshold}
-          onChange={(e) => p.setDropThreshold(e.target.value)}
-        />
-      </label>
-      <label>
-        Pico mínimo de sessões
-        <input
-          type="number"
-          min="1"
-          max="2048"
-          value={p.minimumPeak}
-          onChange={(e) => p.setMinimumPeak(e.target.value)}
-        />
-      </label>
-      {!p.validPolicy && (
-        <p role="status">
-          Informe queda entre 1 e 100% e pico mínimo entre 1 e 2048.
-        </p>
-      )}
-    </>
-  );
-}
-function ContextGroupsList({
-  groups,
-  validPolicy,
-  minimum,
-  threshold,
-}: {
-  groups: PPGroup[];
-  validPolicy: boolean;
-  minimum: number;
-  threshold: number;
-}) {
-  return (
-    <ul>
-      {groups.map((g, i) => (
-        <li key={i}>
-          {g.vlan ?? 'VLAN indisponível'} ·{' '}
-          {g.service || 'Serviço indisponível'}: {g.count} / Pico 7 d:{' '}
-          {g.peak_7d ?? 'Indisponível'}
-          {g.peak_7d !== undefined && g.peak_7d > 0
-            ? ` (Δ ${g.count < g.peak_7d ? '−' : ''}${formatMetric((Math.abs(g.count - g.peak_7d) * 100) / g.peak_7d, '%')})`
-            : ''}
-          {validPolicy &&
-          g.peak_7d !== undefined &&
-          g.peak_7d >= minimum &&
-          ((g.peak_7d - g.count) * 100) / g.peak_7d >= threshold ? (
-            <strong> · Queda local detectada</strong>
-          ) : null}
-          {g.history_limited
-            ? ' · histórico podado; pico entre amostras retidas'
-            : ''}
-        </li>
-      ))}
-    </ul>
-  );
-}
 function useContextGroupsFetch(
   profile: string,
   activation: string,
@@ -263,11 +196,13 @@ export function ContextCounts({
   activation,
   device,
   observation,
+  at,
 }: {
   profile: string;
   activation: string;
   device: string;
   observation: string;
+  at?: string;
 }) {
   const [cursor, setCursor] = useState('');
   const [dropThreshold, setDropThreshold] = useState('50'),
@@ -291,42 +226,52 @@ export function ContextCounts({
     cursor,
   );
   return (
-    <section aria-label="Sessões por VLAN e serviço">
-      <h3>Sessões por VLAN e serviço</h3>
-      <p>
-        Pico dos últimos 7 dias até esta leitura, entre amostras salvas. Padrão
-        herdado do Atlas: queda de 50% com pico mínimo de 5 sessões.
-      </p>
-      <ContextCountsPolicyInputs
-        dropThreshold={dropThreshold}
-        setDropThreshold={setDropThreshold}
-        minimumPeak={minimumPeak}
-        setMinimumPeak={setMinimumPeak}
-        validPolicy={validPolicy}
-      />
-      {resolvedKey !== key ? (
-        <p role="status">Lendo contagens salvas…</p>
-      ) : error ? (
-        <p role="status">{error}</p>
-      ) : (
-        <ContextGroupsList
-          groups={groups}
-          validPolicy={validPolicy}
-          minimum={minimum}
-          threshold={threshold}
-        />
-      )}
-      {resolvedKey === key && next && (
-        <Button type="submit" onClick={() => setCursor(next)}>
-          Próximos grupos
-        </Button>
-      )}
-      {cursor && (
-        <Button type="submit" onClick={() => setCursor('')}>
-          Primeiros grupos
-        </Button>
-      )}
-    </section>
+    <DataBlock
+      title="Sessões por VLAN e serviço"
+      source="SSH"
+      age={readingAge(at)}
+      data={{
+        state: 'ready',
+        content: (
+          <>
+            <div className="bar">
+              <ContextCountsPolicyInputs
+                dropThreshold={dropThreshold}
+                setDropThreshold={setDropThreshold}
+                minimumPeak={minimumPeak}
+                setMinimumPeak={setMinimumPeak}
+                validPolicy={validPolicy}
+              />
+            </div>
+            {resolvedKey !== key ? (
+              <p role="status">Lendo contagens salvas…</p>
+            ) : error ? (
+              <p role="status">{error}</p>
+            ) : (
+              <ContextGroupsList
+                groups={groups}
+                validPolicy={validPolicy}
+                minimum={minimum}
+                threshold={threshold}
+              />
+            )}
+            {resolvedKey === key && next && (
+              <Button type="submit" onClick={() => setCursor(next)}>
+                Próximos grupos
+              </Button>
+            )}
+            {cursor && (
+              <Button type="submit" onClick={() => setCursor('')}>
+                Primeiros grupos
+              </Button>
+            )}
+            <p className="muted">
+              Pico entre amostras salvas até esta leitura.
+            </p>
+          </>
+        ),
+      }}
+    />
   );
 }
 export type PPRunner = (

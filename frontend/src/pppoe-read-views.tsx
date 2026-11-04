@@ -200,7 +200,7 @@ function PPReadTriggerButtons(p: {
           >
             {pProps.rows.length === 1 ? 'Medir banda' : 'Medir banda da página'}
           </Button>
-          {!pProps.bandwidthOnly && (
+          {!pProps.bandwidthOnly && !pProps.pageBandwidth && (
             <Button
               type="submit"
               disabled={s.locked}
@@ -412,7 +412,9 @@ function BandwidthRow({
         <RateValue rate={r.upload} />
       </td>
       <td>
-        <span title={uptimeTitle(r.uptime)}>{formatPPUptime(calcUptime)}</span>
+        <span title={uptimeTitle(r.uptime)}>
+          {formatPPUptime(calcUptime, true)}
+        </span>
         {calculated ? ' (calculado)' : ''}
       </td>
     </tr>
@@ -433,10 +435,10 @@ export function PPReadBandwidthTable(p: {
       <DataTable className="data-table">
         <thead>
           <tr>
-            <th>Login</th>
-            <th>Download do assinante (TX concentrador)</th>
-            <th>Upload do assinante (RX concentrador)</th>
-            <th>Tempo conectado</th>
+            <th>Usuário</th>
+            <th title="TX concentrador">Download do assinante</th>
+            <th title="RX concentrador">Upload do assinante</th>
+            <th>Conectado há</th>
           </tr>
         </thead>
         <tbody>

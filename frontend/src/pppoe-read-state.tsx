@@ -19,6 +19,7 @@ export type PPReadPanelProps = {
   summaryOnly?: boolean;
   traffic?: boolean;
   bandwidthOnly?: boolean;
+  pageBandwidth?: boolean;
 };
 export function ppReadMessage(code: string) {
   if (code === 'PARTIAL')

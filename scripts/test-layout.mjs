@@ -46,11 +46,17 @@ try {
       await page.getByRole('heading', { name: scene.device, exact: true }).waitFor();
       if (scene.tab) await page.getByRole('tab', { name: scene.tab, exact: true }).click();
       if (scene.sub) await page.getByRole('tab', { name: scene.sub, exact: true }).click();
+      for (const step of scene.prepare || []) {
+        if (step.select) await page.getByLabel(step.select, { exact: true }).selectOption(step.value);
+        else await page.getByRole('button', { name: step.button, exact: true }).click();
+        await page.getByRole('cell', { name: step.ready, exact: true }).waitFor();
+      }
       if (scene.session) {
         await page.getByRole('button', { name: 'Detalhar cliente-0001 *0', exact: true }).click();
         await page.locator('.ch-plot canvas').waitFor();
       }
     }
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.addStyleTag({ content: '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}' });
     const capture = path.join(out, id + '.png');

@@ -180,7 +180,13 @@
     "route": "ficha",
     "device": "CCR-CENTRO",
     "tab": "Sessões",
-    "sub": null
+    "sub": null,
+    "prepare": [
+      {
+        "button": "Medir banda da página",
+        "ready": "78 Mbps"
+      }
+    ]
   },
   {
     "id": "ficha-ccr-centro-sesso-es-comparac-a-o",
@@ -188,7 +194,14 @@
     "route": "ficha",
     "device": "CCR-CENTRO",
     "tab": "Sessões",
-    "sub": "Comparação"
+    "sub": "Comparação",
+    "prepare": [
+      {
+        "select": "Referência para comparar",
+        "value": "old",
+        "ready": "cliente-0002"
+      }
+    ]
   },
   {
     "id": "ficha-ccr-centro-sesso-es-refere-ncias",
@@ -295,7 +308,13 @@
     "device": "CCR-CENTRO",
     "tab": "Sessões",
     "sub": "Lista",
-    "session": true
+    "session": true,
+    "prepare": [
+      {
+        "button": "Medir banda da página",
+        "ready": "78 Mbps"
+      }
+    ]
   },
   {
     "id": "visao",
