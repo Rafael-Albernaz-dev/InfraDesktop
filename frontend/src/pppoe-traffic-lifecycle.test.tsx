@@ -186,8 +186,16 @@ it('L06V7: real zero auth count is explicit and never inferred from an empty pag
   fireEvent.click(
     screen.getByRole('button', { name: 'Atualizar monitoramento' }),
   );
+  await screen.findByText(
+    'Nenhuma falha de autenticação reconhecida no buffer examinado.',
+  );
+  fireEvent.click(
+    screen
+      .getByRole('region', { name: 'Resultado operacional' })
+      .querySelector('summary')!,
+  );
   expect(
-    await screen.findByText(
+    screen.getByText(
       'Nenhuma falha de autenticação reconhecida no buffer examinado.',
     ),
   ).toBeVisible();
@@ -259,23 +267,22 @@ it('L06T3: absent dynamic interfaces are separate and never presented as running
     }),
   );
   panel();
-  await screen.findByRole('heading', { name: 'X-absent' });
-  const absent = screen
-    .getByRole('heading', { name: 'X-absent' })
-    .closest('article')!;
-  expect(within(absent).getByText(/Não visto desde/)).toBeInTheDocument();
+  const absent = (
+    await screen.findByRole('cell', { name: 'X-absent' })
+  ).closest('tr')!;
+  expect(within(absent).getAllByRole('cell')[1]).toHaveAttribute(
+    'title',
+    '2026-10-28T17:00:00Z',
+  );
+  expect(absent).not.toHaveTextContent(/Em execução: Sim/);
   expect(
-    within(absent).queryByText(/Em execução: Sim/),
-  ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole('region', {
-      name: 'Interfaces dinâmicas não vistas na leitura atual',
-    }),
+    screen.getByText('Não vistas na leitura atual').closest('.block'),
   ).toContainElement(absent);
-  const current = screen
-    .getByRole('heading', { name: 'X-current' })
-    .closest('article')!;
-  expect(within(current).getByText(/Em execução: Sim/)).toBeInTheDocument();
+  const current = screen.getByRole('cell', { name: 'X-current' });
+  expect(current).toHaveAttribute(
+    'title',
+    expect.stringContaining('Em execução: Sim'),
+  );
 });
 it('L06T3: cross concentrator data stays local and distant readings stay non comparable', async () => {
   vi.mocked(monitoringAPI.current).mockImplementation(
@@ -304,7 +311,7 @@ it('L06T3: cross concentrator data stays local and distant readings stay non com
   render(
     <DeviceMonitoring profile="company" activation="active" device={device} />,
   );
-  fireEvent.click(screen.getByRole('tab', { name: 'Entre concentradores' }));
+  await screen.findByText('Entre concentradores');
   expect(
     await screen.findByText(/X-peer: não comparável \(leituras distantes\)/),
   ).toBeInTheDocument();

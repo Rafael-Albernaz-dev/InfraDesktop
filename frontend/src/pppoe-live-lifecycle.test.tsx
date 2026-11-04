@@ -438,9 +438,10 @@ it('L06D-S6: pools keep unknown separate from zero and interfaces have their own
   expect(
     within(int).getAllByText('Não informado nesta leitura').length,
   ).toBeGreaterThan(0);
-  expect(
-    screen.getByRole('columnheader', { name: 'TX da interface' }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('columnheader', { name: 'TX' })).toHaveAttribute(
+    'title',
+    'TX da interface',
+  );
   expect(
     screen.queryByRole('button', { name: 'Medir banda da página' }),
   ).not.toBeInTheDocument();

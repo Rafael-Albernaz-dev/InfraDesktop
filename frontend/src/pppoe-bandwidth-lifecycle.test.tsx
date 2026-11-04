@@ -147,7 +147,7 @@ it('L06C: lost ping response after worker exit never re-probes on reconcile', as
 });
 it('L06C: catalog type filter resets paging and queries the stored full reading', async () => {
   panel();
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   fireEvent.change(screen.getByLabelText('Filtrar por tipo'), {
     target: { value: 'service' },
   });
@@ -203,9 +203,9 @@ it('L06D-S2: one bandwidth action, explicit direction, unknown rate and legitima
   expect(await screen.findByText('0 bps')).toBeInTheDocument();
   expect(
     screen.getByRole('columnheader', {
-      name: 'Download do assinante (TX concentrador)',
+      name: 'Download do assinante',
     }),
-  ).toBeInTheDocument();
+  ).toHaveAttribute('title', 'TX concentrador');
   expect(
     within(screen.getByText('synthetic').closest('tr')!).getAllByRole(
       'cell',

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoE } from './pppoe';
 import {
@@ -128,8 +134,10 @@ it('L06D-S1: stable context shows negotiated IPv6 and unavailable fields without
   expect(screen.getByText('Sem prefixo delegado')).toBeInTheDocument();
   expect(screen.getByText('10 Mbps / 5 Mbps')).toBeInTheDocument();
   expect(
-    screen.getByText('100 · service: 2 / Pico 7 d: Indisponível'),
-  ).toBeInTheDocument();
+    within(screen.getByRole('cell', { name: 'service' }).closest('tr')!)
+      .getAllByRole('cell')
+      .map((cell) => cell.textContent),
+  ).toEqual(['100', 'service', '2', 'Não informado nesta leitura']);
 });
 it.each([
   ['disabled', 'Secret local desativado: a autenticação não vem dele'],
@@ -205,9 +213,10 @@ it('L06D-S7: operational CSV uses the exact observation and returns focus after 
   const action = await screen.findByRole('button', {
     name: 'Exportar CSV operacional',
   });
-  expect(
-    screen.getByText('O CSV contém dados identificáveis de assinantes.'),
-  ).toBeInTheDocument();
+  expect(action).toHaveAttribute(
+    'title',
+    'O CSV contém dados identificáveis de assinantes.',
+  );
   action.focus();
   fireEvent.click(action);
   await waitFor(() =>
@@ -302,19 +311,25 @@ it('L06T3: VLAN peak uses raw counts, a configurable drop threshold and optional
     }),
   );
   showPP();
+  const group = (
+    await screen.findByRole('cell', { name: 'X-service' })
+  ).closest('tr')!;
   expect(
-    await screen.findByText(/100 · X-service: 4 \/ Pico 7 d: 10/),
-  ).toHaveTextContent('Δ −60 %');
+    within(group)
+      .getAllByRole('cell')
+      .map((cell) => cell.textContent),
+  ).toEqual(['100', 'X-service', '4 · Queda local detectada', '10']);
+  expect(within(group).getByText('10')).toHaveAttribute('title', 'Δ −60 %');
   expect(screen.getByText('· Queda local detectada')).toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Queda local (%)'), {
+  fireEvent.change(screen.getByLabelText('Queda local'), {
     target: { value: '75' },
   });
   expect(screen.queryByText('· Queda local detectada')).not.toBeInTheDocument();
   fireEvent.click(screen.getByLabelText('Mostrar plano/limite'));
   expect(
-    screen.getByRole('columnheader', { name: 'Plano · download / upload' }),
+    screen.getByRole('columnheader', { name: 'Plano' }),
   ).toBeInTheDocument();
-  expect(screen.getByText('100 Mbps / 50 Mbps')).toHaveAttribute(
+  expect(screen.getByText('100 Mbps / 50 Mbps').closest('td')).toHaveAttribute(
     'title',
     '100.000.000 bit/s download / 50.000.000 bit/s upload',
   );

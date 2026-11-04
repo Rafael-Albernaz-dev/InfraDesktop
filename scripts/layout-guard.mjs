@@ -33,6 +33,9 @@ export function checkLayoutGuard() {
     }
   }
   check('frontend/src');
+  const kit = fs.readFileSync('frontend/src/ui/kit.css', 'utf8');
+  for (const state of ['field-error', 'inline-error', 'operation-error', 'empty-state'])
+    if (!new RegExp(`\\.${state}\\s*\\{`).test(kit)) throw Error(`Estado sem regra no kit: ${state}`);
   console.log('layout guard: PASS (zero exceções)');
 }
 

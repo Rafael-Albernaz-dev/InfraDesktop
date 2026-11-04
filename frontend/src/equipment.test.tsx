@@ -1,3 +1,4 @@
+import { findDevicePrimary } from './test-navigation';
 import { beginAdd, openDeviceSheet } from './test-navigation';
 import {
   act,
@@ -1671,10 +1672,9 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   const view = render(<Equipment {...props} />);
   for (let i = 0; i < 130; i++) {
     view.rerender(<Equipment {...props} activation={'a' + i} />);
-    await openDeviceSheet('Router X');
-    const connect = await screen.findByRole('button', {
-      name: /^(Conectar|Atualizar)$/,
-    });
+    const connect = await findDevicePrimary(view.container, 'Router X');
+    expect(connect).toHaveTextContent(/^(Conectar|Atualizar)$/);
+    expect(connect.closest('[hidden]')).toBeNull();
     await act(async () => {
       fireEvent.click(connect);
     });

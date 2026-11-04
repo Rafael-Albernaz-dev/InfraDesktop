@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoE } from './pppoe';
@@ -450,7 +451,7 @@ it('exposes the completed result count as an accessible status', async () => {
   await screen.findAllByText('duplicado');
   expect(
     screen.getByRole('status', { name: '2 resultados' }),
-  ).toHaveTextContent('2 resultados');
+  ).toHaveAccessibleName('2 resultados');
 });
 it('L06C: fields, offline reason and previous page use stored data', async () => {
   const clock = vi
@@ -473,21 +474,23 @@ it('L06C: fields, offline reason and previous page use stored data', async () =>
     result({ rows: [offline], total: 1 }),
   );
   showPP();
-  await screen.findByText('OFFLINE');
+  await screen.findByRole('cell', { name: 'OFFLINE' });
   expect(
-    screen.getByRole('columnheader', { name: 'Caller ID' }),
+    screen.getByRole('columnheader', { name: 'Conectado há' }),
   ).toBeInTheDocument();
-  expect(screen.getByText('1s')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
   await screen.findByRole('button', { name: 'Página anterior' });
+  expect(vi.mocked(api.list).mock.calls.at(-1)?.[5]).toBe('second');
+  await screen.findByRole('cell', { name: 'ONLINE' });
   fireEvent.click(screen.getByRole('button', { name: 'Página anterior' }));
-  await screen.findByText('OFFLINE');
+  await screen.findByRole('cell', { name: 'OFFLINE' });
   expect(vi.mocked(api.list).mock.calls.at(-1)?.[5]).toBe('');
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   await screen.findByText('Sem leitura: sessão OFFLINE');
+  expect(screen.getByText('Caller ID: 02:00:00:00:00:01')).toBeInTheDocument();
   expect(screen.getByText('Offline desde (intervalo)')).toBeInTheDocument();
   expect(screen.getByText(/Duração da última sessão:/)).toHaveTextContent(
     '1 s',
@@ -542,8 +545,26 @@ it('L06C: comparison identifies each side without UUID labels', async () => {
   fireEvent.change(screen.getByLabelText('Referência para comparar'), {
     target: { value: 'base' },
   });
-  await screen.findByText(/old-login · 198.51.100.1/);
-  expect(screen.getByText(/new-login · 198.51.100.1/)).toBeInTheDocument();
+  await screen.findByRole('cell', { name: 'new-login' });
+  vi.mocked(api.detail).mockImplementation(async (_p, _a, _d, observation) =>
+    result({
+      rows: [
+        {
+          ...rows[0],
+          login: observation === 'base' ? 'old-login' : 'new-login',
+        },
+      ],
+      total: 1,
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Detalhar par' }));
+  await screen.findByText(/old-login/);
+  expect(
+    within(
+      screen.getByRole('complementary', { name: 'Detalhes da comparação' }),
+    ).getByText('Login: new-login'),
+  ).toBeInTheDocument();
+  expect(screen.getAllByText(/198.51.100.1/)).toHaveLength(2);
   expect(screen.getByText(/Reconectada/)).toBeInTheDocument();
   expect(screen.queryByText(/internal-base-id/)).not.toBeInTheDocument();
 });

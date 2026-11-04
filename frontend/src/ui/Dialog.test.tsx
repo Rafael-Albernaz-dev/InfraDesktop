@@ -2,8 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { Dialog } from './Dialog';
 import { Field } from './Field';
-import { readFileSync } from 'node:fs';
-const css = readFileSync('src/ui/kit.css', 'utf8');
 
 it('mantém erro legível e fechamento por teclado no modal do kit', () => {
   const close = vi.fn();
@@ -23,10 +21,6 @@ it('mantém erro legível e fechamento por teclado no modal do kit', () => {
     'Informe o nome',
   );
   expect(screen.getByRole('alert')).toBeVisible();
-  expect(css).toMatch(/\.field-error\s*\{/);
-  expect(css).toMatch(/\.inline-error\s*\{/);
-  expect(css).toMatch(/\.operation-error\s*\{/);
-  expect(css).toMatch(/\.empty-state\s*\{/);
   fireEvent.keyDown(dialog, { key: 'Escape' });
   expect(close).toHaveBeenCalledOnce();
 });

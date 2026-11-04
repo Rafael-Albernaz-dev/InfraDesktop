@@ -403,7 +403,7 @@ it('keeps no-response RTT unknown and preserves RADIUS decimal precision', async
   );
   await screen.findByText(/Enviados: 3 · Recebidos: 0 · Perda: 100 %/);
   expect(screen.getByText(/RTT mínimo:/)).toHaveTextContent(
-    'RTT mínimo: Indisponível · médio: Indisponível · máximo: Indisponível',
+    'RTT mínimo: Não informado nesta leitura · médio: Não informado nesta leitura · máximo: Não informado nesta leitura',
   );
   view.unmount();
   vi.mocked(api.current).mockResolvedValue(

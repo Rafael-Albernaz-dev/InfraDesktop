@@ -1,4 +1,4 @@
-import { openDeviceSheet } from './test-navigation';
+import { findDevicePrimary, openDeviceSheet } from './test-navigation';
 import {
   fireEvent,
   render,
@@ -267,7 +267,7 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
       },
     };
   });
-  render(
+  const view = render(
     <Equipment profile="enroll" activation="a" connected createRequest={1} />,
   );
   await screen.findByRole('dialog', { name: 'Adicionar equipamento' });
@@ -310,7 +310,7 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
     ...result(current),
     code: 'CONNECT_FAILED',
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
+  fireEvent.click(await findDevicePrimary(view.container, device.name));
   expect(await screen.findByRole('alert')).toHaveTextContent('porta SSH');
   expect(screen.getByText('ether1')).toBeVisible();
   expect(api.save).toHaveBeenCalledTimes(1);

@@ -85,7 +85,7 @@ export function ContextGroupsList({
             <td
               title={
                 g.peak_7d
-                  ? `Δ ${formatMetric((Math.abs(g.count - g.peak_7d) * 100) / g.peak_7d, '%')}`
+                  ? `Δ ${g.count < g.peak_7d ? '−' : ''}${formatMetric((Math.abs(g.count - g.peak_7d) * 100) / g.peak_7d, '%')}`
                   : ''
               }
             >

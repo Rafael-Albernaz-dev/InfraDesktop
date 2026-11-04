@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
 import { RadioEquipmentView } from './radio-equipment-views';
-import { RadioFamilies, RadioModes } from './radio-contract';
+import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
 import type { RadioReading } from './radio-api';
 import { RadioCredentialRecovery } from './radio-credential-recovery';
 import {
@@ -27,12 +27,34 @@ import type {
 
 type ReadyEquipment = RadioEquipmentState & { reading: RadioReading };
 
-function RadioEquipmentMessages({ state }: { state: RadioEquipmentState }) {
+// Clientes e Rádio já trazem a ação no próprio bloco; demais vistas dependem daqui.
+function viewOffersReopen(
+  { reading, device }: RadioEquipmentState,
+  tab: string,
+) {
+  if (!reading || (tab !== 'Clientes' && tab !== 'Rádio')) return false;
+  return (
+    reading.family !== RadioFamilies.unsupported ||
+    device.role === RadioRoles.ap
+  );
+}
+function RadioEquipmentMessages({
+  state,
+  tab,
+}: {
+  state: RadioEquipmentState;
+  tab: string;
+}) {
   const { radio, reading, credentialRefused } = state,
-    page = createEquipmentPage(state);
+    page = createEquipmentPage(state),
+    offerReopen =
+      radio.error &&
+      !radio.busy &&
+      !(credentialRefused && !reading) &&
+      !viewOffersReopen(state, tab);
   return (
     <>
-      {radio.error && !radio.busy && !(credentialRefused && !reading) && (
+      {offerReopen && (
         <Button
           type="submit"
           className={!reading ? 'primary' : ''}
@@ -74,9 +96,11 @@ type RadioBodyProps = {
 function RadioOperationalFeedback({
   state,
   hidden,
+  tab,
 }: {
   state: RadioEquipmentState;
   hidden: boolean;
+  tab: string;
 }) {
   const { radio } = state;
   return (
@@ -102,7 +126,7 @@ function RadioOperationalFeedback({
       {hidden && radio.error && (
         <StateNotice error>{equipmentRadioError(state)}</StateNotice>
       )}
-      <RadioEquipmentMessages state={state} />
+      <RadioEquipmentMessages state={state} tab={tab} />
     </>
   );
 }
@@ -111,7 +135,7 @@ function RadioEquipmentBody({ state, start, tab }: RadioBodyProps) {
   const hidden = tab === 'Acesso' || tab === 'Cliente' || tab === 'Roteador';
   return (
     <>
-      <RadioOperationalFeedback state={state} hidden={hidden} />
+      <RadioOperationalFeedback state={state} hidden={hidden} tab={tab} />
       <div hidden={hidden}>
         {state.loading ? (
           <DataBlock title="Rádio" source="SSH" data={{ state: 'loading' }} />

@@ -137,5 +137,26 @@
       "name": "CCR-CENTRO",
       "value": "RouterOS 6.49"
     }
+  ],
+  "bandwidth": [
+    {
+      "row_id": "row-2",
+      "login": "cliente-0003",
+      "uptime": {
+        "known": true,
+        "min": 950400000000000.0,
+        "max": 950400000000000.0
+      },
+      "download": {
+        "known": true,
+        "min": 78000000,
+        "max": 78000000
+      },
+      "upload": {
+        "known": true,
+        "min": 10000000,
+        "max": 10000000
+      }
+    }
   ]
 }

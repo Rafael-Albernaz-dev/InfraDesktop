@@ -102,7 +102,7 @@ it.each(['success', 'error', 'rejection'])(
       />,
     );
     await screen.findByRole('cell', { name: /CPE-I1/ });
-    fireEvent.click(screen.getByRole('button', { name: 'Próximos clientes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima' }));
     expect(api.current).toHaveBeenCalledTimes(2);
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
     await screen.findByRole('cell', { name: /Cliente B/ });
@@ -140,7 +140,7 @@ it('accepts a legitimate page when no newer query owns the view', async () => {
     />,
   );
   await screen.findByRole('cell', { name: /CPE-I1/ });
-  fireEvent.click(screen.getByRole('button', { name: 'Próximos clientes' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Próxima' }));
   await screen.findByRole('cell', { name: /Página legítima/ });
   expect(
     screen.getByRole('button', { name: 'Clientes anteriores' }),

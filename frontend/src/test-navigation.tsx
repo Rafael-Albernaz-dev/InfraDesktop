@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 // Follow the public list → sheet → Acesso journey used by operation regressions.
 export async function openDeviceSheet(name: string) {
@@ -28,4 +28,18 @@ export async function beginAdd() {
   fireEvent.click(
     await screen.findByRole('button', { name: 'Adicionar equipamento' }),
   );
+}
+
+// The kit's single primary action is shared by Resumo and Acesso. Scoped text
+// queries keep long regression loops cheap; callers assert the accessible name.
+export async function findDevicePrimary(root: HTMLElement, name: string) {
+  const sheet = () =>
+    root.querySelector<HTMLElement>('[aria-label="Ficha do equipamento"]');
+  if (!sheet()) fireEvent.click(await within(root).findByText(name));
+  const primary = await waitFor(() => {
+    const button = sheet()?.querySelector<HTMLButtonElement>('button.primary');
+    if (!button) throw Error('Ficha sem ação primária');
+    return button;
+  });
+  return primary;
 }
