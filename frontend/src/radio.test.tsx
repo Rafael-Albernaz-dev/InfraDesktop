@@ -72,7 +72,7 @@ it('hiding stops the live and returning never renews it; a late start is cancell
       blocked={false}
     />,
   );
-  fireEvent.click(await screen.findByRole('button', { name: 'Live curto' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ao vivo' }));
   expect(vi.mocked(api.start).mock.calls[0][2].mode).toBe('live');
   view.unmount();
   await act(async () =>
@@ -96,7 +96,7 @@ it('visibility loss cancels an active job exactly once and never issues a replac
       blocked={false}
     />,
   );
-  fireEvent.click(await screen.findByRole('button', { name: 'Live curto' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(api.status).toHaveBeenCalled());
   Object.defineProperty(
     screen.getByRole('region', { name: 'Enlace rádio' }).ownerDocument,
@@ -142,14 +142,10 @@ it('R12: Parar followed by a delayed start cannot make the next stop target the 
       blocked={false}
     />,
   );
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar enlace' }),
-  );
+  fireEvent.click(await screen.findByRole('button', { name: 'Atualizar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
   await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: 'Consultar enlace' }),
-    ).toBeEnabled(),
+    expect(screen.getByRole('button', { name: 'Atualizar' })).toBeEnabled(),
   );
   await act(async () =>
     first(
@@ -158,12 +154,10 @@ it('R12: Parar followed by a delayed start cannot make the next stop target the 
       }),
     ),
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Consultar enlace' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
   await waitFor(() =>
-    expect(
-      screen.getByRole('button', { name: 'Consultar enlace' }),
-    ).toBeEnabled(),
+    expect(screen.getByRole('button', { name: 'Atualizar' })).toBeEnabled(),
   );
   expect(api.cancel).not.toHaveBeenCalled();
   expect(api.cancelOperation).toHaveBeenCalledWith(

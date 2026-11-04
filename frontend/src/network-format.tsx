@@ -407,7 +407,7 @@ const MODE_LABELS: Record<string, string> = {
   [RadioRoles.ptp]: 'Ponto a ponto (PTP)',
   [RadioModes.once]: 'Leitura pontual',
   [RadioModes.measure]: 'Medição curta',
-  [RadioModes.live]: 'Tempo real',
+  [RadioModes.live]: 'Ao vivo',
   [RadioModes.index]: 'Índice de estações',
 };
 

@@ -2,7 +2,7 @@ import { Button } from './ui/Button';
 
 import type { RadioLinkState } from './radio-link-state';
 import { RadioModes } from './radio-contract';
-import { formatMetric } from './network-format';
+import { radioCostLabel } from './radio-cost-label';
 
 export function RadioLinkRunActions({ state }: { state: RadioLinkState }) {
   const { blocked, radio, editing, link, cost } = state;
@@ -26,21 +26,21 @@ export function RadioLinkRunActions({ state }: { state: RadioLinkState }) {
               disabled={blocked}
               onClick={() => void radio.start(RadioModes.once)}
             >
-              Consultar enlace
+              Atualizar
             </Button>
             <Button
               type="submit"
               disabled={blocked}
               onClick={() => void radio.start(RadioModes.measure)}
             >
-              Medir custo do live
+              Testar carga do ao vivo
             </Button>
             <Button
               type="submit"
               disabled={blocked || !cost?.enabled}
               onClick={() => void radio.start(RadioModes.live)}
             >
-              Live curto
+              Ver ao vivo
             </Button>
           </div>
         )
@@ -55,8 +55,8 @@ export function RadioLinkCost({ state }: { state: RadioLinkState }) {
       {link && !editing && (
         <p>
           {cost
-            ? `${cost.reason} Intervalo: ${formatMetric(cost.interval_seconds, 's')} · p95 ${formatMetric(cost.p95_seconds, 's')}`
-            : 'Live desligado: custo dos ticks ainda não medido nesta execução.'}
+            ? radioCostLabel(cost)
+            : 'Ao vivo desligado: custo dos ticks ainda não medido nesta execução.'}
         </p>
       )}
     </>
@@ -68,8 +68,8 @@ export function RadioLinkBusyStatus({ state }: { state: RadioLinkState }) {
     <>
       {radio.busy && (
         <p role="status">
-          Consulta em curso; um enlace por vez. A janela do live termina em até
-          90 s.
+          Consulta em curso; um enlace por vez. A janela do ao vivo termina em
+          até 90 s.
         </p>
       )}
     </>

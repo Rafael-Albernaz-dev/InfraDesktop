@@ -234,7 +234,7 @@ it('shows the first measured refusal and separate command/path times in pt-BR', 
   expect(screen.getByText(/Última amostra/)).toHaveTextContent(
     'AP: comando 0,4 s, percurso 2 s; CPE: comando 3,2 s, percurso 3,5 s',
   );
-  expect(screen.getByRole('button', { name: 'Live curto' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Ver ao vivo' })).toBeDisabled();
 });
 
 it('keeps AP-only live explicit when the CPE firmware has no driver', async () => {
@@ -269,8 +269,8 @@ it('keeps AP-only live explicit when the CPE firmware has no driver', async () =
   expect(await screen.findByText(note)).toBeVisible();
   expect(screen.getByText('-70 dBm')).toBeVisible();
   expect(screen.queryByText('Lado CPE')).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Live curto' })).toBeEnabled();
-  expect(screen.getByRole('button', { name: 'Consultar enlace' })).toHaveClass(
+  expect(screen.getByRole('button', { name: 'Ver ao vivo' })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Atualizar' })).toHaveClass(
     'primary',
   );
   expect(api.start).not.toHaveBeenCalled();

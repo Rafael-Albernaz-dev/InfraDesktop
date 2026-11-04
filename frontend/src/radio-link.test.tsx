@@ -85,10 +85,10 @@ it('suggestion needs confirmation before link query; AP result survives an indep
   fireEvent.click(
     await screen.findByRole('button', { name: /Confirmar sugestão/ }),
   );
-  await screen.findByRole('button', { name: 'Consultar enlace' });
+  await screen.findByRole('button', { name: 'Atualizar' });
   expect(api.start).not.toHaveBeenCalled();
   expect(api.confirmLink).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole('button', { name: 'Consultar enlace' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
   await screen.findByText('-70 dBm');
   expect(screen.getByText('REMOTE_AUTH_FAILED')).toBeInTheDocument();
   expect(
@@ -97,7 +97,7 @@ it('suggestion needs confirmation before link query; AP result survives an indep
     ),
   ).toBeInTheDocument();
   expect(api.start).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole('button', { name: 'Live curto' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Ver ao vivo' })).toBeDisabled();
 });
 
 it('a link read error never claims a missing link; local reopening does not send SSH', async () => {
@@ -121,7 +121,7 @@ it('a link read error never claims a missing link; local reopening does not send
   expect(
     screen.queryByText('Nenhum vínculo confirmado para esta sessão.'),
   ).not.toBeInTheDocument();
-  await screen.findByRole('button', { name: 'Consultar enlace' });
+  await screen.findByRole('button', { name: 'Atualizar' });
   expect(api.start).not.toHaveBeenCalled();
   expect(api.link).toHaveBeenCalledTimes(2);
 });

@@ -136,10 +136,8 @@ it('L06C: lost ping response after worker exit never re-probes on reconcile', as
   fireEvent.click(
     screen.getByRole('button', { name: 'Sondar IP pelo concentrador' }),
   );
-  await screen.findByRole('button', { name: 'Consultar sondagem pendente' });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Consultar sondagem pendente' }),
-  );
+  await screen.findByRole('button', { name: 'Conferir andamento' });
+  fireEvent.click(screen.getByRole('button', { name: 'Conferir andamento' }));
   await screen.findByText(
     'Não há trabalho ativo desta ação. Inicie uma nova leitura deliberadamente.',
   );

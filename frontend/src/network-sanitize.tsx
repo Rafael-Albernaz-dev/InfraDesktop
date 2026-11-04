@@ -30,7 +30,7 @@ const INTERNAL_TOKEN_REPLACEMENTS: Array<[RegExp, string]> = [
 ];
 
 export function sanitizeToken(input: string): string {
-  let out = input;
+  let out = input.replace(/\blive\b/gi, 'ao vivo');
   for (const [pattern, replacement] of INTERNAL_TOKEN_REPLACEMENTS) {
     out = out.replace(pattern, replacement);
   }

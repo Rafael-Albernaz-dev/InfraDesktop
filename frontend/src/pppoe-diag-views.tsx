@@ -232,7 +232,7 @@ export function PPPoEDiagnostics({
     view.starting || view.job
       ? 'Consultando…'
       : view.uncertain
-        ? 'Consultar ação pendente'
+        ? 'Conferir andamento'
         : scope === 'catalog'
           ? 'Atualizar serviços e VLANs'
           : 'Atualizar RADIUS';
@@ -261,7 +261,7 @@ export function PPPoEDiagnostics({
       </HeaderAction>
       {view.statusFailed && (
         <Button type="submit" onClick={view.retryStatus}>
-          Consultar estado novamente
+          Conferir andamento
         </Button>
       )}
       {view.error && <p role="alert">{view.error}</p>}
@@ -332,7 +332,7 @@ export function PPPoEPing({
     view.starting || view.job
       ? 'Sondando…'
       : view.uncertain
-        ? 'Consultar sondagem pendente'
+        ? 'Conferir andamento'
         : 'Sondar IP pelo concentrador';
   return (
     <section
@@ -365,7 +365,7 @@ export function PPPoEPing({
       )}
       {view.statusFailed && (
         <Button type="submit" onClick={view.retryStatus}>
-          Consultar estado da sondagem
+          Conferir andamento
         </Button>
       )}
       {view.error && <p role="alert">{view.error}</p>}

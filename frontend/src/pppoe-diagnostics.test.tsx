@@ -187,9 +187,7 @@ it('reconciles an uncertain start through stored state without a second collecti
       total: 0,
     }),
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Consultar ação pendente' }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: 'Conferir andamento' }));
   await waitFor(() =>
     expect(
       screen.getByRole('button', { name: 'Atualizar serviços e VLANs' }),
@@ -219,7 +217,7 @@ it('recovers status explicitly without replaying the network action', async () =
   );
   fireEvent.click(screen.getByRole('button', { name: 'Atualizar RADIUS' }));
   fireEvent.click(
-    await screen.findByRole('button', { name: 'Consultar estado novamente' }),
+    await screen.findByRole('button', { name: 'Conferir andamento' }),
   );
   await waitFor(() => expect(api.status).toHaveBeenCalledTimes(2));
   await waitFor(() =>
@@ -504,7 +502,7 @@ it('does not adopt another session running ping or stale uncertain presentation'
   fireEvent.click(
     screen.getByRole('button', { name: 'Sondar IP pelo concentrador' }),
   );
-  await screen.findByRole('button', { name: 'Consultar sondagem pendente' });
+  await screen.findByRole('button', { name: 'Conferir andamento' });
   const size = pendingPPPoE.size;
   view.rerender(
     <PPPoEPing
@@ -537,7 +535,7 @@ it.each([
   await screen.findByRole('alert');
   expect(pendingPPPoE.size).toBe(0);
   expect(
-    screen.queryByRole('button', { name: 'Consultar ação pendente' }),
+    screen.queryByRole('button', { name: 'Conferir andamento' }),
   ).not.toBeInTheDocument();
   view.rerender(
     <PPPoEDiagnostics
