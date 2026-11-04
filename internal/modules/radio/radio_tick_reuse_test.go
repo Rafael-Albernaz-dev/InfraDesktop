@@ -35,9 +35,14 @@ func TestRadioWorkerReusesDataErrorSessionAndReopensTransport(t *testing.T) {
 		code   Code
 		opens  int32
 	}{
-		{"tick-frame", Partial, 2}, {"tick-cpu", Partial, 2}, {"exit", RadioCodeSSHConnectionLost, 3},
+		{"tick-frame", Partial, 2},
+		{"tick-cpu", Partial, 2},
+		{"markers", Partial, 2},
+		{"stderr", Partial, 3},
+		{"exit", Partial, 3},
+		{"exit", RadioCodeSSHConnectionLost, 3},
 	} {
-		t.Run(tc.reason, func(t *testing.T) {
+		t.Run(tc.reason+"_"+string(tc.code), func(t *testing.T) {
 			remote := &dataTickRemote{radioLiveRemote: &radioLiveRemote{cpuTicks: [][]int{{100}, {100}}}, code: tc.code, reason: tc.reason}
 			service, q, in, _ := radioHarness(t, remote.radioLiveRemote)
 			service.Remote = remote

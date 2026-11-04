@@ -25,7 +25,8 @@ func TestRadioTickDegradesOnlyInvalidMetric(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			initial, link := tickIdentity()
-			wire := strings.Replace(projectedRadioTickWire, "L07-TICK-DONE", "  "+tc.field+"\nL07-TICK-DONE", 1)
+			wire := strings.Replace(projectedRadioTickWire, "L07-TICK-DONE",
+				"  "+tc.field+"\n  rx-rate=\"0Mbps\"\n  rx-ccq=\"0%\"\nL07-TICK-DONE", 1)
 			r, code := routerssh.ParseRadioAPTick(wire, initial, link)
 			if code != e.OK || r == nil || len(r.CPU) != 1 || r.CPU[0] != 40 || len(r.Clients) != 1 {
 				t.Fatalf("valid CPU/peer lost: %s %+v", code, r)
@@ -92,6 +93,7 @@ func TestRadioTickDataErrorKeepsConnectionTransportCloses(t *testing.T) {
 func assertTickMetrics(t *testing.T, r *e.RadioReading, link *e.RadioLink, reason string) {
 	t.Helper()
 
+	assertValidTickMetrics(t, r.Clients[0].Metrics)
 	if r.Clients[0].MAC != link.MAC || r.Clients[0].BSSID != link.BSSID {
 		t.Fatal("identity lost")
 	}
@@ -116,5 +118,20 @@ func assertTransportTickClosed(t *testing.T, peer *sshfixture.Server) {
 	}
 	if peer.ActiveConnections() != 0 {
 		t.Fatal("transport failure retained SSH connection before explicit cleanup")
+	}
+}
+
+func assertValidTickMetrics(t *testing.T, metrics []e.RadioMetric) {
+	t.Helper()
+	for name, want := range map[string]float64{"signal": -60, "rate_rx": 0, "ccq_rx": 0} {
+		found := false
+		for _, metric := range metrics {
+			if metric.Name == name && metric.Value == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("valid %s=%v was discarded with bad sibling metric", name, want)
+		}
 	}
 }

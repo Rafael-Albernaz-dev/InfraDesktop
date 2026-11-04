@@ -1,11 +1,10 @@
 package radio
 
-import "strings"
-
 func radioTickNeedsReopen(reading *RadioReading, code Code) bool {
-	// A framed AP data diagnostic says nothing about SSH transport health.
-	if code == Partial && reading != nil && reading.Failure != nil && strings.HasPrefix(reading.Failure.Reason, "tick-") {
-		return false
+	// A data diagnostic does not invalidate SSH. The adapter marks failed execs
+	// with fixed exit/stderr reasons; transport codes retain the normal reopen path.
+	if code == Partial && reading != nil && reading.Failure != nil {
+		return reading.Failure.Reason == "exit" || reading.Failure.Reason == "stderr"
 	}
 	return code != OK || (reading != nil && reading.CommandSeconds > 3)
 }
