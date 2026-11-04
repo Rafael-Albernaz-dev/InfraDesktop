@@ -20,6 +20,8 @@ export type PPReadPanelProps = {
   traffic?: boolean;
   bandwidthOnly?: boolean;
   pageBandwidth?: boolean;
+  panel?: boolean;
+  evidence?: 'log' | 'secret';
 };
 export function ppReadMessage(code: string) {
   if (code === 'PARTIAL')
@@ -28,7 +30,6 @@ export function ppReadMessage(code: string) {
     ? 'Esta leitura não está disponível neste formato, versão ou permissão.'
     : equipmentMessage(code);
 }
-
 const READ_REJECTED = [
   'BUSY',
   'REVISION_CONFLICT',
@@ -102,7 +103,6 @@ function usePPReadStateVars() {
     setStoppedTraffic,
   };
 }
-
 export type ReadState = ReturnType<typeof usePPReadStateVars>;
 
 function usePPReadCleanup(p: {

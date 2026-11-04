@@ -1055,6 +1055,7 @@ body.com-painel .col {
   margin-bottom: 10px;
 }
 .pppoe-filters label {
+  min-height: 20px;
   display: inline-flex;
   align-items: center;
   gap: 4px;

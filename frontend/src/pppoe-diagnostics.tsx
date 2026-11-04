@@ -93,11 +93,19 @@ function PPPoEReadContent(props: PPReadPanelProps) {
   }
   const heading = props.traffic
     ? 'Tráfego'
-    : props.monitoring
-      ? 'Leitura operacional'
-      : props.health
-        ? 'Pools e interfaces estáticas'
-        : 'Banda por sessão';
+    : props.evidence === 'log'
+      ? 'Log PPP'
+      : props.evidence === 'secret'
+        ? 'Evidência do secret'
+        : props.monitoring
+          ? 'Leitura operacional'
+          : props.health
+            ? 'Pools e interfaces estáticas'
+            : props.bandwidthOnly
+              ? 'Banda'
+              : props.allowTop && !props.rows.length
+                ? 'Top consumo'
+                : 'Banda por sessão';
   const body = (
     <>
       <div className="bar">
@@ -127,19 +135,36 @@ function PPPoEReadContent(props: PPReadPanelProps) {
       {s.result && <PPReadResultView s={s} pProps={props} />}
     </>
   );
+  const panelBody = (
+    <>
+      {s.result ? (
+        <PPReadResultView s={s} pProps={props} />
+      ) : (
+        <p>Ainda sem leitura</p>
+      )}
+      <PPReadStatusBanners s={s} pProps={props} />
+      <div className="actions">
+        <PPReadActionButtons s={s} pProps={props} />
+      </div>
+    </>
+  );
   return (
     <section
       className="pppoe-diagnostics pppoe-read-panel"
       aria-label={heading}
     >
-      <div className="sp10" />
+      {(!props.panel || !props.traffic) && <div className="sp10" />}
       <DataBlock
         title={heading}
-        source="SSH"
-        age={props.pageBandwidth ? '—' : readingAge(s.result?.ended_at)}
+        source={props.panel ? `SSH (${props.device.name})` : 'SSH'}
+        age={
+          props.pageBandwidth
+            ? '—'
+            : readingAge(s.result?.ended_at) || (props.panel ? '—' : '')
+        }
         data={{
-          state: s.job && s.result ? 'refreshing' : 'ready',
-          content: body,
+          state: s.job && s.result && !props.traffic ? 'refreshing' : 'ready',
+          content: props.panel ? panelBody : body,
         }}
       />
     </section>
@@ -158,6 +183,7 @@ export function PPPoEReadPanel(props: PPReadPanelProps) {
     props.health,
     props.monitoring,
     props.traffic,
+    props.evidence,
   ].join('|');
   return <PPPoEReadContent key={key} {...props} />;
 }

@@ -357,7 +357,7 @@ it('L06T: entering traffic starts once with visible IDs; stop preserves graph an
   expect(screen.getAllByTitle('1.600–1.601 bit/s').length).toBeGreaterThan(0);
   expect(
     screen.getByTitle('1.000 bytes download / 500 bytes upload'),
-  ).toHaveTextContent('1.000 B download / 500 B upload');
+  ).toHaveTextContent('1.000 B / 500 B');
   fireEvent.click(screen.getByRole('button', { name: 'Parar' }));
   await screen.findByText('Observação parada.');
   expect(

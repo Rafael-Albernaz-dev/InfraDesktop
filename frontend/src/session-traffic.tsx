@@ -1,3 +1,5 @@
+import { RateValue } from './pppoe-read-views';
+import { KeyValues } from './ui/KeyValues';
 import { Chart } from './ui/Chart';
 import type { PPReadRow } from './presentation';
 import {
@@ -6,9 +8,8 @@ import {
   exactVolume,
   formatDuration,
   formatRate,
-  formatVolume,
+  formatVolumePair,
 } from './network-format';
-import { RateValue } from './pppoe-read-views';
 const elapsed = (seconds: number) =>
   `${Math.floor(seconds / 60)
     .toString()
@@ -59,29 +60,45 @@ export function SessionTraffic({
         live={live}
         label={'Gráfico de tráfego de ' + row.login}
       />
-      <p>
-        Média da observação: download <RateValue rate={t.average_download} /> /
-        upload <RateValue rate={t.average_upload} /> · pico amostrado: download{' '}
-        <RateValue rate={t.peak_download} /> / upload{' '}
-        <RateValue rate={t.peak_upload} />
+      <p className="muted">
+        Interrupções aparecem como lacunas, nunca como zero.
       </p>
-      <p>
-        Total {t.gaps ? 'parcial ' : ''}da observação:{' '}
-        <span
-          title={`${exactVolume(t.download_bytes)} download / ${exactVolume(t.upload_bytes)} upload`}
-        >
-          {t.covered_ns > 0 && !t.overflow
-            ? `${formatVolume(t.download_bytes)} download / ${formatVolume(t.upload_bytes)} upload`
-            : 'Indisponível'}
-        </span>{' '}
-        · tempo coberto{' '}
-        <span title={exactNumber(t.covered_ns / 1e9, 's')}>
-          {formatDuration(t.covered_ns / 1e9)}
-        </span>
-        {t.gaps
-          ? ` · ${t.gaps} lacuna(s); sem estimar os intervalos ausentes.`
-          : ''}
-      </p>
+      <KeyValues
+        rows={[
+          [
+            'Média',
+            <>
+              <RateValue rate={t.average_download} /> /{' '}
+              <RateValue rate={t.average_upload} />
+            </>,
+          ],
+          [
+            'Pico amostrado',
+            <>
+              <RateValue rate={t.peak_download} /> /{' '}
+              <RateValue rate={t.peak_upload} />
+            </>,
+          ],
+          [
+            'Total da observação',
+            <span
+              key="total"
+              title={`${exactVolume(t.download_bytes)} download / ${exactVolume(t.upload_bytes)} upload`}
+            >
+              {t.covered_ns > 0 && !t.overflow
+                ? formatVolumePair(t.download_bytes, t.upload_bytes)
+                : 'Não informado nesta leitura'}
+            </span>,
+          ],
+          [
+            'Tempo coberto',
+            <span key="coverage" title={exactNumber(t.covered_ns / 1e9, 's')}>
+              {formatDuration(t.covered_ns / 1e9)}
+              {t.gaps ? ` · ${t.gaps} lacuna${t.gaps === 1 ? '' : 's'}` : ''}
+            </span>,
+          ],
+        ]}
+      />
       {t.overflow && <p role="alert">Limite numérico: resumo indisponível.</p>}
     </section>
   );

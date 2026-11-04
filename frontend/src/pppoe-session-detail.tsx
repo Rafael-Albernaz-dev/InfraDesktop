@@ -1,3 +1,4 @@
+import { DataBlock } from './ui/DataBlock';
 import { DataTable } from './ui/DataTable';
 import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
 import { Select } from './ui/Select';
@@ -36,16 +37,6 @@ function SessionInformationTab(p: {
         current={current}
         fastTrack={p.fastTrack}
       />
-      <PPPoEReadPanel
-        profile={profile}
-        activation={activation}
-        device={device}
-        observation={current.observation_id}
-        rows={isOffline ? [] : [selected.row_id]}
-        blocked={disabled}
-        allowTop
-        logRow={selected.row_id}
-      />
       <SessionConnectivityTab
         profile={profile}
         activation={activation}
@@ -57,6 +48,20 @@ function SessionInformationTab(p: {
         isOffline={isOffline}
         openEquipment={p.openEquipment}
       />
+      {(['log', 'secret'] as const).map((evidence) => (
+        <PPPoEReadPanel
+          key={evidence}
+          profile={profile}
+          activation={activation}
+          device={device}
+          observation={current.observation_id}
+          rows={[]}
+          logRow={selected.row_id}
+          evidence={evidence}
+          panel
+          blocked={disabled || isOffline}
+        />
+      ))}
     </>
   );
 }
@@ -116,7 +121,7 @@ export function PPPoESessionDetail(p: {
     <aside className="drawer session-panel" aria-label="Detalhes da sessão">
       <div className="dh">
         <h2 tabIndex={-1} ref={detailHeadingRef}>
-          {selected.login}
+          Sessão {selected.login}
         </h2>
         <Button
           label="Fechar detalhe"
@@ -126,13 +131,23 @@ export function PPPoESessionDetail(p: {
             detailTriggerRef.current?.focus();
           }}
         >
-          ×
+          Fechar
         </Button>
       </div>
+      <p className="muted">
+        Concentrador: {device.name} · {selected.state || 'ONLINE'}
+      </p>
       <SessionDetailNav detailTab={detailTab} setDetailTab={setDetailTab} />
       {detailTab === 'traffic' ? (
         selected.state === 'OFFLINE' ? (
-          <p>Sem leitura: sessão OFFLINE</p>
+          <DataBlock
+            title="Tráfego"
+            source={`SSH (${device.name})`}
+            data={{
+              state: 'ready',
+              content: <p>Sem leitura: sessão OFFLINE</p>,
+            }}
+          />
         ) : (
           <>
             <PPPoEReadPanel
@@ -142,6 +157,7 @@ export function PPPoESessionDetail(p: {
               observation={current.observation_id}
               rows={[selected.row_id]}
               traffic
+              panel
               blocked={disabled}
             />
             <PPPoEReadPanel
@@ -150,8 +166,18 @@ export function PPPoESessionDetail(p: {
               device={device}
               observation={current.observation_id}
               rows={[selected.row_id]}
-              allowTop
+              panel
               bandwidthOnly
+              blocked={disabled}
+            />
+            <PPPoEReadPanel
+              profile={profile}
+              activation={activation}
+              device={device}
+              observation={current.observation_id}
+              rows={[]}
+              panel
+              allowTop
               blocked={disabled}
             />
           </>

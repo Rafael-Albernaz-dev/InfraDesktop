@@ -229,20 +229,24 @@ function PPReadTriggerButtons(p: {
       )}
       {pProps.logRow && (
         <>
-          <Button
-            type="submit"
-            disabled={s.locked}
-            onClick={() => void s.start('log')}
-          >
-            Log PPP
-          </Button>
-          <Button
-            type="submit"
-            disabled={s.locked}
-            onClick={() => void s.start('secret')}
-          >
-            Ver evidência do secret
-          </Button>
+          {pProps.evidence !== 'secret' && (
+            <Button
+              type="submit"
+              disabled={s.locked}
+              onClick={() => void s.start('log')}
+            >
+              Log PPP
+            </Button>
+          )}
+          {pProps.evidence !== 'log' && (
+            <Button
+              type="submit"
+              disabled={s.locked}
+              onClick={() => void s.start('secret')}
+            >
+              Ver evidência do secret
+            </Button>
+          )}
         </>
       )}
     </>
@@ -319,10 +323,13 @@ export function PPReadStatusBanners(p: {
         </p>
       ) : (
         (s.starting || s.job) &&
-        !s.error && <p role="status">{progressStatusText(s.scope)}</p>
+        !s.error &&
+        (!pProps.traffic || !s.result) && (
+          <p role="status">{progressStatusText(s.scope)}</p>
+        )
       )}
       {pProps.traffic && (
-        <p>
+        <p className="muted">
           {trafficNotice} Observação de até 60 s; gráfico retido em memória por
           5 min.
         </p>
