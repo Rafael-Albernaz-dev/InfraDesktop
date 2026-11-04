@@ -80,7 +80,7 @@ export function EquipmentInventoryPane(p: Props) {
         <Select
           aria-label="Estado"
           disabled
-          title="Estado de conectividade: Ainda não existe (L-BASE-2)"
+          title="Estado de conectividade: Ainda não existe (L09)"
         >
           <option>Todos</option>
         </Select>

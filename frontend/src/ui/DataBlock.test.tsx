@@ -30,7 +30,7 @@ describe('bloco de dado com um único estado', () => {
       { state: 'not-supported', resource: 'potência por taxa' },
       'Este modelo não informa potência por taxa',
     ],
-    [{ state: 'unbuilt', slice: 'L-BASE-2' }, 'Ainda não existe (L-BASE-2)'],
+    [{ state: 'unbuilt', slice: 'L-ROT' }, 'Ainda não existe (L-ROT)'],
   ];
   it.each(cases)('apresenta $state sem apagar dado válido', (data, text) => {
     const { container } = render(

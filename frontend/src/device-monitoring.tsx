@@ -1,3 +1,4 @@
+import { hygieneDataState } from './hygiene-data-state';
 import { SessionPointsTable } from './monitoring-points';
 import { DataBlock } from './ui/DataBlock';
 import type { DataState } from './ui/DataBlock';
@@ -255,7 +256,6 @@ function MonitoringVersionsView({
     </p>
   );
 }
-
 function emptyMonitoringNotice(scope: string): string {
   if (scope === 'series')
     return 'Nenhum ponto armazenado. Atualize as sessões ou o monitoramento.';
@@ -429,8 +429,8 @@ function MonitoringScopeCard(p: {
       retry,
       previous: rows.length ? content : undefined,
     };
-  else if (p.scope === 'hygiene' && !rows.some((r) => r.kind === 'hygiene'))
-    data = { state: 'unbuilt', slice: 'L-BASE-2' };
+  else if (p.scope === 'hygiene')
+    data = hygieneDataState(rows, next, retry) || data;
   else if (!rows.length && !next)
     data = {
       state: 'empty',

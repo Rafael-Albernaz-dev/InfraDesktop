@@ -95,7 +95,7 @@ export function Settings({ p }: { p: DesktopProps }) {
           type="password"
           autoComplete="new-password"
         />
-        <Button kind="primary" disabled title="Ainda não existe (L-BASE-2)">
+        <Button kind="primary" disabled title="Ainda não existe (L-CONTA)">
           Alterar senha
         </Button>
       </div>

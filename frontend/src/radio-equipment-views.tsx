@@ -15,7 +15,7 @@ import { useDisplayNow } from './equipment-snapshot';
 import { Fragment } from 'react';
 import type { RadioEquipmentState } from './radio-equipment-state';
 import type { RadioReading } from './radio-api';
-import { Reading } from './radio-reading';
+import { RadioReadingDetails } from './radio-reading-details';
 import {
   formatMetric,
   formatRouterDuration,
@@ -117,6 +117,15 @@ function RadioEquipmentBody({ state, tab, pagination }: ViewProps) {
       </>
     );
   if (tab === 'Resumo') return <RadioIdentity state={state} />;
+  if (tab === 'Enlace' && state.device.role === RadioRoles.ptp)
+    return (
+      <KeyValues
+        rows={[
+          ['Sinal', metric(state.reading, 'signal')],
+          ['SNR', metric(state.reading, 'snr')],
+        ]}
+      />
+    );
   if (tab === 'Clientes')
     return (
       <>
@@ -192,7 +201,9 @@ export function RadioEquipmentView({
             ? 'Identidade e sistema'
             : tab === 'Clientes'
               ? 'Clientes conectados'
-              : tab
+              : state.device.role === RadioRoles.ptp && tab === 'Enlace'
+                ? 'Lado A'
+                : tab
         }
         source="SSH"
         age={
@@ -209,29 +220,15 @@ export function RadioEquipmentView({
       )}
       {tab === 'Enlace' && (
         <DataBlock
-          title="Ao vivo do enlace"
+          title={
+            state.device.role === RadioRoles.ptp
+              ? 'Lado B'
+              : 'Ao vivo do enlace'
+          }
           source="serviço local"
-          data={{ state: 'unbuilt', slice: 'L-BASE-2' }}
+          data={{ state: 'unbuilt', slice: 'L07-DRV' }}
         />
       )}
     </div>
-  );
-}
-
-function RadioReadingDetails({ state }: { state: Ready }) {
-  return (
-    <details className="det">
-      <summary>Detalhes da leitura</summary>
-      <Reading
-        reading={state.reading}
-        standalone
-        code={state.radio.view?.ap_code}
-        title={
-          state.device.role === RadioRoles.ap
-            ? 'Clientes do AP'
-            : 'Perspectiva da CPE'
-        }
-      />
-    </details>
   );
 }
