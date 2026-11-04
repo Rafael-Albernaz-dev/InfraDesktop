@@ -1,6 +1,7 @@
 import { EquipmentQueryFailure } from './equipment-reading-status';
 import {
   SummaryTab,
+  equipmentQueryRunning,
   equipmentReadBlocked,
   useSummaryRefresh,
 } from './equipment-summary-tab';
@@ -146,7 +147,9 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
         device={p.selected}
         section={tab === 'Sessões' ? 'sessions' : 'services'}
         sessionTarget={p.sessionTarget}
-        refreshAvailable={p.connected && p.vault && !p.locked}
+        refreshAvailable={
+          p.connected && p.vault && !p.locked && !equipmentQueryRunning(p)
+        }
         back={() => p.setDetailOpen(false)}
         openEquipment={p.openById}
       />

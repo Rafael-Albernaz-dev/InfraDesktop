@@ -212,7 +212,7 @@ function usePPPoEPageLoad(p: SharedCtx) {
               p.device.id,
               base,
               current.observation_id,
-              query,
+              { ...query, state: '' },
               cursor,
             );
       if (stopped || !p.valid(generation, r)) return;

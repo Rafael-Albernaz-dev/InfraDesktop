@@ -4,6 +4,8 @@ import { EquipmentSummaryStatistics } from './equipment-summary-statistics';
 import { EquipmentReading } from './equipment-reading';
 import { DataBlock } from './ui/DataBlock';
 import { useRefreshOnOpen } from './use-refresh-on-open';
+import { refreshAttemptInProgress } from './refresh-attempt-order';
+import { pppoeAPI } from './presentation';
 
 export function equipmentReadBlocked(p: Props) {
   return (
@@ -13,6 +15,21 @@ export function equipmentReadBlocked(p: Props) {
     !p.selected.credential_id ||
     p.job?.state === 'RUNNING'
   );
+}
+
+export function equipmentQueryRunning(p: Props) {
+  return (
+    p.busy || (p.job?.state === 'RUNNING' && p.job.device_id === p.selected.id)
+  );
+}
+
+// The sessions collection owns the same endpoint, and this surface cannot see it.
+async function refreshUnlessCollecting(p: Props) {
+  if (p.selected.role === 'concentrator') {
+    const r = await pppoeAPI.current(p.profile, p.activation, p.selected.id);
+    if (r.code !== 'OK' || refreshAttemptInProgress(r.data?.attempt)) return;
+  }
+  await p.startOperation('query', p.selected);
 }
 
 export function useSummaryRefresh(p: Props, tab: string, isRadio: boolean) {
@@ -27,7 +44,7 @@ export function useSummaryRefresh(p: Props, tab: string, isRadio: boolean) {
       serviceAvailable: p.connected,
       reading: p.busy || p.job?.state === 'RUNNING',
     },
-    refresh: () => void p.startOperation('query', p.selected),
+    refresh: () => void refreshUnlessCollecting(p),
   });
 }
 

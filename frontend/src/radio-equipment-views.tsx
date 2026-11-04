@@ -34,7 +34,9 @@ type ViewProps = {
 };
 function metric(reading: RadioReading, name: string) {
   const value = reading.metrics.find(
-    (m) => m.name === name && m.quality !== 'unavailable',
+    (m) =>
+      (m.name === name || (name === 'ccq' && m.name === 'ccq_tx')) &&
+      m.quality !== 'unavailable',
   );
   return value
     ? formatMetric(value.value, value.unit)

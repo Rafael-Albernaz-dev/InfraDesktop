@@ -46,7 +46,7 @@ export function RadioClientRow({
         <ClientName client={client} name={name} navigate={navigate} />
       </td>
       <td>{value('signal')}</td>
-      <td>{value('ccq')}</td>
+      <td>{value(radioMetric(client.metrics, 'ccq') ? 'ccq' : 'ccq_tx')}</td>
       <td>{radioRatePair(client.metrics)}</td>
       <td>{value('occupancy')}</td>
     </tr>
