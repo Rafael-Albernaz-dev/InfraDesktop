@@ -5,7 +5,8 @@ import { Desktop } from '../src/desktop';
 import { Equipment } from '../src/equipment';
 import { RadioLinkPanel } from '../src/radio';
 import type { Device, EquipmentResult } from '../src/equipment-api';
-import '../src/style.css';
+import '../src/ui/tokens.css';
+import '../src/ui/kit.css';
 const query = new URLSearchParams(location.search),
   mode = query.get('state') || 'list';
 const devices = [
@@ -23,7 +24,6 @@ const devices = [
     trust_origin: 'synthetic visual fixture',
   },
 ] as Device[];
-
 const metadata = {
   id: 'read',
   alias: 'Consulta local de teste',

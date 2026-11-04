@@ -4,6 +4,7 @@ import { Desktop } from './desktop';
 import type { Page } from './desktop';
 import { normalizeRoute, type RouteName } from './desktop-model';
 import './ui/tokens.css';
+import './ui/kit.css';
 import { Equipment } from './equipment';
 import { useEquipmentOperations } from './equipment-operations';
 import {

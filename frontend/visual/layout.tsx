@@ -9,8 +9,7 @@ import { DataBlock } from '../src/ui/DataBlock';
 import type { DataState } from '../src/ui/DataBlock';
 import { Chart } from '../src/ui/Chart';
 import '../src/ui/tokens.css';
-// Match main.tsx until the conditional F5 removal is authorized by the visual gate.
-import '../src/style.css';
+import '../src/ui/kit.css';
 import { installFixture } from './layout-fixture';
 const query = new URLSearchParams(location.search),
   scene = query.get('scene') || 'login';

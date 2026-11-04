@@ -1,5 +1,4 @@
 import { emptyOperations, routeLegacyPageNumber } from '../src/desktop-model';
-// Separate test entry. Never imported by src/main.tsx or the production bundle.
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Desktop, Dialog, Statusbar } from '../src/desktop';
@@ -7,7 +6,8 @@ import type { Page, Branding, Operations } from '../src/desktop';
 import { Security } from '../src/security';
 import { AccessScreen } from '../src/access-screen';
 import fixture from './fixture.json';
-import '../src/style.css';
+import '../src/ui/tokens.css';
+import '../src/ui/kit.css';
 export function Fixture() {
   const q = new URLSearchParams(location.search);
   const variant = q.get('variant') || '';

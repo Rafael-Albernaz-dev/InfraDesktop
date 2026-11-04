@@ -1,9 +1,9 @@
-// Isolated visual fixture only; the runtime imports no file from frontend/visual.
 import { createRoot } from 'react-dom/client';
 import { Desktop } from '../src/desktop';
 import { PPPoE } from '../src/pppoe';
 import type { Device } from '../src/equipment-api';
-import '../src/style.css';
+import '../src/ui/tokens.css';
+import '../src/ui/kit.css';
 const params = new URLSearchParams(location.search);
 const mode = params.get('state') || 'current';
 const diagnosticState = params.get('diagnostic') || 'ready';

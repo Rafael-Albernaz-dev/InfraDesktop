@@ -1,11 +1,11 @@
-// Isolated test entry. Never imported by the production entrypoint.
 import { createRoot } from 'react-dom/client';
 import { useCallback, useState } from 'react';
 import { Desktop } from '../src/desktop';
 import { Equipment } from '../src/equipment';
 import type { Device, EquipmentResult } from '../src/equipment-api';
 import fixture from './fixture.json';
-import '../src/style.css';
+import '../src/ui/tokens.css';
+import '../src/ui/kit.css';
 const query = new URLSearchParams(location.search),
   mode = query.get('state') || 'list';
 const observation = {
