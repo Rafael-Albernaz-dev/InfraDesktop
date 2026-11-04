@@ -1,196 +1,113 @@
+import {
+  CatalogTable,
+  AbsentInterfacesTable,
+  RadiusTable,
+  RadiusCounterDetails,
+  AAAInfo,
+} from './pppoe-diagnostic-tables';
+import { DataBlock } from './ui/DataBlock';
+import { readingAge } from './equipment-reading-format';
 import { PingResultDetails } from './pppoe-ping-result';
 import { Button } from './ui/Button';
 import { Select } from './ui/Select';
 import { HeaderAction } from './ui/HeaderAction';
 import { useState } from 'react';
 import type { Device } from './equipment-api';
-import {
-  exactNumber,
-  formatDate,
-  formatLatencyRange,
-  uptimeTitle,
-} from './network-format';
-import type { PDRow } from './presentation';
+import { formatDate } from './network-format';
 import { diagnosticMessage, useDiagnostic } from './pppoe-diag-state';
-const state = (value?: boolean) =>
-  value === undefined ? 'Indisponível' : value ? 'Sim' : 'Não';
-const relation: Record<string, string> = {
-  resolved: 'Pai identificado',
-  missing: 'Pai ausente',
-  ambiguous: 'Vínculo ambíguo',
-  cycle: 'Ciclo na configuração',
-  depth_limited: 'Encadeamento excede o limite',
-};
-function RadiusCounters({
-  counters,
-}: {
-  counters: NonNullable<PDRow['counters']>;
-}) {
-  const fields = {
-    Pendentes: counters.pending,
-    Solicitações: counters.requests,
-    Aceitas: counters.accepts,
-    Rejeitadas: counters.rejects,
-    Reenvios: counters.resends,
-    Timeouts: counters.timeouts,
-    'Respostas inválidas': counters.bad_replies,
-  };
-  return (
-    <dl className="pppoe-diagnostic-values">
-      {Object.entries(fields).map(([name, value]) => (
-        <div key={name}>
-          <dt>{name}</dt>
-          <dd>{exactNumber(value)}</dd>
-        </div>
-      ))}
-      <div>
-        <dt>RTT da última solicitação</dt>
-        <dd title={uptimeTitle(counters.last_rtt)}>
-          {counters.last_rtt.known
-            ? formatLatencyRange(counters.last_rtt)
-            : 'Indisponível'}
-        </dd>
-      </div>
-    </dl>
-  );
-}
-function DiagnosticRadiusRow({ row }: { row: PDRow }) {
-  return (
-    <article className="pppoe-diagnostic-row">
-      <h3>{row.address}</h3>
-      <p>
-        Serviços: {row.services} · Protocolo:{' '}
-        {row.protocol === '?' ? 'Indisponível' : row.protocol} · Desativado:{' '}
-        {state(row.disabled)}
-      </p>
-      <p>
-        Autenticação: porta {row.auth_port} · Accounting: porta{' '}
-        {row.accounting_port}
-      </p>
-      {row.counters && <RadiusCounters counters={row.counters} />}
-    </article>
-  );
-}
-function DiagnosticServiceRow({ row }: { row: PDRow }) {
-  const kindLabel =
-    row.kind === 'service'
-      ? 'Serviço PPPoE'
-      : row.kind === 'vlan'
-        ? 'VLAN configurada'
-        : `Interface ${row.type || ''}`;
-  return (
-    <article className="pppoe-diagnostic-row">
-      <h3>{row.name || 'Serviço sem nome'}</h3>
-      <p>
-        {kindLabel} · Desativado: {state(row.disabled)}
-        {row.running !== undefined
-          ? ` · Em execução: ${state(row.running)}`
-          : ''}
-        {row.dynamic !== undefined ? ` · Dinâmica: ${state(row.dynamic)}` : ''}
-      </p>
-      {row.parent !== undefined && (
-        <p>
-          Interface pai: {row.parent} ·{' '}
-          {relation[row.relation || ''] || 'Vínculo indisponível'}
-        </p>
-      )}
-      {row.kind === 'vlan' && (
-        <p>
-          Tag: {row.vlan_id} · Service tag: {state(row.service_tag)}.{' '}
-          {row.relation === 'resolved'
-            ? 'A relação representa a configuração, sem comprovar tráfego individual.'
-            : 'O vínculo não pôde ser comprovado.'}
-        </p>
-      )}
-      {row.kind === 'service' && (
-        <p>
-          Faixas de VLAN:{' '}
-          {row.range === '?'
-            ? 'Indisponível neste firmware/permissão'
-            : row.range || 'Sem faixa configurada'}{' '}
-          · Aceita sem tag: {state(row.accept_untagged)}
-        </p>
-      )}
-    </article>
-  );
-}
-export function DiagnosticRow({ row }: { row: PDRow }) {
-  if (row.not_seen_since) {
-    return (
-      <article className="pppoe-diagnostic-row">
-        <h3>{row.name || 'Interface sem nome'}</h3>
-        <p title={row.not_seen_since}>
-          Não visto desde {formatDate(row.not_seen_since, true)}. Estado atual
-          indisponível; última interface dinâmica observada.
-        </p>
-      </article>
-    );
-  }
-  if (row.kind === 'aaa') {
-    return (
-      <article className="pppoe-diagnostic-row">
-        <h3>PPP AAA</h3>
-        <p>
-          Usa RADIUS: {state(row.use_radius)} · Accounting:{' '}
-          {state(row.accounting)}
-        </p>
-      </article>
-    );
-  }
-  if (row.kind === 'radius') return <DiagnosticRadiusRow row={row} />;
-  return <DiagnosticServiceRow row={row} />;
-}
 type DiagView = ReturnType<typeof useDiagnostic>;
 function DiagnosticListContent(p: {
   view: DiagView;
   scope: 'catalog' | 'radius';
   kind: string;
   setKind: (k: string) => void;
+  blocked: boolean;
+  device: Device;
 }) {
-  const { view, scope, kind, setKind } = p;
+  const { view, scope, kind, setKind, blocked, device } = p;
   if (!view.meta) return null;
-  return (
+  const at = view.meta.provenance.ended_at,
+    absent = view.rows.filter((r) => r.not_seen_since);
+  const locked =
+    blocked ||
+    view.loading ||
+    view.starting ||
+    !device.active ||
+    !device.fingerprint;
+  const title =
+    scope === 'catalog'
+      ? 'Serviços, interfaces e VLANs'
+      : 'RADIUS no concentrador';
+  const content = (
     <>
-      <p>
-        Última leitura boa: {formatDate(view.meta.provenance.ended_at)} ·
-        RouterOS {view.meta.provenance.version} · {view.meta.count} itens ·
-        origem: concentrador via SSH.
-      </p>
-      {scope === 'catalog' && (
-        <label>
-          Filtrar por tipo
-          <Select
-            aria-label="Filtrar por tipo"
-            value={kind}
-            onChange={(e) => {
-              setKind(e.target.value);
-              view.first();
-            }}
-          >
-            <option value="">Todos</option>
-            <option value="ether">Ethernet</option>
-            <option value="bridge">Bridge</option>
-            <option value="vlan">VLAN</option>
-            <option value="service">Serviço PPPoE</option>
-            <option value="wlan">Wireless</option>
-          </Select>
-        </label>
-      )}
-      <p>
-        {scope === 'catalog'
-          ? `VLANs e faixas representam configuração. Não há vínculo individual de VLAN comprovado para as sessões. ` +
-            (view.meta.absent_interfaces !== undefined
-              ? `${view.meta.absent_interfaces} interfaces dinâmicas não vistas, ` +
-                'retidas por até 24 h e separadas das presentes.'
-              : '') +
-            (view.meta.absences_limited
-              ? ' Retenção de ausentes limitada para preservar a leitura atual.'
-              : '')
-          : 'Contadores acumulados desde o boot, agregados por servidor. Eles não identificam motivo de rejeição ' +
-            'ou autenticação de um assinante. Motivo individual indisponível; nenhum log bruto é coletado.'}
-      </p>
+      <div className="bar">
+        {scope === 'catalog' ? (
+          <label>
+            Filtrar por tipo{' '}
+            <Select
+              aria-label="Filtrar por tipo"
+              value={kind}
+              onChange={(e) => {
+                setKind(e.target.value);
+                view.first();
+              }}
+            >
+              {[
+                ['', 'Todos'],
+                ['ether', 'Ethernet'],
+                ['bridge', 'Bridge'],
+                ['vlan', 'VLAN'],
+                ['service', 'Serviço PPPoE'],
+                ['wlan', 'Wireless'],
+              ].map(([v, t]) => (
+                <option key={v} value={v}>
+                  {t}
+                </option>
+              ))}
+            </Select>
+          </label>
+        ) : (
+          <span className="muted">
+            Contadores acumulados desde o boot, por servidor.
+          </span>
+        )}
+        <details className="det">
+          <summary>
+            {scope === 'radius' ? 'Contadores' : 'Origem da leitura'}
+          </summary>
+          <p>
+            Última leitura boa: {formatDate(at)} · RouterOS{' '}
+            {view.meta.provenance.version} · {view.meta.count} itens · origem:
+            concentrador via SSH.
+          </p>
+          {scope === 'radius' && (
+            <>
+              <p>
+                Contadores não identificam motivo de rejeição ou autenticação de
+                um assinante. Nenhum log bruto é coletado.
+              </p>
+              <RadiusCounterDetails rows={view.rows} />
+            </>
+          )}
+        </details>
+        <span className="grow" />
+        <Button
+          disabled={locked}
+          onClick={() => (view.job ? void view.cancel() : void view.start())}
+        >
+          {view.job ? 'Parar' : 'Atualizar'}
+        </Button>
+        {!(view.error || view.pageError) && (
+          <Button onClick={view.reopen}>Reabrir dados armazenados</Button>
+        )}
+      </div>
       {view.pageLoading && <p role="status">Carregando página armazenada…</p>}
-      {!view.pageLoading && !view.pageError && view.rows.length === 0 && (
+      {scope === 'catalog' ? (
+        <CatalogTable rows={view.rows} />
+      ) : (
+        <RadiusTable rows={view.rows} />
+      )}
+      {!view.pageLoading && !view.pageError && !view.rows.length && (
         <p>Nenhum item configurado nesta leitura completa.</p>
       )}
       {scope === 'radius' &&
@@ -198,20 +115,89 @@ function DiagnosticListContent(p: {
         view.rows[0]?.kind === 'aaa' && (
           <p>Nenhum servidor RADIUS configurado nesta leitura.</p>
         )}
-      {view.rows
-        .filter((r) => !r.not_seen_since)
-        .map((r) => (
-          <DiagnosticRow key={r.id} row={r} />
-        ))}
-      {view.rows.some((r) => r.not_seen_since) && (
-        <section aria-label="Interfaces dinâmicas não vistas na leitura atual">
-          <h3>Não vistas na leitura atual</h3>
-          {view.rows
-            .filter((r) => r.not_seen_since)
-            .map((r) => (
-              <DiagnosticRow key={r.id} row={r} />
-            ))}
-        </section>
+      <div className="pager">
+        <Button
+          aria-label="Início do diagnóstico"
+          disabled={!view.cursor}
+          onClick={view.first}
+        >
+          Início
+        </Button>
+        <span>
+          Página {view.cursor ? 2 : 1}
+          {!view.next ? ' de 1' : ''}
+        </span>
+        <Button
+          aria-label="Próxima página do diagnóstico"
+          disabled={view.pageLoading || !!view.pageError || !view.next}
+          onClick={view.more}
+        >
+          Próxima
+        </Button>
+      </div>
+      {scope === 'catalog' && (
+        <p className="muted">
+          VLANs e faixas representam configuração. Não comprovam vínculo
+          individual das sessões.
+        </p>
+      )}
+    </>
+  );
+  return (
+    <>
+      {scope === 'radius' && (
+        <>
+          <div className="grid">
+            <DataBlock
+              title="PPP AAA"
+              source="SSH"
+              age={readingAge(at)}
+              data={{
+                state: 'ready',
+                content: (
+                  <AAAInfo
+                    row={view.rows.find((r) => r.kind === 'aaa')}
+                    at={at}
+                  />
+                ),
+              }}
+            />
+          </div>
+          <div className="sp10" />
+        </>
+      )}
+      <DataBlock
+        title={title}
+        source="SSH"
+        age={readingAge(at)}
+        data={{ state: view.pageLoading ? 'refreshing' : 'ready', content }}
+      />
+      {scope === 'catalog' && (
+        <>
+          <div className="sp10" />
+          <DataBlock
+            title="Não vistas na leitura atual"
+            source="SSH"
+            age={readingAge(at)}
+            data={{
+              state: 'ready',
+              content: (
+                <>
+                  <AbsentInterfacesTable rows={absent} />
+                  <p className="muted">
+                    Retidas por até 24 h, separadas das presentes.
+                  </p>
+                  {view.meta.absences_limited && (
+                    <p role="status">
+                      Retenção de ausentes limitada para preservar a leitura
+                      atual.
+                    </p>
+                  )}
+                </>
+              ),
+            }}
+          />
+        </>
       )}
     </>
   );
@@ -256,11 +242,11 @@ export function PPPoEDiagnostics({
       className="pppoe-diagnostics"
       aria-busy={view.loading || view.pageLoading}
     >
-      <h2>{title}</h2>
       <HeaderAction>
         <Button
           type="submit"
           className="primary"
+          aria-label={view.job ? 'Parar' : actionLabel}
           disabled={
             blocked ||
             view.loading ||
@@ -270,7 +256,7 @@ export function PPPoEDiagnostics({
           }
           onClick={() => (view.job ? void view.cancel() : void view.start())}
         >
-          {view.job ? 'Parar' : actionLabel}
+          {view.job ? 'Parar' : 'Atualizar'}
         </Button>
       </HeaderAction>
       {view.statusFailed && (
@@ -306,6 +292,8 @@ export function PPPoEDiagnostics({
         scope={scope}
         kind={kind}
         setKind={setKind}
+        blocked={blocked}
+        device={device}
       />
       {view.pageError && <p role="alert">{view.pageError}</p>}
       {(view.error || view.pageError) && (
@@ -313,18 +301,6 @@ export function PPPoEDiagnostics({
           Reabrir dados armazenados
         </Button>
       )}
-      <div className="pppoe-actions">
-        {view.cursor && (
-          <Button type="submit" onClick={view.first}>
-            Início do diagnóstico
-          </Button>
-        )}
-        {!view.pageLoading && !view.pageError && view.next && (
-          <Button type="submit" onClick={view.more}>
-            Próxima página do diagnóstico
-          </Button>
-        )}
-      </div>
     </section>
   );
 }

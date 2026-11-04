@@ -118,7 +118,7 @@ it('opens and pages persisted catalog without remote refresh; rejected page has 
     response({ diagnostic_rows: rows, next_cursor: 'signed-page', total: 17 }),
   );
   panel();
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   expect(api.catalog).not.toHaveBeenCalled();
   expect(api.radius).not.toHaveBeenCalled();
   expect(api.ping).not.toHaveBeenCalled();
@@ -128,8 +128,8 @@ it('opens and pages persisted catalog without remote refresh; rejected page has 
     screen.getByRole('button', { name: 'Próxima página do diagnóstico' }),
   );
   expect(
-    screen.queryByRole('button', { name: 'Próxima página do diagnóstico' }),
-  ).not.toBeInTheDocument();
+    screen.getByRole('button', { name: 'Próxima página do diagnóstico' }),
+  ).toBeDisabled();
   await act(async () => page.reject(new Error('transport')));
   expect(screen.getByRole('alert')).toHaveTextContent(
     'Não foi possível carregar a página.',
@@ -147,7 +147,7 @@ it('opens and pages persisted catalog without remote refresh; rejected page has 
   fireEvent.click(
     screen.getByRole('button', { name: 'Reabrir dados armazenados' }),
   );
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   expect(api.catalog).not.toHaveBeenCalled();
 });
 it('reconciles an uncertain start through stored state without a second collection', async () => {
@@ -168,7 +168,7 @@ it('reconciles an uncertain start through stored state without a second collecti
     }),
   );
   panel();
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   fireEvent.click(
     screen.getByRole('button', { name: 'Atualizar serviços e VLANs' }),
   );
@@ -212,7 +212,11 @@ it('recovers status explicitly without replaying the network action', async () =
       }),
     );
   panel('radius');
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'Atualizar RADIUS' }),
+    ).toBeEnabled(),
+  );
   fireEvent.click(screen.getByRole('button', { name: 'Atualizar RADIUS' }));
   fireEvent.click(
     await screen.findByRole('button', { name: 'Consultar estado novamente' }),
@@ -244,18 +248,18 @@ it('a late catalog response cannot populate a newer RADIUS surface', async () =>
       blocked={false}
     />,
   );
-  await screen.findByRole('heading', { name: 'PPP AAA' });
+  await screen.findByText('PPP AAA', { exact: true });
   await act(async () =>
     old.resolve(response({ diagnostic: meta('catalog'), total: 1 })),
   );
-  expect(screen.getByRole('heading', { name: 'PPP AAA' })).toBeInTheDocument();
+  expect(screen.getByText('PPP AAA', { exact: true })).toBeInTheDocument();
   expect(
-    screen.queryByRole('heading', { name: 'Serviço de teste' }),
+    screen.queryByRole('cell', { name: 'Serviço de teste' }),
   ).not.toBeInTheDocument();
 });
 it('L07 R2: a completed collection waits for new metadata before paging; the retired reading cannot report replacement', async () => {
   panel();
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   const nextCurrent = deferred();
   const fresh = { ...meta(), diagnostic_id: 'fresh-catalog' };
   vi.mocked(api.current).mockReturnValueOnce(nextCurrent.promise);
@@ -294,7 +298,7 @@ it('L07 R2: a completed collection waits for new metadata before paging; the ret
   await act(async () =>
     nextCurrent.resolve(response({ diagnostic: fresh, total: 1 })),
   );
-  await screen.findByRole('heading', { name: 'Serviço atualizado' });
+  await screen.findByRole('cell', { name: 'Serviço atualizado' });
   expect(api.list).toHaveBeenCalledTimes(2);
   expect(vi.mocked(api.list).mock.calls.at(-1)?.[4]).toBe('fresh-catalog');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -446,13 +450,16 @@ it('makes new scopes available before session collection with one primary action
     />,
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'VLANs e serviços' }));
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   expect(
     screen.getAllByRole('button', { name: 'Atualizar serviços e VLANs' }),
   ).toHaveLength(1);
+  expect(screen.getByRole('button', { name: 'Atualizar' })).toBeEnabled();
   expect(
-    screen.queryByRole('button', { name: 'Atualizar' }),
-  ).not.toBeInTheDocument();
+    screen
+      .getAllByRole('button')
+      .filter((b) => b.classList.contains('primary')),
+  ).toHaveLength(1);
   expect(
     screen.queryByRole('heading', { name: 'Referências preservadas' }),
   ).not.toBeInTheDocument();
@@ -523,7 +530,7 @@ it.each([
 ])('clears a definitively rejected start receipt: %s', async (code) => {
   vi.mocked(api.catalog).mockResolvedValue({ ...response(), code });
   const view = panel();
-  await screen.findByRole('heading', { name: 'Serviço de teste' });
+  await screen.findByRole('cell', { name: 'Serviço de teste' });
   fireEvent.click(
     screen.getByRole('button', { name: 'Atualizar serviços e VLANs' }),
   );

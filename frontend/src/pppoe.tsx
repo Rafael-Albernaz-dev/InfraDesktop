@@ -275,30 +275,39 @@ export function PPPoE({
     >
       <PPPoEHeader s={s} section={section} />
       <PPPoEStatusBanners s={s} />
-      <DataBlock
-        title={
-          s.tab === 'sessions'
-            ? 'Sessões PPPoE'
-            : PPPOE_TABS.find(([id]) => id === s.tab)?.[1] || 'Sessões'
-        }
-        source={s.tab === 'references' ? 'cadastro local' : 'SSH'}
-        age={readingAge(
-          s.tab === 'references'
-            ? s.savedReferences[0]?.created_at
-            : s.current?.provenance.ended_at,
-        )}
-        data={{
-          state: 'ready',
-          content: (
-            <PPPoETabContent
-              s={s}
-              refs={refs}
-              disabled={disabled}
-              openEquipment={openEquipment}
-            />
-          ),
-        }}
-      />
+      {s.tab === 'catalog' || s.tab === 'radius' ? (
+        <PPPoETabContent
+          s={s}
+          refs={refs}
+          disabled={disabled}
+          openEquipment={openEquipment}
+        />
+      ) : (
+        <DataBlock
+          title={
+            s.tab === 'sessions'
+              ? 'Sessões PPPoE'
+              : PPPOE_TABS.find(([id]) => id === s.tab)?.[1] || 'Sessões'
+          }
+          source={s.tab === 'references' ? 'cadastro local' : 'SSH'}
+          age={readingAge(
+            s.tab === 'references'
+              ? s.savedReferences[0]?.created_at
+              : s.current?.provenance.ended_at,
+          )}
+          data={{
+            state: 'ready',
+            content: (
+              <PPPoETabContent
+                s={s}
+                refs={refs}
+                disabled={disabled}
+                openEquipment={openEquipment}
+              />
+            ),
+          }}
+        />
+      )}
       {s.tab === 'sessions' && !s.loading && !s.initialFailed && (
         <PPPoEReadPanel
           key={
