@@ -140,6 +140,7 @@ it('Resumo abre pelo StartQuery e mantém identidade, idade e motivo na falha', 
     within(block as HTMLElement).getByText('Resumo preservado'),
   ).toBeVisible();
   await waitFor(() => expect(block).toHaveAttribute('data-state', 'failed'));
+  expect(screen.getAllByRole('alert')).toHaveLength(1);
   expect(block).toHaveTextContent('Resumo preservado');
   expect(block).toHaveTextContent(/porta SSH/);
   expect(block).toHaveTextContent(/há/);
@@ -231,3 +232,29 @@ it.each([RadioRoles.ap, RadioRoles.cpe, RadioRoles.ptp])(
     expect(bindings.StartRadio).toHaveBeenCalledOnce();
   },
 );
+it('não inicia outra coleta quando a leitura PPPoE está em curso, mesmo com tentativa de Resumo mais recente', async () => {
+  const { device, observation, bindings, result } = fixtures();
+  device.last_attempt = {
+    job_id: 'summary',
+    state: 'SUCCEEDED',
+    code: 'OK',
+    at: at(0),
+  } as Device['last_attempt'];
+  bindings.GetPPPoECurrent.mockResolvedValue(
+    result({
+      current: observation,
+      attempt: {
+        job_id: 'running',
+        state: 'RUNNING',
+        code: 'OK',
+        at: at(30),
+        quality: { status: 'complete' },
+      },
+    }),
+  );
+  show(device);
+  await screen.findByRole('heading', { name: device.name });
+  fireEvent.click(screen.getByRole('tab', { name: 'Sessões' }));
+  await screen.findByText('cliente-sintético');
+  expect(bindings.StartPPPoECollection).not.toHaveBeenCalled();
+});

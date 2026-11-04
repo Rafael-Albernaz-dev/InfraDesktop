@@ -43,11 +43,10 @@ function StateContent(p: DataState) {
           <span className="spin" role="status">
             atualizando…
           </span>
-          {p.content}
         </>
       );
     case 'ready':
-      return <>{p.content}</>;
+      return null;
     case 'empty':
       return <p>{p.message}</p>;
     case 'failed':
@@ -61,7 +60,6 @@ function StateContent(p: DataState) {
             <summary>Detalhe técnico</summary>
             <p>Motivo: {p.technical}</p>
           </details>
-          {p.previous}
         </>
       );
     case 'not-supported':
@@ -77,16 +75,27 @@ export function DataBlock({
   age = '',
   data,
   actions,
+  className,
 }: {
   title: string;
   source: string;
   age?: string;
   data: DataState;
   actions?: ReactNode;
+  className?: string;
 }) {
   const showAge = data.state !== 'unread' && data.state !== 'loading' && age;
+  const content =
+    data.state === 'ready' || data.state === 'refreshing'
+      ? data.content
+      : data.state === 'failed'
+        ? data.previous
+        : undefined;
   return (
-    <div className="block" data-state={data.state}>
+    <div
+      className={className ? `block ${className}` : 'block'}
+      data-state={data.state}
+    >
       <div className="bh">
         <b>{title}</b>
         {actions && <div className="block-actions">{actions}</div>}
@@ -97,6 +106,7 @@ export function DataBlock({
       </div>
       <div className="bb">
         <StateContent {...data} />
+        {content}
       </div>
     </div>
   );

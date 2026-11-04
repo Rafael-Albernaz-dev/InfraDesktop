@@ -442,6 +442,7 @@ function MonitoringScopeCard(p: {
   return (
     <DataBlock
       title={p.title}
+      className={p.scope === 'hygiene' ? 'monitoring-hygiene' : undefined}
       source="local"
       age={readingAge(at)}
       data={data}

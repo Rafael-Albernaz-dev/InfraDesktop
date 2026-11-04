@@ -1,6 +1,6 @@
+import { showSeparatePPPoEError } from './pppoe-observation-state';
 import { Button } from './ui/Button';
 import { HeaderAction } from './ui/HeaderAction';
-
 import type { PPPoETab } from './pppoe-state';
 import { usePPPoEState } from './pppoe-state';
 import { Tabs } from './ui/Tabs';
@@ -71,10 +71,10 @@ export function PPPoEStatusBanners({ s }: { s: State }) {
     <>
       {s.statusFailed && s.job && (
         <Button type="submit" onClick={() => s.retryStatus((n) => n + 1)}>
-          Consultar estado novamente
+          Conferir andamento
         </Button>
       )}
-      {s.error && isObsTab && <p role="alert">{s.error}</p>}
+      {showSeparatePPPoEError(s) && isObsTab && <p role="alert">{s.error}</p>}
       {s.notice && <p role="status">{s.notice}</p>}
       {s.attempt && isListTab && <p role="status">{s.attempt}</p>}
       {s.initialFailed && !s.loading && isObsTab && (

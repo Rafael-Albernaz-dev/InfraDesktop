@@ -1,3 +1,4 @@
+import { RadioTickDiagnostic } from './radio-tick-diagnostic';
 import type { RadioMetric, RadioReading } from './radio-api';
 import {
   formatDate,
@@ -167,7 +168,6 @@ function ReadingMissing({ title, code }: { title: string; code?: string }) {
     </article>
   );
 }
-
 function ReadingIdentity({
   reading,
   code,
@@ -187,6 +187,7 @@ function ReadingIdentity({
           {radioMessage(code)} A última leitura boa conserva a data abaixo.
         </p>
       )}
+      <RadioTickDiagnostic failure={reading.failure} />
       {!reading.compatible && (
         <p role="status">
           Leitura de um cadastro anterior; não confirma o vínculo atual.
@@ -212,7 +213,6 @@ function ReadingIdentity({
     </>
   );
 }
-
 function WOMCollectionScope() {
   return (
     <div className="radio-wom-scope" data-testid="wom-collection-scope">

@@ -207,9 +207,7 @@ it('review: failed status can recover the existing job without a new collection'
   await screen.findAllByText('duplicado');
   fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
   await screen.findByRole('alert');
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Consultar estado novamente' }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: 'Conferir andamento' }));
   await waitFor(() => expect(api.status).toHaveBeenCalledTimes(2));
   await waitFor(() =>
     expect(screen.queryByRole('alert')).not.toBeInTheDocument(),

@@ -104,7 +104,7 @@ it('mede as linhas da página, mostra progresso e resultado e libera busy', asyn
       }),
   );
   const button = await pageAction();
-  fireEvent.click(button);
+  await act(async () => fireEvent.click(button));
   expect(
     await screen.findByText('Aguardando duas amostras do concentrador…'),
   ).toBeVisible();

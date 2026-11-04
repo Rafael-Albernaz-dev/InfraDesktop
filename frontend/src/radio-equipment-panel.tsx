@@ -1,3 +1,4 @@
+import { RadioCPEClient } from './radio-cpe-client';
 import type { RefreshOpeningRef } from './use-refresh-on-open';
 import { useRadioTabRefresh } from './automatic-tab-refresh';
 import { equipmentRadioError } from './radio-equipment-status';
@@ -51,6 +52,7 @@ function RadioEquipmentMessages({
       !radio.busy &&
       !(credentialRefused && !reading) &&
       !viewOffersReopen(state, tab);
+  if (tab === 'Cliente') return null;
   return (
     <>
       {offerReopen && (
@@ -129,12 +131,14 @@ function RadioOperationalFeedback({
 }
 function RadioEquipmentBody({ state, start, tab }: RadioBodyProps) {
   const { radio } = state;
-  const hidden = tab === 'Acesso' || tab === 'Cliente' || tab === 'Roteador';
+  const hidden = tab === 'Acesso' || tab === 'Roteador';
   return (
     <>
       <RadioOperationalFeedback state={state} hidden={hidden} tab={tab} />
       <div hidden={hidden}>
-        {state.loading ? (
+        {tab === 'Cliente' ? (
+          <RadioCPEClient state={state} />
+        ) : state.loading ? (
           <DataBlock title="Rádio" source="SSH" data={{ state: 'loading' }} />
         ) : state.reading ? (
           <RadioEquipmentReading

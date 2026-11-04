@@ -1,3 +1,4 @@
+import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
 import {
   RadioRoles,
@@ -186,6 +187,7 @@ function radioReading(deviceId: string) {
       },
     ],
     clients: [0, 1].map((i) => ({
+      cpe_id: i === 0 ? 'CPE-0001' : undefined,
       name: `CPE-000${i + 1}`,
       mac: `02:00:5E:00:00:0${i + 1}`,
       interface: 'wlan1',
@@ -321,6 +323,7 @@ export function installFixture() {
     go: {
       presentation: {
         App: {
+          ...radioFixtureOperations(result, radioReading),
           ListEquipment: async (
             _p: string,
             _a: string,

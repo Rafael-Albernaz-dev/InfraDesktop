@@ -1139,8 +1139,8 @@ body.com-painel .col {
   font-size: 12px;
   text-decoration: underline;
 }
-/* Reserve the approved two-metric card footprint while its projection is pending. */
-.monitoring-grid .block[data-state='unbuilt'] {
+/* Preserve the approved hygiene card footprint across its reading states. */
+.monitoring-grid .monitoring-hygiene {
   min-height: 124px;
 }
 .grid > .pppoe-read-panel > .block {

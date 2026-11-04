@@ -1,3 +1,4 @@
+import type { LinkedSessionTarget } from './linked-session-navigation';
 import { useEffect, useRef, useState } from 'react';
 import { radioAPI as api } from './radio-api';
 import type { Device } from './equipment-api';
@@ -12,6 +13,7 @@ export type RadioEquipmentProps = {
   blocked: boolean;
   devices?: Device[];
   openEquipment?: (id: string) => void;
+  openSession?: (target: LinkedSessionTarget) => void;
 };
 export function useRadioEquipmentState(props: RadioEquipmentProps) {
   const [currentDevice, setCurrentDevice] = useState(props.device);
@@ -53,7 +55,6 @@ export type RadioEquipmentState = Omit<
   ReturnType<typeof useRadioEquipmentState>,
   'rootRef'
 >;
-
 export function useStoredEquipmentRadio(state: RadioEquipmentState) {
   const {
     profile,
@@ -92,7 +93,6 @@ export function useStoredEquipmentRadio(state: RadioEquipmentState) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, activation, device.id]);
 }
-
 export function useCompletedEquipmentRefresh(state: RadioEquipmentState) {
   const {
     radio,
@@ -140,7 +140,6 @@ export function useCompletedEquipmentRefresh(state: RadioEquipmentState) {
     refreshedJobRef,
   ]);
 }
-
 export function createFamilyConfirmation(state: RadioEquipmentState) {
   return async function confirm() {
     try {
@@ -166,7 +165,6 @@ export function createFamilyConfirmation(state: RadioEquipmentState) {
     }
   };
 }
-
 export function createEquipmentPage(state: RadioEquipmentState) {
   return async function page(next: number, fresh = false) {
     const owner = state.radio.owner();

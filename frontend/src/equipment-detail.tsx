@@ -1,3 +1,4 @@
+import { EquipmentQueryFailure } from './equipment-reading-status';
 import {
   SummaryTab,
   equipmentReadBlocked,
@@ -144,6 +145,7 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
         activation={p.activation}
         device={p.selected}
         section={tab === 'Sessões' ? 'sessions' : 'services'}
+        sessionTarget={p.sessionTarget}
         refreshAvailable={p.connected && p.vault && !p.locked}
         back={() => p.setDetailOpen(false)}
         openEquipment={p.openById}
@@ -155,14 +157,16 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
       source="cadastro local"
       data={{
         state: 'unbuilt',
-        slice: tab === 'Roteador' ? 'L-ROT' : 'L-BASE-2',
+        slice: tab === 'Roteador' ? 'L-ROT' : 'L07-DRV',
       }}
     />
   );
 }
 export function EquipmentDetailPane(p: Props) {
   const { surfaceRef, detailReadRef, detailSurfaceRef } = p;
-  const [tab, setTab] = useState('Resumo');
+  const [tab, setTab] = useState(
+    p.sessionTarget?.deviceID === p.selected.id ? 'Sessões' : 'Resumo',
+  );
   const radioRefreshDecision = useRef<RefreshOpening | undefined>(undefined);
   const [radioActions, setRadioActions] = useState<HTMLDivElement | null>(null);
   const [chainHost, setChainHost] = useState<HTMLDivElement | null>(null);
@@ -247,6 +251,7 @@ export function EquipmentDetailPane(p: Props) {
           />
         )}
       </div>
+      <EquipmentQueryFailure state={p} tab={tab} isRadio={isRadio} />
       <Tabs
         label="Ficha do equipamento"
         items={(TABS[role] || TABS.other).map((t) => [t, t])}
@@ -270,12 +275,12 @@ export function EquipmentDetailPane(p: Props) {
             chainHost={chainHost}
             devices={p.devices}
             openEquipment={p.openById}
+            openSession={p.openSession}
           />
         )}
-        {(!isRadio ||
-          tab === 'Acesso' ||
-          tab === 'Cliente' ||
-          tab === 'Roteador') && <SheetContent p={p} tab={tab} />}
+        {(!isRadio || tab === 'Acesso' || tab === 'Roteador') && (
+          <SheetContent p={p} tab={tab} />
+        )}
       </HeaderActionHost>
     </section>
   );

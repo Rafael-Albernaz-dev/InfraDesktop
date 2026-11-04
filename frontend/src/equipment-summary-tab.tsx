@@ -1,3 +1,4 @@
+import { queryFailureOwnsDetail } from './equipment-reading-status';
 import type { Props } from './equipment-detail';
 import { EquipmentSummaryStatistics } from './equipment-summary-statistics';
 import { EquipmentReading } from './equipment-reading';
@@ -38,7 +39,7 @@ export function SummaryTab({ p }: { p: Props }) {
       section="summary"
       status={{
         refreshing: p.job?.state === 'RUNNING' || p.busy,
-        error: p.error,
+        error: queryFailureOwnsDetail(p) ? p.error : undefined,
         code: p.job?.code,
         retry: () => void p.startOperation('query', p.selected),
         disabled: equipmentReadBlocked(p),

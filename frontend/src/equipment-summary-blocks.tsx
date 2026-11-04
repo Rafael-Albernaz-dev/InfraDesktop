@@ -68,7 +68,7 @@ export function Summary({
               {formatVolumePair(r.free_memory_bytes, r.total_memory_bytes)}
             </dd>
           </dl>,
-          status,
+          status && { ...status, error: undefined },
         )}
       />
       {statistics}

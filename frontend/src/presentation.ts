@@ -168,7 +168,6 @@ const equipmentBindings = {
   status: QueryStatus,
   cancel: CancelQuery,
 };
-
 export const equipmentAPI: {
   [K in keyof typeof equipmentBindings]: (
     ...args: Parameters<(typeof equipmentBindings)[K]>
@@ -176,6 +175,7 @@ export const equipmentAPI: {
 } = equipmentBindings;
 
 export type PPQuery = {
+  state?: '' | 'ONLINE' | 'OFFLINE';
   search: string;
   duplicates_only: boolean;
   sort: string;

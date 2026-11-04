@@ -1,3 +1,4 @@
+import { refreshAttemptInProgress } from './refresh-attempt-order';
 import { RadioCodes } from './radio-contract';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { MutableRefObject } from 'react';
@@ -22,7 +23,7 @@ export function shouldRefreshOnOpen(p: RefreshOnOpenInput): boolean {
   if (!p.vaultAvailable || !p.serviceAvailable || p.reading) return false;
   const attempt = p.device.last_attempt;
   if (
-    ['RUNNING', 'STARTED'].includes(attempt?.state || '') ||
+    refreshAttemptInProgress(attempt) ||
     attempt?.code === RadioCodes.REMOTE_AUTH_FAILED
   )
     return false;

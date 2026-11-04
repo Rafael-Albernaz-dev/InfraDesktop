@@ -76,6 +76,10 @@ function usePPPoEViewState(
   const [tab, setTab] = useState<PPPoETab>(initialTab);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [collectionFailure, setCollectionFailure] = useState<{
+    code: string;
+    reason: string;
+  }>();
   const [lastAttempt, setLastAttempt] =
     useState<NonNullable<PPResult['data']>['attempt']>();
   const [attempt, setAttempt] = useState('');
@@ -131,6 +135,8 @@ function usePPPoEViewState(
     setAttempt,
     lastAttempt,
     setLastAttempt,
+    collectionFailure,
+    setCollectionFailure,
     job,
     setJob,
     busy,
@@ -274,6 +280,12 @@ function usePPPoEJobPoll(p: SharedCtx) {
         } else {
           pending.delete(context + '|collect|' + device.revision);
           p.setJob('');
+          const code = r.data?.job?.code || 'SERVICE_UNAVAILABLE';
+          p.setCollectionFailure(
+            code === 'OK'
+              ? undefined
+              : { code, reason: equipmentMessage(code) },
+          );
           p.setError(
             r.data?.job?.code === 'OK'
               ? ''
@@ -517,7 +529,10 @@ export function usePPPoEState(
     fastTrack,
     run,
     runDetail,
-    update: createUpdateHandler(ctx, run),
+    update: () => {
+      s.setCollectionFailure(undefined);
+      createUpdateHandler(ctx, run)();
+    },
     save: createSaveHandler(ctx, run),
     remove: createRemoveHandler(ctx, run),
     change,

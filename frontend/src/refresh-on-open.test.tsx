@@ -1,3 +1,4 @@
+import { latestRefreshAttempt } from './refresh-attempt-order';
 import { RadioCodes } from './radio-contract';
 import { StrictMode } from 'react';
 import { act, renderHook } from '@testing-library/react';
@@ -133,4 +134,15 @@ it('preserva a decisão quando a leitura remonta pela revisão do equipamento', 
   first.unmount();
   renderHook(() => useRefreshOnOpen(props));
   expect(refresh).toHaveBeenCalledOnce();
+});
+
+it('uma observação PPPoE antiga bem sucedida não esconde recusa mais recente do equipamento', () => {
+  const refused = attempt(RadioCodes.REMOTE_AUTH_FAILED, 60);
+  const old = { ...attempt('OK', 3600), state: 'SUCCEEDED' };
+  const p = input();
+  p.device.last_attempt = latestRefreshAttempt(refused, old);
+  expect(shouldRefreshOnOpen(p)).toBe(false);
+  const manual = { ...attempt('OK', 0), state: 'SUCCEEDED' };
+  p.device.last_attempt = latestRefreshAttempt(refused, manual);
+  expect(shouldRefreshOnOpen(p)).toBe(true);
 });

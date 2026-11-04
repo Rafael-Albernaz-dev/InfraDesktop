@@ -1,3 +1,6 @@
+import { observationReadingStatus } from './pppoe-observation-state';
+import { useOpenLinkedSession } from './linked-session-navigation';
+import type { LinkedSessionTarget } from './linked-session-navigation';
 import { useSessionsTabRefresh } from './automatic-tab-refresh';
 import { readingUpdateState } from './reading-update-state';
 import type { ReactNode } from 'react';
@@ -210,6 +213,7 @@ export function PPPoE({
   openEquipment,
   section = 'sessions',
   refreshAvailable = false,
+  sessionTarget,
 }: {
   profile: string;
   activation: string;
@@ -217,6 +221,7 @@ export function PPPoE({
   back: () => void;
   section?: 'sessions' | 'services';
   refreshAvailable?: boolean;
+  sessionTarget?: LinkedSessionTarget;
   openEquipment?: (id: string) => void;
 }) {
   const detailTriggerRef = useRef<HTMLElement | null>(null);
@@ -255,6 +260,7 @@ export function PPPoE({
     section === 'services' ? 'catalog' : 'sessions',
   );
   useSessionsTabRefresh(s, refreshAvailable);
+  useOpenLinkedSession(s, sessionTarget);
   const disabled = s.busy || Boolean(s.job);
   return (
     <section
@@ -304,12 +310,7 @@ export function PPPoE({
               disabled={disabled}
               openEquipment={openEquipment}
             />,
-            {
-              refreshing: Boolean(s.job) || s.busy,
-              error: s.error,
-              retry: s.update,
-              disabled,
-            },
+            observationReadingStatus(s, disabled),
           )}
         />
       )}

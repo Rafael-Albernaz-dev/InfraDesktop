@@ -1,3 +1,4 @@
+import { queryFailureOwnsDetail } from './equipment-reading-status';
 import { RadioCodes } from './radio-contract';
 import { Button } from './ui/Button';
 import {
@@ -14,6 +15,7 @@ export function EquipmentBanners(p: {
   trustOpen: boolean;
 }) {
   const { s, locked, trustOpen } = p;
+  const operationError = queryFailureOwnsDetail(s) ? '' : s.error;
   const plain =
     !s.shownForm && !s.credentialForm && !trustOpen && !s.resetTrust;
   return (
@@ -36,7 +38,7 @@ export function EquipmentBanners(p: {
             Escolher outra credencial
           </Button>
         )}
-      {s.error && plain && (
+      {operationError && plain && (
         <p className="inline-error operation-error" role="alert">
           {s.error}
         </p>
@@ -57,7 +59,6 @@ export function EquipmentBanners(p: {
     </>
   );
 }
-
 export function EquipmentDialogs(p: {
   s: ReturnType<typeof useEquipmentState>;
   profile: string;

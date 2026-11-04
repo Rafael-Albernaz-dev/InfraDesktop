@@ -1,3 +1,5 @@
+import { useEquipmentNavigator } from './equipment-navigator';
+import type { LinkedSessionTarget } from './linked-session-navigation';
 import {
   useCallback,
   useEffect,
@@ -40,7 +42,6 @@ function retireOlderPendingRevisions(
     }
   }
 }
-
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,
   after?: (r: EquipmentResult) => void,
@@ -186,6 +187,7 @@ function useEquipmentStore(profile: string, activation: string) {
     credentialCatalog.key === [profile, activation].join('|')
       ? credentialCatalog.value
       : [];
+  const [sessionTarget, setSessionTarget] = useState<LinkedSessionTarget>();
   const [selected, setSelected] = useState<Device>(),
     [search, setSearch] = useState(''),
     [inactive, setInactive] = useState(false);
@@ -221,6 +223,8 @@ function useEquipmentStore(profile: string, activation: string) {
     credentials,
     selected,
     setSelected,
+    sessionTarget,
+    setSessionTarget,
     search,
     setSearch,
     inactive,
@@ -272,22 +276,13 @@ function createEquipmentActions(
   perform: EquipmentPerformFn,
   onSelect?: (id: string) => void,
 ) {
-  const openDevice = (device: Device) => {
+  const openDevice = (device: Device, target?: LinkedSessionTarget) => {
+    s.setSessionTarget(target);
     s.setSelected(device);
     s.setDetailOpen(true);
     s.setJob(undefined);
     s.setError('');
     onSelect?.(device.id);
-  };
-  const openById = (id: string) => {
-    const dev = s.devices.find((d) => d.id === id);
-    if (dev) {
-      openDevice(dev);
-      return;
-    }
-    void api.get(profile, activation, id).then((r) => {
-      if (r.code === 'OK' && r.data?.device) openDevice(r.data.device);
-    });
   };
   const dismissTrust = () => {
     if (!s.job || s.busy) return;
@@ -307,13 +302,11 @@ function createEquipmentActions(
   };
   return {
     openDevice,
-    openById,
     dismissTrust,
     showSavedDevice,
     continueEnrollment,
   };
 }
-
 export function useEquipmentState(props: {
   profile: string;
   activation: string;
@@ -421,9 +414,21 @@ export function useEquipmentState(props: {
     perform,
     onSelect,
   );
+  const openById = useEquipmentNavigator({
+    profile,
+    activation,
+    scopeRef: defaultContextRef,
+    surfaceRef,
+    mountedRef,
+    open: actions.openDevice,
+    error: s.setError,
+  });
   return {
     ...s,
     ...actions,
+    openById,
+    openSession: (target: LinkedSessionTarget) =>
+      openById(target.deviceID, target),
     shownForm,
     closeForm,
     perform,

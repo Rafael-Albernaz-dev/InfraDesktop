@@ -1,12 +1,7 @@
 [
   {
-    "id": "ficha-cpe-0001-cliente",
-    "owner": "L-BASE-2",
-    "reason": "Dado ainda sem percurso nesta ficha"
-  },
-  {
     "id": "ficha-ptp-0001-enlace",
-    "owner": "L-BASE-2",
+    "owner": "L07-DRV",
     "reason": "Dado ainda sem percurso nesta ficha"
   }
 ]

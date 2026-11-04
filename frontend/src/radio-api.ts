@@ -1,17 +1,5 @@
-export type RadioMetric = {
-  label?: string;
-  name: string;
-  value: number;
-  unit: string;
-  direction: string;
-  perspective: string;
-  device_id: string;
-  interface: string;
-  observed_at: string;
-  quality: string;
-  best?: number;
-  worst?: number;
-};
+import type { RadioMetric, RadioClient } from './radio-client-types';
+export type { RadioMetric, RadioClient } from './radio-client-types';
 export type RadioInterface = {
   had_clients?: boolean;
   power_metrics?: RadioMetric[];
@@ -25,16 +13,8 @@ export type RadioInterface = {
   clients?: number;
   metrics: RadioMetric[];
 };
-export type RadioClient = {
-  mac: string;
-  name: string;
-  interface: string;
-  bssid: string;
-  wireless_uptime?: string;
-  last_activity?: string;
-  metrics: RadioMetric[];
-};
 export type RadioReading = {
+  failure?: { reason: string; bytes: number };
   model?: string;
   manufacturer?: string;
   driver_reason?: string;
@@ -133,7 +113,6 @@ export type RadioView = {
     credential_id: string;
   };
   match_reason?: string;
-
   cpe_note?: string;
   reading?: RadioReading;
   cpe_reading?: RadioReading;

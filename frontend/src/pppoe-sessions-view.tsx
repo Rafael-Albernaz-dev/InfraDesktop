@@ -3,7 +3,6 @@ import { DataTable } from './ui/DataTable';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { SessionCPE } from './session-cpe';
-
 import {
   exactRate,
   formatDate,
@@ -13,7 +12,6 @@ import {
 import { FRESH_QUERY } from './pppoe-context';
 import { formatPPUptime } from './pppoe-format';
 import type { PPObservation, PPQuery, PPRow } from './presentation';
-
 export function PPPoEObsActions(p: {
   profile: string;
   activation: string;
@@ -111,6 +109,7 @@ function SortAndCheckFilters(p: {
           <option value="login">Usuário</option>
           <option value="address">IP</option>
           <option value="uptime">Conectado há</option>
+          <option value="state">Estado</option>
         </Select>
       </label>
       <label>
@@ -163,10 +162,14 @@ export function PPPoESessionFilters(p: {
         value={query.search}
         onChange={(e) => change({ search: e.target.value })}
       />
-      <Select aria-label="Estado" disabled title="Ainda não existe (L-BASE-2)">
-        <option>Todos</option>
-        <option>ONLINE</option>
-        <option>OFFLINE</option>
+      <Select
+        aria-label="Estado"
+        value={query.state || ''}
+        onChange={(e) => change({ state: e.target.value as PPQuery['state'] })}
+      >
+        <option value="">Todos</option>
+        <option value="ONLINE">ONLINE</option>
+        <option value="OFFLINE">OFFLINE</option>
       </Select>
       <SortAndCheckFilters
         query={query}
@@ -174,7 +177,7 @@ export function PPPoESessionFilters(p: {
         showPlan={showPlan}
         setShowPlan={setShowPlan}
       />
-      {(query.search || query.duplicates_only) && (
+      {(query.search || query.duplicates_only || query.state) && (
         <Button
           type="submit"
           onClick={() => {

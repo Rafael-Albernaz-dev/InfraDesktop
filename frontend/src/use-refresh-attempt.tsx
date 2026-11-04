@@ -1,3 +1,4 @@
+import { latestRefreshAttempt } from './refresh-attempt-order';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import type { Device } from './equipment-api';
 type Attempt = { code: string; state: string; at: string };
@@ -17,7 +18,7 @@ export function useRefreshAttempt(
   device: Device,
   job?: { id: string; state: string; code: string },
 ) {
-  const key = `${scope}|${device.id}`;
+  const key = `${scope}|${device.id}|${device.credential_id}|${device.fingerprint}`;
   const snapshot = useCallback(() => history.get(key), [key]);
   const recorded = useSyncExternalStore(subscribe, snapshot);
   const terminal = Boolean(job && job.state !== 'RUNNING');
@@ -33,11 +34,6 @@ export function useRefreshAttempt(
     });
     for (const listener of listeners) listener();
   }, [key, terminal, jobID, state, code]);
-  const saved = device.last_attempt;
-  const attempt =
-    recorded &&
-    (!saved || Date.parse(recorded.attempt.at) > Date.parse(saved.at))
-      ? recorded.attempt
-      : saved;
+  const attempt = latestRefreshAttempt(device.last_attempt, recorded?.attempt);
   return { attempt, ready: !terminal || recorded?.jobID === jobID };
 }
