@@ -1146,3 +1146,6 @@ body.com-painel .col {
 .grid > .pppoe-read-panel > .block {
   height: 100%;
 }
+.radio-clients-table th:first-child {
+  width: 38%;
+}

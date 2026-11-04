@@ -136,7 +136,7 @@ it('R13: a new virtual AP with zero clients has no inherited alert; its own obse
       blocked={false}
     />,
   );
-  await screen.findByText('AP virtual · virtual');
+  await screen.findByText('virtual (AP virtual de wlan1)');
   expect(
     screen.queryByText('Clientes zero: este AP já teve clientes.'),
   ).not.toBeInTheDocument();

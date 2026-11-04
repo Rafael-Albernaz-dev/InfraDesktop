@@ -5,14 +5,14 @@ import { equipmentAPI } from './equipment-api';
 import { RadioCodes, RadioFamilies } from './radio-contract';
 import { radioMessage } from './radio-messages';
 import { useRadio } from './radio-observation';
-
 export type RadioEquipmentProps = {
   profile: string;
   activation: string;
   device: Device;
   blocked: boolean;
+  devices?: Device[];
+  openEquipment?: (id: string) => void;
 };
-
 export function useRadioEquipmentState(props: RadioEquipmentProps) {
   const [currentDevice, setCurrentDevice] = useState(props.device);
   const { root: rootRef, ...radio } = useRadio(

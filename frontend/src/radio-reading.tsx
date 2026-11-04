@@ -10,8 +10,9 @@ import {
 import { useDisplayNow } from './equipment-snapshot';
 import { RadioFamilies } from './radio-contract';
 import { radioMessage } from './radio-messages';
-
 const metricNames: Record<string, string> = {
+  voltage: 'Tensão',
+  temperature: 'Temperatura',
   signal: 'Sinal',
   remote_signal: 'Sinal informado pela CPE',
   chain0: 'Chain 0',
@@ -42,7 +43,6 @@ const metricNames: Record<string, string> = {
   tx_errors_delta: 'Erros tx',
   rx_errors_delta: 'Erros rx',
 };
-
 function Basics({
   metrics,
   perspective,

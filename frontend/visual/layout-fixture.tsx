@@ -141,16 +141,27 @@ function radioReading(deviceId: string) {
     revision: 1,
     credential_revision: 1,
     perspective: device.role === RadioRoles.cpe ? 'CPE' : 'AP',
+    mode: 'ap-bridge',
     version: device.result?.version,
     model: 'Modelo-X',
-    observed_at: device.result?.observed_at,
+    observed_at:
+      device.role === RadioRoles.ap
+        ? new Date(time - 240000).toISOString()
+        : device.result?.observed_at,
     compatible: true,
     connection: RadioTransports.ssh,
     seconds: 1,
     device_uptime: device.result?.uptime,
     had_clients: false,
     metrics: [
-      metric('cpu', Number(device.result?.cpu_percent), '%'),
+      metric(
+        'cpu',
+        Number(
+          device.result?.cpu_percent ??
+            (device.role === RadioRoles.ap ? 14 : undefined),
+        ),
+        '%',
+      ),
       metric('voltage', 24, 'V'),
       ...(device.role === RadioRoles.cpe
         ? [metric('temperature', 41, '°C')]
@@ -159,6 +170,9 @@ function radioReading(deviceId: string) {
       metric('snr', 42, 'dB'),
       metric('noise', -100, 'dBm'),
       metric('ccq', 92, '%'),
+      ...(device.role === RadioRoles.cpe
+        ? [metric('rate_tx', 117, 'Mbps'), metric('rate_rx', 130, 'Mbps')]
+        : []),
     ],
     interfaces: [
       {
@@ -179,6 +193,7 @@ function radioReading(deviceId: string) {
       metrics: [
         metric('signal', i ? -66 : -58, 'dBm'),
         metric('ccq', i ? 80 : 92, '%'),
+        metric('occupancy', i ? 9 : 18, '%'),
         metric('rate_tx', i ? 65 : 130, 'Mbps'),
         metric('rate_rx', i ? 58 : 117, 'Mbps'),
       ],

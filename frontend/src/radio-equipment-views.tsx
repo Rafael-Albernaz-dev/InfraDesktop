@@ -1,3 +1,12 @@
+import { RadioUnsupportedNotice } from './radio-equipment-parts';
+import {
+  RadioClients,
+  RadioInterfaces,
+  radioRatePair,
+} from './radio-equipment-tables';
+import { KeyValues } from './ui/KeyValues';
+import { Button } from './ui/Button';
+import { createEquipmentPage } from './radio-equipment-state';
 import { equipmentRadioError } from './radio-equipment-status';
 import type { DataState } from './ui/DataBlock';
 import type { ReactNode } from 'react';
@@ -6,14 +15,13 @@ import { useDisplayNow } from './equipment-snapshot';
 import { Fragment } from 'react';
 import type { RadioEquipmentState } from './radio-equipment-state';
 import type { RadioReading } from './radio-api';
-import { Metrics, Reading } from './radio-reading';
+import { Reading } from './radio-reading';
 import {
   formatMetric,
   formatRouterDuration,
   formatDuration,
 } from './network-format';
 import { DataBlock } from './ui/DataBlock';
-import { DataTable } from './ui/DataTable';
 import { RadioRoles } from './radio-contract';
 
 type Ready = RadioEquipmentState & { reading: RadioReading };
@@ -54,104 +62,89 @@ function RadioIdentity({ state }: { state: Ready }) {
     </dl>
   );
 }
-function RadioClients({ state }: { state: Ready }) {
-  const { reading } = state;
-  if (!reading.clients.length) return <p>Nenhum cliente encontrado</p>;
+function RadioMetricsBody({ state, tab }: { state: Ready; tab: string }) {
+  const names: [string, string][] = [
+    ['cpu', 'CPU'],
+    ['voltage', 'Tensão'],
+    ['temperature', 'Temperatura'],
+    ['signal', 'Sinal'],
+    ['snr', 'SNR'],
+    ['noise', 'Ruído'],
+    ['ccq', 'CCQ'],
+  ];
+  const rows: [string, ReactNode][] = names
+    .filter(
+      ([name]) =>
+        name !== 'temperature' ||
+        state.reading.metrics.some((m) => m.name === name),
+    )
+    .map(([name, label]) => [label, metric(state.reading, name)]);
+  if (tab === 'Enlace') {
+    rows.push(['Taxas (TX/RX)', radioRatePair(state.reading.metrics)]);
+    const id = state.radio.view?.link?.ap_id,
+      ap = state.devices?.find((d) => d.id === id);
+    rows.push([
+      'AP de origem',
+      ap ? (
+        <Button
+          className="link-control"
+          onClick={() => state.openEquipment?.(ap.id)}
+        >
+          {ap.name}
+        </Button>
+      ) : (
+        'Não informado nesta leitura'
+      ),
+    ]);
+  }
+  return <KeyValues rows={rows} />;
+}
+function RadioReopen({ state }: { state: Ready }) {
+  const page = createEquipmentPage(state);
   return (
-    <DataTable>
-      <thead>
-        <tr>
-          <th>CPE</th>
-          <th>Sinal</th>
-          <th>CCQ</th>
-          <th>Taxas (TX/RX)</th>
-          <th>Ocupação</th>
-        </tr>
-      </thead>
-      <tbody>
-        {reading.clients.map((client) => {
-          const value = (name: string) => {
-            const m = client.metrics.find(
-              (m) => m.name === name && m.quality !== 'unavailable',
-            );
-            return m
-              ? formatMetric(m.value, m.unit)
-              : 'Não informado nesta leitura';
-          };
-          return (
-            <tr key={client.interface + '|' + client.mac}>
-              <td>
-                {client.name || client.mac}{' '}
-                <span className="muted">(não cadastrada)</span>
-              </td>
-              <td>{value('signal')}</td>
-              <td>{value('ccq')}</td>
-              <td>
-                {value('rate_tx')} / {value('rate_rx')}
-              </td>
-              <td>{value('occupancy')}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </DataTable>
+    <Button onClick={() => void page(0, true)}>Reabrir rádio armazenado</Button>
   );
 }
-function RadioInterfaces({ state }: { state: Ready }) {
+function RadioEquipmentBody({ state, tab, pagination }: ViewProps) {
+  if (
+    state.reading.family === RadioFamilies.unsupported &&
+    state.device.role !== RadioRoles.ap
+  )
+    return (
+      <>
+        <RadioUnsupportedNotice reading={state.reading} />
+        <RadioReadingDetails state={state} />
+      </>
+    );
+  if (tab === 'Resumo') return <RadioIdentity state={state} />;
+  if (tab === 'Clientes')
+    return (
+      <>
+        <RadioClients state={state} />
+        {pagination}
+        <RadioReadingDetails state={state} />
+        <div className="actions">
+          <RadioReopen state={state} />
+        </div>
+      </>
+    );
+  if (tab === 'Interfaces')
+    return (
+      <>
+        <RadioInterfaces state={state} />
+        <RadioReadingDetails state={state} />
+      </>
+    );
   return (
-    <DataTable>
-      <thead>
-        <tr>
-          <th>Interface</th>
-          <th>BSSID</th>
-          <th>Canal</th>
-          <th>Largura</th>
-          <th>Métricas</th>
-        </tr>
-      </thead>
-      <tbody>
-        {state.reading.interfaces.map((iface) => (
-          <tr key={iface.name}>
-            <td>
-              {iface.name}
-              {iface.master && ` (AP virtual de ${iface.master})`}
-            </td>
-            <td>{iface.bssid}</td>
-            <td>{iface.channel || 'Não informado nesta leitura'}</td>
-            <td>{iface.configured_width || 'Não informado nesta leitura'}</td>
-            <td>
-              <Metrics metrics={iface.metrics} />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </DataTable>
-  );
-}
-function RadioEquipmentBody({
-  state,
-  tab,
-  limits,
-  interfaces,
-  pagination,
-}: ViewProps) {
-  return tab === 'Resumo' ? (
-    <RadioIdentity state={state} />
-  ) : tab === 'Clientes' ? (
     <>
-      <RadioClients state={state} />
-      {pagination}
-    </>
-  ) : tab === 'Interfaces' ? (
-    <RadioInterfaces state={state} />
-  ) : (
-    <>
-      <Metrics metrics={state.reading.metrics} />
-      {tab === 'Rádio' && (
-        <>
-          {limits}
-          {interfaces}
-        </>
+      <RadioMetricsBody state={state} tab={tab} />
+      {tab === 'Rádio' ? (
+        <div className="actions">
+          <RadioReopen state={state} />
+          <RadioReadingDetails state={state} />
+        </div>
+      ) : (
+        <RadioReadingDetails state={state} />
       )}
     </>
   );
@@ -183,19 +176,16 @@ export function RadioEquipmentView({
 }: ViewProps) {
   const now = useDisplayNow();
   const content = (
-    <>
-      <RadioEquipmentBody
-        state={state}
-        tab={tab}
-        limits={limits}
-        interfaces={interfaces}
-        pagination={pagination}
-      />
-      {tab !== 'Resumo' && <RadioReadingDetails state={state} />}
-    </>
+    <RadioEquipmentBody
+      state={state}
+      tab={tab}
+      limits={limits}
+      interfaces={interfaces}
+      pagination={pagination}
+    />
   );
   return (
-    <div className="grid">
+    <div className={['Resumo', 'Rádio', 'Enlace'].includes(tab) ? 'grid' : ''}>
       <DataBlock
         title={
           tab === 'Resumo'
@@ -211,6 +201,12 @@ export function RadioEquipmentView({
         }
         data={readingBlockState(state, content)}
       />
+      {tab === 'Rádio' && (
+        <>
+          {interfaces}
+          {limits}
+        </>
+      )}
       {tab === 'Enlace' && (
         <DataBlock
           title="Ao vivo do enlace"
