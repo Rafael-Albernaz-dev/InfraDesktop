@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"infradesktop/internal/adapters/routerssh"
 	e "infradesktop/internal/modules/equipment"
@@ -85,7 +86,7 @@ func TestRadioTickDataErrorKeepsConnectionTransportCloses(t *testing.T) {
 	if _, c = s.Tick(); c == e.OK {
 		t.Fatal("transport failure accepted")
 	}
-	assertPersistentRadioClose(t, s, peer)
+	assertTransportTickClosed(t, peer)
 }
 
 func assertTickMetrics(t *testing.T, r *e.RadioReading, link *e.RadioLink, reason string) {
@@ -104,5 +105,16 @@ func assertTickMetrics(t *testing.T, r *e.RadioReading, link *e.RadioLink, reaso
 	}
 	if reason == "" && r.Failure != nil {
 		t.Fatal("absent optional metric is not malformed")
+	}
+}
+
+func assertTransportTickClosed(t *testing.T, peer *sshfixture.Server) {
+	t.Helper()
+	until := time.Now().Add(time.Second)
+	for peer.ActiveConnections() != 0 && time.Now().Before(until) {
+		time.Sleep(time.Millisecond)
+	}
+	if peer.ActiveConnections() != 0 {
+		t.Fatal("transport failure retained SSH connection before explicit cleanup")
 	}
 }

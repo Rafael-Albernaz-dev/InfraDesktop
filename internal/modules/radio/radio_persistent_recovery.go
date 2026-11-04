@@ -16,7 +16,7 @@ func (run *persistentRadioRun) reopenFailedSides(tick *persistentRadioTick) {
 		if i >= len(run.sessions) {
 			break
 		}
-		if side.code == OK && (side.reading == nil || side.reading.CommandSeconds <= 3) {
+		if !radioTickNeedsReopen(side.reading, side.code) {
 			continue
 		}
 		run.sessions[i].Close()
