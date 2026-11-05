@@ -46,7 +46,10 @@ export function CompanyList({ p }: { p: DesktopProps }) {
                   }
                 }}
               >
-                <td>{company.name}</td>
+                <td>
+                  {company.name}
+                  {company.id === p.activeProfile && <span> · Atual</span>}
+                </td>
                 <td>
                   {company.count === undefined
                     ? 'Não informado nesta leitura'

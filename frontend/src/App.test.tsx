@@ -47,6 +47,7 @@ beforeEach(() => {
     brand: { name: '', logo: '', accent: 'teal' },
   });
   vi.mocked(access.ackRecovery).mockResolvedValue(snapshot());
+  vi.mocked(access.selectCompany).mockResolvedValue(snapshot(true));
 });
 afterEach(() => vi.useRealTimers());
 const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
@@ -109,6 +110,7 @@ describe('BF01 real-use presentation', () => {
   it('enters a real company and shows unavailable readings instead of invented traffic', async () => {
     vi.mocked(access.status).mockResolvedValue(snapshot(true));
     render(<App />);
+    fireEvent.click(await screen.findByText('Fixture Alpha'));
     await screen.findByRole('heading', { name: emptyHeading });
     fireEvent.click(screen.getByRole('link', { name: 'Equipamentos' }));
     expect(
@@ -159,6 +161,8 @@ describe('BF01 real-use presentation', () => {
     });
     render(<App />);
     await act(async () => {});
+    fireEvent.click(screen.getByText('Fixture Alpha'));
+    await act(async () => {});
     fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Sair da conta' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sair' }));
@@ -201,6 +205,7 @@ describe('BF01 real-use presentation', () => {
     const deferred = defer<Result>();
     vi.mocked(access.setTheme).mockReturnValue(deferred.p);
     const { container } = render(<App />);
+    fireEvent.click(await screen.findByText('Fixture Alpha'));
     await screen.findByRole('heading', { name: emptyHeading });
     fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Tema escuro' }));
@@ -295,6 +300,7 @@ it('C01b confirmed unauthentication clears expired receipts; transport failure r
 it('supports company, overview, equipment, credential and settings routes with coherent paths', async () => {
   vi.mocked(access.status).mockResolvedValue(snapshot(true));
   render(<App />);
+  fireEvent.click(await screen.findByText('Fixture Alpha'));
   await screen.findByRole('heading', { name: 'Visão geral' });
   const path = () => screen.getByRole('navigation', { name: 'Caminho' });
   fireEvent.click(screen.getByRole('link', { name: 'Equipamentos' }));

@@ -364,8 +364,7 @@ function applySessionResult(
   refs.setConnected(r.code === 'OK');
   if (r.authenticated) {
     setTheme(r.theme);
-    if (!refs.hadAuthRef.current)
-      setPage(r.profile_id ? 'overview' : 'companies');
+    if (!refs.hadAuthRef.current) setPage('companies');
   }
   refs.hadAuthRef.current = r.authenticated;
 }
