@@ -3,7 +3,7 @@ import { Button } from './ui/Button';
 import { CompanyList, Settings } from './desktop-pages';
 import { Sidebar, Topbar } from './desktop-shell';
 import { useState } from 'react';
-import type { DesktopProps } from './desktop-model';
+import type { DesktopProps, Page } from './desktop-model';
 import { normalizeRoute } from './desktop-model';
 import { DialogHost } from './ui/Dialog';
 export { Button } from './ui/Button';
@@ -43,6 +43,16 @@ export function Desktop(p: DesktopProps) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const route = normalizeRoute(p.page);
   const [detailTitle, setDetailTitle] = useState('');
+  const [expandRequest, setExpandRequest] = useState(0);
+  const navigationProps = {
+    ...p,
+    navigate: (page: Page) => {
+      const next = normalizeRoute(page);
+      if (next === 'equipment' || next === 'credentials')
+        setExpandRequest((n) => n + 1);
+      p.navigate(page);
+    },
+  };
   return (
     <DialogHost value={host}>
       <DetailTitle value={setDetailTitle}>
@@ -74,9 +84,19 @@ export function Desktop(p: DesktopProps) {
             </div>
           ) : (
             <>
-              <Sidebar key={route} p={p} route={route} />
+              <Sidebar
+                key={route}
+                p={navigationProps}
+                route={route}
+                expandRequest={expandRequest}
+                detailTitle={detailTitle}
+              />
               <div className="col">
-                <Topbar p={p} route={route} detailTitle={detailTitle} />
+                <Topbar
+                  p={navigationProps}
+                  route={route}
+                  detailTitle={detailTitle}
+                />
                 <main>
                   {route === 'overview' ? (
                     <h1>Visão geral</h1>

@@ -4,6 +4,9 @@ import App from './App';
 import { access, equipmentAPI, type Result } from './presentation';
 import type { Device } from './equipment-api';
 import { NavigationHistory } from './navigation-history';
+import { useRef } from 'react';
+import { Equipment } from './equipment';
+import { Button } from './ui/Button';
 import { reading, link, device as radioDevice } from './radio-test-fixtures';
 import { RadioRoles, RadioTransports } from './radio-contract';
 
@@ -98,6 +101,37 @@ it('returns from a detail to the list when Lista is clicked repeatedly', async (
   expect(screen.getByRole('cell', { name: 'Roteador exemplo' })).toBeVisible();
   fireEvent.click(screen.getByRole('link', { name: 'Lista' }));
   expect(screen.getByRole('cell', { name: 'Roteador exemplo' })).toBeVisible();
+});
+
+function EmptySelectionHarness() {
+  const back = useRef<(() => void) | undefined>(undefined);
+  return (
+    <>
+      <Button onClick={() => back.current?.()}>Lista</Button>
+      <Equipment
+        profile="company"
+        activation="activation"
+        connected
+        createRequest={0}
+        onBackReady={(next) => {
+          back.current = next;
+        }}
+      />
+    </>
+  );
+}
+it('returns to the list even without an external selection', async () => {
+  render(<EmptySelectionHarness />);
+  fireEvent.click(
+    await screen.findByRole('cell', { name: 'Roteador exemplo' }),
+  );
+  expect(
+    await screen.findByRole('region', { name: 'Ficha do equipamento' }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Lista' }));
+  expect(
+    screen.queryByRole('region', { name: 'Ficha do equipamento' }),
+  ).not.toBeInTheDocument();
 });
 
 it.each(['mouse', 'alt-left', 'backspace'])(
@@ -310,4 +344,22 @@ it('returns to Lista after a CPE opens its linked session on the concentrator', 
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it('expands the equipment group when the sheet breadcrumb opens the list', async () => {
+  const cell = await inventory();
+  fireEvent.click(cell);
+  await screen.findByRole('region', { name: 'Ficha do equipamento' });
+  const group = within(
+    screen.getByRole('navigation', { name: 'Menu' }),
+  ).getByRole('link', { name: 'Equipamentos' });
+  fireEvent.click(group);
+  expect(group).toHaveAttribute('aria-expanded', 'false');
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Caminho' })).getByRole(
+      'link',
+      { name: 'Equipamentos' },
+    ),
+  );
+  expect(group).toHaveAttribute('aria-expanded', 'true');
 });

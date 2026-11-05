@@ -3,10 +3,26 @@ import type { DesktopProps, RouteName } from './desktop-model';
 import { Button } from './ui/Button';
 import { ProductBrand } from './ui/ProductBrand';
 import { ShellIcon } from './ui/ShellIcon';
-export function Sidebar({ p, route }: { p: DesktopProps; route: RouteName }) {
-  const [expanded, setExpanded] = useState(
-    route === 'equipment' || route === 'credentials',
-  );
+export function Sidebar({
+  p,
+  route,
+  expandRequest,
+  detailTitle,
+}: {
+  p: DesktopProps;
+  route: RouteName;
+  expandRequest: number;
+  detailTitle: string;
+}) {
+  const [closedAt, setClosedAt] = useState<{
+    request: number;
+    title: string;
+  }>();
+  const expanded =
+    (route === 'equipment' || route === 'credentials') &&
+    (!closedAt ||
+      closedAt.request !== expandRequest ||
+      closedAt.title !== detailTitle);
   const navigateTo = (event: React.MouseEvent, next: RouteName) => {
     event.preventDefault();
     p.navigate(next);
@@ -39,9 +55,9 @@ export function Sidebar({ p, route }: { p: DesktopProps; route: RouteName }) {
         onClick={(e) => {
           e.preventDefault();
           if (!expanded) {
-            setExpanded(true);
+            setClosedAt(undefined);
             p.navigate('equipment');
-          } else setExpanded(false);
+          } else setClosedAt({ request: expandRequest, title: detailTitle });
         }}
       >
         Equipamentos
