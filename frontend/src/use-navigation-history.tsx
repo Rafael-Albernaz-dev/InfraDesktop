@@ -21,7 +21,9 @@ function editable(target: EventTarget | null): boolean {
 export function useNavigationHistory(state: NavigationState) {
   const history = useRef(createNavigationHistory());
   const scope = useRef('');
-  const pending = useRef<NavigationStep | undefined>(undefined);
+  const pending = useRef<
+    { target: NavigationStep; origin: NavigationStep } | undefined
+  >(undefined);
   const current = useRef(state);
   const {
     authenticated,
@@ -42,8 +44,14 @@ export function useNavigationHistory(state: NavigationState) {
       return;
     }
     if (pending.current) {
-      if (sameStep(pending.current, step)) pending.current = undefined;
-      return;
+      const { target, origin } = pending.current;
+      if (sameStep(target, step)) {
+        pending.current = undefined;
+        return;
+      }
+      if (target.device && target.route === step.route && !step.device) return;
+      pending.current = undefined;
+      history.current.record(origin);
     }
     history.current.record(step);
   }, [nextScope, authenticated, route, device]);
@@ -60,7 +68,7 @@ export function useNavigationHistory(state: NavigationState) {
         return;
       const previous = history.current.back();
       if (!previous) return;
-      pending.current = previous;
+      pending.current = { target: previous, origin: s.step };
       s.restore(previous);
     };
     const key = (event: KeyboardEvent) => {
@@ -72,6 +80,7 @@ export function useNavigationHistory(state: NavigationState) {
         !event.metaKey;
       if (!isBack && !isAltLeft) return;
       event.preventDefault();
+      if (event.repeat) return;
       back();
     };
     const mouse = (event: MouseEvent) => {
