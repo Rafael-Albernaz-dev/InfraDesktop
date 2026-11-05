@@ -370,6 +370,7 @@ it('preauth theme survives service failure/reconnect/modes and keyboard, account
     ...snapshot(true),
     theme: 'light',
   });
+  vi.mocked(access.selectCompany).mockResolvedValue(snapshot(true));
   vi.mocked(access.logout).mockResolvedValue({ ...snapshot(), setup: false });
   const { container } = render(<App />);
   await act(async () => {});
@@ -417,6 +418,8 @@ it('preauth theme survives service failure/reconnect/modes and keyboard, account
     'data-theme',
     'light',
   );
+  fireEvent.click(screen.getByText('Audit Company'));
+  await act(async () => {});
   fireEvent.click(screen.getByRole('button', { name: /Conta:/ }));
   fireEvent.click(screen.getByRole('menuitem', { name: 'Sair da conta' }));
   fireEvent.click(screen.getByRole('button', { name: 'Sair' }));

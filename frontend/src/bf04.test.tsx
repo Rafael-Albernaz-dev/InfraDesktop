@@ -44,6 +44,7 @@ const state: Result = {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(access.status).mockResolvedValue(state);
+  vi.mocked(access.selectCompany).mockResolvedValue(state);
   vi.mocked(access.getBrand).mockResolvedValue({
     ...state,
     brand: { name: '', logo: '', accent: 'teal' },
@@ -60,9 +61,7 @@ it('microcopy preserves operation intent, actions and safe credential ambiguity'
   expect(message('INVALID_REQUEST', 'recover')).toContain('nova senha');
   expect(message('INVALID_REQUEST', 'company')).toContain('empresa');
   expect(message('INVALID_REQUEST', 'company')).not.toContain('senha');
-  expect(message('UNAUTHENTICATED', 'renew')).toBe(
-    'SENHA INCORRETA',
-  );
+  expect(message('UNAUTHENTICATED', 'renew')).toBe('SENHA INCORRETA');
   expect(message('BUSY', 'company')).toContain('Aguarde');
   expect(message('BUSY', 'company')).not.toContain('Feche');
   expect(message('VERSION_INCOMPATIBLE', 'general')).toContain('Atualize');
@@ -83,6 +82,7 @@ it('rejecting renewal never suggests a first issuance and security shortcut does
     code: 'UNAUTHENTICATED',
   });
   render(<App />);
+  fireEvent.click(await screen.findByText('Catalog X'));
   fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
   expect(access.renewRecovery).not.toHaveBeenCalled();
@@ -109,6 +109,7 @@ it('a rejected retry does not erase earlier unknown commit', async () => {
     .mockResolvedValueOnce({ ...state, code: 'DEADLINE_EXCEEDED' })
     .mockResolvedValueOnce({ ...state, code: 'UNAUTHENTICATED' });
   render(<App />);
+  fireEvent.click(await screen.findByText('Catalog X'));
   fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));
   fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
   fireEvent.change(
@@ -142,6 +143,7 @@ it('account dropdown keyboard and dialog trap include readonly textarea', async 
     recovery: 'a'.repeat(64),
   });
   render(<App />);
+  fireEvent.click(await screen.findByText('Catalog X'));
   const trigger = await screen.findByRole('button', { name: /Conta:/ });
   fireEvent.click(trigger);
   expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -175,6 +177,7 @@ it('account dropdown keyboard and dialog trap include readonly textarea', async 
 
 it('profile navigation has an explicit Escape dismissal that returns focus', async () => {
   render(<App />);
+  fireEvent.click(await screen.findByText('Catalog X'));
   const trigger = await screen.findByRole('button', { name: /Conta:/ });
   fireEvent.click(trigger);
   expect(trigger).toHaveAttribute('aria-expanded', 'true');

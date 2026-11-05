@@ -30,12 +30,14 @@ export function useNavigationHistory(state: NavigationState) {
   useLayoutEffect(() => {
     current.current = state;
   });
-  useEffect(() => {
+  useLayoutEffect(() => {
     const step = { route, device };
     if (!authenticated || scope.current !== nextScope) {
       scope.current = authenticated ? nextScope : '';
       pending.current = undefined;
-      history.current.reset(authenticated ? step : undefined);
+      history.current.reset(
+        authenticated && route !== 'companies' ? step : undefined,
+      );
       return;
     }
     if (pending.current) {

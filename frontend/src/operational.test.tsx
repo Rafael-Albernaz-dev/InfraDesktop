@@ -1,3 +1,4 @@
+import { operationalAccount } from './operational-account-fixture';
 import { findDevicePrimary, openDeviceSheet } from './test-navigation';
 import {
   fireEvent,
@@ -16,7 +17,7 @@ import {
 } from './presentation';
 import type { Device, EquipmentResult } from './equipment-api';
 vi.mock('./presentation', () => ({
-  access: { status: vi.fn(), getBrand: vi.fn() },
+  access: { status: vi.fn(), getBrand: vi.fn(), selectCompany: vi.fn() },
   pppoeAPI: {
     current: vi.fn(),
     references: vi.fn(),
@@ -82,6 +83,9 @@ const result = (d = device): EquipmentResult => ({
 });
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(access.selectCompany).mockImplementation(async () =>
+    access.status(),
+  );
   vi.mocked(sessions.current).mockResolvedValue({
     code: 'OK',
     profile_id: 'X',
@@ -157,25 +161,13 @@ it('list reads the normal company inventory and reopens its full detail', async 
       pppoe: { online: 53, offline: 2, at: '2026-10-26T12:00:00Z' },
     }),
   );
-  vi.mocked(access.status).mockResolvedValue({
-    code: 'OK',
-    request_id: 't',
-    instance_id: 'one',
-    activation_id: 'a',
-    profile_id: 'X',
-    heartbeat: 1,
-    setup: false,
-    authenticated: true,
-    name: 'reader',
-    theme: 'light',
-    recovery: '',
-    companies: [{ id: 'X', name: 'Company X' }],
-  });
+  vi.mocked(access.status).mockResolvedValue(operationalAccount());
   vi.mocked(access.getBrand).mockResolvedValue({
     code: 'OK',
     brand: { name: '', accent: 'teal', logo: '' },
   } as Awaited<ReturnType<typeof access.getBrand>>);
   render(<App />);
+  fireEvent.click(await screen.findByText('Company X'));
   fireEvent.click(await screen.findByRole('link', { name: 'Equipamentos' }));
   await openDeviceSheet('Saved router');
   await openDeviceSheet('Saved router');
@@ -380,25 +372,13 @@ it('cancel first acceptance never authenticates and leaves a resumable saved dev
   expect(api.save).not.toHaveBeenCalled();
 });
 it('overview and list navigation retain saved data while Back exposes the list', async () => {
-  vi.mocked(access.status).mockResolvedValue({
-    code: 'OK',
-    request_id: 't',
-    instance_id: 'one',
-    activation_id: 'a',
-    profile_id: 'X',
-    heartbeat: 1,
-    setup: false,
-    authenticated: true,
-    name: 'reader',
-    theme: 'light',
-    recovery: '',
-    companies: [{ id: 'X', name: 'Company X' }],
-  });
+  vi.mocked(access.status).mockResolvedValue(operationalAccount());
   vi.mocked(access.getBrand).mockResolvedValue({
     code: 'OK',
     brand: { name: '', accent: 'teal', logo: '' },
   } as Awaited<ReturnType<typeof access.getBrand>>);
   render(<App />);
+  fireEvent.click(await screen.findByText('Company X'));
   fireEvent.click(await screen.findByRole('link', { name: 'Equipamentos' }));
   await openDeviceSheet('Saved router');
   await openDeviceSheet('Saved router');
@@ -417,20 +397,7 @@ it('overview and list navigation retain saved data while Back exposes the list',
 });
 
 it('inventory read error offers retry without claiming an empty inventory', async () => {
-  vi.mocked(access.status).mockResolvedValue({
-    code: 'OK',
-    request_id: 't',
-    instance_id: 'one',
-    activation_id: 'a',
-    profile_id: 'X',
-    heartbeat: 1,
-    setup: false,
-    authenticated: true,
-    name: 'reader',
-    theme: 'light',
-    recovery: '',
-    companies: [{ id: 'X', name: 'Company X' }],
-  });
+  vi.mocked(access.status).mockResolvedValue(operationalAccount());
   vi.mocked(access.getBrand).mockResolvedValue({
     code: 'OK',
     brand: { name: '', accent: 'teal', logo: '' },
@@ -441,6 +408,7 @@ it('inventory read error offers retry without claiming an empty inventory', asyn
     return result();
   });
   render(<App />);
+  fireEvent.click(await screen.findByText('Company X'));
   fireEvent.click(await screen.findByRole('link', { name: 'Equipamentos' }));
   await screen.findByRole('alert');
   expect(
