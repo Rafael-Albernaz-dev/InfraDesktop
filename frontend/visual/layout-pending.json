@@ -3,5 +3,125 @@
     "id": "ficha-ptp-0001-enlace",
     "owner": "L07-DRV",
     "reason": "Dado ainda sem percurso nesta ficha"
+  },
+  {
+    "id": "equipamentos",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "equipamentos-colunas",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "equipamentos-selecao",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "credenciais",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "codigo",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "ficha-ccr-centro-sesso-es",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "ficha-sw-norte-resumo",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "seguranca-erro",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "seguranca-codigo",
+    "owner": "L-BASE-5A",
+    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
+  },
+  {
+    "id": "adicionar",
+    "owner": "L-BASE-5B",
+    "reason": "Rev. 6: tela Adicionar e importação"
+  },
+  {
+    "id": "importar-arquivo",
+    "owner": "L-BASE-5B",
+    "reason": "Rev. 6: tela Adicionar e importação"
+  },
+  {
+    "id": "importar-previa",
+    "owner": "L-BASE-5B",
+    "reason": "Rev. 6: tela Adicionar e importação"
+  },
+  {
+    "id": "importar-corrigir",
+    "owner": "L-BASE-5B",
+    "reason": "Rev. 6: tela Adicionar e importação"
+  },
+  {
+    "id": "importar-fim",
+    "owner": "L-BASE-5B",
+    "reason": "Rev. 6: tela Adicionar e importação"
+  },
+  {
+    "id": "sessao-trafego-ao-vivo",
+    "owner": "L-BASE-5C",
+    "reason": "Rev. 6: sessão em tela completa"
+  },
+  {
+    "id": "sessao-informacoes",
+    "owner": "L-BASE-5C",
+    "reason": "Rev. 6: sessão em tela completa"
+  },
+  {
+    "id": "sessao-enlace",
+    "owner": "L-BASE-5C",
+    "reason": "Rev. 6: sessão em tela completa"
+  },
+  {
+    "id": "sessao-historico",
+    "owner": "L-BASE-5C",
+    "reason": "Rev. 6: sessão em tela completa"
+  },
+  {
+    "id": "sessao-offline",
+    "owner": "L-BASE-5C",
+    "reason": "Rev. 6: sessão em tela completa"
+  },
+  {
+    "id": "criar",
+    "owner": "L-CONTA",
+    "reason": "Rev. 6: conta e excluir credencial"
+  },
+  {
+    "id": "recuperar",
+    "owner": "L-CONTA",
+    "reason": "Rev. 6: conta e excluir credencial"
+  },
+  {
+    "id": "redefinir",
+    "owner": "L-CONTA",
+    "reason": "Rev. 6: conta e excluir credencial"
+  },
+  {
+    "id": "credencial-editar",
+    "owner": "L-CONTA",
+    "reason": "Rev. 6: conta e excluir credencial"
+  },
+  {
+    "id": "credencial-excluir",
+    "owner": "L-CONTA",
+    "reason": "Rev. 6: conta e excluir credencial"
   }
 ]

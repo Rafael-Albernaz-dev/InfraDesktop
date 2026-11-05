@@ -1,5 +1,10 @@
 [
   {
+    "id": "adicionar",
+    "reference": "adicionar",
+    "route": "adicionar"
+  },
+  {
     "id": "codigo",
     "reference": "codigo",
     "route": "codigo"
@@ -13,6 +18,16 @@
     "id": "credenciais",
     "reference": "credenciais",
     "route": "credenciais"
+  },
+  {
+    "id": "credencial-editar",
+    "reference": "credencial-editar",
+    "route": "credencial-editar"
+  },
+  {
+    "id": "credencial-excluir",
+    "reference": "credencial-excluir",
+    "route": "credencial-excluir"
   },
   {
     "id": "criar",
@@ -37,6 +52,16 @@
     "id": "equipamentos",
     "reference": "equipamentos",
     "route": "equipamentos"
+  },
+  {
+    "id": "equipamentos-colunas",
+    "reference": "equipamentos-colunas",
+    "route": "equipamentos-colunas"
+  },
+  {
+    "id": "equipamentos-selecao",
+    "reference": "equipamentos-selecao",
+    "route": "equipamentos-selecao"
   },
   {
     "id": "ficha-ap-norte-acesso",
@@ -314,6 +339,31 @@
     "sub": null
   },
   {
+    "id": "ficha-sw-norte-resumo",
+    "reference": "ficha-sw-norte-resumo",
+    "route": "ficha-sw-norte-resumo"
+  },
+  {
+    "id": "importar-arquivo",
+    "reference": "importar-arquivo",
+    "route": "importar-arquivo"
+  },
+  {
+    "id": "importar-corrigir",
+    "reference": "importar-corrigir",
+    "route": "importar-corrigir"
+  },
+  {
+    "id": "importar-fim",
+    "reference": "importar-fim",
+    "route": "importar-fim"
+  },
+  {
+    "id": "importar-previa",
+    "reference": "importar-previa",
+    "route": "importar-previa"
+  },
+  {
     "id": "login",
     "reference": "login",
     "route": "login"
@@ -322,6 +372,41 @@
     "id": "recuperar",
     "reference": "recuperar",
     "route": "recuperar"
+  },
+  {
+    "id": "redefinir",
+    "reference": "redefinir",
+    "route": "redefinir"
+  },
+  {
+    "id": "seguranca-codigo",
+    "reference": "seguranca-codigo",
+    "route": "seguranca-codigo"
+  },
+  {
+    "id": "seguranca-erro",
+    "reference": "seguranca-erro",
+    "route": "seguranca-erro"
+  },
+  {
+    "id": "sessao-enlace",
+    "reference": "sessao-enlace",
+    "route": "sessao-enlace"
+  },
+  {
+    "id": "sessao-historico",
+    "reference": "sessao-historico",
+    "route": "sessao-historico"
+  },
+  {
+    "id": "sessao-informacoes",
+    "reference": "sessao-informacoes",
+    "route": "sessao-informacoes"
+  },
+  {
+    "id": "sessao-offline",
+    "reference": "sessao-offline",
+    "route": "sessao-offline"
   },
   {
     "id": "sessao-trafego-ao-vivo",
