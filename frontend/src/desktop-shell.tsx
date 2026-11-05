@@ -56,7 +56,8 @@ export function Sidebar({
           e.preventDefault();
           if (!expanded) {
             setClosedAt(undefined);
-            p.navigate('equipment');
+            if (route !== 'equipment' && route !== 'credentials')
+              p.navigate('equipment');
           } else setClosedAt({ request: expandRequest, title: detailTitle });
         }}
       >
