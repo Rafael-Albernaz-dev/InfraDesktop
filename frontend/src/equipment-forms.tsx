@@ -8,11 +8,7 @@ import type {
   DeviceInput,
   EquipmentResult,
 } from './equipment-api';
-import {
-  ProtectedDialog,
-  useDraftProtection,
-  useFieldErrors,
-} from './equipment-draft';
+import { useDraftProtection, useFieldErrors } from './equipment-draft';
 import { pendingEnrollments } from './equipment-receipts';
 import { id } from './equipment-reading';
 import {
@@ -23,7 +19,7 @@ import {
   validEquipmentText,
 } from './equipment-validation';
 import { RadioRoles, RadioTransports } from './radio-contract';
-export { ProtectedDialog };
+export { ProtectedDialog } from './protected-dialog';
 const RADIO_ROLE_VALUES: string[] = [
   RadioRoles.ap,
   RadioRoles.cpe,

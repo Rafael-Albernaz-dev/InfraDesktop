@@ -1,5 +1,5 @@
 import { EquipmentBanners, EquipmentDialogs } from './equipment-surfaces';
-import { useContext, useLayoutEffect } from 'react';
+import { useContext, useEffect, useLayoutEffect } from 'react';
 import { DetailTitle } from './ui/DetailTitle';
 import { Button } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
@@ -18,6 +18,7 @@ function EquipmentCapabilityBody(p: {
   credentialsPage?: boolean;
   locked: boolean;
   trustOpen: boolean;
+  onBackReady?: (back?: () => void) => void;
 }) {
   const { s, profile, activation, connected, primaryInHeader, locked } = p;
   return (
@@ -48,6 +49,7 @@ function EquipmentCapabilityBody(p: {
                 locked={locked}
                 profile={profile}
                 activation={activation}
+                onBackReady={p.onBackReady}
               />
             )}
           </>
@@ -90,6 +92,8 @@ export type EquipmentProps = {
   targetID?: string;
   onSelect?: (id: string) => void;
   onDetailChange?: (open: boolean) => void;
+  onBackReady?: (back?: () => void) => void;
+  onBlockedChange?: (blocked: boolean) => void;
 };
 
 export function Equipment(props: EquipmentProps) {
@@ -102,8 +106,18 @@ export function Equipment(props: EquipmentProps) {
 }
 
 function EquipmentContext(props: EquipmentProps) {
-  const { profile, activation, connected, primaryInHeader = false } = props;
+  const {
+    profile,
+    activation,
+    connected,
+    primaryInHeader = false,
+    onBlockedChange,
+  } = props;
   const s = useEquipmentState(props);
+  useEffect(() => {
+    onBlockedChange?.(s.busy || s.job?.state === 'RUNNING');
+    return () => onBlockedChange?.(false);
+  }, [s.busy, s.job?.state, onBlockedChange]);
   const setTitle = useContext(DetailTitle);
   useLayoutEffect(() => {
     setTitle(
@@ -139,6 +153,7 @@ function EquipmentContext(props: EquipmentProps) {
       credentialsPage={props.credentialsPage}
       locked={locked}
       trustOpen={trustOpen}
+      onBackReady={props.onBackReady}
     />
   );
 }

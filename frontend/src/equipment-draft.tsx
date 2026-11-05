@@ -6,8 +6,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { ReactNode } from 'react';
-import { Button, Dialog } from './desktop';
 
 export type DraftState = { dirty: boolean; blocked: boolean };
 
@@ -16,88 +14,6 @@ export const DraftProtection = createContext<{
   cancel: () => void;
   attempt: (action: () => void) => void;
 } | null>(null);
-
-function DiscardConfirmDialog({
-  close,
-  confirmDiscard,
-}: {
-  close: () => void;
-  confirmDiscard: () => void;
-}) {
-  return (
-    <Dialog
-      portal
-      title="Descartar alterações?"
-      close={close}
-      dismissOnBackdrop={false}
-    >
-      <p>As alterações deste formulário serão perdidas.</p>
-      <div className="dialog-actions">
-        <Button onClick={close}>Continuar editando</Button>
-        <Button kind="primary" onClick={confirmDiscard}>
-          Descartar alterações
-        </Button>
-      </div>
-    </Dialog>
-  );
-}
-
-export function ProtectedDialog({
-  title,
-  close,
-  children,
-}: {
-  title: string;
-  close: () => void;
-  children: ReactNode;
-}) {
-  const guard = useRef<() => DraftState>(() => ({
-    dirty: false,
-    blocked: false,
-  }));
-  const [confirm, setConfirm] = useState(false);
-  const pendingAction = useRef(close);
-  const attempt = (action: () => void) => {
-    const state = guard.current();
-    if (state.blocked) return;
-    pendingAction.current = action;
-    if (state.dirty) setConfirm(true);
-    else action();
-  };
-  const requestClose = () => attempt(close);
-  return (
-    <DraftProtection.Provider
-      value={{
-        register: (read) => {
-          guard.current = read;
-        },
-        cancel: requestClose,
-        attempt,
-      }}
-    >
-      <Dialog
-        portal
-        title={title}
-        close={requestClose}
-        dismissOnBackdrop={false}
-        inactive={confirm}
-      >
-        {children}
-      </Dialog>
-      {confirm && (
-        <DiscardConfirmDialog
-          close={() => setConfirm(false)}
-          confirmDiscard={() => {
-            if (!guard.current().blocked) {
-              setConfirm(false);
-              pendingAction.current();
-            }
-          }}
-        />
-      )}
-    </DraftProtection.Provider>
-  );
-}
 
 export function useDraftProtection(read: () => DraftState) {
   const protection = useContext(DraftProtection);

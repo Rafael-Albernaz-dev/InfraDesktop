@@ -38,8 +38,10 @@ export function Sidebar({ p, route }: { p: DesktopProps; route: RouteName }) {
         aria-expanded={expanded}
         onClick={(e) => {
           e.preventDefault();
-          if (!expanded) p.navigate('equipment');
-          else setExpanded(false);
+          if (!expanded) {
+            setExpanded(true);
+            p.navigate('equipment');
+          } else setExpanded(false);
         }}
       >
         Equipamentos

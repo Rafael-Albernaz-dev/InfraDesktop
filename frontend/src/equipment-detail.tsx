@@ -8,7 +8,7 @@ import {
 import { EquipmentChain } from './equipment-chain';
 import { equipmentType } from './equipment-layout';
 import { HeaderActionHost } from './ui/HeaderAction';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { RefreshOpening } from './use-refresh-on-open';
 import type { useEquipmentState } from './equipment-state';
 import type { Device } from './equipment-api';
@@ -35,6 +35,7 @@ export type Props = ReturnType<typeof useEquipmentState> & {
   activation: string;
   connected: boolean;
   locked: boolean;
+  onBackReady?: (back?: () => void) => void;
 };
 const TABS: Record<string, string[]> = {
   concentrator: [
@@ -198,6 +199,10 @@ export function EquipmentDetailPane(p: Props) {
       row?.focus({ preventScroll: true });
     });
   };
+  useLayoutEffect(() => {
+    p.onBackReady?.(back);
+    return () => p.onBackReady?.();
+  });
   return (
     <section
       ref={detailSurfaceRef}
