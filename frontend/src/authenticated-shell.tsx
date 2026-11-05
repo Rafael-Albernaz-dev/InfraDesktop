@@ -79,6 +79,8 @@ export function AuthenticatedShell(props: {
   brand: ReturnType<typeof useBrandState>;
   operations: ReturnType<typeof useEquipmentOperations>;
   perform: PerformFn;
+  root: HTMLDivElement | null;
+  setRoot: (root: HTMLDivElement | null) => void;
 }) {
   const { theme, route, setPage, session, inv, brand, operations, perform } =
     props;
@@ -100,6 +102,7 @@ export function AuthenticatedShell(props: {
   return (
     <NavigationGuard.Provider value={registerNavigationGuard}>
       <Desktop
+        onRoot={props.setRoot}
         operations={operations}
         inventoryDetailOpen={inv.inventoryDetail}
         openEquipment={(id) => {
@@ -132,7 +135,7 @@ export function AuthenticatedShell(props: {
             setPage(normalizeRoute(next));
             close();
           };
-          if (document.querySelector('[role="dialog"]')) {
+          if (props.root?.querySelector('[role="dialog"]')) {
             navigationGuard.current?.(navigate);
             return;
           }

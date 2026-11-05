@@ -2,7 +2,7 @@ import { DetailTitle } from './ui/DetailTitle';
 import { Button } from './ui/Button';
 import { CompanyList, Settings } from './desktop-pages';
 import { Sidebar, Topbar } from './desktop-shell';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { DesktopProps, Page } from './desktop-model';
 import { normalizeRoute } from './desktop-model';
 import { DialogHost } from './ui/Dialog';
@@ -39,8 +39,18 @@ export function Statusbar({
     </p>
   );
 }
-export function Desktop(p: DesktopProps) {
+export function Desktop(
+  p: DesktopProps & { onRoot?: (root: HTMLDivElement | null) => void },
+) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const onRoot = p.onRoot;
+  const attachRoot = useCallback(
+    (node: HTMLDivElement | null) => {
+      setHost(node);
+      onRoot?.(node);
+    },
+    [onRoot],
+  );
   const route = normalizeRoute(p.page);
   const [detailTitle, setDetailTitle] = useState('');
   const [expandRequest, setExpandRequest] = useState(0);
@@ -57,7 +67,7 @@ export function Desktop(p: DesktopProps) {
     <DialogHost value={host}>
       <DetailTitle value={setDetailTitle}>
         <div
-          ref={setHost}
+          ref={attachRoot}
           className="app"
           data-route={route}
           data-theme={p.theme}

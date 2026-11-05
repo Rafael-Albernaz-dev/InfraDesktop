@@ -17,6 +17,7 @@ import { AuthenticatedShell } from './authenticated-shell';
 export default function App() {
   const [theme, setTheme] = useState('light');
   const [page, setPage] = useState<Page>('companies');
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const route = normalizeRoute(page);
   const session = useAccessSession(setPage, setTheme);
   const inv = useInventoryNavigation(
@@ -24,6 +25,7 @@ export default function App() {
     session.view.activation_id,
   );
   useNavigationHistory({
+    root,
     scope: inv.contextPair,
     authenticated: session.view.authenticated,
     step: {
@@ -63,6 +65,8 @@ export default function App() {
   }
   return (
     <AuthenticatedShell
+      root={root}
+      setRoot={setRoot}
       theme={theme}
       route={route}
       setPage={setPage}

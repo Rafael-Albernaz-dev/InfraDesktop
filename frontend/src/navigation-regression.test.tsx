@@ -3,7 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import App from './App';
 import { access, equipmentAPI, type Result } from './presentation';
 import type { Device } from './equipment-api';
-import { NavigationHistory } from './navigation-history';
+import { createNavigationHistory } from './navigation-history';
 import { useRef } from 'react';
 import { Equipment } from './equipment';
 import { Button } from './ui/Button';
@@ -141,11 +141,19 @@ it.each(['mouse', 'alt-left', 'backspace'])(
     expect(
       await screen.findByRole('region', { name: 'Ficha do equipamento' }),
     ).toBeVisible();
-    if (trigger === 'mouse') fireEvent.mouseDown(document, { button: 3 });
+    if (trigger === 'mouse')
+      fireEvent.mouseDown(screen.getByRole('main').ownerDocument, {
+        button: 3,
+      });
     if (trigger === 'alt-left')
-      fireEvent.keyDown(document, { key: 'ArrowLeft', altKey: true });
+      fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+        key: 'ArrowLeft',
+        altKey: true,
+      });
     if (trigger === 'backspace')
-      fireEvent.keyDown(document, { key: 'Backspace' });
+      fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+        key: 'Backspace',
+      });
     expect(
       screen.queryByRole('region', { name: 'Ficha do equipamento' }),
     ).not.toBeInTheDocument();
@@ -165,9 +173,14 @@ it('does not navigate on backspace in search or on any back trigger with a dialo
     screen.getByRole('button', { name: 'Adicionar equipamento' }),
   );
   expect(screen.getByRole('dialog')).toBeVisible();
-  fireEvent.keyDown(document, { key: 'ArrowLeft', altKey: true });
-  fireEvent.keyDown(document, { key: 'Backspace' });
-  fireEvent.mouseDown(document, { button: 3 });
+  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+    key: 'ArrowLeft',
+    altKey: true,
+  });
+  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+    key: 'Backspace',
+  });
+  fireEvent.mouseDown(screen.getByRole('main').ownerDocument, { button: 3 });
   expect(screen.getByRole('dialog')).toBeVisible();
   expect(screen.getByRole('heading', { name: 'Equipamentos' })).toBeVisible();
 });
@@ -194,7 +207,7 @@ it('asks before discarding a dirty form for a navigation click', async () => {
 });
 
 it('limits and resets the navigation stack', () => {
-  const stack = new NavigationHistory(2);
+  const stack = createNavigationHistory(2);
   stack.record({ route: 'overview', device: '' });
   stack.record({ route: 'equipment', device: '' });
   stack.record({ route: 'equipment', device: 'device' });
@@ -224,7 +237,9 @@ it('clears navigation history when selecting a different company', async () => {
   expect(
     await screen.findByRole('heading', { name: 'Visão geral' }),
   ).toBeVisible();
-  fireEvent.keyDown(document, { key: 'Backspace' });
+  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+    key: 'Backspace',
+  });
   expect(screen.getByRole('heading', { name: 'Visão geral' })).toBeVisible();
   expect(
     screen.queryByRole('heading', { name: 'Equipamentos' }),
@@ -258,7 +273,9 @@ it('clears navigation history across logout and login', async () => {
   expect(
     await screen.findByRole('heading', { name: 'Empresas' }),
   ).toBeVisible();
-  fireEvent.keyDown(document, { key: 'Backspace' });
+  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+    key: 'Backspace',
+  });
   expect(screen.getByRole('heading', { name: 'Empresas' })).toBeVisible();
 });
 

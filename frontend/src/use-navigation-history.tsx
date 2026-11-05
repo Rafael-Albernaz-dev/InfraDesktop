@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { NavigationHistory, sameStep } from './navigation-history';
+import { createNavigationHistory, sameStep } from './navigation-history';
 import type { NavigationStep } from './navigation-history';
 
 type NavigationState = {
+  root: HTMLElement | null;
   scope: string;
   authenticated: boolean;
   step: NavigationStep;
@@ -18,7 +19,7 @@ function editable(target: EventTarget | null): boolean {
   );
 }
 export function useNavigationHistory(state: NavigationState) {
-  const history = useRef(new NavigationHistory());
+  const history = useRef(createNavigationHistory());
   const scope = useRef('');
   const pending = useRef<NavigationStep | undefined>(undefined);
   const current = useRef(state);
@@ -47,12 +48,14 @@ export function useNavigationHistory(state: NavigationState) {
     history.current.record(step);
   }, [nextScope, authenticated, route, device]);
   useEffect(() => {
+    const target = state.root?.ownerDocument;
+    if (!target) return;
     const back = () => {
       const s = current.current;
       if (
         !s.authenticated ||
         s.blocked ||
-        document.querySelector('[role="dialog"]')
+        s.root?.querySelector('[role="dialog"]')
       )
         return;
       const previous = history.current.back();
@@ -76,11 +79,11 @@ export function useNavigationHistory(state: NavigationState) {
       event.preventDefault();
       back();
     };
-    document.addEventListener('keydown', key);
-    document.addEventListener('mousedown', mouse);
+    target.addEventListener('keydown', key);
+    target.addEventListener('mousedown', mouse);
     return () => {
-      document.removeEventListener('keydown', key);
-      document.removeEventListener('mousedown', mouse);
+      target.removeEventListener('keydown', key);
+      target.removeEventListener('mousedown', mouse);
     };
-  }, []);
+  }, [state.root]);
 }
