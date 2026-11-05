@@ -988,6 +988,10 @@ body.com-painel .col {
   border-left: 3px solid var(--g55);
   padding: 8px 10px;
 }
+.inline-error-danger {
+  color: var(--erro);
+  border-color: var(--erro);
+}
 .operation-error {
   margin: 0 0 16px;
 }
@@ -1097,11 +1101,6 @@ body.com-painel .col {
 .radio-client {
   border-top: 1px solid var(--gbb);
   padding: 8px 0;
-}
-.security-theme {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0;
 }
 @media (max-width: 900px) {
   .radio-sides {

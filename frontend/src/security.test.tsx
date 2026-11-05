@@ -62,7 +62,7 @@ function submit() {
     }),
   );
 }
-it('works without company, retains pending issuance and one-time code until ack, allows theme and copies narrowly', async () => {
+it('works without company, retains pending issuance and one-time code until ack, and copies narrowly', async () => {
   let complete!: (r: Result) => void;
   vi.mocked(access.renewRecovery).mockReturnValue(
     new Promise((resolve) => {
@@ -81,8 +81,6 @@ it('works without company, retains pending issuance and one-time code until ack,
   ).not.toBeInTheDocument();
   const field = screen.getByLabelText('Novo código de recuperação');
   expect(field).toHaveValue(Array(8).fill('aaaaaaaa').join('-'));
-  fireEvent.click(screen.getByRole('button', { name: 'Escuro' }));
-  await act(async () => {});
   expect(screen.getByLabelText('Novo código de recuperação')).toHaveValue(
     Array(8).fill('aaaaaaaa').join('-'),
   );

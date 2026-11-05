@@ -4,8 +4,6 @@ import { RecoveryActions } from './recovery-actions';
 
 export function Security({
   recovery,
-  theme,
-  setTheme,
   busy,
   error,
   uncertain,
@@ -14,8 +12,6 @@ export function Security({
   acknowledge,
 }: {
   recovery: string;
-  theme: string;
-  setTheme: (theme: string) => void;
   busy: boolean;
   error: string;
   uncertain: boolean;
@@ -30,23 +26,9 @@ export function Security({
   return (
     <div className="security">
       <p>
-        O código de recuperação pertence à conta local e funciona para todas as
-        empresas. Gerar um novo invalida o anterior.
+        Se esquecer sua senha, este código permite criar uma nova. Gerar outro
+        código invalida o anterior.
       </p>
-      <div className="security-theme" aria-label="Tema da janela">
-        {(['light', 'dark'] as const).map((id) => (
-          <Button
-            type="button"
-            key={id}
-            className={'btn ' + (theme === id ? 'primary' : '')}
-            aria-pressed={theme === id}
-            disabled={busy}
-            onClick={() => setTheme(id)}
-          >
-            {id === 'light' ? 'Claro' : 'Escuro'}
-          </Button>
-        ))}
-      </div>
       {recovery ? (
         <>
           <h3>Guarde seu novo código</h3>
@@ -107,7 +89,14 @@ export function Security({
         </form>
       )}
       {error && (
-        <p role="alert" className="inline-error">
+        <p
+          role="alert"
+          className={
+            error === 'SENHA INCORRETA'
+              ? 'inline-error inline-error-danger'
+              : 'inline-error'
+          }
+        >
           {error}
         </p>
       )}

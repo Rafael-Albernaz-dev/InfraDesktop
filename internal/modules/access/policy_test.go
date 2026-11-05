@@ -7,10 +7,7 @@ import (
 )
 
 func TestPasswordAndNamePolicy(t *testing.T) {
-	for _, x := range []struct {
-		v  string
-		ok bool
-	}{{strings.Repeat("á", 15), true}, {strings.Repeat("界", 128), true}, {strings.Repeat("a", 14), false}, {strings.Repeat("a", 129), false}, {"  espaços valem  ", true}, {string([]byte{0xff}) + strings.Repeat("a", 20), false}} {
+	for _, x := range passwordPolicyCases() {
 		if ValidPassword(x.v) != x.ok {
 			t.Errorf("password policy mismatch for rune boundary")
 		}

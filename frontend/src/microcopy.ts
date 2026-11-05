@@ -17,14 +17,13 @@ export function message(code: string, intent: Intent): string {
     return 'Usuário ou senha não conferem';
   if (code === 'UNAUTHENTICATED')
     return intent === 'renew'
-      ? 'A senha não confere. Tente novamente.'
+      ? 'SENHA INCORRETA'
       : intent === 'recover'
         ? 'Usuário ou código não conferem.'
         : 'Entre novamente para continuar.';
   if (code === 'INVALID_REQUEST') {
     if (intent === 'register' || intent === 'recover')
-      return 'Use uma nova senha de 15 a 128 caracteres e confira o usuário.';
-    if (intent === 'renew') return 'Confira sua senha atual.';
+      return 'Use uma nova senha de 8 a 128 caracteres e confira o usuário.';
     if (intent === 'company')
       return 'Use um nome de empresa de 1 a 80 caracteres.';
     return 'Confira os campos e tente novamente.';

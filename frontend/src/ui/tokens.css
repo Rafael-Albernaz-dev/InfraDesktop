@@ -31,6 +31,7 @@
   --chart-down: #0e7490;
   --chart-up: #c2570c;
   --chart-alerta: #b91c1c;
+  --erro: #b91c1c;
   --chart-grade: #e6e6e6;
 }
 [data-theme='dark'] {
@@ -66,6 +67,7 @@
   --chart-down: #22b8cf;
   --chart-up: #f59e0b;
   --chart-alerta: #f87171;
+  --erro: #f87171;
   --chart-grade: #383838;
 }
 

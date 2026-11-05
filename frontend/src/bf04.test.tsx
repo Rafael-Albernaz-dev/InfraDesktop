@@ -56,12 +56,12 @@ afterEach(() => {
 it('microcopy preserves operation intent, actions and safe credential ambiguity', () => {
   for (const code of ['UNAUTHENTICATED', 'INVALID_REQUEST'])
     expect(message(code, 'login')).toBe('Usuário ou senha não conferem');
-  expect(message('INVALID_REQUEST', 'register')).toContain('15 a 128');
+  expect(message('INVALID_REQUEST', 'register')).toContain('8 a 128');
   expect(message('INVALID_REQUEST', 'recover')).toContain('nova senha');
   expect(message('INVALID_REQUEST', 'company')).toContain('empresa');
   expect(message('INVALID_REQUEST', 'company')).not.toContain('senha');
   expect(message('UNAUTHENTICATED', 'renew')).toBe(
-    'A senha não confere. Tente novamente.',
+    'SENHA INCORRETA',
   );
   expect(message('BUSY', 'company')).toContain('Aguarde');
   expect(message('BUSY', 'company')).not.toContain('Feche');
@@ -97,7 +97,7 @@ it('rejecting renewal never suggests a first issuance and security shortcut does
       name: 'Gerar novo código',
     }),
   );
-  await screen.findByText('A senha não confere. Tente novamente.');
+  await screen.findByText('SENHA INCORRETA');
   expect(
     screen.queryByText(/pode ter sido invalidado/),
   ).not.toBeInTheDocument();
@@ -132,7 +132,7 @@ it('a rejected retry does not erase earlier unknown commit', async () => {
   fireEvent.click(
     screen.getByRole('button', { name: 'Gerar outro código novo' }),
   );
-  await screen.findByText(/A senha não confere/);
+  await screen.findByText(/SENHA INCORRETA/);
   expect(screen.getByText(/Não recebemos a confirmação/)).toBeVisible();
 });
 

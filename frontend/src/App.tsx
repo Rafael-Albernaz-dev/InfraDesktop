@@ -73,18 +73,16 @@ function renderInventory(
 }
 function AuthenticatedOverlays(props: {
   session: ReturnType<typeof useAccessSession>;
-  theme: string;
   perform: PerformFn;
   close: () => void;
   setPage: (p: Page) => void;
 }) {
-  const { session, theme, perform, close, setPage } = props;
+  const { session, perform, close, setPage } = props;
   return (
     <AppOverlays
       dialog={session.dialog}
       close={close}
       recovery={session.recovery}
-      theme={theme}
       busy={session.busy}
       error={session.error}
       recoveryUncertain={session.recoveryUncertain}
@@ -179,7 +177,6 @@ function AuthenticatedShell(props: {
     >
       <AuthenticatedOverlays
         session={session}
-        theme={theme}
         perform={perform}
         close={close}
         setPage={setPage}

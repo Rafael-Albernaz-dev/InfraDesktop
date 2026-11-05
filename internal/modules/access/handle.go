@@ -84,7 +84,7 @@ func (s *Service) commitOpenSession(
 }
 
 func admitCredentialInput(q Command) Code {
-	if ValidName(q.Name) && ValidPassword(q.Password) {
+	if ValidName(q.Name) && passwordForOperation(q.Op, q.Password) {
 		return OK
 	}
 	if q.Op == "access.login" {

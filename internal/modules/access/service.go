@@ -109,7 +109,7 @@ func New(store Store, crypto Crypto, now func() time.Time, uid uint32, activatio
 }
 func ValidPassword(p string) bool {
 	n := utf8.RuneCountInString(p)
-	return utf8.ValidString(p) && n >= 15 && n <= 128
+	return validExistingPassword(p) && n >= 8
 }
 func ValidName(n string) bool {
 	if !utf8.ValidString(n) || strings.TrimSpace(n) != n || utf8.RuneCountInString(n) < 1 || utf8.RuneCountInString(n) > 80 {
@@ -250,8 +250,8 @@ func ValidCompanyID(id string) bool {
 }
 
 func (s *Service) renewRecovery(ctx context.Context, uid uint32, q Command) (View, Code) {
-	if !ValidPassword(q.Password) {
-		return View{}, Invalid
+	if !validExistingPassword(q.Password) {
+		return View{}, Unauthorized
 	}
 	select {
 	case s.kdf <- struct{}{}:
@@ -259,21 +259,7 @@ func (s *Service) renewRecovery(ctx context.Context, uid uint32, q Command) (Vie
 	default:
 		return View{}, Busy
 	}
-	s.mu.Lock()
-	st, c := s.store.Read(ctx)
-	if c == OK {
-		c = s.authorized(st, uid, q)
-	}
-	// Any unacknowledged issuance blocks other sessions. The issuing session may
-	// explicitly reauthenticate to replace an uncertain/lost response.
-	if c == OK {
-		for owner := range s.pendingRecovery {
-			if owner != q.Session || !q.Replace {
-				c = Busy
-			}
-		}
-	}
-	s.mu.Unlock()
+	st, c := s.renewalState(ctx, uid, q)
 	if c != OK {
 		return View{}, c
 	}

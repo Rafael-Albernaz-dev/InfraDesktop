@@ -140,7 +140,6 @@ export type PerformFn = (
 
 function SecurityDialogBody(props: {
   recovery: string;
-  theme: string;
   busy: boolean;
   error: string;
   recoveryUncertain: boolean;
@@ -153,7 +152,6 @@ function SecurityDialogBody(props: {
 }) {
   const {
     recovery,
-    theme,
     busy,
     error,
     recoveryUncertain,
@@ -167,8 +165,6 @@ function SecurityDialogBody(props: {
   return (
     <Security
       recovery={recovery}
-      theme={theme}
-      setTheme={(next) => void perform(() => access.setTheme(next))}
       busy={busy}
       error={error}
       uncertain={recoveryUncertain}
@@ -205,7 +201,6 @@ export function AppOverlays(props: {
   dialog: string;
   close: () => void;
   recovery: string;
-  theme: string;
   busy: boolean;
   error: string;
   recoveryUncertain: boolean;
