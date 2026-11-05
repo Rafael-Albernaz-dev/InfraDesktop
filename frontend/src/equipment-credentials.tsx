@@ -51,7 +51,7 @@ export function EquipmentCredentials({
         </thead>
         <tbody>
           {rows.map((credential) => {
-            const count = usage?.[credential.id] ?? (usage ? 0 : undefined);
+            const names = usage?.[credential.id]?.join(', ') || '—';
             const defaults = Object.entries(s.credentialDefaults)
               .filter(([, value]) => value === credential.id)
               .map(([role]) => role.toUpperCase())
@@ -72,9 +72,13 @@ export function EquipmentCredentials({
                 <td>{credential.alias}</td>
                 <td>{credential.user}</td>
                 <td>
-                  {count === undefined
-                    ? 'Não informado nesta leitura'
-                    : `${count} equipamento${count === 1 ? '' : 's'}`}
+                  {usage ? (
+                    <span className="credential-usage" title={names}>
+                      {names}
+                    </span>
+                  ) : (
+                    'Não informado nesta leitura'
+                  )}
                 </td>
                 <td>{defaults || '—'}</td>
               </tr>

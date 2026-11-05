@@ -992,6 +992,13 @@ body.com-painel .col {
   color: var(--erro);
   border-color: var(--erro);
 }
+.credential-usage {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .operation-error {
   margin: 0 0 16px;
 }
