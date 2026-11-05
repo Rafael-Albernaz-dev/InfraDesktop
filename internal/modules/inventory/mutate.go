@@ -3,15 +3,12 @@ package inventory
 import (
 	"context"
 	"fmt"
+	"infradesktop/internal/modules/equipment"
 	"net/netip"
 	"strings"
 )
 
-const RoleOther Role = "other"
-
-func validInventoryRole(r Role) bool {
-	return r == RoleConcentrator || r == RoleAP || r == RoleCPE || r == RolePTP || r == RoleOther
-}
+const RoleOther Role = equipment.RoleOther
 
 func validRadioDefaultRole(r Role) bool {
 	return r == RoleAP || r == RoleCPE || r == RolePTP
@@ -23,7 +20,7 @@ func canonicalizeMutation(q *Command) Code {
 		if q.Role == "" {
 			q.Role = RoleOther
 		}
-		if !validInventoryRole(q.Role) {
+		if !equipment.ValidInventoryRole(q.Role) {
 			return Invalid
 		}
 		q.Address = strings.TrimSpace(q.Address)
@@ -48,6 +45,9 @@ func buildMutationStamp(q Command, secretStamp string) string {
 		q.Alias, q.User, secretStamp, fmt.Sprint(q.Affected),
 	}
 	stamp := fmt.Sprintf("%q", parts)
+	if q.Block != "" {
+		stamp += fmt.Sprintf(";block:%q", q.Block)
+	}
 	if q.Role != "" && q.Role != RoleOther {
 		stamp += ";role:" + string(q.Role)
 	}
@@ -274,7 +274,7 @@ func mutateTrustReset(st *State, q Command, stamp *string, v *View) Code {
 func mutateDeviceSave(st *State, q Command, v *View) Code {
 	old := DeviceByID(st, q.ID)
 	d := Device{
-		Role: q.Role, ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port,
+		Role: q.Role, ID: q.ID, Name: q.Name, Block: q.Block, Address: q.Address, Port: q.Port,
 		Transport: q.Transport, CredentialID: q.CredentialID, Revision: 1, Active: true,
 	}
 	if q.Op == "inventory.create" {

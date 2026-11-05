@@ -11,19 +11,6 @@ type EquipmentResult struct {
 	Activation string          `json:"activation_id"`
 	Data       *equipment.View `json:"data,omitempty"`
 }
-type DeviceInput struct {
-	User         string `json:"user"`
-	Secret       string `json:"secret"`
-	ID           string `json:"id"`
-	Operation    string `json:"operation_id"`
-	Revision     uint64 `json:"revision"`
-	Role         string `json:"role,omitempty"`
-	Name         string `json:"name"`
-	Address      string `json:"address"`
-	Port         int    `json:"port"`
-	Transport    string `json:"transport"`
-	CredentialID string `json:"credential_id"`
-}
 type CredentialInput struct {
 	ID        string `json:"id"`
 	Operation string `json:"operation_id"`
@@ -51,14 +38,11 @@ func (a *App) GetEquipment(profile, activation, id string) EquipmentResult {
 	return a.equipmentCall("inventory.get", profile, activation, ipc.EquipmentInput{ID: id})
 }
 func (a *App) SaveEquipment(profile, activation string, d DeviceInput) EquipmentResult {
-	op := "inventory.update"
-	if d.Revision == 0 {
-		op = "inventory.create"
-		if d.User != "" || d.Secret != "" {
-			op = "inventory.enroll"
-		}
+	op := deviceOperation(d)
+	if op == "inventory.enroll" && d.Block != "" {
+		return EquipmentResult{Code: string(equipment.Invalid), Profile: profile, Activation: activation}
 	}
-	return a.equipmentCall(op, profile, activation, ipc.EquipmentInput{ID: d.ID, Operation: d.Operation, Revision: d.Revision, Role: equipment.Role(d.Role), Name: d.Name, Address: d.Address, Port: d.Port, Transport: equipment.Transport(d.Transport), CredentialID: d.CredentialID, User: d.User, Secret: d.Secret})
+	return a.equipmentCall(op, profile, activation, makeDeviceInput(d))
 }
 func (a *App) SetEquipmentActive(profile, activation, id, operation string, revision uint64, active bool) EquipmentResult {
 	return a.equipmentCall("inventory.set-active", profile, activation, ipc.EquipmentInput{ID: id, Operation: operation, Revision: revision, Active: active})

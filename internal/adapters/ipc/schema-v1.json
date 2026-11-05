@@ -173,7 +173,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 19,
+  "product_revision": 20,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -215,7 +215,8 @@
       "address",
       "port",
       "transport",
-      "credential_id"
+      "credential_id",
+      "block"
     ],
     "inventory.update": [
       "operation_id",
@@ -226,7 +227,8 @@
       "address",
       "port",
       "transport",
-      "credential_id"
+      "credential_id",
+      "block"
     ],
     "inventory.set-active": [
       "operation_id",

@@ -6,23 +6,22 @@ import (
 	"time"
 )
 
-// RadioFamily is the driver identity proved by a reading, never a caller-selected guess.
-type RadioFamily string
-
 // Role identifies the operational capability of an inventory device.
 type Role string
 
 const (
-	RoleAP                  Role        = "ap"
-	RoleCPE                 Role        = "cpe"
-	RolePTP                 Role        = "ptp"
-	RoleConcentrator        Role        = "concentrator"
-	RadioAuto               RadioFamily = "auto"
-	RadioStandalone         RadioFamily = "auto-avulso"
-	RadioUnsupported        RadioFamily = "unsupported"
-	RadioRouterOSWirelessV6 RadioFamily = "routeros-wireless-v6"
-	RadioAirOSV6            RadioFamily = "airos-v6"
-	RadioIntelbrasWOM       RadioFamily = "intelbras-wom"
+	RoleAP              Role = "ap"
+	RoleCPE             Role = "cpe"
+	RolePTP             Role = "ptp"
+	RoleConcentrator    Role = "concentrator"
+	RoleEdge            Role = "edge"
+	RoleSwitch          Role = "switch"
+	RoleStation         Role = "station"
+	RolePowerMonitor    Role = "power-monitor"
+	RoleUPS             Role = "ups"
+	RoleRectifier       Role = "rectifier"
+	RoleSolarController Role = "solar-controller"
+	RoleBatteryMonitor  Role = "battery-monitor"
 )
 
 // RadioMode selects the bounded radio use case.

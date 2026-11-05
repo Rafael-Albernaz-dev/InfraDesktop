@@ -1,10 +1,7 @@
 package storage
 
 import (
-	"bytes"
 	"context"
-	"database/sql"
-	"encoding/json"
 	"infradesktop/internal/modules/equipment"
 )
 
@@ -27,131 +24,16 @@ func (s *Store) ReadEquipment(ctx context.Context, id string) (equipment.State, 
 }
 func (s *Store) loadEquipment(ctx context.Context, q queryer, id string) (equipment.State, error) {
 	st := equipment.State{Installation: s.installation, Company: id, Credentials: []equipment.SealedCredential{}, Devices: []equipment.Device{}, Operations: []equipment.Operation{}}
-	e := q.QueryRowContext(ctx, "SELECT envelope FROM vault_key WHERE singleton=1").Scan(&st.WrappedKey)
-	if e != nil && e != sql.ErrNoRows {
-		return st, e
-	}
-	rows, e := q.QueryContext(ctx, "SELECT id,alias,username,revision,envelope FROM credentials ORDER BY rowid")
-	if e != nil {
-		return st, e
-	}
-	for rows.Next() {
-		var c equipment.SealedCredential
-		if e = rows.Scan(&c.Metadata.ID, &c.Metadata.Alias, &c.Metadata.User, &c.Metadata.Revision, &c.Envelope); e != nil {
-			rows.Close()
-			return st, e
-		}
-		st.Credentials = append(st.Credentials, c)
-	}
-	e = rows.Err()
-	rows.Close()
-	if e != nil {
-		return st, e
-	}
-	st.CredentialDefaults = map[string]string{}
-	defaults, err := q.QueryContext(ctx, "SELECT class,credential_id FROM radio_credential_defaults")
-	if err != nil {
+	if err := loadEquipmentCredentials(ctx, q, &st); err != nil {
 		return st, err
 	}
-	for defaults.Next() {
-		var class, id string
-		if err = defaults.Scan(&class, &id); err != nil {
-			defaults.Close()
-			return st, err
-		}
-		st.CredentialDefaults[class] = id
-	}
-	err = defaults.Err()
-	defaults.Close()
-	if err != nil {
+	if err := loadEquipmentDevices(ctx, q, &st); err != nil {
 		return st, err
 	}
-	rows, e = q.QueryContext(ctx, "SELECT id,name,address,port,transport,COALESCE(credential_id,''),revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,COALESCE((SELECT role FROM device_radio_roles WHERE device_id=devices.id),role) FROM devices ORDER BY rowid")
-	if e != nil {
-		return st, e
+	if err := loadEquipmentOperations(ctx, q, &st); err != nil {
+		return st, err
 	}
-	for rows.Next() {
-		var d equipment.Device
-		var observation, acceptance, attempt sql.NullString
-		if e = rows.Scan(&d.ID, &d.Name, &d.Address, &d.Port, &d.Transport, &d.CredentialID, &d.Revision, &d.Active, &d.Fingerprint, &d.TrustOrigin, &observation, &acceptance, &attempt, &d.Role); e != nil {
-			rows.Close()
-			return st, e
-		}
-		if observation.Valid {
-			d.Result = &equipment.Observation{}
-			if e = json.Unmarshal([]byte(observation.String), d.Result); e != nil {
-				rows.Close()
-				return st, e
-			}
-		}
-		if acceptance.Valid {
-			d.TrustAcceptance = &equipment.TrustAcceptance{}
-			if e = json.Unmarshal([]byte(acceptance.String), d.TrustAcceptance); e != nil {
-				rows.Close()
-				return st, e
-			}
-		}
-		if attempt.Valid {
-			d.LastAttempt = &equipment.Attempt{}
-			if e = json.Unmarshal([]byte(attempt.String), d.LastAttempt); e != nil {
-				rows.Close()
-				return st, e
-			}
-		}
-		st.Devices = append(st.Devices, d)
-	}
-	e = rows.Err()
-	rows.Close()
-	if e != nil {
-		return st, e
-	}
-	for i := range st.Devices {
-		d := &st.Devices[i]
-		var healthRaw, healthAt string
-		if err := q.QueryRowContext(ctx, "SELECT health_json,stamp FROM device_equipment_snapshot WHERE device_id=? AND revision=?", d.ID, d.Revision).Scan(&healthRaw, &healthAt); err == nil {
-			var h equipment.DeviceHealth
-			if err = json.Unmarshal([]byte(healthRaw), &h); err != nil {
-				return st, err
-			}
-			d.Monitoring = &h
-			d.MonitoringAt = healthAt
-		} else if err != sql.ErrNoRows {
-			return st, err
-		}
-		if d.Role != "concentrator" {
-			continue
-		}
-		var body string
-		err := q.QueryRowContext(ctx, "SELECT o.meta_json FROM pppoe_current c JOIN pppoe_observations o ON o.id=c.observation_id WHERE c.device_id=?", d.ID).Scan(&body)
-		if err == sql.ErrNoRows {
-			continue
-		}
-		if err != nil {
-			return st, err
-		}
-		var o equipment.PPObservation
-		if err = json.Unmarshal([]byte(body), &o); err != nil {
-			return st, err
-		}
-		online := o.Online
-		if online == 0 && o.Offline == 0 {
-			online = o.Count
-		}
-		d.PPPoE = &equipment.PPSummary{Online: online, Offline: o.Offline, At: o.Provenance.Ended}
-	}
-	rows, e = q.QueryContext(ctx, "SELECT id,stamp,entity FROM equipment_operations ORDER BY rowid")
-	if e != nil {
-		return st, e
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var op equipment.Operation
-		if e = rows.Scan(&op.ID, &op.Stamp, &op.Entity); e != nil {
-			return st, e
-		}
-		st.Operations = append(st.Operations, op)
-	}
-	return st, rows.Err()
+	return st, nil
 }
 func (s *Store) UpdateEquipment(ctx context.Context, id string, fn func(*equipment.State) equipment.Code) equipment.Code {
 	s.mu.Lock()
@@ -162,120 +44,24 @@ func (s *Store) UpdateEquipment(ctx context.Context, id string, fn func(*equipme
 	if s.checkActive() != nil {
 		return equipment.Unavailable
 	}
-	tx, e := s.unit.BeginTx(ctx, nil)
-	if e != nil {
+	tx, err := s.unit.BeginTx(ctx, nil)
+	if err != nil {
 		return equipment.Unavailable
 	}
 	defer tx.Rollback()
-	st, e := s.loadEquipment(ctx, tx, id)
-	if e != nil {
+	state, err := s.loadEquipment(ctx, tx, id)
+	if err != nil {
 		return equipment.Unavailable
 	}
-	before, _ := json.Marshal(st)
-	old := equipment.State{}
-	if json.Unmarshal(before, &old) != nil {
+	old, err := cloneEquipmentState(state)
+	if err != nil {
 		return equipment.Unavailable
 	}
-	oldCredentials := map[string][]byte{}
-	oldDevices := map[string][]byte{}
-	oldOps := map[string]bool{}
-	for _, c := range old.Credentials {
-		b, _ := json.Marshal(c)
-		oldCredentials[c.Metadata.ID] = b
+	if code := fn(&state); code != equipment.OK {
+		return code
 	}
-	for _, d := range old.Devices {
-		b, _ := json.Marshal(d)
-		oldDevices[d.ID] = b
-	}
-	for _, op := range old.Operations {
-		oldOps[op.ID] = true
-	}
-	if c := fn(&st); c != equipment.OK {
-		return c
-	}
-	if len(st.WrappedKey) > 0 && !bytes.Equal(st.WrappedKey, old.WrappedKey) {
-		if _, e = tx.ExecContext(ctx, "INSERT INTO vault_key VALUES(1,?) ON CONFLICT(singleton) DO UPDATE SET envelope=excluded.envelope", st.WrappedKey); e != nil {
-			return equipment.Unavailable
-		}
-	}
-	for _, c := range st.Credentials {
-		b, _ := json.Marshal(c)
-		if bytes.Equal(b, oldCredentials[c.Metadata.ID]) {
-			continue
-		}
-		m := c.Metadata
-		if _, e = tx.ExecContext(ctx, "INSERT INTO credentials VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET alias=excluded.alias,username=excluded.username,revision=excluded.revision,envelope=excluded.envelope", m.ID, m.Alias, m.User, m.Revision, c.Envelope); e != nil {
-			return equipment.Unavailable
-		}
-	}
-	for class, id := range st.CredentialDefaults {
-		if old.CredentialDefaults[class] == id {
-			continue
-		}
-		if _, e = tx.ExecContext(ctx, "INSERT INTO radio_credential_defaults VALUES(?,?) ON CONFLICT(class) DO UPDATE SET credential_id=excluded.credential_id", class, id); e != nil {
-			return equipment.Unavailable
-		}
-	}
-
-	for _, d := range st.Devices {
-		b, _ := json.Marshal(d)
-		if bytes.Equal(b, oldDevices[d.ID]) {
-			continue
-		}
-		if d.Role == "" {
-			d.Role = "other"
-		}
-		var observation any
-		if d.Result != nil {
-			b, err := json.Marshal(d.Result)
-			if err != nil || len(b) > 48*1024 {
-				return equipment.Limit
-			}
-			observation = string(b)
-		}
-		var credentialID any
-		if d.CredentialID != "" {
-			credentialID = d.CredentialID
-		}
-		var acceptance, attempt any
-		if d.TrustAcceptance != nil {
-			b, err := json.Marshal(d.TrustAcceptance)
-			if err != nil {
-				return equipment.Unavailable
-			}
-			acceptance = string(b)
-		}
-		if d.LastAttempt != nil {
-			b, err := json.Marshal(d.LastAttempt)
-			if err != nil {
-				return equipment.Unavailable
-			}
-			attempt = string(b)
-		}
-		databaseRole := d.Role
-		if databaseRole == "ptp" {
-			databaseRole = "other"
-		}
-		if _, e = tx.ExecContext(ctx, "INSERT INTO devices(id,name,address,port,transport,credential_id,revision,active,fingerprint,trust_origin,observation,trust_acceptance,last_attempt,role) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,address=excluded.address,port=excluded.port,transport=excluded.transport,credential_id=excluded.credential_id,revision=excluded.revision,active=excluded.active,fingerprint=excluded.fingerprint,trust_origin=excluded.trust_origin,observation=excluded.observation,trust_acceptance=excluded.trust_acceptance,last_attempt=excluded.last_attempt,role=excluded.role", d.ID, d.Name, d.Address, d.Port, d.Transport, credentialID, d.Revision, d.Active, d.Fingerprint, d.TrustOrigin, observation, acceptance, attempt, databaseRole); e != nil {
-			return equipment.Unavailable
-		}
-		if d.Role == "ptp" {
-			if _, e = tx.ExecContext(ctx, "INSERT INTO device_radio_roles VALUES(?,?) ON CONFLICT(device_id) DO UPDATE SET role=excluded.role", d.ID, d.Role); e != nil {
-				return equipment.Unavailable
-			}
-		} else {
-			if _, e = tx.ExecContext(ctx, "DELETE FROM device_radio_roles WHERE device_id=?", d.ID); e != nil {
-				return equipment.Unavailable
-			}
-		}
-	}
-	for _, op := range st.Operations {
-		if oldOps[op.ID] {
-			continue
-		}
-		if _, e = tx.ExecContext(ctx, "INSERT INTO equipment_operations VALUES(?,?,?) ON CONFLICT(id) DO NOTHING", op.ID, op.Stamp, op.Entity); e != nil {
-			return equipment.Unavailable
-		}
+	if code := persistEquipmentChanges(ctx, tx, old, state); code != equipment.OK {
+		return code
 	}
 	s.observe("before-equipment-commit")
 	if tx.Commit() != nil {

@@ -50,9 +50,6 @@ var companyContextPeaksSchema string
 //go:embed company_012_radio.sql
 var companyRadioSchema string
 
-//go:embed company_013_radio_journey.sql
-var companyRadioJourneySchema string
-
 func migrateGlobal(tx *sql.Tx) error {
 	rows, e := tx.Query("SELECT version,checksum FROM schema_migrations ORDER BY version")
 	if e != nil {
@@ -173,46 +170,24 @@ func (s *Store) validateUnitIdentity(db *sql.DB, id string) error {
 	if e := db.QueryRow("SELECT count(*) FROM schema_migrations").Scan(&n); e != nil {
 		return e
 	}
-	if n < 1 || n > 13 {
+	schemas := companySchemas()
+	if n < 1 || n > len(schemas) {
 		return errors.New("unknown company schema")
 	}
-	for v, src := range []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema, companyPPPoESchema, companyPPDiagnosticSchema, companySessionsOfflineSchema, companySessionContextSchema, companyDeviceMonitoringSchema, companyEquipmentInsightsSchema, companyContextPeaksSchema, companyRadioSchema, companyRadioJourneySchema} {
-		if v+1 > n {
-			break
-		}
+	for v, src := range schemas[:n] {
 		var h string
 		if e := db.QueryRow("SELECT checksum FROM schema_migrations WHERE version=?", v+1).Scan(&h); e != nil || h != checksum([]byte(src)) {
 			return errors.New("company migration mismatch")
 		}
 	}
-	schemaCount := n
-	if e := db.QueryRow("SELECT count(*) FROM identity").Scan(&n); e != nil || n != 1 {
+	var identities int
+	if e := db.QueryRow("SELECT count(*) FROM identity").Scan(&identities); e != nil || identities != 1 {
 		return errors.New("invalid company identity")
 	}
 	if e := db.QueryRow("SELECT installation,company FROM identity WHERE singleton=1").Scan(&installation, &company); e != nil || installation != s.installation || company != id {
 		return errors.New("company identity mismatch")
 	}
-	for version := schemaCount + 1; version <= 13; version++ {
-		src := map[int]string{2: companyBrandSchema, 3: companyEquipmentSchema, 4: companyOperationalSchema, 5: companyPPPoESchema, 6: companyPPDiagnosticSchema, 7: companySessionsOfflineSchema, 8: companySessionContextSchema, 9: companyDeviceMonitoringSchema, 10: companyEquipmentInsightsSchema, 11: companyContextPeaksSchema, 12: companyRadioSchema, 13: companyRadioJourneySchema}[version]
-		tx, e := db.Begin()
-		if e != nil {
-			return e
-		}
-		if _, e = tx.Exec(src); e == nil && version == 7 {
-			e = migrateReadReceipts(tx)
-		}
-		if e == nil {
-			_, e = tx.Exec("INSERT INTO schema_migrations VALUES(?,?)", version, checksum([]byte(src)))
-		}
-		if e != nil {
-			tx.Rollback()
-			return e
-		}
-		if e = tx.Commit(); e != nil {
-			return e
-		}
-	}
-	return nil
+	return applyCompanyMigrations(db, n, schemas)
 }
 
 func (s *Store) openUnit(id string) (*sql.DB, error) {

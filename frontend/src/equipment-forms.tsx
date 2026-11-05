@@ -359,6 +359,7 @@ function useInitialDeviceDraft(device?: Device, contextKey = '') {
     operation_id: receipt?.operation_id || id(),
     revision: device?.revision || 0,
     name: device?.name || '',
+    block: device?.block || '',
     role: device?.role || 'other',
     address: device?.address || '',
     port: device?.port || 22,

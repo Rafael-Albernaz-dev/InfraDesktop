@@ -127,6 +127,7 @@ function credentialChangeInput(target: Device, credential: string) {
     operation_id: crypto.randomUUID(),
     role: target.role,
     name: target.name,
+    block: target.block || '',
     address: target.address,
     port: target.port,
     transport: RadioTransports.ssh,
@@ -135,7 +136,6 @@ function credentialChangeInput(target: Device, credential: string) {
     secret: '',
   };
 }
-
 export function createRecoverySave(state: RecoveryState) {
   return async function save(credential: string) {
     const generation = state.recoveryLife.current,

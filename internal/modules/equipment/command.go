@@ -15,7 +15,7 @@ type Command struct {
 	Active                                                          bool
 	Inactive                                                        bool
 	Cursor                                                          int
-	Search                                                          string
+	Search, Block                                                   string
 	Affected                                                        int
 	JobID, Fingerprint                                              string
 }

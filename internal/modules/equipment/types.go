@@ -111,6 +111,7 @@ type Device struct {
 	LastAttempt     *Attempt         `json:"last_attempt,omitempty"`
 	ID              string           `json:"id"`
 	Name            string           `json:"name"`
+	Block           string           `json:"block"`
 	Address         string           `json:"address"`
 	Port            int              `json:"port"`
 	Transport       Transport        `json:"transport"`
@@ -120,12 +121,6 @@ type Device struct {
 	Fingerprint     string           `json:"fingerprint"`
 	TrustOrigin     string           `json:"trust_origin"`
 	Result          *Observation     `json:"result,omitempty"`
-}
-
-type PPSummary struct {
-	Online  int    `json:"online"`
-	Offline int    `json:"offline"`
-	At      string `json:"at"`
 }
 
 type SealedCredential struct {

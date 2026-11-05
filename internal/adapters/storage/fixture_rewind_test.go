@@ -3,13 +3,11 @@ package storage
 import "testing"
 
 // latestCompanySchema is the newest company migration the synthetic fixtures know.
-const latestCompanySchema = 13
+const latestCompanySchema = 14
 
-// dropRadioFixtureSchema rewinds the additive radio migrations 12 and 13 so the
-// synthetic fixtures can rebuild an older unit; the PPPoE/monitoring rewind chain
-// calls it first. A newer migration must be taught to the chain explicitly.
 func dropRadioFixtureSchema(t *testing.T, j *journey) {
 	t.Helper()
+	dropInventoryBlockFixtureSchema(t, j)
 	var latest int
 	if e := j.st.unit.QueryRow("SELECT max(version) FROM schema_migrations").Scan(&latest); e != nil || latest > latestCompanySchema {
 		t.Fatal("company migration newer than the fixture rewind; extend the rewind chain", latest, e)

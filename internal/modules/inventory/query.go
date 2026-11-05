@@ -60,7 +60,7 @@ func (s *Service) admitQueryStart(ctx context.Context, q Command) (*Device, uint
 	if !d.Active {
 		return nil, 0, Inactive
 	}
-	if d.Role == RolePTP {
+	if d.Role == RolePTP || roleWithoutDriver(d.Role) {
 		return nil, 0, CodeUnsupported
 	}
 	if q.Op != "device.query-start" {
