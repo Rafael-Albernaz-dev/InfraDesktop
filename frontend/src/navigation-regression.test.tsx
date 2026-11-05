@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import App from './App';
 import { access, equipmentAPI, type Result } from './presentation';
@@ -18,7 +25,7 @@ vi.mock('./presentation', async (importOriginal) => ({
       .map((k) => [k, vi.fn()]),
   ),
   equipmentAPI: Object.fromEntries(
-    'list,credentials,get'.split(',').map((k) => [k, vi.fn()]),
+    'list,credentials,get,inspect'.split(',').map((k) => [k, vi.fn()]),
   ),
 }));
 const account: Result = {
@@ -183,6 +190,33 @@ it('does not navigate on backspace in search or on any back trigger with a dialo
   fireEvent.mouseDown(screen.getByRole('main').ownerDocument, { button: 3 });
   expect(screen.getByRole('dialog')).toBeVisible();
   expect(screen.getByRole('heading', { name: 'Equipamentos' })).toBeVisible();
+});
+
+it('blocks back navigation while an equipment operation is pending', async () => {
+  const bound = { ...device, credential_id: 'cred' };
+  const available = {
+    ...data,
+    data: { ...data.data, device: bound, devices: [bound] },
+  };
+  vi.mocked(equipmentAPI.list).mockResolvedValue(available);
+  vi.mocked(equipmentAPI.get).mockResolvedValue(available);
+  let finish!: (result: typeof available) => void;
+  vi.mocked(equipmentAPI.inspect).mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  fireEvent.click(await inventory());
+  fireEvent.click(await screen.findByRole('button', { name: 'Conectar' }));
+  await waitFor(() => expect(equipmentAPI.inspect).toHaveBeenCalledOnce());
+  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
+    key: 'ArrowLeft',
+    altKey: true,
+  });
+  expect(
+    screen.getByRole('region', { name: 'Ficha do equipamento' }),
+  ).toBeVisible();
+  await act(async () => finish({ ...available, code: 'SERVICE_UNAVAILABLE' }));
 });
 
 it('asks before discarding a dirty form for a navigation click', async () => {
