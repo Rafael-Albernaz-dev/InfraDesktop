@@ -32,6 +32,7 @@ type Verifier struct {
 	Salt, Hash         []byte
 }
 type Account struct {
+	Columns        []string
 	Name           string
 	Password       Verifier
 	Recovery       []byte
@@ -66,6 +67,7 @@ type Crypto interface {
 	Equal([]byte, []byte) bool
 }
 type Command struct {
+	Columns                                                                             *[]string
 	Op, Session, Grant, Name, Password, Recovery, Profile, Activation, Theme, Operation string
 	ExpectedProfile, ExpectedActivation                                                 string
 	Brand                                                                               Branding
@@ -74,6 +76,7 @@ type Command struct {
 	Owner string
 }
 type View struct {
+	Columns                                                    []string
 	Setup, Authenticated                                       bool
 	Name, Theme, Profile, Activation, Session, Grant, Recovery string
 	Companies                                                  []Company
@@ -158,6 +161,7 @@ func (s *Service) view(st State) View {
 	if st.Account != nil {
 		v.Name = st.Account.Name
 		v.Theme = st.Account.Theme
+		v.Columns = append([]string(nil), st.Account.Columns...)
 		v.Profile = st.Account.Profile
 		v.Activation = s.activation
 		v.Companies = st.Companies

@@ -24,7 +24,6 @@ func (s *Service) Handle(ctx context.Context, uid uint32, q Command) (View, Code
 		return s.handleAuthenticated(ctx, uid, q)
 	}
 }
-
 func (s *Service) handleBootstrap(ctx context.Context) (View, Code) {
 	st, c := s.store.Read(ctx)
 	if c != OK {
@@ -32,7 +31,6 @@ func (s *Service) handleBootstrap(ctx context.Context) (View, Code) {
 	}
 	return View{Setup: st.Account == nil, Theme: "light", Companies: []Company{}}, OK
 }
-
 func (s *Service) issueOpenTokens(remember bool) (string, string, Code) {
 	id, c := s.crypto.Token()
 	if c != OK {
@@ -363,6 +361,8 @@ func applyAuthenticatedOp(current *State, q Command, id string) Code {
 		}
 		current.Account.Theme = q.Theme
 		return OK
+	case "preferences.columns":
+		return applyInventoryColumns(current, q)
 	default:
 		return Invalid
 	}

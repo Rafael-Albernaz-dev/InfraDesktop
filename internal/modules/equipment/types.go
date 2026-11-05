@@ -103,6 +103,7 @@ type Observation struct {
 }
 
 type Device struct {
+	RadioSummary    *RadioSummary    `json:"radio_summary,omitempty"`
 	Monitoring      *DeviceHealth    `json:"monitoring,omitempty"`
 	MonitoringAt    string           `json:"monitoring_at,omitempty"`
 	Role            Role             `json:"role"`
@@ -176,6 +177,9 @@ type Job struct {
 }
 
 type View struct {
+	BulkReceipt        *BulkReceipt      `json:"bulk_receipt,omitempty"`
+	Blocks             []string          `json:"blocks,omitempty"`
+	Models             []string          `json:"models,omitempty"`
 	CredentialDefaults map[string]string `json:"credential_defaults,omitempty"`
 	Total              int               `json:"total_devices"`
 	OperationState     string            `json:"operation_state,omitempty"`

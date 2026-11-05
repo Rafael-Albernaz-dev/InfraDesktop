@@ -3,6 +3,7 @@ package equipment
 import "infradesktop/internal/modules/access"
 
 type Command struct {
+	Bulk                                                            *BulkUpdate
 	Authority                                                       uint64
 	Op                                                              string
 	Scope                                                           access.Command
@@ -12,10 +13,9 @@ type Command struct {
 	Role                                                            Role
 	Revision                                                        uint64
 	Port                                                            int
-	Active                                                          bool
-	Inactive                                                        bool
+	Active, Inactive, IncludeInactive, BlockEmpty                   bool
 	Cursor                                                          int
-	Search, Block                                                   string
+	Search, Block, Model                                            string
 	Affected                                                        int
 	JobID, Fingerprint                                              string
 }

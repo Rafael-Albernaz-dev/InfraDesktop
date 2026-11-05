@@ -99,6 +99,17 @@
       "theme",
       "contract_revision"
     ],
+    "preferences.columns": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "session",
+      "profile_id",
+      "activation_id",
+      "columns",
+      "contract_revision"
+    ],
     "access.renew-recovery": [
       "version",
       "request_id",
@@ -173,7 +184,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 20,
+  "product_revision": 21,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -202,7 +213,16 @@
     "inventory.list": [
       "search",
       "cursor",
-      "inactive"
+      "inactive",
+      "include_inactive",
+      "role",
+      "block",
+      "block_empty",
+      "model"
+    ],
+    "inventory.bulk-update": [
+      "operation_id",
+      "bulk"
     ],
     "inventory.get": [
       "id"

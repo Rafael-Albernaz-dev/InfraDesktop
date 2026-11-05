@@ -10,6 +10,7 @@ import (
 )
 
 type Result struct {
+	Columns        []string      `json:"columns,omitempty"`
 	Code           string        `json:"code"`
 	RequestID      string        `json:"request_id"`
 	Instance       string        `json:"instance_id"`
@@ -61,49 +62,8 @@ func (a *App) call(q ipc.Request) Result {
 		a.ppGeneration++
 	}
 	r := a.client.Call(a.ctx, q)
-	if r.Code == "UNAUTHENTICATED" || r.Code == "PROFILE_CHANGED" {
-		a.ppGeneration++
-	}
-	if !a.accessRecoveryPending && (r.Code == "UNAUTHENTICATED" || r.Code == "PROFILE_CHANGED" || (r.Data != nil && a.recovery != "" && (r.Data.Instance != a.recoveryInstance || !r.Data.Authenticated || r.Data.Profile != a.recoveryProfile || r.Data.Activation != a.recoveryActivation))) {
-		a.recovery = ""
-		a.recoveryGeneration++
-	}
-	if (q.Op == "access.renew-recovery" || q.Op == "access.register" || q.Op == "access.recover") && r.Code == "OK" && r.Data != nil {
-		a.recovery = r.Data.Recovery
-		a.renewalRecoveryPending = q.Op == "access.renew-recovery" && r.Data.Recovery != ""
-		a.recoveryGeneration++
-		a.recoveryInstance = r.Data.Instance
-		a.recoveryProfile = r.Data.Profile
-		a.recoveryActivation = r.Data.Activation
-	}
-	if q.Op == "access.ack-recovery" && r.Code == "OK" {
-		a.recovery = ""
-		a.renewalRecoveryPending = false
-		a.recoveryGeneration++
-	}
-	if (q.Op == "access.register" || q.Op == "access.recover") && r.Code == "OK" && r.Data != nil {
-		a.accessRecoveryPending = r.Data.Recovery != ""
-		a.renewalRecoveryPending = false
-	}
-	if q.Op == "access.bootstrap" && (r.Code == "UNAUTHENTICATED" || (r.Code == "OK" && r.Data != nil && !r.Data.Authenticated)) {
-		a.renewalRecoveryPending = false
-	}
-	v := Result{Code: string(r.Code), RequestID: r.RequestID, Companies: []ipc.Company{}}
-	if d := r.Data; d != nil {
-		v.Instance = d.Instance
-		v.Activation = d.Activation
-		v.Profile = d.Profile
-		v.Heartbeat = d.Heartbeat
-		v.Setup = d.Setup
-		v.Authenticated = d.Authenticated
-		v.Name = d.Name
-		v.Theme = d.Theme
-		v.Recovery = d.Recovery
-		v.Companies = d.Companies
-		v.Brand = d.Brand
-		v.ProductVersion = d.ProductVersion
-	}
-	return v
+	a.updateRecoveryAfterCall(q, r)
+	return accountResult(r)
 }
 func (a *App) Status() Result { return a.call(ipc.Request{Op: "access.bootstrap"}) }
 func (a *App) Register(name, password string) Result {

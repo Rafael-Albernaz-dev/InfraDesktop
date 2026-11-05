@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"io"
@@ -14,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-const ProductRevision = 20
+const ProductRevision = 21
 const ProductVersion = "0.6.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104
@@ -23,6 +22,7 @@ const Budget = 3 * time.Second
 var errProtocol = errors.New("invalid frame")
 
 type Request struct {
+	Columns            []string              `json:"columns,omitempty"`
 	Radio              *equipment.RadioInput `json:"radio,omitempty"`
 	PPPoE              *equipment.PPInput    `json:"pppoe,omitempty"`
 	Equipment          *EquipmentInput       `json:"equipment,omitempty"`
@@ -57,6 +57,7 @@ type Company struct {
 	Name string `json:"name"`
 }
 type Data struct {
+	Columns          []string             `json:"columns,omitempty"`
 	Radio            *equipment.RadioView `json:"radio,omitempty"`
 	VaultAvailable   bool                 `json:"vault_available"`
 	PPPoE            *equipment.PPView    `json:"pppoe,omitempty"`
@@ -232,51 +233,14 @@ func validate(b []byte) (Request, foundation.Code) {
 		if q.Op == "foundation.observe" {
 			allowed["label"] = true
 		}
-	case "access.bootstrap", "access.register", "access.login", "access.recover", "access.resume", "access.snapshot", "access.logout", "company.create", "company.select", "preferences.theme", "access.renew-recovery", "access.ack-recovery", "access.check-issued", "access.ack-issued", "company.brand-get", "company.brand-set":
-		if q.ContractRevision != ProductRevision {
-			return q, foundation.Version
-		}
-		allowed = map[string]bool{"version": true, "request_id": true, "op": true, "capability": true, "contract_revision": true}
-		switch q.Op {
-		case "access.check-issued", "access.ack-issued":
-			allowed["recovery"] = true
-		case "access.register":
-			allowed["name"] = true
-			allowed["password"] = true
-		case "access.login":
-			allowed["name"] = true
-			allowed["password"] = true
-			allowed["remember"] = true
-		case "access.recover":
-			allowed["name"] = true
-			allowed["password"] = true
-			allowed["recovery"] = true
-		case "access.resume":
-			allowed["grant"] = true
-		case "access.snapshot", "access.logout", "company.create", "company.select", "preferences.theme", "access.renew-recovery", "access.ack-recovery", "company.brand-get", "company.brand-set":
-			allowed["session"] = true
-			allowed["profile_id"] = true
-			allowed["activation_id"] = true
-			if q.Op == "company.brand-get" || q.Op == "company.brand-set" {
-				allowed["expected_profile"] = true
-				allowed["expected_activation"] = true
-				if q.Op == "company.brand-set" {
-					allowed["brand"] = true
-				}
-			}
-			if q.Op == "access.renew-recovery" {
-				allowed["password"] = true
-				allowed["replace_pending"] = true
-			}
-			if q.Op == "company.create" {
-				allowed["operation_id"] = true
-			}
-			if q.Op == "company.create" || q.Op == "company.select" {
-				allowed["name"] = true
-			}
-			if q.Op == "preferences.theme" {
-				allowed["theme"] = true
-			}
+	case "access.bootstrap", "access.register", "access.login", "access.recover", "access.resume",
+		"access.snapshot", "access.logout", "company.create", "company.select", "preferences.theme",
+		"preferences.columns", "access.renew-recovery", "access.ack-recovery", "access.check-issued",
+		"access.ack-issued", "company.brand-get", "company.brand-set":
+		var code foundation.Code
+		allowed, code = accessAllowed(q)
+		if code != foundation.OK {
+			return q, code
 		}
 	default:
 		if isRadio(q.Op) {
@@ -290,27 +254,5 @@ func validate(b []byte) (Request, foundation.Code) {
 		}
 		return q, foundation.Invalid
 	}
-	for k := range fields {
-		if !allowed[k] {
-			return q, foundation.Invalid
-		}
-	}
-	if len(b) > MaxFrame && q.Op != "company.brand-set" {
-		return q, foundation.Invalid
-	}
-	if q.Op == "company.brand-get" || q.Op == "company.brand-set" {
-		if !access.ValidCompanyID(q.ExpectedProfile) || !validID(q.ExpectedActivation) {
-			return q, foundation.Invalid
-		}
-		if q.Op == "company.brand-set" {
-			var brand Branding
-			if q.Brand == nil || strict(fields["brand"], &brand) != nil {
-				return q, foundation.Invalid
-			}
-		}
-	}
-	if q.Op == "company.create" && !access.ValidCompanyID(q.Operation) {
-		return q, foundation.Invalid
-	}
-	return q, foundation.OK
+	return validateEnvelope(q, b, fields, allowed)
 }

@@ -8,7 +8,6 @@ import (
 	"infradesktop/internal/modules/foundation"
 	"os"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -33,7 +32,7 @@ func (s *Server) dispatchAccess(ctx context.Context, uid uint32, q Request, owne
 	if isEquipment(q.Op) {
 		return s.dispatchEquipment(ctx, uid, q, owner)
 	}
-	if !strings.HasPrefix(q.Op, "access.") && !strings.HasPrefix(q.Op, "company.") && q.Op != "preferences.theme" {
+	if !isAccessOperation(q.Op) {
 		return r
 	}
 	if subtle.ConstantTimeCompare([]byte(q.Capability), []byte(s.capability)) != 1 {
@@ -45,12 +44,12 @@ func (s *Server) dispatchAccess(ctx context.Context, uid uint32, q Request, owne
 	if q.Brand != nil {
 		brand = access.Branding{Name: q.Brand.Name, Logo: q.Brand.Logo, Accent: q.Brand.Accent}
 	}
-	v, c := s.account.Handle(ctx, uid, access.Command{Owner: owner, Op: q.Op, Session: q.Session, Grant: q.Grant, Name: q.Name, Password: q.Password, Recovery: q.Recovery, Remember: q.Remember, Profile: q.Profile, Activation: q.Activation, Theme: q.Theme, Operation: q.Operation, Replace: q.Replace, ExpectedProfile: q.ExpectedProfile, ExpectedActivation: q.ExpectedActivation, Brand: brand})
+	v, c := s.account.Handle(ctx, uid, accessCommand(q, owner, brand))
 	r.Code = foundation.Code(c)
 	if c != access.OK {
 		return r
 	}
-	d := &Data{ContractRevision: ProductRevision, ProductVersion: ProductVersion, Setup: v.Setup, Authenticated: v.Authenticated, Name: v.Name, Theme: v.Theme, Profile: v.Profile, Activation: v.Activation, Session: v.Session, Grant: v.Grant, Recovery: v.Recovery, Instance: s.identity.Instance, Heartbeat: int64(time.Since(s.started) / time.Second)}
+	d := accessData(v, s.identity.Instance, int64(time.Since(s.started)/time.Second))
 	if s.equipment != nil {
 		d.VaultAvailable = s.equipment.VaultAvailable()
 	}

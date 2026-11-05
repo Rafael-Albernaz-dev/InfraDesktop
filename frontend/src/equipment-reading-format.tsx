@@ -12,8 +12,19 @@ export const readingAge = (at?: string, now = Date.now()) =>
 export const stamp = (d: Device) => readingAge(d.result?.observed_at);
 
 export function latestSavedReading(d: Device) {
+  const radioAt = Date.parse(d.radio_summary?.observed_at || '');
   const monitorAt = Date.parse(d.monitoring_at || ''),
     summaryAt = Date.parse(d.result?.observed_at || '');
+  if (d.radio_summary && Number.isFinite(radioAt) &&
+      (!Number.isFinite(monitorAt) || radioAt >= monitorAt) &&
+      (!Number.isFinite(summaryAt) || radioAt >= summaryAt))
+    return {
+      at: d.radio_summary.observed_at,
+      version: d.radio_summary.version,
+      cpu: d.radio_summary.cpu,
+      uptime: formatRouterDuration(d.radio_summary.uptime),
+      exactUptime: d.radio_summary.uptime,
+    };
   if (
     d.monitoring &&
     Number.isFinite(monitorAt) &&

@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 )
 
 //go:embed migrations/*.sql
@@ -126,74 +125,6 @@ func (s *Store) Close() error {
 	}
 	return ce
 }
-func load(ctx context.Context, q queryer) (access.State, error) {
-	st := access.State{Companies: []access.Company{}}
-	var a access.Account
-	e := q.QueryRowContext(ctx, "SELECT name,algorithm,memory,iterations,parallelism,salt,hash,recovery,epoch,theme,profile FROM account WHERE id=1").Scan(&a.Name, &a.Password.Algorithm, &a.Password.Memory, &a.Password.Iterations, &a.Password.Parallelism, &a.Password.Salt, &a.Password.Hash, &a.Recovery, &a.Epoch, &a.Theme, &a.Profile)
-	if e == nil {
-		v := a.Password
-		if v.Algorithm != "argon2id-v19" || v.Memory != 19456 || v.Iterations != 2 || v.Parallelism != 1 || len(v.Salt) != 16 || len(v.Hash) != 32 || len(a.Recovery) != 32 || a.Epoch == 0 || !access.ValidName(a.Name) || (a.Theme != "light" && a.Theme != "dark") {
-			return st, errors.New("invalid account state")
-		}
-		st.Account = &a
-	} else if !errors.Is(e, sql.ErrNoRows) {
-		return st, e
-	}
-	var next int64
-	if e = q.QueryRowContext(ctx, "SELECT failures,next_attempt FROM attempts WHERE id=1").Scan(&st.Failures, &next); e != nil {
-		return st, e
-	}
-	if next > 0 {
-		st.NextAttempt = time.Unix(0, next)
-	}
-	rows, e := q.QueryContext(ctx, "SELECT id,name FROM companies ORDER BY rowid")
-	if e != nil {
-		return st, e
-	}
-	for rows.Next() {
-		var c access.Company
-		if e = rows.Scan(&c.ID, &c.Name); e != nil {
-			rows.Close()
-			return st, e
-		}
-		if !access.ValidCompanyID(c.ID) || !access.ValidName(c.Name) {
-			rows.Close()
-			return st, errors.New("invalid catalog")
-		}
-		st.Companies = append(st.Companies, c)
-	}
-	e = rows.Err()
-	rows.Close()
-	if e != nil {
-		return st, e
-	}
-	if st.Account != nil && st.Account.Profile != "" {
-		found := false
-		for _, c := range st.Companies {
-			if c.ID == st.Account.Profile {
-				found = true
-			}
-		}
-		if !found {
-			return st, errors.New("active company outside catalog")
-		}
-	}
-	rows, e = q.QueryContext(ctx, "SELECT digest,epoch,expires FROM grants")
-	if e != nil {
-		return st, e
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var g access.Grant
-		var expiry int64
-		if e = rows.Scan(&g.Digest, &g.Epoch, &expiry); e != nil {
-			return st, e
-		}
-		g.Expires = time.Unix(0, expiry)
-		st.Grants = append(st.Grants, g)
-	}
-	return st, rows.Err()
-}
 func (s *Store) Read(ctx context.Context) (access.State, access.Code) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -217,112 +148,50 @@ func (s *Store) Read(ctx context.Context) (access.State, access.Code) {
 func (s *Store) Update(ctx context.Context, fn func(*access.State) access.Code) access.Code {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if e := s.checkActive(); e != nil {
+	if s.checkActive() != nil {
 		return access.Unavailable
 	}
-	tx, e := s.db.BeginTx(ctx, nil)
-	if e != nil {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
 		return access.Unavailable
 	}
 	defer tx.Rollback()
-	st, e := load(ctx, tx)
-	if e != nil {
+	st, err := load(ctx, tx)
+	if err != nil {
 		return access.Unavailable
 	}
-	if c := fn(&st); c != access.OK {
-		return c
+	if code := fn(&st); code != access.OK {
+		return code
 	}
-	// Persist creation intent separately before touching the company file.
-	var additions []access.Company
-	for _, company := range st.Companies {
-		var n int
-		if e = tx.QueryRowContext(ctx, "SELECT count(*) FROM companies WHERE id=?", company.ID).Scan(&n); e != nil {
-			return access.Unavailable
-		}
-		if n == 0 {
-			additions = append(additions, company)
-		}
-	}
-	if len(additions) > 0 {
-		tx.Rollback()
-		for _, company := range additions {
-			if e = s.prepareIntent(ctx, company); e != nil {
-				return access.Unavailable
-			}
-		}
-		tx, e = s.db.BeginTx(ctx, nil)
-		if e != nil {
-			return access.Unavailable
-		}
-		defer tx.Rollback()
-	}
-	var candidate *sql.DB
-	var candidateInfo os.FileInfo
-	target := ""
-	if st.Account != nil {
-		target = st.Account.Profile
-	}
-	if target != s.unitID {
-		if target != "" {
-			p, err := s.unitPath(target)
-			if err != nil {
-				return access.Unavailable
-			}
-			candidateInfo, err = os.Lstat(p)
-			if err != nil {
-				return access.Unavailable
-			}
-			candidate, e = s.openUnit(target)
-			if e != nil {
-				return access.Unavailable
-			}
-		}
-		defer func() {
-			if candidate != nil {
-				candidate.Close()
-			}
-		}()
-	}
-	if st.Account != nil {
-		a := st.Account
-		v := a.Password
-		_, e = tx.ExecContext(ctx, `INSERT INTO account VALUES(1,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,algorithm=excluded.algorithm,memory=excluded.memory,iterations=excluded.iterations,parallelism=excluded.parallelism,salt=excluded.salt,hash=excluded.hash,recovery=excluded.recovery,epoch=excluded.epoch,theme=excluded.theme,profile=excluded.profile`, a.Name, v.Algorithm, v.Memory, v.Iterations, v.Parallelism, v.Salt, v.Hash, a.Recovery, a.Epoch, a.Theme, a.Profile)
-		if e != nil {
-			return access.Unavailable
-		}
-	}
-	if _, e = tx.ExecContext(ctx, "DELETE FROM grants"); e != nil {
+	additions, err := catalogAdditions(ctx, tx, st.Companies)
+	if err != nil {
 		return access.Unavailable
 	}
-	for _, c := range st.Companies {
-		if _, e = tx.ExecContext(ctx, "INSERT INTO companies(id,name) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name", c.ID, c.Name); e != nil {
-			return access.Unavailable
+	tx, err = s.prepareCatalogAdditions(ctx, tx, additions)
+	if err != nil {
+		return access.Unavailable
+	}
+	defer tx.Rollback()
+	candidate, info, target, err := s.catalogCandidate(st)
+	if err != nil {
+		return access.Unavailable
+	}
+	defer func() {
+		if candidate != nil {
+			candidate.Close()
 		}
-	}
-	for _, g := range st.Grants {
-		if _, e = tx.ExecContext(ctx, "INSERT INTO grants(digest,epoch,expires) VALUES(?,?,?)", g.Digest, g.Epoch, g.Expires.UnixNano()); e != nil {
-			return access.Unavailable
-		}
-	}
-	next := int64(0)
-	if !st.NextAttempt.IsZero() {
-		next = st.NextAttempt.UnixNano()
-	}
-	if _, e = tx.ExecContext(ctx, "UPDATE attempts SET failures=?,next_attempt=? WHERE id=1", st.Failures, next); e != nil {
+	}()
+	if err = persistAccessState(ctx, tx, st); err != nil {
 		return access.Unavailable
 	}
 	s.observe("before-catalog-commit")
-	if e = tx.Commit(); e != nil {
+	if err = tx.Commit(); err != nil {
 		return access.Unavailable
 	}
 	s.observe("catalog-committed")
 	if target != s.unitID {
 		previous := s.unit
-		s.unit, s.unitID = candidate, target
-		s.unitInfo = nil
-		if target != "" {
-			s.unitInfo = candidateInfo
-		}
+		s.unit, s.unitID, s.unitInfo = candidate, target, info
 		candidate = nil
 		if previous != nil {
 			previous.Close()

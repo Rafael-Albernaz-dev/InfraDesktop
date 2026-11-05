@@ -97,6 +97,8 @@ func (s *Service) dispatchAuthorized(ctx context.Context, q Command, v *View) Co
 		return c
 	case "trust.confirm":
 		return s.confirm(ctx, q, v)
+	case "inventory.bulk-update":
+		return s.bulkUpdate(ctx, q, v)
 	case "inventory.list", "inventory.get", "credential.list", "inventory.enroll-status":
 		return s.handleReadOp(ctx, q, v)
 	default:
@@ -179,7 +181,11 @@ func (s *Service) listDevices(st *State, q Command, v *View) Code {
 	if q.Cursor < 0 || len(q.Search) > 160 {
 		return Invalid
 	}
-	filtered := filterDevices(st.Devices, q.Inactive, q.Search)
+	if c := validateInventoryFilters(q); c != OK {
+		return c
+	}
+	v.Blocks, v.Models = inventoryOptions(st.Devices)
+	filtered := filterDevices(st.Devices, q)
 	if q.Cursor > len(filtered) {
 		return Invalid
 	}
@@ -189,22 +195,6 @@ func (s *Service) listDevices(st *State, q Command, v *View) Code {
 		v.Next = end
 	}
 	return OK
-}
-
-func filterDevices(devices []Device, inactive bool, search string) []Device {
-	filtered := []Device{}
-	needle := strings.ToLower(search)
-	for _, d := range devices {
-		if d.Active != inactive && strings.Contains(strings.ToLower(d.Name+" "+d.Address), needle) {
-			if d.Result != nil {
-				summary := *d.Result
-				summary.Interfaces = nil
-				d.Result = &summary
-			}
-			filtered = append(filtered, d)
-		}
-	}
-	return filtered
 }
 
 func (s *Service) PruneLocked() {

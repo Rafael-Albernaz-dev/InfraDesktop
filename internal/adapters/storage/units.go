@@ -64,7 +64,7 @@ func migrateGlobal(tx *sql.Tx) error {
 			return e
 		}
 		count++
-		name := map[int]string{1: "001_access.sql", 2: "002_company_units.sql"}[v]
+		name := map[int]string{1: "001_access.sql", 2: "002_company_units.sql", 3: "003_inventory_columns.sql"}[v]
 		b, err := migrations.ReadFile("migrations/" + name)
 		if err != nil || v != count || h != checksum(b) {
 			rows.Close()
@@ -82,8 +82,8 @@ func migrateGlobal(tx *sql.Tx) error {
 			return errors.New("unversioned database")
 		}
 	}
-	for v := count + 1; v <= 2; v++ {
-		name := map[int]string{1: "001_access.sql", 2: "002_company_units.sql"}[v]
+	for v := count + 1; v <= 3; v++ {
+		name := map[int]string{1: "001_access.sql", 2: "002_company_units.sql", 3: "003_inventory_columns.sql"}[v]
 		b, _ := migrations.ReadFile("migrations/" + name)
 		if _, e = tx.Exec(string(b)); e != nil {
 			return e
