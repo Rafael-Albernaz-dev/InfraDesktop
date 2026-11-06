@@ -8,15 +8,5 @@
     "id": "sessao-historico",
     "owner": "L-PULSO",
     "reason": "Histórico de conexões ainda não implementado"
-  },
-  {
-    "id": "credencial-editar",
-    "owner": "L-CONTA",
-    "reason": "Rev. 6: conta e excluir credencial"
-  },
-  {
-    "id": "credencial-excluir",
-    "owner": "L-CONTA",
-    "reason": "Rev. 6: conta e excluir credencial"
   }
 ]

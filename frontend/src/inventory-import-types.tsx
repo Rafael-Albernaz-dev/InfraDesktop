@@ -12,7 +12,7 @@ export type ImportRow = {
 };
 export type ImportItem = {
   row: ImportRow;
-  status: 'ready' | 'pending' | 'duplicate' | 'conflict' | 'ignored';
+  status: string;
   reason?: string;
   credential_id?: string;
 };

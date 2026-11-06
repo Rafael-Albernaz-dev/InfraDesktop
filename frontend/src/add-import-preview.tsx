@@ -164,7 +164,7 @@ function ImportRowView(p: {
             : 'import-status-error'
         }
       >
-        {labels[item.status]}
+        {labels[item.status] || 'Situação desconhecida'}
       </td>
       <td className="import-reason">{item.reason || '—'}</td>
       <td>

@@ -1,6 +1,6 @@
 import { Button, Dialog } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
-import type { Device, EquipmentResult, Job } from './equipment-api';
+import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
 import { DeviceForm, ProtectedDialog } from './equipment-forms';
 import { id } from './equipment-reading';
 export type EquipmentPerformFn = (
