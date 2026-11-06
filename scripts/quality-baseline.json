@@ -344,7 +344,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-diagnostics.tsx": {
-    "Lines": 169,
+    "Lines": 163,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -365,7 +365,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-read-state.tsx": {
-    "Lines": 505,
+    "Lines": 26,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -19591,6 +19591,104 @@
   },
   "frontend/src/vault-notice.ts": {
     "Lines": 3,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-traffic-renewal.test.tsx": {
+    "Lines": 239,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-cancel.ts": {
+    "Lines": 75,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-lifecycle.ts": {
+    "Lines": 48,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-machine.test.tsx": {
+    "Lines": 107,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-machine.ts": {
+    "Lines": 136,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-poll.ts": {
+    "Lines": 90,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-props.ts": {
+    "Lines": 22,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-start.ts": {
+    "Lines": 111,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-traffic-windows.ts": {
+    "Lines": 43,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/traffic-recovery.test.tsx": {
+    "Lines": 177,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/traffic-visibility-retry.test.tsx": {
+    "Lines": 118,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-pppoe-read-job.tsx": {
+    "Lines": 156,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-traffic-renewal.tsx": {
+    "Lines": 69,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-log-evidence.test.tsx": {
+    "Lines": 510,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,

@@ -109,7 +109,9 @@ it('renews successful windows without erasing points and marks their interval as
       await vi.advanceTimersByTimeAsync(54000);
     });
     expect(pppoeReadAPI.start).toHaveBeenCalledTimes(1);
-    await act(async () => { await vi.advanceTimersByTimeAsync(1001); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1001);
+    });
     expect(pppoeReadAPI.start).toHaveBeenCalledTimes(2);
     const graph = JSON.parse(
       screen.getByLabelText('pontos').textContent || '{}',
@@ -122,7 +124,7 @@ it('renews successful windows without erasing points and marks their interval as
   }
 });
 
-it('stops after BUSY without an automatic retry', async () => {
+it('stops after the three bounded BUSY retries', async () => {
   vi.useFakeTimers();
   vi.mocked(pppoeReadAPI.start).mockResolvedValue({
     ...result(),
@@ -143,7 +145,7 @@ it('stops after BUSY without an automatic retry', async () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(120000);
     });
-    expect(pppoeReadAPI.start).toHaveBeenCalledTimes(1);
+    expect(pppoeReadAPI.start).toHaveBeenCalledTimes(4);
     expect(screen.getByRole('alert')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Ver ao vivo' })).toBeEnabled();
   } finally {
@@ -192,7 +194,7 @@ it('stopping between windows prevents renewal and preserves the graph', async ()
   }
 });
 
-it('cancels an active traffic job when status fails and does not renew', async () => {
+it('cancels failed traffic windows before bounded transport retries', async () => {
   vi.useFakeTimers();
   vi.mocked(pppoeReadAPI.start).mockResolvedValue(
     result({ job: { id: 'lost', state: 'RUNNING', code: 'OK' } }),
@@ -214,6 +216,14 @@ it('cancels an active traffic job when status fails and does not renew', async (
   );
   try {
     await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    for (const delay of [5000, 15000, 30000]) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(delay);
+      });
+    }
+    await act(async () => {
       await vi.advanceTimersByTimeAsync(120000);
     });
     expect(pppoeReadAPI.cancel).toHaveBeenCalledWith(
@@ -221,7 +231,7 @@ it('cancels an active traffic job when status fails and does not renew', async (
       'active',
       'lost',
     );
-    expect(pppoeReadAPI.start).toHaveBeenCalledTimes(1);
+    expect(pppoeReadAPI.start).toHaveBeenCalledTimes(4);
     expect(screen.getByRole('alert')).toBeVisible();
   } finally {
     view.unmount();

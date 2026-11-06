@@ -228,7 +228,7 @@
     "max-lines": 553
   },
   "src/pppoe-diagnostics.tsx": {
-    "max-lines-per-function": 139,
+    "max-lines-per-function": 134,
     "complexity": 48,
     "no-nested-ternary": 9
   },
@@ -239,7 +239,7 @@
     "complexity": 20
   },
   "src/pppoe-log-evidence.test.tsx": {
-    "max-lines": 528
+    "max-lines": 508
   },
   "src/pppoe-mount-generation.test.tsx": {
     "no-nested-ternary": 1
@@ -252,16 +252,6 @@
   },
   "src/pppoe-read-result.tsx": {
     "no-nested-ternary": 4
-  },
-  "src/pppoe-read-state.tsx": {
-    "no-nested-ternary": 2,
-    "max-lines-per-function": 150,
-    "complexity": 30,
-    "quality/ref-count": 13
-  },
-  "src/pppoe-read-vars.tsx": {
-    "max-lines-per-function": 61,
-    "quality/state-count": 19
   },
   "src/pppoe-read-views.tsx": {
     "no-nested-ternary": 7,

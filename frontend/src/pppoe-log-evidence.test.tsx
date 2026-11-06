@@ -377,51 +377,31 @@ it('L06T: automatic traffic starts once with visible IDs; stop preserves graph a
     ),
   );
 });
-it('L06T: uncertain automatic start is cancelled on context change and BUSY has only explicit retry', async () => {
-  const late = deferred();
-  vi.mocked(readAPI.start)
-    .mockReturnValueOnce(late.promise)
-    .mockResolvedValue({ ...response(), code: 'BUSY' });
+it('L06T: uncertain start is cancelled on context change and BUSY permits explicit retry after its automatic limit', async () => {
+  vi.useFakeTimers();
+  const late=deferred();
+  vi.mocked(readAPI.start).mockReturnValueOnce(late.promise).mockResolvedValue({...response(),code:'BUSY'});
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
-  const props = {
-    profile: 'company',
-    activation: 'active',
-    device,
-    observation: 'reading',
-    rows: ['row'],
-    traffic: true,
-  };
-  const view = render(<PPPoEReadPanel {...props} />);
-  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(1));
-  const operation = vi.mocked(readAPI.start).mock.calls[0][3];
-  view.rerender(<PPPoEReadPanel {...props} rows={['other-row']} />);
-  await waitFor(() =>
-    expect(readAPI.cancelOperation).toHaveBeenCalledWith(
-      'company',
-      'active',
-      'device',
-      operation,
-    ),
-  );
-  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(2));
-  await screen.findByRole('button', { name: 'Ver ao vivo' });
-  await act(async () =>
-    late.resolve(
-      response({
-        total: 0,
-        job: { id: 'late-traffic', state: 'RUNNING', code: 'OK' },
-      }),
-    ),
-  );
-  expect(readAPI.cancel).toHaveBeenCalledWith(
-    'company',
-    'active',
-    'late-traffic',
-  );
-  expect(readAPI.start).toHaveBeenCalledTimes(2);
-  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
-  await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(3));
-  view.unmount();
+  const props={profile:'company',activation:'active',device,observation:'reading',rows:['row'],traffic:true};
+  const view=render(<PPPoEReadPanel {...props}/>);
+  try {
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    expect(readAPI.start).toHaveBeenCalledTimes(1);
+    const operation=vi.mocked(readAPI.start).mock.calls[0][3];
+    view.rerender(<PPPoEReadPanel {...props} rows={['other-row']}/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    expect(readAPI.cancelOperation).toHaveBeenCalledWith('company','active','device',operation);
+    expect(readAPI.start).toHaveBeenCalledTimes(2);
+    await act(async()=>late.resolve(response({total:0,job:{id:'late-traffic',state:'RUNNING',code:'OK'}})));
+    expect(readAPI.cancel).toHaveBeenCalledWith('company','active','late-traffic');
+    expect(readAPI.start).toHaveBeenCalledTimes(2);
+    for(const delay of [5000,15000,30000]) await act(async()=>{await vi.advanceTimersByTimeAsync(delay);});
+    expect(readAPI.start).toHaveBeenCalledTimes(5);
+    expect(screen.getByRole('button',{name:'Ver ao vivo'})).toBeEnabled();
+    fireEvent.click(screen.getByRole('button',{name:'Ver ao vivo'}));
+    await act(async()=>{await vi.advanceTimersByTimeAsync(1);});
+    expect(readAPI.start).toHaveBeenCalledTimes(6);
+  } finally {view.unmount();vi.useRealTimers();}
 });
 it('L06T: stop has no deadline or silent renewal after sixty seconds', async () => {
   vi.useFakeTimers();

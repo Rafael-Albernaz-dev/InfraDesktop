@@ -1,4 +1,3 @@
-import { useEffect,useRef } from 'react';
 import { readingAge } from './equipment-reading-format';
 import { PPReadResultMetadata,PPReadResultView } from './pppoe-read-result';
 import { RadioModes } from './radio-contract';
@@ -12,13 +11,7 @@ export { DeviceMonitoring } from './device-monitoring';
 export { PPPoEDiagnostics,PPPoEPing } from './pppoe-diag-views';
 
 function PPPoEReadContent(props: PPReadPanelProps) {
-  const s = usePPReadState(props);
-  const automaticTrafficStarted = useRef(false);
-  useEffect(() => {
-    if (!props.traffic || props.blocked || !props.rows.length || automaticTrafficStarted.current) return;
-    automaticTrafficStarted.current = true;
-    void s.start('traffic');
-  }, [props.traffic, props.blocked, props.rows.length, s.start]);
+  const {setRoot,...s} = usePPReadState(props);
   if (
     !props.rows.length &&
     !props.allowTop &&
@@ -115,6 +108,7 @@ function PPPoEReadContent(props: PPReadPanelProps) {
   );
   return (
     <section
+      ref={setRoot}
       className="pppoe-diagnostics pppoe-read-panel"
       aria-label={
         props.health

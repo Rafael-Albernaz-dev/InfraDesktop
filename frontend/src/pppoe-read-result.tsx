@@ -8,8 +8,7 @@ import { Button } from './ui/Button';
 import { SessionTraffic } from './session-traffic';
 import { DeviceOperationalTables } from './device-monitoring';
 
-import type { PPReadPanelProps } from './pppoe-read-state';
-import { usePPReadState } from './pppoe-read-state';
+import type { PPReadPanelProps,ReadState } from './pppoe-read-state';
 import {
   PPReadCostInfo,
   PPHealthTables,
@@ -17,7 +16,6 @@ import {
   PPReadLogTable,
   PPSecretEvidence,
 } from './pppoe-read-views';
-type ReadState = ReturnType<typeof usePPReadState>;
 export function PPReadScopeBody(p: { s: ReadState; pProps: PPReadPanelProps }) {
   const { s, pProps } = p;
   const result = s.result!;
