@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { initialReadState, readReducer } from './pppoe-read-machine';
 import type { ReadEvent } from './pppoe-read-machine';
-import { createReadLifecycle } from './pppoe-read-lifecycle';
+import { canResumeTraffic, createReadLifecycle } from './pppoe-read-lifecycle';
 import type { ReadContext } from './pppoe-read-lifecycle';
 import type { PPReadPanelProps } from './pppoe-read-props';
 import { startRead } from './pppoe-read-start';
@@ -45,11 +45,9 @@ function useReadClock(c: ReadContext, job: string, scope: string) {
   }, [c, job, scope]);
 }
 function automaticTraffic(c: ReadContext) {
-  const p = c.latest.current,
-    l = c.life.current;
-  if (!p.traffic || p.blocked || !p.rows.length || l.automaticStarted) return;
-  l.automaticStarted = true;
-  void c.start('traffic');
+  if (!canResumeTraffic(c)) return;
+  c.life.current.automaticStarted = true;
+  void c.start('traffic', true);
 }
 function useAutomaticTraffic(c: ReadContext, p: PPReadPanelProps) {
   const {

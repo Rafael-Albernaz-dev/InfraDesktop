@@ -15,14 +15,30 @@ import (
 	"infradesktop/internal/testsupport/sshfixture"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 )
 
-func (j *ppJourney) diagnostic(in equipment.PPInput, want equipment.Code) *equipment.PDDiagnostic {
+func (j *ppJourney) diagnostic(in equipment.PPInput, want equipment.Code, capture ...bool) *equipment.PDDiagnostic {
 	j.t.Helper()
+	if len(capture) > 0 {
+		stacks := make(chan string, 1)
+		timer := time.AfterFunc(2500*time.Millisecond, func() {
+			buf := make([]byte, 2<<20)
+			stacks <- string(buf[:runtime.Stack(buf, true)])
+		})
+		defer func() {
+			if !timer.Stop() {
+				dump := <-stacks
+				if j.t.Failed() {
+					j.t.Log(dump)
+				}
+			}
+		}()
+	}
 	r := j.call("pppoe.diagnostic-start", in, foundation.OK)
 	id := r.Data.PPPoE.Job.ID
 	deadline := time.Now().Add(3 * time.Second)
@@ -40,7 +56,6 @@ func (j *ppJourney) diagnostic(in equipment.PPInput, want equipment.Code) *equip
 	j.t.Fatal("diagnostic job did not finish")
 	return nil
 }
-
 func TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay(t *testing.T) {
 	j := newPPJourney(t, sshfixture.Config{RealTime: true, PPRows: 2})
 	observation := j.collect(uuid.NewString())
@@ -49,49 +64,36 @@ func TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay(t *testing.T)
 		in := equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: scope, Operation: uuid.NewString()}
 		inputs = append(inputs, in)
 		diagnostic := j.diagnostic(in, equipment.OK)
-		if diagnostic == nil || diagnostic.Count == 0 {
-			t.Fatal("empty integration diagnostic", scope)
-		}
+		catalogBoundaryCheck(t, diagnostic == nil || diagnostic.Count == 0, fmt.Sprint("empty integration diagnostic", scope))
 		before := j.peer.Commands.Load()
 		page := j.call("pppoe.diagnostic-list", equipment.PPInput{DeviceID: j.device, Scope: scope, DiagnosticID: diagnostic.ID}, foundation.OK)
-		if len(page.Data.PPPoE.DiagnosticRows) == 0 {
-			t.Fatal("no persisted rows")
-		}
+		catalogBoundaryCheck(t, len(page.Data.PPPoE.DiagnosticRows) == 0, "no persisted rows")
 		exported := j.call("pppoe.export-page", equipment.PPInput{DeviceID: j.device, TargetID: observation.ID, Scope: scope, DiagnosticID: diagnostic.ID, ExportPart: "diagnostics", ExportKey: base64.RawStdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32))}, foundation.OK)
 		encoded, _ := json.Marshal(exported)
 		for _, canary := range []string{"fixture-ether", "fixture-service", "198.51.100.20", "local-fixture-only", diagnostic.ID} {
-			if bytes.Contains(encoded, []byte(canary)) {
-				t.Fatal("diagnostic export leaked", canary)
-			}
+			catalogBoundaryCheck(t, bytes.Contains(encoded, []byte(canary)), fmt.Sprint("diagnostic export leaked", canary))
 		}
-		if len(exported.Data.PPPoE.ExportDiagnostics) == 0 || j.peer.Commands.Load() != before {
-			t.Fatal("stored page/export caused network")
-		}
+		catalogBoundaryCheck(t, len(exported.Data.PPPoE.ExportDiagnostics) == 0 || j.peer.Commands.Load() != before,
+			"stored page/export caused network")
 		// A second deliberate read after completion gets a new job, not a permanent replay.
 		again := j.diagnostic(in, equipment.OK)
-		if again.ID == diagnostic.ID || j.peer.Commands.Load() != before+1 {
-			t.Fatal("completed read retained permanent replay")
-		}
+		catalogBoundaryCheck(t, again.ID == diagnostic.ID || j.peer.Commands.Load() != before+1, "completed read retained permanent replay")
 	}
 	session := j.call("pppoe.sessions-list", equipment.PPInput{DeviceID: j.device, ObservationID: observation.ID}, foundation.OK).Data.PPPoE.Rows[0]
 	ping := equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: equipment.PDPing, Operation: uuid.NewString(), ObservationID: observation.ID, RowID: session.ID}
 	result := j.diagnostic(ping, equipment.OK)
-	if result == nil || result.SourceObservation != observation.ID || result.SourceRow != session.ID || j.peer.PingCalls.Load() != 1 {
-		t.Fatal("ping source/run identity", result, j.peer.PingCalls.Load())
-	}
+	catalogBoundaryCheck(t, result == nil || result.SourceObservation != observation.ID ||
+		result.SourceRow != session.ID || j.peer.PingCalls.Load() != 1,
+		fmt.Sprint("ping source/run identity", result, j.peer.PingCalls.Load()))
 	// No automatic ping retry; a deliberate second run is a fresh finite action.
 	j.diagnostic(ping, equipment.OK)
-	if j.peer.PingCalls.Load() != 2 {
-		t.Fatal("explicit second ping did not execute once")
-	}
+	catalogBoundaryCheck(t, j.peer.PingCalls.Load() != 2, "explicit second ping did not execute once")
 	before := j.peer.Auth.Load()
 	j.svc.Close()
 	j.svc = equipment.New(j.auth, j.store, vault.New(func() ([]byte, error) { return bytes.Repeat([]byte{8}, 32), nil }), routerssh.Adapter{}, testEquipmentIDs{}, time.Now)
 	AttachEquipment(j.server, j.svc)
 	j.call("pppoe.diagnostic-start", ping, "PING_READING_STALE")
-	if j.peer.Auth.Load() != before {
-		t.Fatal("stale ping after restart reached network")
-	}
+	catalogBoundaryCheck(t, j.peer.Auth.Load() != before, "stale ping after restart reached network")
 	if c := j.store.UpdateEquipment(context.Background(), j.client.profile, func(s *equipment.State) equipment.Code {
 		for len(s.Operations) < equipment.MaxOperations {
 			s.Operations = append(s.Operations, equipment.Operation{ID: uuid.NewString(), Stamp: "synthetic-budget", Entity: uuid.NewString()})
@@ -102,9 +104,7 @@ func TestPPDiagnosticRealClientScopesPagesSanitizedExportAndReplay(t *testing.T)
 	}
 	j.diagnostic(inputs[0], equipment.OK)
 	j.diagnostic(equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: equipment.PDCatalog, Operation: uuid.NewString()}, equipment.OK)
-	if j.peer.Auth.Load() != before+2 {
-		t.Fatal("mutation ceiling blocked reads")
-	}
+	catalogBoundaryCheck(t, j.peer.Auth.Load() != before+2, "mutation ceiling blocked reads")
 
 }
 
@@ -268,7 +268,80 @@ func TestPPDiagnosticExportEnforcesTargetContextAtIPC(t *testing.T) {
 func TestPPDiagnosticCatalogBoundaryWorkloadRealIPC(t *testing.T) {
 	var count atomic.Int32
 	count.Store(2047)
-	j := newPPJourney(t, sshfixture.Config{Command: func(command string) (string, bool) {
+	j := newPPJourney(t, sshfixture.Config{Command: catalogWorkloadCommand(&count)})
+	var previous *equipment.PDDiagnostic
+	for _, n := range []int{2047, 2048, 2049} {
+		count.Store(int32(n))
+		started := time.Now()
+		want := equipment.OK
+		if n > 2048 {
+			want = equipment.Limit
+		}
+		input := equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: equipment.PDCatalog, Operation: uuid.NewString()}
+		current := j.diagnostic(input, want, true)
+		catalogBoundaryCheck(t, current == nil, "no good catalog")
+		catalogBoundaryCheck(t, n <= 2048 && current.Count != n, fmt.Sprint("silently truncated catalog", current.Count, n))
+		catalogBoundaryCheck(t, n > 2048 && (current.ID != previous.ID || current.Provenance.Ended != previous.Provenance.Ended),
+			"limit replaced good catalog/date")
+		catalogBoundaryCheck(t, current.Bytes > equipment.PPObservationBytes, "observation budget bypass")
+		remote := j.peer.Commands.Load()
+		cursor, seen := "", map[string]bool{}
+		maxFrame, pages := 0, 0
+		for {
+			in := equipment.PPInput{DeviceID: j.device, Scope: equipment.PDCatalog, DiagnosticID: current.ID, Cursor: cursor}
+			page := j.call("pppoe.diagnostic-list", in, foundation.OK)
+			encoded, _ := json.Marshal(page)
+			catalogBoundaryCheck(t, len(encoded) > 48*1024, fmt.Sprint("projection exceeds48KiB", len(encoded)))
+			if len(encoded) > maxFrame {
+				maxFrame = len(encoded)
+			}
+			catalogBoundaryCheck(t, len(page.Data.PPPoE.DiagnosticRows) > equipment.PageSize, "page limit bypass")
+			for _, row := range page.Data.PPPoE.DiagnosticRows {
+				catalogBoundaryCheck(t, seen[row.ID], "duplicate row across pages")
+				seen[row.ID] = true
+			}
+			pages++
+			cursor = page.Data.PPPoE.Next
+			if cursor == "" {
+				break
+			}
+			catalogBoundaryCheck(t, pages > 128, "unbounded page loop")
+		}
+		catalogBoundaryCheck(t, len(seen) != current.Count || j.peer.Commands.Load() != remote,
+			fmt.Sprint("incomplete local paging or extra network", len(seen), current.Count))
+		logCatalogWorkload(t, j, n, current, [2]int{pages, maxFrame}, started)
+		previous = current
+	}
+}
+func catalogBoundaryCheck(t *testing.T, failed bool, message string) {
+	t.Helper()
+	if failed {
+		t.Fatal(message)
+	}
+}
+func logCatalogWorkload(t *testing.T, j *ppJourney, n int, current *equipment.PDDiagnostic, frames [2]int, started time.Time) {
+	pages, maxFrame := frames[0], frames[1]
+	rss := []string{}
+	if raw, e := os.ReadFile("/proc/self/status"); e == nil {
+		for _, line := range strings.Split(string(raw), "\n") {
+			if strings.HasPrefix(line, "VmRSS:") || strings.HasPrefix(line, "VmHWM:") {
+				rss = append(rss, line)
+			}
+		}
+	}
+	var dbBytes int64
+	for _, suffix := range []string{"", "-wal", "-shm"} {
+		if info, e := os.Stat(filepath.Join(j.root, "state", "companies", j.client.profile+".db"+suffix)); e == nil {
+			dbBytes += info.Size()
+		}
+	}
+	t.Logf("synthetic catalog requested=%d retained=%d pages=%d observationBytes=%d maxResponseFrame=%d elapsed=%s "+
+		"sqlitePhysicalBytes=%d selfRSS=%v",
+		n, current.Count, pages, current.Bytes, maxFrame, time.Since(started), dbBytes, rss)
+}
+
+func catalogWorkloadCommand(count *atomic.Int32) func(string) (string, bool) {
+	return func(command string) (string, bool) {
 		if command != routerssh.PDCatalogCommand {
 			return "", false
 		}
@@ -284,79 +357,5 @@ func TestPPDiagnosticCatalogBoundaryWorkloadRealIPC(t *testing.T) {
 		}
 		fmt.Fprintf(&body, "Z\t%d\tcomplete\t2d1h1s\n", n)
 		return body.String(), true
-	}})
-	var previous *equipment.PDDiagnostic
-	for _, n := range []int{2047, 2048, 2049} {
-		count.Store(int32(n))
-		started := time.Now()
-		want := equipment.OK
-		if n > 2048 {
-			want = equipment.Limit
-		}
-		current := j.diagnostic(equipment.PPInput{DeviceID: j.device, Revision: 2, Scope: equipment.PDCatalog, Operation: uuid.NewString()}, want)
-		if current == nil {
-			t.Fatal("no good catalog")
-		}
-		if n <= 2048 && current.Count != n {
-			t.Fatal("silently truncated catalog", current.Count, n)
-		}
-		if n > 2048 && (current.ID != previous.ID || current.Provenance.Ended != previous.Provenance.Ended) {
-			t.Fatal("limit replaced good catalog/date")
-		}
-		if current.Bytes > equipment.PPObservationBytes {
-			t.Fatal("observation budget bypass")
-		}
-		remote := j.peer.Commands.Load()
-		cursor := ""
-		seen := map[string]bool{}
-		maxFrame := 0
-		pages := 0
-		for {
-			in := equipment.PPInput{DeviceID: j.device, Scope: equipment.PDCatalog, DiagnosticID: current.ID, Cursor: cursor}
-			page := j.call("pppoe.diagnostic-list", in, foundation.OK)
-			encoded, _ := json.Marshal(page)
-			if len(encoded) > 48*1024 {
-				t.Fatal("projection exceeds48KiB", len(encoded))
-			}
-			if len(encoded) > maxFrame {
-				maxFrame = len(encoded)
-			}
-			if len(page.Data.PPPoE.DiagnosticRows) > equipment.PageSize {
-				t.Fatal("page limit bypass")
-			}
-			for _, row := range page.Data.PPPoE.DiagnosticRows {
-				if seen[row.ID] {
-					t.Fatal("duplicate row across pages")
-				}
-				seen[row.ID] = true
-			}
-			pages++
-			cursor = page.Data.PPPoE.Next
-			if cursor == "" {
-				break
-			}
-			if pages > 128 {
-				t.Fatal("unbounded page loop")
-			}
-		}
-		if len(seen) != current.Count || j.peer.Commands.Load() != remote {
-			t.Fatal("incomplete local paging or extra network", len(seen), current.Count)
-		}
-		rss := []string{}
-		if raw, e := os.ReadFile("/proc/self/status"); e == nil {
-			for _, line := range strings.Split(string(raw), "\n") {
-				if strings.HasPrefix(line, "VmRSS:") || strings.HasPrefix(line, "VmHWM:") {
-					rss = append(rss, line)
-				}
-			}
-		}
-		var dbBytes int64
-		for _, suffix := range []string{"", "-wal", "-shm"} {
-			if info, e := os.Stat(filepath.Join(j.root, "state", "companies", j.client.profile+".db"+suffix)); e == nil {
-				dbBytes += info.Size()
-			}
-		}
-		t.Logf("synthetic catalog requested=%d retained=%d pages=%d observationBytes=%d maxResponseFrame=%d elapsed=%s sqlitePhysicalBytes=%d selfRSS=%v", n, current.Count, pages, current.Bytes, maxFrame, time.Since(started), dbBytes, rss)
-		previous = current
 	}
 }

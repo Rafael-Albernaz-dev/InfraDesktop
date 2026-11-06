@@ -44,6 +44,7 @@ func main() {
 		return
 	}
 	failures := validate(measured, previous, changed)
+	failures = append(failures, qualityrules.BaselineRatchet()...)
 	failures = append(failures, qualityrules.DuplicationGate()...)
 	failures = append(failures, qualityrules.FrontendRatchet()...)
 	failures = append(failures, qualityrules.LegacyGate(legacyRatchetOnly)...)

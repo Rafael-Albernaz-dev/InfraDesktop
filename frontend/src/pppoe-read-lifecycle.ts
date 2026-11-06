@@ -4,24 +4,17 @@ import type { PPReadPanelProps } from './pppoe-read-props';
 import type { PPReadResult, PPResult } from './presentation';
 export function createReadLifecycle() {
   return {
-    disposed: false,
-    automaticStarted: false,
-    generation: 0,
-    jobGeneration: 0,
-    activeJob: '',
-    privateJob: '',
+    disposed: false, automaticStarted: false, generation: 0,
+    jobGeneration: 0, activeJob: '', privateJob: '',
     operation: '',
-    liveStarted: 0,
-    requestedAt: 0,
-    sampleClock: 0,
-    lastSample: '',
+    liveStarted: 0, requestedAt: 0,
+    sampleClock: 0, lastSample: '',
     history: undefined as PPReadResult | undefined,
     window: undefined as PPReadResult | undefined,
     renewalTimer: undefined as ReturnType<typeof setTimeout> | undefined,
     pollTimer: undefined as ReturnType<typeof setTimeout> | undefined,
-    hidden: false,
-    operatorStopped: false,
-    retries: 0,
+    hidden: false, operatorStopped: false,
+    terminalStopped: false, retries: 0,
   };
 }
 export type ReadLifecycle = ReturnType<typeof createReadLifecycle>;
@@ -34,9 +27,16 @@ export type ReadContext = {
   schedule: (delay: number) => void;
   failed: (code: string) => Promise<void>;
 };
+
 export function validRead(p: PPReadPanelProps, r: PPResult) {
   return r.profile_id === p.profile && r.activation_id === p.activation;
 }
 export function currentRead(c: ReadContext, g: number) {
   return !c.life.current.disposed && c.life.current.generation === g;
+}
+export function canResumeTraffic(c: ReadContext) {
+  const p = c.latest.current, l = c.life.current;
+  return Boolean(p.traffic && !p.blocked && p.rows.length &&
+    !l.disposed && !l.hidden && !l.operatorStopped && !l.terminalStopped &&
+    !l.operation && !l.activeJob);
 }

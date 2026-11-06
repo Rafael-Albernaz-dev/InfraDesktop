@@ -4,20 +4,23 @@ import fs from 'node:fs';
 import {ESLint,Linter} from 'eslint';
 import ts from 'typescript-eslint';
 import {plugin,rulesFor} from './eslint-quality.mjs';
-test('effective new source configs enforce G1 and G4 in src and visual',async()=>{
+test('every real source retains its effective quality limits',async()=>{
  const lint=new ESLint();
- for(const path of ['src/new-quality-fixture.tsx','visual/new-quality-fixture.tsx']){
-  const {rules}=await lint.calculateConfigForFile(path);
-  for(const [rule,max] of Object.entries({'max-lines-per-function':60,'max-lines':500})){
-   assert.equal(rules[rule][0],2);assert.equal(rules[rule][1].max,max);
-   assert.equal(rules[rule][1].skipBlankLines,true);assert.equal(rules[rule][1].skipComments,true);
+ const ratchet=JSON.parse(fs.readFileSync('quality-ratchet.json','utf8'));
+ const files=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry=>{
+  const path=dir+'/'+entry.name;
+  return entry.isDirectory()?files(path):/\.tsx?$/.test(path)?[path]:[];
+ });
+ for(const path of [...files('src'),...files('visual')]){
+  assert.equal(await lint.isPathIgnored(path),false,path+' ignored');
+  const config=await lint.calculateConfigForFile(path);
+  for(const [rule,expected] of Object.entries(rulesFor(path,ratchet[path]))){
+   const normalized=Array.isArray(expected)?[2,...expected.slice(1)]:[expected==='off'?0:2];
+   assert.deepEqual(config.rules[rule],normalized,path+': '+rule);
   }
-  for(const [rule,max] of Object.entries({complexity:15,'max-params':5,'max-depth':4})){
-   assert.equal(rules[rule][0],2);assert.equal(rules[rule][1],max);
-  }
-  for(const rule of ['no-nested-ternary','react-hooks/exhaustive-deps','react-refresh/only-export-components'])assert.equal(rules[rule][0],2);
+  for(const rule of ['react-hooks/exhaustive-deps','react-refresh/only-export-components'])
+   assert.equal(config.rules[rule][0],2,path+': '+rule);
  }
- assert.equal((await lint.calculateConfigForFile('src/new-quality-fixture.test.tsx')).rules['max-lines-per-function'][1].max,120);
  assert.match(fs.readFileSync('../Makefile','utf8'),/eslint \. --max-warnings 0 --no-inline-config/);
 });
 test('G2 accepts its boundary and rejects the seventh ref',()=>{

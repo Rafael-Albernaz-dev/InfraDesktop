@@ -8,6 +8,8 @@ import (
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/foundation"
 	"path/filepath"
+	"runtime"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -47,7 +49,21 @@ func TestUncertainResetRequiresVerificationAfterSyntheticDaemonRestart(t *testin
 	if r := reopened.ResetAccount("again", "another synthetic password"); r.Code != "RESET_VERIFICATION_REQUIRED" || called != 0 {
 		t.Fatal("restart bypassed verification", r.Code)
 	}
-	if r := reopened.Login("new", "synthetic new password", false); r.Code != "OK" {
+	var stacks atomic.Value
+	captured := make(chan struct{})
+	timer := time.AfterFunc(2500*time.Millisecond, func() {
+		defer close(captured)
+		buf := make([]byte, 2<<20)
+		stacks.Store(string(buf[:runtime.Stack(buf, true)]))
+	})
+	r := reopened.Login("new", "synthetic new password", false)
+	if !timer.Stop() {
+		<-captured
+	}
+	if r.Code != "OK" {
+		if dump := stacks.Load(); dump != nil {
+			t.Log(dump)
+		}
 		t.Fatal("verification after restart failed", r.Code)
 	}
 	if pending, err := reopened.client.ResetIntentPending(); err != nil || pending {

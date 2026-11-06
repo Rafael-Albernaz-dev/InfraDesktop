@@ -1,6 +1,9 @@
 package qualityrules
 
-import "testing"
+import (
+	"infradesktop/scripts/qualitymetrics"
+	"testing"
+)
 
 func TestTypeScriptBaselineOnlyBlocksHistoricalSource(t *testing.T) {
 	if !ExistingTSWithoutBaseline(true, false) {
@@ -39,5 +42,23 @@ func TestLegacyExceptionKeysAreReadFromHeadSource(t *testing.T) {
 	keys := legacyKeys(source)
 	if !keys["existing"] || keys["new"] {
 		t.Fatal("legacy keys not closed")
+	}
+}
+
+func TestBaselineExistingCeilingsOnlyDecrease(t *testing.T) {
+	old := qualitymetrics.Report{"a": {Lines: 10, LongLines: 2, MaxFunction: 6, MaxComplexity: 3}}
+	for _, after := range []qualitymetrics.Metric{
+		{Lines: 11}, {LongLines: 3}, {MaxFunction: 7}, {MaxComplexity: 4},
+	} {
+		if len(BaselineGrowth(qualitymetrics.Report{"a": after}, old)) == 0 {
+			t.Fatal("increased ceiling accepted", after)
+		}
+	}
+	for _, current := range []qualitymetrics.Report{
+		old, {"a": {Lines: 9}, "new": {Lines: 999}}, {},
+	} {
+		if len(BaselineGrowth(current, old)) != 0 {
+			t.Fatal("unchanged, reduced or new key refused")
+		}
 	}
 }
