@@ -22,11 +22,11 @@ func TestInventoryFiltersBulkAndColumnsAcrossBindingIPC(t *testing.T) {
 	input := equipment.BulkUpdate{Items: []equipment.BulkItem{{ID: r.device.ID, Revision: 1}}, Block: &block}
 	operation := uuid.NewString()
 	got := r.app.BulkUpdateEquipment(r.profile, r.activation, operation, input)
-	if got.Code != "OK" || got.Data.BulkReceipt == nil || got.Data.BulkReceipt.Items[0].Revision != 2 {
+	if got.Code != "OK" || got.Data.BulkReceipt == nil || got.Data.BulkReceipt.Items[0].Revision != 1 {
 		t.Fatal("bulk", got.Code)
 	}
 	again := r.app.BulkUpdateEquipment(r.profile, r.activation, operation, input)
-	if again.Code != "OK" || again.Data.BulkReceipt.Items[0].Revision != 2 {
+	if again.Code != "OK" || again.Data.BulkReceipt.Items[0].Revision != 1 {
 		t.Fatal("replay", again.Code)
 	}
 	listed := r.app.ListEquipmentFiltered(r.profile, r.activation, InventoryFilters{Block: "Norte"})

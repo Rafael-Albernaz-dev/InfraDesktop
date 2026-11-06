@@ -5,7 +5,7 @@ func blockUpdateKeptRevision(q Command, v *View) bool {
 }
 
 func deviceUpdateRevision(next, old Device, operation string) uint64 {
-	if operation == "inventory.update" && sameDeviceConfiguration(next, old) {
+	if operation == "inventory.update" && next.Block != old.Block && sameDeviceConfiguration(next, old) {
 		return old.Revision
 	}
 	return old.Revision + 1
