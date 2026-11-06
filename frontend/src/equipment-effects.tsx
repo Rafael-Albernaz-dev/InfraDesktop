@@ -1,24 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type { Device, Job } from './equipment-api';
-import { pendingStarts } from './equipment-receipts';
-function clearPendingStartsForJob(
-  profile: string,
-  activation: string,
-  current: Job,
-) {
-  const prefix =
-    [
-      profile,
-      activation,
-      current.kind === 'trust.inspect' ? 'inspect' : 'query',
-      current.device_id,
-    ].join('|') + '|';
-  for (const [key, operation] of pendingStarts) {
-    if (key.startsWith(prefix) && operation) pendingStarts.delete(key);
-  }
-}
-
+import { equipmentAPI as api, equipmentMessage } from './equipment-api';
+import { clearPendingStartsForJob } from './equipment-pending-revisions';
+import { useLatestRef } from './use-latest-ref';
 function reconcileListedSelection(
   old: Device | undefined,
   devices: Device[],
@@ -37,7 +21,7 @@ function reconcileListedSelection(
     ? old
     : current;
 }
-export function useDeviceListEffect(p: {
+type UseDeviceListEffectProps = {
   profile: string;
   activation: string;
   search: string;
@@ -60,31 +44,51 @@ export function useDeviceListEffect(p: {
   setVault: (v: boolean) => void;
   setReady: (v: boolean) => void;
   setSelected: React.Dispatch<React.SetStateAction<Device | undefined>>;
-}) {
+};
+export function useDeviceListEffect(p: UseDeviceListEffectProps) {
   const { generationRef } = p;
   const detailOpen = useRef(p.detailOpen);
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     detailOpen.current = p.detailOpen;
-  }, [p.detailOpen]);
+  }, [latestRef, p.detailOpen]);
   useEffect(() => {
+    const p = latestRef.current;
+
     let stopped = false;
     const read = ++generationRef.current;
     if (!p.profile || !p.connected) return;
     void (async () => {
       try {
-        const filters = p.roleFilter || p.blockFilter || p.modelFilter || p.inactive ? {
-          role: p.roleFilter, block: p.blockFilter.startsWith('b:') ? p.blockFilter.slice(2) : '',
-          block_empty: p.blockFilter === 'none', model: p.modelFilter,
-        } : undefined;
-        const r = filters ? await api.list(
-          p.profile, p.activation, p.search, p.cursor, p.inactive, filters,
-        ) : await api.list(
-          p.profile,
-          p.activation,
-          p.search,
-          p.cursor,
-          p.inactive,
-        );
+        const filters =
+          p.roleFilter || p.blockFilter || p.modelFilter || p.inactive
+            ? {
+                role: p.roleFilter,
+                block: p.blockFilter.startsWith('b:')
+                  ? p.blockFilter.slice(2)
+                  : '',
+                block_empty: p.blockFilter === 'none',
+                model: p.modelFilter,
+              }
+            : undefined;
+        const r = filters
+          ? await api.list(
+              p.profile,
+              p.activation,
+              p.search,
+              p.cursor,
+              p.inactive,
+              filters,
+            )
+          : await api.list(
+              p.profile,
+              p.activation,
+              p.search,
+              p.cursor,
+              p.inactive,
+            );
         if (stopped || read !== generationRef.current) return;
         if (r.code !== 'OK' || !r.data)
           return p.setListError(equipmentMessage(r.code));
@@ -111,6 +115,7 @@ export function useDeviceListEffect(p: {
       stopped = true;
     };
   }, [
+    latestRef,
     p.profile,
     p.activation,
     p.search,
@@ -134,7 +139,7 @@ export function useDeviceListEffect(p: {
     p.setSelected,
   ]);
 }
-export function useJobPollEffect(p: {
+type UseJobPollEffectProps = {
   job?: Job;
   profile: string;
   activation: string;
@@ -142,8 +147,12 @@ export function useJobPollEffect(p: {
   setError: (v: string) => void;
   setJob: (v: Job | undefined) => void;
   reload: React.Dispatch<React.SetStateAction<number>>;
-}) {
+};
+export function useJobPollEffect(p: UseJobPollEffectProps) {
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     if (!p.job || p.job.state !== 'RUNNING') return;
     const jobId = p.job.id;
     let stopped = false;
@@ -186,6 +195,7 @@ export function useJobPollEffect(p: {
       clearTimeout(timer);
     };
   }, [
+    latestRef,
     p.job,
     p.profile,
     p.activation,
@@ -240,7 +250,7 @@ function fetchTargetDetail(
   };
 }
 
-function useJobCompletionSyncEffect(p: {
+type UseJobCompletionSyncEffectProps = {
   job?: Job;
   profile: string;
   activation: string;
@@ -249,8 +259,12 @@ function useJobCompletionSyncEffect(p: {
   setSelected: (d: Device | undefined) => void;
   setDetailOpen: (v: boolean) => void;
   setError: (v: string) => void;
-}) {
+};
+function useJobCompletionSyncEffect(p: UseJobCompletionSyncEffectProps) {
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     if (
       !p.job ||
       !['device.query-start', 'trust.inspect'].includes(p.job.kind) ||
@@ -278,6 +292,7 @@ function useJobCompletionSyncEffect(p: {
       cancelled = true;
     };
   }, [
+    latestRef,
     p.job,
     p.profile,
     p.activation,
@@ -289,7 +304,7 @@ function useJobCompletionSyncEffect(p: {
   ]);
 }
 
-export function useDetailDeviceSyncEffects(p: {
+type UseDetailDeviceSyncEffectsProps = {
   targetID?: string;
   profile: string;
   activation: string;
@@ -303,7 +318,8 @@ export function useDetailDeviceSyncEffects(p: {
   setSelected: (d: Device | undefined) => void;
   setDetailOpen: (v: boolean) => void;
   setError: (v: string) => void;
-}) {
+};
+export function useDetailDeviceSyncEffects(p: UseDetailDeviceSyncEffectsProps) {
   useEffect(() => {
     if (!p.targetID || !p.connected) return;
     return fetchTargetDetail(

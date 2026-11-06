@@ -1,3 +1,4 @@
+import { useLatestRef } from './use-latest-ref';
 import { useEffect } from 'react';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type { Credential } from './equipment-api';
@@ -10,7 +11,10 @@ export function useCredentialsCatalogEffect(p: {
   setCredentialCatalog: (v: { key: string; value: Credential[] }) => void;
   setCredentialError: (v: string) => void;
 }) {
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     if (!p.profile || !p.connected) return;
     let stopped = false;
     void (async () => {
@@ -37,6 +41,7 @@ export function useCredentialsCatalogEffect(p: {
       stopped = true;
     };
   }, [
+    latestRef,
     p.profile,
     p.activation,
     p.connected,

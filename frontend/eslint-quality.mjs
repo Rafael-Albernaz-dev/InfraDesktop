@@ -9,6 +9,7 @@ const hookRule = (hook, defaultLimit) => ({
   meta: { type: 'problem', schema: [{ type: 'integer', minimum: 0 }], messages: { excess: '{{hook}}: {{count}} exceeds {{limit}}.' } },
   create(context) {
     const stack = [];
+    const aliases = new Set([hook]);
     const enter = () => stack.push(0);
     const leave = (node) => {
       const count = stack.pop(), limit = context.options[0] ?? defaultLimit;
@@ -16,10 +17,15 @@ const hookRule = (hook, defaultLimit) => ({
     };
     return {
       ':function': enter, ':function:exit': leave,
+      ImportDeclaration(node) {
+        if (node.source.value !== 'react') return;
+        for (const spec of node.specifiers)
+          if (spec.type === 'ImportSpecifier' && (spec.imported.name ?? spec.imported.value) === hook) aliases.add(spec.local.name);
+      },
       CallExpression(node) {
         const callee = node.callee;
         const name = callee.type === 'Identifier' ? callee.name : callee.type === 'MemberExpression' ? callee.property.name : '';
-        if (name === hook && stack.length) stack[stack.length - 1]++;
+        if (aliases.has(name) && stack.length) stack[stack.length - 1]++;
       },
     };
   },

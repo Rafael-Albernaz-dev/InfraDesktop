@@ -1,124 +1,33 @@
 import { readingAge } from './equipment-reading-format';
-import { PPReadResultMetadata,PPReadResultView } from './pppoe-read-result';
-import { RadioModes } from './radio-contract';
-import { Button } from './ui/Button';
+import { readHeading, hasReadTarget } from './pppoe-read-heading';
+import {
+  ReadActionsOnly,
+  ReadPanelBody,
+  ReadStandardBody,
+} from './pppoe-read-panel-body';
 import { DataBlock } from './ui/DataBlock';
 
-import type { PPReadPanelProps } from './pppoe-read-state';
+import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
 import { usePPReadState } from './pppoe-read-state';
-import { PPReadActionButtons,PPReadStatusBanners } from './pppoe-read-views';
+import { PPReadActionButtons } from './pppoe-read-views';
 export { DeviceMonitoring } from './device-monitoring';
-export { PPPoEDiagnostics,PPPoEPing } from './pppoe-diag-views';
+export { PPPoEDiagnostics } from './pppoe-diag-views';
+export { PPPoEPing } from './pppoe-ping';
 
+function readAge(props: PPReadPanelProps, s: ReadState) {
+  if (props.pageBandwidth) return '—';
+  return readingAge(s.result?.ended_at) || (props.panel ? '—' : '');
+}
 function PPPoEReadContent(props: PPReadPanelProps) {
-  const {setRoot,...s} = usePPReadState(props);
-  if (
-    !props.rows.length &&
-    !props.allowTop &&
-    !props.logRow &&
-    !props.health &&
-    !props.monitoring
-  ) {
-    return null;
-  }
-  if (props.actionsOnly)
-    return (
-      <>
-        <PPReadActionButtons s={s} pProps={props} />
-        <PPReadStatusBanners s={s} pProps={props} />
-        {s.result && (
-          <details className="det">
-            <summary>Última leitura operacional</summary>
-            <PPReadResultMetadata s={s} />
-            <PPReadResultView s={s} pProps={{ ...props, summaryOnly: false }} />
-          </details>
-        )}
-      </>
-    );
-  const heading = props.traffic
-    ? 'Tráfego'
-    : props.evidence === 'log'
-      ? 'Log PPP'
-      : props.evidence === 'secret'
-        ? 'Evidência do secret'
-        : props.monitoring
-          ? 'Leitura operacional'
-          : props.health
-            ? props.healthView === 'uplinks'
-              ? 'Interfaces estáticas'
-              : props.healthView === 'pools'
-                ? 'Pools IPv4'
-                : 'Pools e interfaces estáticas'
-            : props.bandwidthOnly
-              ? 'Banda'
-              : props.allowTop && !props.rows.length
-                ? 'Top consumo'
-                : 'Banda por sessão';
-  const body = (
-    <>
-      {props.healthView !== 'pools' && (
-        <div className="bar">
-          {(props.pageBandwidth || props.healthView === 'uplinks') && (
-            <>
-              <span className="muted">
-                {props.healthView === 'uplinks'
-                  ? 'TX e RX vistos pela interface do concentrador.'
-                  : 'Mede as sessões desta página.'}
-              </span>
-            </>
-          )}
-          {(s.result || props.pageBandwidth) && (
-            <details className="det">
-              <summary>Detalhes da leitura</summary>
-              {s.result && <PPReadResultMetadata s={s} />}
-              {props.pageBandwidth && (
-                <Button
-                  disabled={s.locked}
-                  onClick={() => void s.start(RadioModes.live)}
-                >
-                  Ver ao vivo
-                </Button>
-              )}
-            </details>
-          )}
-          {(props.pageBandwidth || props.healthView === 'uplinks') && (
-            <span className="grow" />
-          )}
-          <PPReadActionButtons s={s} pProps={props} />
-        </div>
-      )}
-      <PPReadStatusBanners s={s} pProps={props} />
-      {s.result && <PPReadResultView s={s} pProps={props} />}
-    </>
-  );
-  const panelBody = (
-    <>
-      {s.result ? (
-        <PPReadResultView s={s} pProps={props} />
-      ) : (
-        <p>Ainda sem leitura</p>
-      )}
-      <PPReadStatusBanners s={s} pProps={props} />
-      <div className="actions">
-        <PPReadActionButtons s={s} pProps={props} />
-      </div>
-      {props.evidence === 'log' && <p className="muted">Até 50 eventos, com horário informado pelo equipamento.</p>}
-      {props.evidence === 'secret' && <p className="muted">Apenas nesta consulta. Não é salva nem exportada, e a senha nunca é exibida.</p>}
-    </>
-  );
+  const { setRoot, ...s } = usePPReadState(props);
+  if (!hasReadTarget(props)) return null;
+  if (props.actionsOnly) return <ReadActionsOnly s={s} props={props} />;
+  const heading = readHeading(props);
   return (
     <section
       ref={setRoot}
       className="pppoe-diagnostics pppoe-read-panel"
-      aria-label={
-        props.health
-          ? props.healthView === 'uplinks'
-            ? 'Interfaces estáticas'
-            : props.healthView === 'pools'
-              ? 'Pools IPv4'
-              : 'Pools e interfaces estáticas'
-          : heading
-      }
+      aria-label={heading}
     >
       {(!props.panel || !props.traffic) && props.healthView !== 'pools' && (
         <div className="sp10" />
@@ -131,19 +40,20 @@ function PPPoEReadContent(props: PPReadPanelProps) {
           ) : undefined
         }
         source={props.panel ? `SSH (${props.device.name})` : 'SSH'}
-        age={
-          props.pageBandwidth
-            ? '—'
-            : readingAge(s.result?.ended_at) || (props.panel ? '—' : '')
-        }
+        age={readAge(props, s)}
         data={{
           state: s.job && s.result && !props.traffic ? 'refreshing' : 'ready',
-          content: props.panel ? panelBody : body,
+          content: props.panel ? (
+            <ReadPanelBody s={s} props={props} />
+          ) : (
+            <ReadStandardBody s={s} props={props} />
+          ),
         }}
       />
     </section>
   );
 }
+
 export function PPPoEReadPanel(props: PPReadPanelProps) {
   const key = [
     props.profile,

@@ -1,20 +1,12 @@
-import type { LinkedSessionTarget } from './linked-session-navigation';
 import { useEffect, useRef, useState } from 'react';
-import { radioAPI as api } from './radio-api';
-import type { Device } from './equipment-api';
 import { equipmentAPI } from './equipment-api';
+import { radioAPI as api } from './radio-api';
 import { RadioCodes, RadioFamilies } from './radio-contract';
+import type { RadioEquipmentProps } from './radio-equipment-props';
 import { radioMessage } from './radio-messages';
 import { useRadio } from './radio-observation';
-export type RadioEquipmentProps = {
-  profile: string;
-  activation: string;
-  device: Device;
-  blocked: boolean;
-  devices?: Device[];
-  openEquipment?: (id: string) => void;
-  openSession?: (target: LinkedSessionTarget) => void;
-};
+import { useLatestRef } from './use-latest-ref';
+export type { RadioEquipmentProps } from './radio-equipment-props';
 export function useRadioEquipmentState(props: RadioEquipmentProps) {
   const [currentDevice, setCurrentDevice] = useState(props.device);
   const { root: rootRef, ...radio } = useRadio(
@@ -56,16 +48,10 @@ export type RadioEquipmentState = Omit<
   'rootRef'
 >;
 export function useStoredEquipmentRadio(state: RadioEquipmentState) {
-  const {
-    profile,
-    activation,
-    device,
-    radio,
-    setWarning,
-    setCritical,
-    setLoading,
-  } = state;
+  const { profile, activation, device } = state;
+  const latestRef = useLatestRef(state);
   useEffect(() => {
+    const { radio, setWarning, setCritical, setLoading } = latestRef.current;
     let alive = true;
     void (async () => {
       try {
@@ -90,8 +76,7 @@ export function useStoredEquipmentRadio(state: RadioEquipmentState) {
       alive = false;
     };
     // Read stored data only when the account/device context changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, activation, device.id]);
+  }, [profile, activation, device.id, latestRef]);
 }
 export function useCompletedEquipmentRefresh(state: RadioEquipmentState) {
   const {

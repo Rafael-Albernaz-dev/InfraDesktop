@@ -71,7 +71,8 @@ export default [
     plugins: { 'react-hooks': hooks, 'react-refresh': refresh },
     rules: {
       ...hooks.configs.recommended.rules,
-      'react-refresh/only-export-components': 'warn',
+      'react-refresh/only-export-components': 'error',
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
 ];

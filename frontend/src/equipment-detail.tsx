@@ -1,30 +1,35 @@
-import { useContext,useEffect,useLayoutEffect,useRef,useState } from 'react';
 import {
-EquipmentAccessDetails,
-EquipmentSecondaryActions,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  EquipmentAccessDetails,
+  EquipmentSecondaryActions,
 } from './equipment-access';
 import type { Device } from './equipment-api';
-import { equipmentAPI as api } from './equipment-api';
 import { EquipmentChain } from './equipment-chain';
 import { EquipmentInsights } from './equipment-insights';
-import { equipmentType } from './equipment-layout';
 import { EquipmentReading } from './equipment-reading';
-import { latestSavedReading } from './equipment-reading-format';
 import { EquipmentQueryFailure } from './equipment-reading-status';
 import { driverOwners } from './equipment-role-options';
+import { EquipmentSheetHeader } from './equipment-sheet-header';
 import type { useEquipmentState } from './equipment-state';
+import { useSummaryRefresh } from './equipment-summary-refresh';
+import {
+  equipmentQueryRunning,
+  equipmentReadBlocked,
+} from './equipment-query-policy';
 import { SummaryTab } from './equipment-summary-tab';
-import { equipmentQueryRunning,equipmentReadBlocked,useSummaryRefresh } from './equipment-summary-refresh';
-import { formatDuration } from './network-format';
 import { PPPoE } from './pppoe';
-import { DeviceMonitoring,PPPoEReadPanel } from './pppoe-diagnostics';
+import { DeviceMonitoring, PPPoEReadPanel } from './pppoe-diagnostics';
 import { RadioEquipment } from './radio';
 import { RadioRoles } from './radio-contract';
 import { SessionRoute } from './session-navigation';
-import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
 import { HeaderActionHost } from './ui/HeaderAction';
-import { PageHeader } from './ui/PageHeader';
 import { Tabs } from './ui/Tabs';
 import type { RefreshOpening } from './use-refresh-on-open';
 
@@ -137,9 +142,17 @@ function HealthTab({ p }: { p: Props }) {
 function SheetContent({ p, tab }: { p: Props; tab: string }) {
   if (tab === 'Acesso') return <AccessTab p={p} />;
   if (tab === 'Resumo' && driverOwners[p.selected.role || ''])
-    return <DataBlock title="Resumo" source="cadastro local" data={{
-      state: 'unbuilt', slice: driverOwners[p.selected.role || ''], label: 'Não feito',
-    }} />;
+    return (
+      <DataBlock
+        title="Resumo"
+        source="cadastro local"
+        data={{
+          state: 'unbuilt',
+          slice: driverOwners[p.selected.role || ''],
+          label: 'Não feito',
+        }}
+      />
+    );
   if (tab === 'Resumo') return <SummaryTab p={p} />;
   if (tab === 'Interfaces e saúde') return <HealthTab p={p} />;
   if (tab === 'Sessões' || tab === 'Serviços')
@@ -172,13 +185,17 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
 }
 export function EquipmentDetailPane(p: Props) {
   const sessionRoute = useContext(SessionRoute);
-  const { surfaceRef, detailReadRef, detailSurfaceRef } = p;
+  const { detailSurfaceRef } = p;
   const [tab, setTab] = useState(
-    p.sessionTarget?.deviceID === p.selected.id ? 'Sessões' :
-      sessionRoute?.returnOrigin === p.selected.id ? 'Cliente' : 'Resumo',
+    p.sessionTarget?.deviceID === p.selected.id
+      ? 'Sessões'
+      : sessionRoute?.returnOrigin === p.selected.id
+        ? 'Cliente'
+        : 'Resumo',
   );
   useEffect(() => {
-    if (sessionRoute?.returnOrigin === p.selected.id) sessionRoute.consumeReturnOrigin?.();
+    if (sessionRoute?.returnOrigin === p.selected.id)
+      sessionRoute.consumeReturnOrigin?.();
   }, [sessionRoute, p.selected.id]);
   const radioRefreshDecision = useRef<RefreshOpening | undefined>(undefined);
   const [radioActions, setRadioActions] = useState<HTMLDivElement | null>(null);
@@ -190,25 +207,7 @@ export function EquipmentDetailPane(p: Props) {
   );
   const noDriver = Boolean(driverOwners[role]);
   useSummaryRefresh(p, tab, isRadio || noDriver);
-  const saved = latestSavedReading(device);
-  const readingAge = saved.at
-    ? `há ${formatDuration((p.displayNow - Date.parse(saved.at)) / 1000)}`
-    : 'Ainda sem leitura';
-  const back = () => {
-    const inventory = detailSurfaceRef.current?.closest(
-      '.equipment-capability',
-    );
-    surfaceRef.current++;
-    detailReadRef.current++;
-    p.setDetailOpen(false);
-    p.setJob(undefined);
-    queueMicrotask(() => {
-      const row = Array.from(
-        inventory?.querySelectorAll<HTMLElement>('[data-device-id]') || [],
-      ).find((element) => element.dataset.deviceId === device.id);
-      row?.focus({ preventScroll: true });
-    });
-  };
+  const back = createEquipmentBack(p);
   useLayoutEffect(() => {
     p.onBackReady?.(back);
     return () => p.onBackReady?.();
@@ -221,62 +220,29 @@ export function EquipmentDetailPane(p: Props) {
       aria-label="Ficha do equipamento"
     >
       <div hidden={sessionRoute?.active}>
-      <PageHeader
-        title={device.name}
-        meta={
-          <>
-            {device.name} · {equipmentType(role)}{device.block && ` · ${device.block}`} ·{' '}
-            {saved.version || 'Não informado nesta leitura'} ·{' '}
-            {saved.at ? `atualizado ${readingAge}` : readingAge}
-          </>
-        }
-      >
-        <Button onClick={back}>Voltar</Button>
-        {noDriver ? null : isRadio || tab === 'Sessões' || tab === 'Serviços' ? (
-          <div ref={setRadioActions} className="actions header-actions" />
-        ) : (
-          <Button
-            kind="primary"
-            disabled={
-              p.job?.state === 'RUNNING' ? p.locked : equipmentReadBlocked(p)
-            }
-            onClick={() =>
-              p.job?.state === 'RUNNING'
-                ? void p.perform(
-                    () => api.cancel(p.profile, p.activation, p.job!.id),
-                    (r) => p.setJob(r.data?.job),
-                    false,
-                  )
-                : void p.startOperation(
-                    device.fingerprint ? 'query' : 'inspect',
-                    device,
-                  )
-            }
-          >
-            {p.job?.state === 'RUNNING'
-              ? 'Parar'
-              : device.fingerprint
-                ? 'Atualizar'
-                : 'Conectar'}
-          </Button>
-        )}
-      </PageHeader>
-      <div className="chain" ref={setChainHost}>
-        {!isRadio && (
-          <EquipmentChain
-            device={device}
-            devices={p.devices}
-            open={p.openById}
-          />
-        )}
-      </div>
-      <EquipmentQueryFailure state={p} tab={tab} isRadio={isRadio} />
-      <Tabs
-        label="Ficha do equipamento"
-        items={(TABS[role] || TABS.other).map((t) => [t, t])}
-        value={tab}
-        onChange={setTab}
-      />
+        <EquipmentSheetHeader
+          p={p}
+          tab={tab}
+          isRadio={isRadio}
+          back={back}
+          setRadioActions={setRadioActions}
+        />
+        <div className="chain" ref={setChainHost}>
+          {!isRadio && (
+            <EquipmentChain
+              device={device}
+              devices={p.devices}
+              open={p.openById}
+            />
+          )}
+        </div>
+        <EquipmentQueryFailure state={p} tab={tab} isRadio={isRadio} />
+        <Tabs
+          label="Ficha do equipamento"
+          items={(TABS[role] || TABS.other).map((t) => [t, t])}
+          value={tab}
+          onChange={setTab}
+        />
       </div>
       <HeaderActionHost value={radioActions}>
         {isRadio && (
@@ -304,4 +270,23 @@ export function EquipmentDetailPane(p: Props) {
       </HeaderActionHost>
     </section>
   );
+}
+
+function createEquipmentBack(p: Props) {
+  const { surfaceRef, detailReadRef, detailSurfaceRef, selected: device } = p;
+  return () => {
+    const inventory = detailSurfaceRef.current?.closest(
+      '.equipment-capability',
+    );
+    surfaceRef.current++;
+    detailReadRef.current++;
+    p.setDetailOpen(false);
+    p.setJob(undefined);
+    queueMicrotask(() => {
+      const row = Array.from(
+        inventory?.querySelectorAll<HTMLElement>('[data-device-id]') || [],
+      ).find((element) => element.dataset.deviceId === device.id);
+      row?.focus({ preventScroll: true });
+    });
+  };
 }

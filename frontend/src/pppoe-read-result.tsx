@@ -1,18 +1,18 @@
+import { DeviceOperationalTables } from './device-monitoring';
 import {
   exactNumber,
   formatDate,
   formatDuration,
   formatLatency,
 } from './network-format';
-import { Button } from './ui/Button';
+import { PPHealthTables } from './pppoe-read-health-tables';
 import { SessionTraffic } from './session-traffic';
-import { DeviceOperationalTables } from './device-monitoring';
+import { Button } from './ui/Button';
 
-import type { PPReadPanelProps,ReadState } from './pppoe-read-state';
+import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
 import {
-  PPReadCostInfo,
-  PPHealthTables,
   PPReadBandwidthTable,
+  PPReadCostInfo,
   PPReadLogTable,
   PPSecretEvidence,
 } from './pppoe-read-views';

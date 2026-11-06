@@ -1,27 +1,23 @@
-import {
-useCallback,
-useEffect,
-useEffectEvent,
-useLayoutEffect,
-useRef,
-useState,
-} from 'react';
-import type { Credential,Device,EquipmentResult,Job } from './equipment-api';
-import { equipmentAPI as api,equipmentMessage } from './equipment-api';
+import { useCallback, useEffect, useEffectEvent } from 'react';
+import type { Device, EquipmentResult, Job } from './equipment-api';
+import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { useCredentialsCatalogEffect } from './equipment-credential-effect';
 import {
-useDetailDeviceSyncEffects,
-useDeviceListEffect,
-useJobPollEffect,
+  useDetailDeviceSyncEffects,
+  useDeviceListEffect,
+  useJobPollEffect,
 } from './equipment-effects';
+import {
+  useEquipmentRefs,
+  useEquipmentSurfaceEffects,
+} from './equipment-lifecycle';
 import { useEquipmentNavigator } from './equipment-navigator';
 import { retireOlderPendingRevisions } from './equipment-pending-revisions';
 import { id } from './equipment-reading-format';
-import { acceptEquipmentAuthority,pendingStarts } from './equipment-receipts';
+import { pendingStarts } from './equipment-receipts';
 import { driverOwners } from './equipment-role-options';
-import { useDisplayNow } from './equipment-snapshot';
+import { useEquipmentStore } from './equipment-store';
 import { fieldForEquipmentCode } from './equipment-validation';
-import { useInventoryFilterState } from './inventory-filter-state';
 import type { LinkedSessionTarget } from './linked-session-navigation';
 import { RadioRoles } from './radio-contract';
 
@@ -32,14 +28,22 @@ export type EquipmentPerformFn = (
   inlineFields?: boolean,
 ) => Promise<EquipmentResult | undefined>;
 
-function usePerformAction(
-  busy: boolean,
-  setBusy: (v: boolean) => void,
-  setError: (v: string) => void,
-  surfaceRef: React.MutableRefObject<number>,
-  mountedRef: React.MutableRefObject<boolean>,
-  reload: React.Dispatch<React.SetStateAction<number>>,
-): EquipmentPerformFn {
+type EquipmentPerformContext = {
+  busy: boolean;
+  setBusy: (v: boolean) => void;
+  setError: (v: string) => void;
+  surfaceRef: React.MutableRefObject<number>;
+  mountedRef: React.MutableRefObject<boolean>;
+  reload: React.Dispatch<React.SetStateAction<number>>;
+};
+function usePerformAction({
+  busy,
+  setBusy,
+  setError,
+  surfaceRef,
+  mountedRef,
+  reload,
+}: EquipmentPerformContext): EquipmentPerformFn {
   return useCallback(
     async function perform(
       call: () => Promise<EquipmentResult>,
@@ -59,7 +63,7 @@ function usePerformAction(
           if (intent === surfaceRef.current) after?.(r);
         } else if (
           intent === surfaceRef.current &&
-          !(inlineFields && fieldForEquipmentCode[r.code])
+          !isInlineFieldError(inlineFields, r.code)
         )
           setError(equipmentMessage(r.code));
         return r;
@@ -74,14 +78,15 @@ function usePerformAction(
   );
 }
 
-function createStartOperation(p: {
+type CreateStartOperationProps = {
   profile: string;
   activation: string;
   setError: (v: string) => void;
   setJobDevice: (d: Device | undefined) => void;
   setJob: (j: Job | undefined) => void;
   perform: EquipmentPerformFn;
-}) {
+};
+function createStartOperation(p: CreateStartOperationProps) {
   return async function startOperation(
     kind: 'query' | 'inspect',
     device: Device,
@@ -135,7 +140,8 @@ function useQueuedConnectEffect(
     setConnectRequest(undefined);
     if (
       Boolean(driverOwners[device.role || '']) ||
-      (device.fingerprint && (device.role === RadioRoles.ap || device.role === RadioRoles.cpe))
+      (device.fingerprint &&
+        (device.role === RadioRoles.ap || device.role === RadioRoles.cpe))
     )
       return;
     void startOperation(device.fingerprint ? 'query' : 'inspect', device);
@@ -153,111 +159,19 @@ function useQueuedConnectEffect(
   }, [connectRequest, busy, connected]);
 }
 
-function useEquipmentStore(profile: string, activation: string) {
-  const inventoryFilters = useInventoryFilterState();
-  const [credentialRefresh, reloadCredentials] = useState(0);
-  const [credentialDefaults, setCredentialDefaults] = useState<
-    Record<string, string>
-  >({});
-  const [defaultBusy, setDefaultBusy] = useState(false);
-  const [credentialError, setCredentialError] = useState('');
-  const displayNow = useDisplayNow();
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [credentialCatalog, setCredentialCatalog] = useState<{
-    key: string;
-    value: Credential[];
-  }>({ key: '', value: [] });
-  const credentials =
-    credentialCatalog.key === [profile, activation].join('|')
-      ? credentialCatalog.value
-      : [];
-  const [sessionTarget, setSessionTarget] = useState<LinkedSessionTarget>();
-  const [selected, setSelected] = useState<Device>(),
-    [search, setSearch] = useState(''),
-    [inactive, setInactive] = useState(false);
-  const [cursor, setCursor] = useState(0),
-    [next, setNext] = useState(0),
-    [refresh, reload] = useState(0),
-    [total, setTotal] = useState(0);
-  const [ready, setReady] = useState(false),
-    [vault, setVault] = useState(false),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [listError, setListError] = useState('');
-  const [form, setForm] = useState<Device>(),
-    [credentialForm, setCredentialForm] = useState<Credential | 'new'>(),
-    [job, setJob] = useState<Job>();
-  const [connectRequest, setConnectRequest] = useState<Device>(),
-    [resetTrust, setResetTrust] = useState(false),
-    [jobDevice, setJobDevice] = useState<Device>();
-  return {
-    ...inventoryFilters,
-    credentialRefresh,
-    reloadCredentials,
-    credentialDefaults,
-    setCredentialDefaults,
-    defaultBusy,
-    setDefaultBusy,
-    credentialError,
-    setCredentialError,
-    displayNow,
-    devices,
-    setDevices,
-    setCredentialCatalog,
-    credentials,
-    selected,
-    setSelected,
-    sessionTarget,
-    setSessionTarget,
-    search,
-    setSearch,
-    inactive,
-    setInactive,
-    cursor,
-    setCursor,
-    next,
-    setNext,
-    refresh,
-    reload,
-    total,
-    setTotal,
-    ready,
-    setReady,
-    vault,
-    setVault,
-    busy,
-    setBusy,
-    error,
-    setError,
-    listError,
-    setListError,
-    form,
-    setForm,
-    credentialForm,
-    setCredentialForm,
-    job,
-    setJob,
-    detailOpen: Boolean(selected),
-    setDetailOpen: useCallback((open: boolean) => {
-      if (!open) setSelected(undefined);
-    }, []),
-    connectRequest,
-    setConnectRequest,
-    resetTrust,
-    setResetTrust,
-    jobDevice,
-    setJobDevice,
-  };
-}
-
+type EquipmentActionContext = {
+  profile: string;
+  activation: string;
+  closeForm: () => void;
+  perform: EquipmentPerformFn;
+  onSelect?: (id: string) => void;
+};
 function createEquipmentActions(
   s: ReturnType<typeof useEquipmentStore>,
-  profile: string,
-  activation: string,
-  closeForm: () => void,
-  perform: EquipmentPerformFn,
-  onSelect?: (id: string) => void,
+  p: EquipmentActionContext,
 ) {
+  const { profile, activation, closeForm, perform, onSelect } = p;
+
   const openDevice = (device: Device, target?: LinkedSessionTarget) => {
     s.setSessionTarget(target);
     s.setSelected(device);
@@ -284,7 +198,7 @@ function createEquipmentActions(
     showSavedDevice,
   };
 }
-export function useEquipmentState(props: {
+export type UseEquipmentStateProps = {
   profile: string;
   activation: string;
   connected: boolean;
@@ -293,50 +207,24 @@ export function useEquipmentState(props: {
   targetID?: string;
   onSelect?: (id: string) => void;
   onDetailChange?: (open: boolean) => void;
-}) {
+};
+export function useEquipmentState(props: UseEquipmentStateProps) {
+  const { profile, activation, connected, onTotal, targetID, onSelect } = props;
+  const refs = useEquipmentRefs(profile, activation);
   const {
-    profile,
-    activation,
-    connected,
-    addVisible,
-    onTotal,
-    targetID,
-    onSelect,
-    onDetailChange,
-  } = props;
-  const defaultContextRef = useRef([profile, activation].join('|'));
-  const detailSurfaceRef = useRef<HTMLElement>(null);
-  const resetOperationRef = useRef('');
-  const confirmOperationRef = useRef({ job: '', operation: '' });
-  const detailReadRef = useRef(0);
-  const surfaceRef = useRef(0);
-  const mountedRef = useRef(true);
-  const generationRef = useRef(0);
+    defaultContextRef,
+    surfaceRef,
+    mountedRef,
+    detailReadRef,
+    generationRef,
+  } = refs;
   const s = useEquipmentStore(profile, activation);
-  useLayoutEffect(() => {
-    acceptEquipmentAuthority(profile, activation);
-    defaultContextRef.current = [profile, activation].join('|');
-  }, [profile, activation]);
-  useLayoutEffect(() => {
-    if (s.detailOpen && s.selected?.id) {
-      detailSurfaceRef.current?.focus({ preventScroll: true });
-      detailSurfaceRef.current?.scrollIntoView?.({ block: 'start' });
-    }
-  }, [s.detailOpen, s.selected?.id]);
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  useEquipmentSurfaceEffects(refs, s, props);
   const shownForm = s.form;
   const closeForm = () => {
     s.setError('');
     s.setForm(undefined);
   };
-  useLayoutEffect(() => {
-    surfaceRef.current += 1;
-  }, [s.selected?.id, shownForm, s.credentialForm, profile, activation, addVisible]);
   useDeviceListEffect({
     ...s,
     generationRef,
@@ -347,14 +235,14 @@ export function useEquipmentState(props: {
   });
   useCredentialsCatalogEffect({ ...s, profile, activation, connected });
   useJobPollEffect({ ...s, surfaceRef, profile, activation });
-  const perform = usePerformAction(
-    s.busy,
-    s.setBusy,
-    s.setError,
+  const perform = usePerformAction({
+    busy: s.busy,
+    setBusy: s.setBusy,
+    setError: s.setError,
     surfaceRef,
     mountedRef,
-    s.reload,
-  );
+    reload: s.reload,
+  });
   const startOperation = createStartOperation({
     ...s,
     profile,
@@ -378,17 +266,13 @@ export function useEquipmentState(props: {
     connected,
     startOperation,
   );
-  useEffect(() => {
-    onDetailChange?.(s.detailOpen);
-  }, [s.detailOpen, onDetailChange]);
-  const actions = createEquipmentActions(
-    s,
+  const actions = createEquipmentActions(s, {
     profile,
     activation,
     closeForm,
     perform,
     onSelect,
-  );
+  });
   const openById = useEquipmentNavigator({
     profile,
     activation,
@@ -408,15 +292,12 @@ export function useEquipmentState(props: {
     closeForm,
     perform,
     startOperation,
-    defaultContextRef,
-    detailSurfaceRef,
-    resetOperationRef,
-    confirmOperationRef,
-    confirmOperation: confirmOperationRef,
-    resetOperation: resetOperationRef,
-    detailReadRef,
-    surfaceRef,
-    mountedRef,
-    generationRef,
+    ...refs,
+    confirmOperation: refs.confirmOperationRef,
+    resetOperation: refs.resetOperationRef,
   };
+}
+
+function isInlineFieldError(inlineFields: boolean, code: string) {
+  return inlineFields && Boolean(fieldForEquipmentCode[code]);
 }

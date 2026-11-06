@@ -6,35 +6,19 @@ import {
   useState,
 } from 'react';
 import type { Device } from './equipment-api';
-import { equipmentMessage } from './equipment-api';
 import { pendingPPPoE as pending } from './equipment-receipts';
+import type {
+  UseDiagLoadEffectProps,
+  UseDiagPageEffectProps,
+  UseDiagPollEffectProps,
+} from './pppoe-diagnostic-effect-props';
+import { diagnosticMessage } from './pppoe-diagnostic-message';
 import type { PDDiagnostic, PDRow, PPResult } from './presentation';
 import { pppoeDiagnosticAPI as api } from './presentation';
+import { useLatestRef } from './use-latest-ref';
 
 export type Scope = 'catalog' | 'radius' | 'ping';
 export type Source = { observation: string; row: string };
-
-export const diagnosticMessage = (code: string) =>
-  (
-    ({
-      PING_CONTEXT_UNAVAILABLE:
-        'O contexto main contém VRF, regras ou mangle ativos incompatíveis com a sondagem.',
-      PING_SESSION_CHANGED:
-        'A sessão mudou no concentrador. Atualize as sessões antes de sondar.',
-      PING_READING_STALE:
-        'A leitura pertence a um contexto anterior do serviço. Atualize as sessões.',
-      PING_OFFLINE: 'Ping indisponível: sessão OFFLINE.',
-    }) as Record<string, string>
-  )[code] ||
-  (code === 'PARTIAL'
-    ? 'O concentrador não devolveu uma leitura completa.'
-    : code === 'OBSERVATION_INCOMPATIBLE'
-      ? 'A leitura não permite uma sondagem segura. Confira a identidade da sessão.'
-      : code === 'OBSERVATION_UNAVAILABLE'
-        ? 'A leitura foi substituída. Reabra os dados armazenados.'
-        : code === 'JOB_INTERRUPTED'
-          ? 'A ação anterior foi interrompida. Ela não será reenviada automaticamente.'
-          : equipmentMessage(code));
 
 function useDiagnosticStateVars(context: string, readKey: string) {
   const [storedContext, setStoredContext] = useState(context);
@@ -112,23 +96,9 @@ function useDiagnosticStateVars(context: string, readKey: string) {
   };
 }
 
-type DiagState = ReturnType<typeof useDiagnosticStateVars>;
+export type DiagState = ReturnType<typeof useDiagnosticStateVars>;
 
-function useDiagLoadEffect(p: {
-  s: DiagState;
-  context: string;
-  readKey: string;
-  profile: string;
-  activation: string;
-  deviceId: string;
-  scope: Scope;
-  sourceObservation?: string;
-  sourceRow?: string;
-  lifeRef: React.MutableRefObject<{ generation: number }>;
-  readSequenceRef: React.MutableRefObject<number>;
-  active: (generation: number, result?: PPResult) => boolean;
-  acknowledge: (op?: string) => void;
-}) {
+function useDiagLoadEffect(p: UseDiagLoadEffectProps) {
   const {
     s,
     context,
@@ -144,7 +114,10 @@ function useDiagLoadEffect(p: {
     active,
     acknowledge,
   } = p;
+  const latestRef = useLatestRef(s);
   useEffect(() => {
+    const s = latestRef.current;
+
     const generation = lifeRef.current.generation;
     const request = ++readSequenceRef.current;
     let stopped = false;
@@ -186,6 +159,9 @@ function useDiagLoadEffect(p: {
       stopped = true;
     };
   }, [
+    latestRef,
+    lifeRef,
+    readSequenceRef,
     context,
     s.refresh,
     profile,
@@ -200,19 +176,7 @@ function useDiagLoadEffect(p: {
   ]);
 }
 
-function useDiagPageEffect(p: {
-  s: DiagState;
-  context: string;
-  diagnosticID?: string;
-  kind: string;
-  profile: string;
-  activation: string;
-  deviceId: string;
-  scope: Scope;
-  readKey: string;
-  lifeRef: React.MutableRefObject<{ generation: number }>;
-  active: (generation: number, result?: PPResult) => boolean;
-}) {
+function useDiagPageEffect(p: UseDiagPageEffectProps) {
   const {
     s,
     context,
@@ -235,7 +199,10 @@ function useDiagPageEffect(p: {
     s.setPageError('');
     s.setPageLoading(!!diagnosticID);
   }
+  const latestRef = useLatestRef(s);
   useEffect(() => {
+    const s = latestRef.current;
+
     let stopped = false;
     const generation = lifeRef.current.generation;
     if (!diagnosticID || s.metaReadKey !== readKey) return;
@@ -261,6 +228,8 @@ function useDiagPageEffect(p: {
       stopped = true;
     };
   }, [
+    latestRef,
+    lifeRef,
     context,
     diagnosticID,
     kind,
@@ -276,17 +245,12 @@ function useDiagPageEffect(p: {
   ]);
 }
 
-function useDiagPollEffect(p: {
-  s: DiagState;
-  context: string;
-  profile: string;
-  activation: string;
-  lifeRef: React.MutableRefObject<{ generation: number }>;
-  active: (generation: number, result?: PPResult) => boolean;
-  acknowledge: (op?: string) => void;
-}) {
+function useDiagPollEffect(p: UseDiagPollEffectProps) {
   const { s, context, profile, activation, lifeRef, active, acknowledge } = p;
+  const latestRef = useLatestRef(s);
   useEffect(() => {
+    const s = latestRef.current;
+
     if (!s.job) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;
@@ -330,7 +294,17 @@ function useDiagPollEffect(p: {
       stopped = true;
       clearTimeout(timer);
     };
-  }, [context, s.job, s.statusRetry, profile, activation, active, acknowledge]);
+  }, [
+    latestRef,
+    lifeRef,
+    context,
+    s.job,
+    s.statusRetry,
+    profile,
+    activation,
+    active,
+    acknowledge,
+  ]);
 }
 
 import { useDiagActions } from './pppoe-diag-actions';

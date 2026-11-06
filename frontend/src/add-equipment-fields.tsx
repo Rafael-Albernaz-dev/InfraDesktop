@@ -1,13 +1,13 @@
 import { useId } from 'react';
+import { AddCredentialField } from './add-equipment-access-field';
 import type { Credential } from './equipment-api';
+import type { useFieldErrors } from './equipment-draft';
+import { RoleOptions } from './equipment-roles';
 import type { ImportRow } from './presentation';
 import { Field } from './ui/Field';
 import { Select } from './ui/Select';
-import { RoleOptions } from './equipment-roles';
-import { RadioRoles } from './radio-contract';
-import type { useFieldErrors } from './equipment-draft';
 
-export function AddEquipmentFields(p: {
+export type AddEquipmentFieldsProps = {
   row: ImportRow;
   change: (v: Partial<ImportRow>) => void;
   credentials: Credential[];
@@ -17,15 +17,11 @@ export function AddEquipmentFields(p: {
   correction?: boolean;
   disabled?: boolean;
   validation?: Pick<ReturnType<typeof useFieldErrors>, 'attrs' | 'message'>;
-}) {
-  const { row, change, credentials } = p;
-  const blockList = useId();
+};
+function AddIdentityFields(p: AddEquipmentFieldsProps) {
+  const { row, change } = p;
   return (
-    <div
-      className={
-        p.correction ? 'add-form-grid correction-form' : 'add-form-grid'
-      }
-    >
+    <>
       <Field
         layout="form"
         label="Nome"
@@ -63,6 +59,14 @@ export function AddEquipmentFields(p: {
       >
         {p.validation?.message('port')}
       </Field>
+    </>
+  );
+}
+function AddRoleFields(p: AddEquipmentFieldsProps) {
+  const { row, change } = p;
+  const blockList = useId();
+  return (
+    <>
       <label className="field">
         Papel do equipamento
         <Select
@@ -91,42 +95,19 @@ export function AddEquipmentFields(p: {
           ))}
         </datalist>
       </Field>
-      <label className="field">
-        {p.correction ? 'Credencial' : 'Credencial de consulta'}
-        <Select
-          aria-label={p.correction ? 'Credencial' : 'Credencial de consulta'}
-          disabled={p.disabled}
-          value={row.credential}
-          onChange={(e) => {
-            if (e.target.value === '__add__') p.addCredential?.();
-            else change({ credential: e.target.value });
-          }}
-        >
-          <option value="">Sem credencial</option>
-          {row.credential &&
-            row.credential !== '__inline__' &&
-            !credentials.some(
-              (c) => (p.credentialById ? c.id : c.alias) === row.credential,
-            ) && (
-              <option value={row.credential}>
-                {row.credential} (não encontrada)
-              </option>
-            )}
-          {credentials.map((c) => (
-            <option key={c.id} value={p.credentialById ? c.id : c.alias}>
-              {c.alias}
-            </option>
-          ))}
-          {p.addCredential && (
-            <>
-              <option value="__add__">Adicionar credencial</option>
-              {!Object.values<string>(RadioRoles).includes(row.role) && (
-                <option value="__inline__">Informar usuário e senha</option>
-              )}
-            </>
-          )}
-        </Select>
-      </label>
+    </>
+  );
+}
+export function AddEquipmentFields(p: AddEquipmentFieldsProps) {
+  return (
+    <div
+      className={
+        p.correction ? 'add-form-grid correction-form' : 'add-form-grid'
+      }
+    >
+      <AddIdentityFields {...p} />
+      <AddRoleFields {...p} />
+      <AddCredentialField {...p} />
     </div>
   );
 }

@@ -1,4 +1,6 @@
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSessionRefs } from './access-session-refs';
+import { useLatestRef } from './use-latest-ref';
 import type { Page } from './desktop';
 import type { Branding } from './desktop-model';
 import { acceptEquipmentAuthority } from './equipment-receipts';
@@ -21,7 +23,6 @@ export const initial: Result = {
   recovery: '',
   companies: [],
 };
-
 
 export function useBrandState(view: Result, connected: boolean) {
   const [brandState, setBrandState] = useState<{
@@ -95,25 +96,24 @@ export function useStatusPoll(
     const request = async () => {
       const generation = epoch.current;
       if (working.current) return;
-        try {
-          const r = await access.status();
-          if (!stopped && generation === epoch.current) {
-            if (r.code === 'OK') {
-              failures = 0;
-              accept(r);
-            } else {
-              failures++;
-              setConnected(false);
-              if (r.code === 'UNAUTHENTICATED') accept(r);
-            }
-          }
-        } catch {
-          if (!stopped && generation === epoch.current) {
+      try {
+        const r = await access.status();
+        if (!stopped && generation === epoch.current) {
+          if (r.code === 'OK') {
+            failures = 0;
+            accept(r);
+          } else {
             failures++;
             setConnected(false);
+            if (r.code === 'UNAUTHENTICATED') accept(r);
           }
         }
-
+      } catch {
+        if (!stopped && generation === epoch.current) {
+          failures++;
+          setConnected(false);
+        }
+      }
     };
     const poll = async () => {
       await request();
@@ -131,7 +131,6 @@ export function useStatusPoll(
     };
   }, [accept, epoch, invalidate, setConnected, working]);
 }
-
 
 export type PerformFn = (
   call: () => Promise<Result>,
@@ -215,45 +214,31 @@ export function applySessionResult(
   refs.hadAuthRef.current = r.authenticated;
 }
 
-
 export function useAccessSession(
   setPage: (p: Page) => void,
   setTheme: (t: string) => void,
 ) {
   const state = useSessionView();
-  const { setError, setRecovery, setDialog, setRecoveryUncertain, setView, setConnected } = state;
-  const { securityLockedRef, epochRef, workingRef, surfaceRef,
-    hadAuthRef, contextKeyRef, previousViewRef } = useSessionRefs();
+  const refs = useSessionRefs(initial),
+    stateRef = useLatestRef(state);
+  const { securityLockedRef, epochRef, workingRef, surfaceRef } = refs;
+  const { setConnected } = state;
   const bumpSurface = useCallback(() => {
     surfaceRef.current++;
-  }, []);
+  }, [surfaceRef]);
   const accept = useCallback(
-    (r: Result) => {
+    (r: Result) =>
       applySessionResult(
         r,
-        {
-          securityLockedRef,
-          epochRef,
-          hadAuthRef,
-          contextKeyRef,
-          surfaceRef,
-          previousViewRef,
-          setError,
-          setRecovery,
-          setDialog,
-          setRecoveryUncertain,
-          setView,
-          setConnected,
-        },
+        { ...refs, ...stateRef.current },
         setPage,
         setTheme,
-      );
-    },
-    [setPage, setTheme],
+      ),
+    [refs, stateRef, setPage, setTheme],
   );
   const invalidate = useCallback(() => {
     epochRef.current++;
-  }, []);
+  }, [epochRef]);
   useStatusPoll(workingRef, epochRef, accept, setConnected, invalidate);
   return {
     ...state,
@@ -266,10 +251,6 @@ export function useAccessSession(
     invalidate,
   };
 }
-
-
-
-
 
 export function createBrandSaver(
   view: Result,
@@ -316,14 +297,22 @@ function useSessionView() {
   const [resetVerification, setResetVerification] = useState(false);
   const [dialog, setDialog] = useState('');
   const [recoveryUncertain, setRecoveryUncertain] = useState(false);
- return { view, setView, connected, setConnected, busy, setBusy, error, setError, recovery, setRecovery,
- resetVerification, setResetVerification, dialog, setDialog, recoveryUncertain, setRecoveryUncertain };
-}
-function useSessionAuthorityRefs() {
- const hadAuthRef = useRef(false), contextKeyRef = useRef(''), previousViewRef = useRef(initial);
- return { hadAuthRef, contextKeyRef, previousViewRef };
-}
-function useSessionRefs() {
- const securityLockedRef = useRef(false), epochRef = useRef(0), workingRef = useRef(false), surfaceRef = useRef(0);
- return { securityLockedRef, epochRef, workingRef, surfaceRef, ...useSessionAuthorityRefs() };
+  return {
+    view,
+    setView,
+    connected,
+    setConnected,
+    busy,
+    setBusy,
+    error,
+    setError,
+    recovery,
+    setRecovery,
+    resetVerification,
+    setResetVerification,
+    dialog,
+    setDialog,
+    recoveryUncertain,
+    setRecoveryUncertain,
+  };
 }

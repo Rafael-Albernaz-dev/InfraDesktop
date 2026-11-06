@@ -15,36 +15,8 @@
     "complexity": 16,
     "no-nested-ternary": 6
   },
-  "src/add-enrollment.tsx": {
-    "max-lines-per-function": 126,
-    "complexity": 18
-  },
-  "src/add-equipment-fields.tsx": {
-    "max-lines-per-function": 123,
-    "complexity": 16
-  },
-  "src/add-equipment.tsx": {
-    "max-lines-per-function": 270,
-    "complexity": 24,
-    "no-nested-ternary": 3
-  },
-  "src/add-import-file.tsx": {
-    "max-lines-per-function": 101
-  },
-  "src/add-import-preview.tsx": {
-    "max-lines-per-function": 145
-  },
-  "src/add-import-state.tsx": {
-    "max-lines-per-function": 142,
-    "no-nested-ternary": 2,
-    "complexity": 17
-  },
   "src/app-dialogs.tsx": {
     "no-nested-ternary": 2
-  },
-  "src/app-perform.tsx": {
-    "max-lines-per-function": 61,
-    "complexity": 23
   },
   "src/app-session.tsx": {
     "no-nested-ternary": 3
@@ -65,9 +37,8 @@
     "no-nested-ternary": 1
   },
   "src/desktop-shell.tsx": {
-    "max-lines-per-function": 181,
-    "complexity": 21,
-    "no-nested-ternary": 8
+    "max-lines-per-function": 100,
+    "complexity": 20
   },
   "src/desktop.tsx": {
     "max-lines-per-function": 99,
@@ -101,13 +72,13 @@
     "max-lines-per-function": 112
   },
   "src/equipment-detail.tsx": {
-    "max-lines-per-function": 135,
-    "no-nested-ternary": 4,
-    "complexity": 31
+    "max-lines-per-function": 100,
+    "no-nested-ternary": 2,
+    "complexity": 20
   },
   "src/equipment-effects.tsx": {
     "complexity": 19,
-    "max-lines-per-function": 97,
+    "max-lines-per-function": 92,
     "max-params": 9
   },
   "src/equipment-forms.tsx": {
@@ -141,11 +112,7 @@
     "max-lines-per-function": 94
   },
   "src/equipment-state.tsx": {
-    "max-params": 6,
-    "complexity": 16,
-    "max-lines-per-function": 136,
-    "quality/state-count": 25,
-    "quality/ref-count": 8
+    "max-lines-per-function": 100
   },
   "src/equipment-summary-blocks.tsx": {
     "max-lines-per-function": 64
@@ -210,27 +177,19 @@
     "complexity": 18
   },
   "src/pppoe-diag-state.tsx": {
-    "no-nested-ternary": 3,
     "max-lines-per-function": 140,
     "quality/state-count": 18,
     "complexity": 19,
     "max-params": 6
   },
   "src/pppoe-diag-views.tsx": {
-    "max-lines-per-function": 186,
-    "complexity": 47,
-    "no-nested-ternary": 4
+    "max-lines-per-function": 100
   },
   "src/pppoe-diagnostic-tables.tsx": {
     "no-nested-ternary": 4
   },
   "src/pppoe-diagnostics.test.tsx": {
     "max-lines": 553
-  },
-  "src/pppoe-diagnostics.tsx": {
-    "max-lines-per-function": 134,
-    "complexity": 48,
-    "no-nested-ternary": 9
   },
   "src/pppoe-export.ts": {
     "no-nested-ternary": 1
@@ -253,11 +212,6 @@
   "src/pppoe-read-result.tsx": {
     "no-nested-ternary": 4
   },
-  "src/pppoe-read-views.tsx": {
-    "no-nested-ternary": 7,
-    "max-lines-per-function": 112,
-    "complexity": 17
-  },
   "src/pppoe-reference-lifecycle.test.tsx": {
     "max-params": 6,
     "max-lines": 566
@@ -265,32 +219,18 @@
   "src/pppoe-session-detail.tsx": {
     "max-lines-per-function": 75
   },
-  "src/pppoe-session-info.tsx": {
-    "max-lines-per-function": 119,
-    "complexity": 30,
-    "no-nested-ternary": 1
-  },
-  "src/pppoe-session-screen.tsx": {
-    "max-lines-per-function": 145,
-    "no-nested-ternary": 2
-  },
   "src/pppoe-sessions-view.tsx": {
     "max-lines-per-function": 79
   },
   "src/pppoe-state.tsx": {
-    "max-lines-per-function": 108,
-    "quality/state-count": 29,
-    "complexity": 20,
-    "max-lines": 536
+    "max-lines-per-function": 100,
+    "complexity": 20
   },
   "src/pppoe.test.tsx": {
     "max-lines": 544
   },
   "src/pppoe.tsx": {
-    "max-lines-per-function": 229,
-    "quality/ref-count": 15,
-    "complexity": 47,
-    "no-nested-ternary": 1
+    "max-lines-per-function": 100
   },
   "src/presentation.ts": {
     "max-params": 7,

@@ -1,4 +1,4 @@
-import type { Device } from './equipment-api';
+import type { Device, Job } from './equipment-api';
 import { pendingStarts } from './equipment-receipts';
 export function retireOlderPendingRevisions(
   profile: string,
@@ -18,5 +18,22 @@ export function retireOlderPendingRevisions(
       )
         pendingStarts.delete(old);
     }
+  }
+}
+
+export function clearPendingStartsForJob(
+  profile: string,
+  activation: string,
+  current: Job,
+) {
+  const prefix =
+    [
+      profile,
+      activation,
+      current.kind === 'trust.inspect' ? 'inspect' : 'query',
+      current.device_id,
+    ].join('|') + '|';
+  for (const [key, operation] of pendingStarts) {
+    if (key.startsWith(prefix) && operation) pendingStarts.delete(key);
   }
 }

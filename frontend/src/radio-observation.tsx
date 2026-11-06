@@ -1,17 +1,11 @@
-import { RadioModes } from './radio-contract';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { radioAPI as api } from './radio-api';
-import type { RadioInput, RadioResult, RadioView } from './radio-api';
 import type { Device } from './equipment-api';
+import type { RadioInput, RadioResult, RadioView } from './radio-api';
+import { radioAPI as api } from './radio-api';
+import { RadioModes } from './radio-contract';
 import { radioMessage } from './radio-messages';
-
-type RadioObservationContext = {
-  profile: string;
-  activation: string;
-  device: Device;
-  observation: string;
-  row: string;
-};
+import type { RadioObservationContext } from './radio-observation-context';
+import { useLatestRef } from './use-latest-ref';
 
 function useRadioState(context: RadioObservationContext) {
   const [view, setView] = useState<RadioView>();
@@ -227,7 +221,9 @@ function createRadioPoll(
 function useRadioPolling(state: RadioState) {
   const { busy, jobID, profile, activation } = state;
   const identity = observationIdentity(state);
+  const latestRef = useLatestRef(state);
   useEffect(() => {
+    const state = latestRef.current;
     if (!busy || !jobID) return;
     const owned = createRadioPoll(
       state,
@@ -237,8 +233,7 @@ function useRadioPolling(state: RadioState) {
     void owned.poll();
     return owned.stop;
     // Only a deliberate start creates a polling owner; replies update presentation without renewing it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busy, jobID, profile, activation, identity]);
+  }, [busy, jobID, profile, activation, identity, latestRef]);
 }
 
 function radioStartInput(

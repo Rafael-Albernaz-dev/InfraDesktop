@@ -2,7 +2,7 @@ import type { Props } from './equipment-detail';
 import { EquipmentReading } from './equipment-reading';
 import { queryFailureOwnsDetail } from './equipment-query-failure';
 import { EquipmentSummaryStatistics } from './equipment-summary-statistics';
-import { equipmentReadBlocked } from './equipment-summary-refresh';
+import { equipmentReadBlocked } from './equipment-query-policy';
 import { DataBlock } from './ui/DataBlock';
 
 export function SummaryTab({ p }: { p: Props }) {

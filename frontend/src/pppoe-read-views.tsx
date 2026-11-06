@@ -1,19 +1,23 @@
-import { Button } from './ui/Button';
-import { DataTable } from './ui/DataTable';
 import { Fragment } from 'react';
 import {
-  exactNumber,
   exactRate,
   exactVolume,
-  formatVolume,
   formatMetric,
   formatRate,
+  formatVolume,
   uptimeTitle,
 } from './network-format';
 import { formatPPUptime } from './pppoe-format';
+import {
+  cancelReadLabel,
+  readingFlag,
+  trafficReadNotice,
+} from './pppoe-read-labels';
+import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
 import type { PPRate, PPReadResult, PPReadRow } from './presentation';
 import { RadioModes } from './radio-contract';
-import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
+import { Button } from './ui/Button';
+import { DataTable } from './ui/DataTable';
 
 export function RateValue({ rate }: { rate?: PPRate }) {
   return <span title={exactRate(rate)}>{formatRate(rate)}</span>;
@@ -43,13 +47,7 @@ export function PPSecretEvidence({ result }: { result: PPReadResult }) {
             <h4>Secret {index + 1}</h4>
             <dl className="pppoe-diagnostic-values pppoe-context-values">
               <dt>Desativado</dt>
-              <dd>
-                {secret?.disabled === undefined
-                  ? 'Não informado nesta leitura'
-                  : secret.disabled
-                    ? 'Sim'
-                    : 'Não'}
-              </dd>
+              <dd>{readingFlag(secret?.disabled)}</dd>
               {items.map(([label, value]) => (
                 <Fragment key={label}>
                   <dt>{label}</dt>
@@ -68,119 +66,58 @@ export function PPSecretEvidence({ result }: { result: PPReadResult }) {
   );
 }
 
-export function PPHealthTables({
-  result,
-  view,
-}: {
-  result: PPReadResult;
-  view?: 'pools' | 'uplinks';
-}) {
-  const pools = result.rows.filter((r) => r.kind === 'pool');
-  const uplinks = result.rows.filter((r) => r.kind === 'uplink');
-  const flag = (v?: boolean) =>
-    v === undefined ? 'Não informado nesta leitura' : v ? 'Sim' : 'Não';
+type TriggerProps = { s: ReadState; pProps: PPReadPanelProps };
+function BandwidthTriggers({ s, pProps }: TriggerProps) {
   return (
-    <>
-      {view !== 'uplinks' && (
-        <>
-          {!view && <h4>Pools IPv4</h4>}
-          {result.pools_available !== true ? (
-            <p>Leitura de pools indisponível nesta versão ou permissão.</p>
-          ) : !pools.length ? (
-            <p>
-              {result.pool_total === 0
-                ? 'Nenhum pool configurado.'
-                : 'Pools disponíveis em outra página.'}
-            </p>
-          ) : (
-            <div className="table-region" tabIndex={0} aria-label="Pools IPv4">
-              <DataTable className="data-table">
-                <thead>
-                  <tr>
-                    <th>Pool</th>
-                    <th>Em uso</th>
-                    <th>Configurados</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pools.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.name}</td>
-                      <td>{r.used ?? 'Não informado nesta leitura'}</td>
-                      <td>{r.size ?? 'Não informado nesta leitura'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DataTable>
-            </div>
-          )}
-        </>
-      )}
-      {view !== 'pools' && (
-        <>
-          {!view && <h4>Interfaces estáticas</h4>}
-          {!view && (
-            <p>
-              TX e RX são vistos pela interface do concentrador. Tráfego e
-              contadores não identificam a causa de uma falha.
-            </p>
-          )}
-          {result.uplinks_available !== true ? (
-            <p>Leitura de interfaces indisponível nesta versão ou permissão.</p>
-          ) : !uplinks.length ? (
-            <p>
-              {result.uplink_total === 0
-                ? 'Nenhuma interface estática disponível.'
-                : 'Interfaces disponíveis em outra página.'}
-            </p>
-          ) : (
-            <div
-              className="table-region"
-              tabIndex={0}
-              aria-label="Interfaces estáticas"
-            >
-              <DataTable className="data-table">
-                <thead>
-                  <tr>
-                    <th>Interface</th>
-                    <th title="TX da interface">TX</th>
-                    <th title="RX da interface">RX</th>
-                    <th>Em execução</th>
-                    <th>Desativada</th>
-                    <th>Erros RX</th>
-                    <th>Erros TX</th>
-                    <th>Descartes RX</th>
-                    <th>Descartes TX</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {uplinks.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.name}</td>
-                      <td>
-                        <RateValue rate={r.tx} />
-                      </td>
-                      <td>
-                        <RateValue rate={r.rx} />
-                      </td>
-                      <td>{flag(r.running)}</td>
-                      <td>{flag(r.disabled)}</td>
-                      <td>{exactNumber(r.rx_errors)}</td>
-                      <td>{exactNumber(r.tx_errors)}</td>
-                      <td>{exactNumber(r.rx_drops)}</td>
-                      <td>{exactNumber(r.tx_drops)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DataTable>
-            </div>
-          )}
-        </>
-      )}
-    </>
+    pProps.rows.length > 0 &&
+    !pProps.traffic && (
+      <>
+        <Button
+          type="submit"
+          disabled={s.locked}
+          onClick={() => void s.start('bandwidth')}
+        >
+          {pProps.rows.length === 1 ? 'Medir banda' : 'Medir banda da página'}
+        </Button>
+        {!pProps.bandwidthOnly && !pProps.pageBandwidth && (
+          <Button
+            type="submit"
+            disabled={s.locked}
+            onClick={() => void s.start(RadioModes.live)}
+          >
+            Ver ao vivo
+          </Button>
+        )}
+      </>
+    )
   );
 }
-
+function EvidenceTriggers({ s, pProps }: TriggerProps) {
+  return (
+    pProps.logRow && (
+      <>
+        {pProps.evidence !== 'secret' && (
+          <Button
+            type="submit"
+            disabled={s.locked}
+            onClick={() => void s.start('log')}
+          >
+            Log PPP
+          </Button>
+        )}
+        {pProps.evidence !== 'log' && (
+          <Button
+            type="submit"
+            disabled={s.locked}
+            onClick={() => void s.start('secret')}
+          >
+            Ver evidência do secret
+          </Button>
+        )}
+      </>
+    )
+  );
+}
 function PPReadTriggerButtons(p: {
   s: ReadState & { start: (mode: string) => Promise<void>; locked: boolean };
   pProps: PPReadPanelProps;
@@ -207,31 +144,12 @@ function PPReadTriggerButtons(p: {
           Atualizar
         </Button>
       )}
-      {pProps.rows.length > 0 && !pProps.traffic && (
-        <>
-          <Button
-            type="submit"
-            disabled={s.locked}
-            onClick={() => void s.start('bandwidth')}
-          >
-            {pProps.rows.length === 1 ? 'Medir banda' : 'Medir banda da página'}
-          </Button>
-          {!pProps.bandwidthOnly && !pProps.pageBandwidth && (
-            <Button
-              type="submit"
-              disabled={s.locked}
-              onClick={() => void s.start(RadioModes.live)}
-            >
-              Ver ao vivo
-            </Button>
-          )}
-        </>
-      )}
+      <BandwidthTriggers s={s} pProps={pProps} />
       {pProps.traffic && !s.locked && (s.stoppedTraffic || s.error) && (
-          <Button type="submit" onClick={() => void s.start('traffic')}>
-            Ver ao vivo
-          </Button>
-        )}
+        <Button type="submit" onClick={() => void s.start('traffic')}>
+          Ver ao vivo
+        </Button>
+      )}
       {pProps.allowTop && (
         <Button
           type="submit"
@@ -241,28 +159,7 @@ function PPReadTriggerButtons(p: {
           Top consumo
         </Button>
       )}
-      {pProps.logRow && (
-        <>
-          {pProps.evidence !== 'secret' && (
-            <Button
-              type="submit"
-              disabled={s.locked}
-              onClick={() => void s.start('log')}
-            >
-              Log PPP
-            </Button>
-          )}
-          {pProps.evidence !== 'log' && (
-            <Button
-              type="submit"
-              disabled={s.locked}
-              onClick={() => void s.start('secret')}
-            >
-              Ver evidência do secret
-            </Button>
-          )}
-        </>
-      )}
+      <EvidenceTriggers s={s} pProps={pProps} />
     </>
   );
 }
@@ -276,15 +173,7 @@ export function PPReadActionButtons(p: {
   pProps: PPReadPanelProps;
 }) {
   const { s, pProps } = p;
-  const isObservingLive = s.scope === RadioModes.live && !s.deadlineReached;
-  const cancelText =
-    pProps.traffic && (s.job || s.renewing)
-      ? 'Parar'
-      : !s.job
-        ? 'Cancelar solicitação pendente'
-        : isObservingLive
-          ? 'Encerrar ao vivo'
-          : 'Cancelar medição';
+  const cancelText = cancelReadLabel(s, pProps);
   return (
     <>
       <PPReadTriggerButtons s={s} pProps={pProps} />
@@ -323,24 +212,10 @@ export function PPReadStatusBanners(p: {
   pProps: PPReadPanelProps;
 }) {
   const { s, pProps } = p;
-  const sampleAgeSec = Math.floor(s.sampleAge / 1000);
-  const trafficNotice = s.result
-    ? `Última atualização há ${sampleAgeSec} s.`
-    : s.job || s.starting
-      ? 'Aguardando primeira amostra.'
-      : 'Nenhuma amostra recebida.';
+  const trafficNotice = trafficReadNotice(s);
   return (
     <>
-      {s.deadlineReached ? (
-        <p role="status">
-          Prazo da observação encerrado. Consulte o estado para confirmar o
-          término.
-        </p>
-      ) : (
-        (s.starting || s.job) && !s.error && !pProps.traffic && (
-          <p role="status">{progressStatusText(s.scope)}</p>
-        )
-      )}
+      <ReadProgress s={s} pProps={pProps} />
       {pProps.traffic && (
         <p className="muted">
           {trafficNotice} Gráfico retido em memória por 5 min.
@@ -401,15 +276,12 @@ export function PPReadLogTable({ rows }: { rows: PPReadResult['rows'] }) {
   );
 }
 
-function BandwidthRow({
-  r,
-  calculated,
-  sampleAge,
-}: {
+type BandwidthRowProps = {
   r: PPReadRow;
   calculated: boolean;
   sampleAge: number;
-}) {
+};
+function BandwidthRow({ r, calculated, sampleAge }: BandwidthRowProps) {
   const calcUptime =
     r.uptime.known && calculated
       ? {
@@ -440,11 +312,12 @@ function BandwidthRow({
   );
 }
 
-export function PPReadBandwidthTable(p: {
+type PPReadBandwidthTableProps = {
   rows: PPReadResult['rows'];
   calculated: boolean;
   sampleAge: number;
-}) {
+};
+export function PPReadBandwidthTable(p: PPReadBandwidthTableProps) {
   return (
     <div
       className="table-region"
@@ -496,5 +369,17 @@ export function PPReadCostInfo({
       </span>
       {cpuText}
     </p>
+  );
+}
+
+function ReadProgress({ s, pProps }: TriggerProps) {
+  return s.deadlineReached ? (
+    <p role="status">
+      Prazo da observação encerrado. Consulte o estado para confirmar o término.
+    </p>
+  ) : (
+    (s.starting || s.job) && !s.error && !pProps.traffic && (
+      <p role="status">{progressStatusText(s.scope)}</p>
+    )
   );
 }

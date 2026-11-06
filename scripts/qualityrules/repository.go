@@ -10,6 +10,7 @@ import (
 	"infradesktop/scripts/qualitymetrics"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func duplication() (int, int, error) {
@@ -49,6 +50,9 @@ func PrintReport(measured qualitymetrics.Report) error {
 	}
 	fmt.Printf("duplication: %d windows; ceiling %d\n", count, ceiling)
 	for path, m := range measured {
+		if strings.HasPrefix(path, "frontend/") {
+			continue
+		}
 		fmt.Printf("%s lines=%d function=%d complexity=%d\n", path, m.Lines, m.MaxFunction, m.MaxComplexity)
 	}
 	return nil

@@ -1,24 +1,17 @@
+import type { Dispatch, RefObject, SetStateAction } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Dispatch, SetStateAction, RefObject } from 'react';
-import { radioAPI as api } from './radio-api';
-import type { RadioLinkChoice, RadioResult } from './radio-api';
 import type { Device } from './equipment-api';
 import { equipmentAPI } from './equipment-api';
+import { useDisplayNow } from './equipment-snapshot';
+import type { RadioLinkChoice, RadioResult } from './radio-api';
+import { radioAPI as api } from './radio-api';
 import { RadioModes, RadioRoles } from './radio-contract';
+import type { RadioLinkPanelProps } from './radio-link-props';
 import { radioMessage } from './radio-messages';
 import { useRadio } from './radio-observation';
-import { useDisplayNow } from './equipment-snapshot';
+import { useLatestRef } from './use-latest-ref';
+export type { RadioLinkPanelProps } from './radio-link-props';
 
-export type RadioLinkPanelProps = {
-  profile: string;
-  activation: string;
-  device: Device;
-  observation: string;
-  row: string;
-  pppoeUptime: string;
-  blocked: boolean;
-  onOpenEquipment?: (deviceID: string) => void;
-};
 type LinkContext = Pick<
   RadioLinkPanelProps,
   'profile' | 'activation' | 'device' | 'observation' | 'row'
@@ -34,7 +27,9 @@ function useRadioLinkLoad(
   const { profile, activation, device, observation, row } = context;
   const [loading, setLoading] = useState(true),
     [reload, setReload] = useState(0);
+  const latestRef = useLatestRef({ radio, blocked });
   useEffect(() => {
+    const { radio } = latestRef.current;
     let alive = true;
     void (async () => {
       try {
@@ -52,12 +47,12 @@ function useRadioLinkLoad(
         }
         radio.setView(result.data);
         if (
-          !blocked &&
+          !latestRef.current.blocked &&
           !result.data?.link &&
           !result.data?.index &&
           result.data?.match_reason
         )
-          await radio.start(RadioModes.index);
+          await latestRef.current.radio.start(RadioModes.index);
       } catch {
         if (alive) radio.setError('Não foi possível abrir o vínculo salvo.');
       } finally {
@@ -68,8 +63,7 @@ function useRadioLinkLoad(
       alive = false;
     };
     // Same scalar context owns this stored-link read and explicit reload.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, activation, device.id, observation, row, reload]);
+  }, [profile, activation, device.id, observation, row, reload, latestRef]);
   const changed = () => {
     radio.setError('');
     setReload((value) => value + 1);

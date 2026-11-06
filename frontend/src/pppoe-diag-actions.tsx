@@ -3,7 +3,7 @@ import { pendingPPPoE as pending } from './equipment-receipts';
 import type { PPResult } from './presentation';
 import { pppoeDiagnosticAPI as api } from './presentation';
 import type { Scope, Source } from './pppoe-diag-state';
-import { diagnosticMessage } from './pppoe-diag-state';
+import { diagnosticMessage } from './pppoe-diagnostic-message';
 
 export const REJECTED_CODES = [
   'JOB_INTERRUPTED',

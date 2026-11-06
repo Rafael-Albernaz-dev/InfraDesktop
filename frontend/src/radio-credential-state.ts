@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { RadioTransports } from './radio-contract';
 import type { Credential, Device } from './equipment-api';
 import { equipmentAPI, equipmentMessage } from './equipment-api';
+import { credentialChangeInput } from './radio-credential-input';
+import { useLatestRef } from './use-latest-ref';
 
 export type RadioRecoveryProps = {
   profile: string;
@@ -107,35 +108,19 @@ export function useRecoveryAutoload(
   choose: () => Promise<void>,
 ) {
   const { profile, activation, deviceID } = state;
+  const chooseRef = useLatestRef(choose);
   useEffect(() => {
     let active = true;
     void Promise.resolve().then(() => {
-      if (active) void choose();
+      if (active) void chooseRef.current();
     });
     return () => {
       active = false;
     };
     // Load once per mounted refusal; a failed load keeps a manual retry.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, activation, deviceID]);
+  }, [profile, activation, deviceID, chooseRef]);
 }
 
-function credentialChangeInput(target: Device, credential: string) {
-  return {
-    id: target.id,
-    revision: target.revision,
-    operation_id: crypto.randomUUID(),
-    role: target.role,
-    name: target.name,
-    block: target.block || '',
-    address: target.address,
-    port: target.port,
-    transport: RadioTransports.ssh,
-    credential_id: credential,
-    user: '',
-    secret: '',
-  };
-}
 export function createRecoverySave(state: RecoveryState) {
   return async function save(credential: string) {
     const generation = state.recoveryLife.current,

@@ -85,7 +85,7 @@
     "Functions": null
   },
   "frontend/src/desktop-shell.tsx": {
-    "Lines": 486,
+    "Lines": 172,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -127,7 +127,7 @@
     "Functions": null
   },
   "frontend/src/equipment-detail.tsx": {
-    "Lines": 307,
+    "Lines": 292,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -148,7 +148,7 @@
     "Functions": null
   },
   "frontend/src/equipment-effects.tsx": {
-    "Lines": 386,
+    "Lines": 374,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -225,7 +225,7 @@
     "Functions": null
   },
   "frontend/src/equipment-state.tsx": {
-    "Lines": 422,
+    "Lines": 303,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -323,14 +323,14 @@
     "Functions": null
   },
   "frontend/src/pppoe-diag-state.tsx": {
-    "Lines": 477,
+    "Lines": 451,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
   "frontend/src/pppoe-diag-views.tsx": {
-    "Lines": 486,
+    "Lines": 228,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -344,7 +344,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-diagnostics.tsx": {
-    "Lines": 163,
+    "Lines": 73,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -372,7 +372,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-read-views.tsx": {
-    "Lines": 559,
+    "Lines": 385,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -393,7 +393,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-state.tsx": {
-    "Lines": 537,
+    "Lines": 435,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -407,7 +407,7 @@
     "Functions": null
   },
   "frontend/src/pppoe.tsx": {
-    "Lines": 400,
+    "Lines": 82,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -442,7 +442,7 @@
     "Functions": null
   },
   "frontend/src/radio-credential-state.ts": {
-    "Lines": 175,
+    "Lines": 160,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -463,7 +463,7 @@
     "Functions": null
   },
   "frontend/src/radio-equipment-state.ts": {
-    "Lines": 194,
+    "Lines": 177,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -498,7 +498,7 @@
     "Functions": null
   },
   "frontend/src/radio-link-state.tsx": {
-    "Lines": 284,
+    "Lines": 278,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -526,7 +526,7 @@
     "Functions": null
   },
   "frontend/src/radio-observation.tsx": {
-    "Lines": 360,
+    "Lines": 355,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -19499,7 +19499,7 @@
     ]
   },
   "frontend/src/access-session.ts": {
-    "Lines": 329,
+    "Lines": 318,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -19527,7 +19527,7 @@
     "Functions": null
   },
   "frontend/src/equipment-summary-refresh.ts": {
-    "Lines": 47,
+    "Lines": 35,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -19689,6 +19689,434 @@
   },
   "frontend/src/pppoe-log-evidence.test.tsx": {
     "Lines": 510,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-equipment-fields.tsx": {
+    "Lines": 113,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-equipment.tsx": {
+    "Lines": 44,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-file.tsx": {
+    "Lines": 74,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-preview.tsx": {
+    "Lines": 285,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-credential-effect.tsx": {
+    "Lines": 53,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-summary-tab.tsx": {
+    "Lines": 53,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-initial-load.tsx": {
+    "Lines": 86,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-mount-generation.test.tsx": {
+    "Lines": 54,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-result.tsx": {
+    "Lines": 171,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-session-info.tsx": {
+    "Lines": 64,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-session-screen.tsx": {
+    "Lines": 213,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "scripts/qualityrules/repository.go": {
+    "Lines": 106,
+    "LongLines": 0,
+    "MaxFunction": 33,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "duplication",
+        "Start": 16,
+        "End": 28,
+        "Lines": 13,
+        "Complexity": 3
+      },
+      {
+        "Name": "DuplicationGate",
+        "Start": 29,
+        "End": 45,
+        "Lines": 17,
+        "Complexity": 6
+      },
+      {
+        "Name": "PrintReport",
+        "Start": 46,
+        "End": 59,
+        "Lines": 14,
+        "Complexity": 4
+      },
+      {
+        "Name": "LegacyGate",
+        "Start": 60,
+        "End": 73,
+        "Lines": 14,
+        "Complexity": 4
+      },
+      {
+        "Name": "legacyKeys",
+        "Start": 74,
+        "End": 106,
+        "Lines": 33,
+        "Complexity": 10
+      },
+      {
+        "Name": "function literal at 80",
+        "Start": 80,
+        "End": 104,
+        "Lines": 25,
+        "Complexity": 9
+      }
+    ]
+  },
+  "frontend/src/access-session-refs.ts": {
+    "Lines": 28,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-enrollment-actions.ts": {
+    "Lines": 124,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-enrollment.ts": {
+    "Lines": 69,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-equipment-access-field.tsx": {
+    "Lines": 44,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-equipment-body.tsx": {
+    "Lines": 63,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-actions.ts": {
+    "Lines": 114,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-defaults.tsx": {
+    "Lines": 38,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-state.ts": {
+    "Lines": 87,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-table.tsx": {
+    "Lines": 119,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-import-template.tsx": {
+    "Lines": 34,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/add-single-equipment-form.tsx": {
+    "Lines": 144,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/app-perform.ts": {
+    "Lines": 92,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/desktop-breadcrumbs.tsx": {
+    "Lines": 68,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/desktop-profile-menu.tsx": {
+    "Lines": 93,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-lifecycle.ts": {
+    "Lines": 68,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-pending-revisions.ts": {
+    "Lines": 39,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-query-policy.ts": {
+    "Lines": 16,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-sheet-header.tsx": {
+    "Lines": 79,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-store.ts": {
+    "Lines": 122,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-diagnostic-content.tsx": {
+    "Lines": 154,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-diagnostic-effect-props.ts": {
+    "Lines": 39,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-diagnostic-message.ts": {
+    "Lines": 20,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-ping.tsx": {
+    "Lines": 160,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-heading.ts": {
+    "Lines": 23,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-health-tables.tsx": {
+    "Lines": 138,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-labels.ts": {
+    "Lines": 19,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-panel-body.tsx": {
+    "Lines": 93,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-session-auth-content.tsx": {
+    "Lines": 134,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-session-header.tsx": {
+    "Lines": 31,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-session-props.ts": {
+    "Lines": 19,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-view-state.ts": {
+    "Lines": 141,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-workspace.tsx": {
+    "Lines": 129,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio-credential-input.ts": {
+    "Lines": 18,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio-equipment-props.ts": {
+    "Lines": 11,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio-link-authorization.test.tsx": {
+    "Lines": 70,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio-link-props.ts": {
+    "Lines": 11,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/radio-observation-context.ts": {
+    "Lines": 8,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/summary-refresh-cleanup.test.tsx": {
+    "Lines": 60,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-add-equipment-page.ts": {
+    "Lines": 182,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-latest-ref.ts": {
+    "Lines": 9,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-opening-authority.ts": {
+    "Lines": 17,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-pppoe-refs.ts": {
+    "Lines": 39,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-pppoe-session-navigation.ts": {
+    "Lines": 122,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,

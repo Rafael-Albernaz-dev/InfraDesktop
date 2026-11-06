@@ -1,26 +1,31 @@
-import { useContext, useEffect, useRef, useState } from 'react';
-import { SessionRoute } from './session-navigation';
+import { useEffect, useRef, useState } from 'react';
+import { DesktopBreadcrumbs } from './desktop-breadcrumbs';
 import type { DesktopProps, RouteName } from './desktop-model';
+import { DesktopProfileMenu } from './desktop-profile-menu';
 import { Button } from './ui/Button';
 import { ProductBrand } from './ui/ProductBrand';
 import { ShellIcon } from './ui/ShellIcon';
+type SidebarProps = {
+  p: DesktopProps;
+  route: RouteName;
+  expandRequest: number;
+  detailTitle: string;
+};
 export function Sidebar({
   p,
   route,
   expandRequest,
   detailTitle,
-}: {
-  p: DesktopProps;
-  route: RouteName;
-  expandRequest: number;
-  detailTitle: string;
-}) {
+}: SidebarProps) {
   const [closedAt, setClosedAt] = useState<{
     request: number;
     title: string;
   }>();
   const expanded =
-    (route === 'equipment' || route === 'credentials' || route === 'adicionar' || route === 'sessao') &&
+    (route === 'equipment' ||
+      route === 'credentials' ||
+      route === 'adicionar' ||
+      route === 'sessao') &&
     (!closedAt ||
       closedAt.request !== expandRequest ||
       closedAt.title !== detailTitle);
@@ -68,7 +73,13 @@ export function Sidebar({
         <div className="subm">
           <a
             href="#equipamentos"
-            className={route === 'equipment' || route === 'adicionar' || route === 'sessao' ? 'on' : ''}
+            className={
+              route === 'equipment' ||
+              route === 'adicionar' ||
+              route === 'sessao'
+                ? 'on'
+                : ''
+            }
             aria-current={route === 'equipment' ? 'page' : undefined}
             onClick={(e) => navigateTo(e, 'equipment')}
           >
@@ -87,16 +98,12 @@ export function Sidebar({
     </nav>
   );
 }
-export function Topbar({
-  p,
-  route,
-  detailTitle,
-}: {
+type TopbarProps = {
   p: DesktopProps;
   route: RouteName;
   detailTitle?: string;
-}) {
-  const session = useContext(SessionRoute);
+};
+export function Topbar({ p, route, detailTitle }: TopbarProps) {
   const [menu, setMenu] = useState('');
   const profileTrigger = useRef<HTMLButtonElement>(null);
   const profileMenu = useRef<HTMLDivElement>(null);
@@ -116,18 +123,6 @@ export function Topbar({
     doc?.addEventListener('pointerdown', dismiss);
     return () => doc?.removeEventListener('pointerdown', dismiss);
   }, [menu]);
-  const title =
-    route === 'vitrine'
-      ? 'Vitrine'
-      : route === 'overview'
-        ? 'Visão geral'
-        : route === 'settings'
-          ? 'Configurações'
-          : route === 'credentials'
-            ? 'Credenciais'
-            : route === 'adicionar'
-              ? 'Adicionar equipamento'
-            : 'Equipamentos';
   return (
     <header
       className="top"
@@ -138,33 +133,7 @@ export function Topbar({
         }
       }}
     >
-      <nav className="bc" aria-label="Caminho">
-        {(route === 'credentials' || route === 'adicionar' || route === 'sessao' ||
-          (route === 'equipment' && detailTitle)) && (
-          <>
-            <a
-              href="#equipamentos"
-              onClick={(e) => {
-                e.preventDefault();
-                p.navigate('equipment');
-              }}
-            >
-              Equipamentos
-            </a>
-            <span aria-hidden="true">›</span>
-          </>
-        )}
-        {route === 'sessao' && detailTitle && (
-          <>
-            <a href="#equipamentos" onClick={(event) => {
-              event.preventDefault(); session?.back();
-            }}>{detailTitle}</a>
-            <span aria-hidden="true">›</span>
-          </>
-        )}
-        <b aria-current="page">{route === 'sessao' ? session?.target?.login :
-          route === 'equipment' && detailTitle ? detailTitle : title}</b>
-      </nav>
+      <DesktopBreadcrumbs p={p} route={route} detailTitle={detailTitle} />
       <div className="wrap">
         <Button
           className="ib"
@@ -191,80 +160,13 @@ export function Topbar({
       >
         <ShellIcon name="gear" />
       </Button>
-      <div className="wrap">
-        <Button
-          ref={profileTrigger}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowDown') {
-              event.preventDefault();
-              setMenu('profile');
-            }
-          }}
-          className="user"
-          aria-label={`Conta: ${p.account}`}
-          aria-haspopup="true"
-          aria-expanded={menu === 'profile'}
-          onClick={() => setMenu(menu === 'profile' ? '' : 'profile')}
-        >
-          <span className="av">{p.account.slice(0, 1).toUpperCase()}</span>
-          <b>{p.account}</b>
-          <ShellIcon name="chev" />
-        </Button>
-        {menu === 'profile' && (
-          <div
-            className="dd"
-            role="menu"
-            ref={profileMenu}
-            onKeyDown={(event) => {
-              const items = Array.from(
-                event.currentTarget.querySelectorAll<HTMLElement>(
-                  '[role=menuitem]',
-                ),
-              );
-              const index = items.indexOf(event.target as HTMLElement);
-              const next =
-                event.key === 'ArrowDown'
-                  ? (index + 1) % items.length
-                  : event.key === 'ArrowUp'
-                    ? (index + items.length - 1) % items.length
-                    : event.key === 'Home'
-                      ? 0
-                      : event.key === 'End'
-                        ? items.length - 1
-                        : -1;
-              if (next >= 0) {
-                event.preventDefault();
-                items[next]?.focus();
-              }
-            }}
-          >
-            <Button
-              className="mi"
-              disabled={p.busy}
-              role="menuitem"
-              onClick={() => {
-                p.setTheme(p.theme === 'dark' ? 'light' : 'dark');
-                setMenu('');
-              }}
-            >
-              <ShellIcon name="moon" />
-              Tema {p.theme === 'dark' ? 'claro' : 'escuro'}
-            </Button>
-            <hr />
-            <Button
-              className="mi sair"
-              role="menuitem"
-              onClick={() => {
-                setMenu('');
-                p.logout();
-              }}
-            >
-              <ShellIcon name="out" />
-              Sair da conta
-            </Button>
-          </div>
-        )}
-      </div>
+      <DesktopProfileMenu
+        p={p}
+        menu={menu}
+        setMenu={setMenu}
+        profileTrigger={profileTrigger}
+        profileMenu={profileMenu}
+      />
     </header>
   );
 }

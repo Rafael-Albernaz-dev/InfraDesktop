@@ -1,3 +1,4 @@
+import { useLatestRef } from './use-latest-ref';
 import { useEffect } from 'react';
 import { equipmentMessage } from './equipment-api';
 import { pppoeErrorMessage } from './pppoe-context-actions';
@@ -25,7 +26,10 @@ function formatAttemptStatus(r: PPResult): string {
 }
 export function usePPPoEInitialLoad(p: SharedCtx) {
   const { context, refresh, profile, activation, device, valid, lifeRef } = p;
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     const generation = lifeRef.current.generation;
     let stopped = false;
     void (async () => {
@@ -69,5 +73,14 @@ export function usePPPoEInitialLoad(p: SharedCtx) {
     return () => {
       stopped = true;
     };
-  }, [context, refresh, profile, activation, device.id, valid, lifeRef]);
+  }, [
+    latestRef,
+    context,
+    refresh,
+    profile,
+    activation,
+    device.id,
+    valid,
+    lifeRef,
+  ]);
 }

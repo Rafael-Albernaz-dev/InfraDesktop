@@ -1,27 +1,23 @@
-import { useCallback,useEffect,useLayoutEffect,useState } from 'react';
+import { useLatestRef } from './use-latest-ref';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
-import {
-acceptEquipmentAuthority,
-pendingPPPoE as pending,
-} from './equipment-receipts';
+import { pendingPPPoE as pending } from './equipment-receipts';
 import { useEquipmentSnapshot } from './equipment-snapshot';
 import {
- createOpenPairHandler, createRemoveHandler, createSaveHandler,
- createUpdateHandler, FRESH_QUERY, pppoeErrorMessage
+  createOpenPairHandler,
+  createRemoveHandler,
+  createSaveHandler,
+  createUpdateHandler,
+  pppoeErrorMessage,
 } from './pppoe-context-actions';
 import { usePPPoEInitialLoad } from './pppoe-initial-load';
-import type {
-PPDelta,
-PPObservation,
-PPQuery,
-PPReference,
-PPResult,
-PPRow,
-} from './presentation';
+import type { PPPoETab } from './pppoe-view-state';
+import { usePPPoEViewState } from './pppoe-view-state';
+import type { PPQuery, PPReference, PPResult } from './presentation';
 import { pppoeAPI as api } from './presentation';
-export type PPPoETab =
-  'sessions' | 'compare' | 'references' | 'catalog' | 'radius' | 'monitoring';
+export type { PPPoETab } from './pppoe-view-state';
+
 export type PPPoERefs = {
   detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
   detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -37,114 +33,7 @@ export type PPPoERefs = {
   primaryRef: React.RefObject<HTMLButtonElement | null>;
   detailIntentRef: React.MutableRefObject<number>;
 };
-function usePPPoEViewState(
-  profile: string,
-  activation: string,
-  initialTab: PPPoETab,
-) {
-  useLayoutEffect(() => {
-    acceptEquipmentAuthority(profile, activation);
-  }, [profile, activation]);
-  const [pageState, setPageState] = useState<
-    'idle' | 'loading' | 'ready' | 'error'
-  >('loading');
-  const [statusFailed, setStatusFailed] = useState(false);
-  const [statusRetry, retryStatus] = useState(0);
-  const [detailTab, setDetailTab] = useState<
-    'traffic' | 'information' | 'link' | 'history'
-  >('traffic');
-  const [pair, setPair] = useState<{ left?: PPRow; right?: PPRow }>();
-  const [referencesState, setReferencesState] = useState<
-    'loading' | 'ready' | 'error'
-  >('loading');
-  const [initialFailed, setInitialFailed] = useState(false);
-  const [current, setCurrent] = useState<PPObservation>();
-  const [rows, setRows] = useState<PPRow[]>([]);
-  const [savedReferences, setSavedReferences] = useState<PPReference[]>([]);
-  const [deltas, setDeltas] = useState<PPDelta[]>([]);
-  const [query, setQuery] = useState(FRESH_QUERY);
-  const [cursor, setCursor] = useState('');
-  const [next, setNext] = useState('');
-  const [showPlan, setShowPlan] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
-  const [selected, select] = useState<PPRow>();
-  const [base, setBase] = useState('');
-  const [tab, setTab] = useState<PPPoETab>(initialTab);
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [collectionFailure, setCollectionFailure] = useState<{
-    code: string;
-    reason: string;
-  }>();
-  const [lastAttempt, setLastAttempt] =
-    useState<NonNullable<PPResult['data']>['attempt']>();
-  const [attempt, setAttempt] = useState('');
-  const [job, setJob] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [refresh, bump] = useState(0);
-  return {
-    pageState,
-    setPageState,
-    statusFailed,
-    setStatusFailed,
-    statusRetry,
-    retryStatus,
-    detailTab,
-    setDetailTab,
-    pair,
-    setPair,
-    referencesState,
-    setReferencesState,
-    initialFailed,
-    setInitialFailed,
-    current,
-    setCurrent,
-    rows,
-    setRows,
-    savedReferences,
-    setSavedReferences,
-    deltas,
-    setDeltas,
-    query,
-    setQuery,
-    cursor,
-    setCursor,
-    next,
-    setNext,
-    showPlan,
-    setShowPlan,
-    history,
-    setHistory,
-    selected,
-    select,
-    base,
-    setBase,
-    tab,
-    setTab,
-    error,
-    setError,
-    notice,
-    setNotice,
-    attempt,
-    setAttempt,
-    lastAttempt,
-    setLastAttempt,
-    collectionFailure,
-    setCollectionFailure,
-    job,
-    setJob,
-    busy,
-    setBusy,
-    loading,
-    setLoading,
-    total,
-    setTotal,
-    refresh,
-    bump,
-  };
-}
+
 type ViewState = ReturnType<typeof usePPPoEViewState>;
 export type SharedCtx = ViewState &
   PPPoERefs & {
@@ -175,7 +64,10 @@ function usePPPoEPageLoad(p: SharedCtx) {
     activation,
     lifeRef,
   } = p;
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     const generation = lifeRef.current.generation;
     let stopped = false;
     void (async () => {
@@ -232,6 +124,8 @@ function usePPPoEPageLoad(p: SharedCtx) {
       stopped = true;
     };
   }, [
+    latestRef,
+    lifeRef,
     context,
     current,
     query,
@@ -256,7 +150,10 @@ function usePPPoEJobPoll(p: SharedCtx) {
     primaryRef,
     valid,
   } = p;
+  const latestRef = useLatestRef(p);
   useEffect(() => {
+    const p = latestRef.current;
+
     if (!job) return;
     let stopped = false;
     const generation = lifeRef.current.generation;
@@ -308,6 +205,7 @@ function usePPPoEJobPoll(p: SharedCtx) {
       clearTimeout(timer);
     };
   }, [
+    latestRef,
     job,
     context,
     statusRetry,

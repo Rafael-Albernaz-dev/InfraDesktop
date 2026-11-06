@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { AddEquipmentFields } from './add-equipment-fields';
 import { ImportSteps } from './add-import-file';
 import type { useImportState } from './add-import-state';
+import { ImportPreviewTable } from './add-import-table';
 import type { Credential } from './equipment-api';
 import { roleGroups } from './equipment-role-options';
 import type { ImportItem } from './presentation';
 import { Button } from './ui/Button';
-import { Checkbox } from './ui/Checkbox';
-import { DataTable } from './ui/DataTable';
 import { Dialog } from './ui/Dialog';
 import { Select } from './ui/Select';
 
@@ -20,12 +19,13 @@ const labels: Record<ImportItem['status'], string> = {
 };
 type Filter = 'all' | ImportItem['status'];
 type State = ReturnType<typeof useImportState>;
-function Correction(p: {
+type CorrectionProps = {
   item: ImportItem;
   state: State;
   credentials: Credential[];
   close: () => void;
-}) {
+};
+function Correction(p: CorrectionProps) {
   const [row, setRow] = useState(() => ({
     ...p.item.row,
     role:
@@ -68,12 +68,13 @@ function Correction(p: {
     </Dialog>
   );
 }
-function SelectionDialog(p: {
+type SelectionDialogProps = {
   mode: 'block' | 'credential';
   state: State;
   credentials: Credential[];
   close: () => void;
-}) {
+};
+function SelectionDialog(p: SelectionDialogProps) {
   const [value, setValue] = useState('');
   return (
     <Dialog
@@ -124,72 +125,13 @@ function SelectionDialog(p: {
     </Dialog>
   );
 }
-function ImportRowView(p: {
-  item: ImportItem;
-  state: State;
-  correct: () => void;
-}) {
-  const { item, state: s } = p;
-  const row = item.row;
-  return (
-    <tr>
-      <td className="import-check">
-        <Checkbox
-          aria-label={`Selecionar linha ${row.line}`}
-          checked={s.selected.includes(row.line)}
-          disabled={item.status === 'ignored'}
-          onChange={(e) =>
-            s.setSelected(
-              e.target.checked
-                ? [...s.selected, row.line]
-                : s.selected.filter((n) => n !== row.line),
-            )
-          }
-        />
-      </td>
-      <td>{row.line}</td>
-      <td>{row.name}</td>
-      <td>{row.address}</td>
-      <td>
-        {roleGroups
-          .flatMap(([, roles]) => roles)
-          .find(([id]) => id === row.role)?.[1] || row.role}
-      </td>
-      <td>{row.block || '—'}</td>
-      <td>{row.credential || 'Sem credencial'}</td>
-      <td
-        className={
-          item.status === 'ready' || item.status === 'ignored'
-            ? ''
-            : 'import-status-error'
-        }
-      >
-        {labels[item.status] || 'Situação desconhecida'}
-      </td>
-      <td className="import-reason">{item.reason || '—'}</td>
-      <td>
-        {item.status === 'ignored' ? (
-          <Button onClick={() => s.update(row.line, { ignored: false })}>
-            Restaurar
-          </Button>
-        ) : (
-          <>
-            <Button onClick={p.correct}>Corrigir</Button>{' '}
-            <Button onClick={() => s.update(row.line, { ignored: true })}>
-              Ignorar
-            </Button>
-          </>
-        )}
-      </td>
-    </tr>
-  );
-}
-export function ImportPreview(p: {
+type ImportPreviewProps = {
   state: State;
   credentials: Credential[];
   cancel: () => void;
   replace: () => void;
-}) {
+};
+export function ImportPreview(p: ImportPreviewProps) {
   const s = p.state;
   const [filter, setFilter] = useState<Filter>('all');
   const [editing, setEditing] = useState<ImportItem>();
@@ -212,6 +154,50 @@ export function ImportPreview(p: {
   return (
     <>
       <ImportSteps step={2} />
+      <PreviewHeader
+        {...p}
+        filter={filter}
+        setFilter={setFilter}
+        filters={filters}
+      />
+      <PreviewSelection s={s} setBulk={setBulk} />
+      <ImportPreviewTable s={s} visible={visible} setEditing={setEditing} />
+      <PreviewFooter {...p} open={open} ready={ready} />
+      {s.error && (
+        <Button onClick={() => void s.review(s.items.map((item) => item.row))}>
+          Atualizar prévia
+        </Button>
+      )}
+      {editing && (
+        <Correction
+          item={editing}
+          state={s}
+          credentials={p.credentials}
+          close={() => setEditing(undefined)}
+        />
+      )}
+      {bulk && (
+        <SelectionDialog
+          mode={bulk}
+          state={s}
+          credentials={p.credentials}
+          close={() => setBulk(undefined)}
+        />
+      )}
+    </>
+  );
+}
+
+type PreviewHeaderProps = ImportPreviewProps & {
+  filter: Filter;
+  setFilter: (f: Filter) => void;
+  filters: Filter[];
+};
+function PreviewHeader(p: PreviewHeaderProps) {
+  const s = p.state,
+    { filter, setFilter, filters } = p;
+  return (
+    <>
       <div className="bar">
         <span className="muted">
           {s.filename} · {s.items.length} linhas
@@ -236,6 +222,18 @@ export function ImportPreview(p: {
           </Button>
         ))}
       </div>
+    </>
+  );
+}
+function PreviewSelection({
+  s,
+  setBulk,
+}: {
+  s: State;
+  setBulk: (m: 'block' | 'credential') => void;
+}) {
+  return (
+    <>
       {s.selected.length > 0 && (
         <div className="inventory-selection" role="status">
           <b>{s.selected.length} selecionada(s)</b>
@@ -258,74 +256,30 @@ export function ImportPreview(p: {
           </Button>
         </div>
       )}
-      <DataTable aria-label="Prévia da importação">
-        <thead>
-          <tr>
-            <th className="import-check"></th>
-            <th>Linha</th>
-            <th>Nome</th>
-            <th>IP</th>
-            <th>Papel</th>
-            <th>Bloco</th>
-            <th>Credencial</th>
-            <th>Situação</th>
-            <th>Motivo</th>
-            <th>Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visible.map((item) => (
-            <ImportRowView
-              key={item.row.line}
-              item={item}
-              state={s}
-              correct={() => setEditing(item)}
-            />
-          ))}
-          {!visible.length && (
-            <tr>
-              <td colSpan={10}>Nenhuma linha nesta situação</td>
-            </tr>
-          )}
-        </tbody>
-      </DataTable>
-      <div className="bar import-footer">
-        <span className="muted">
-          {open
-            ? `Resolva ${open} linha${open === 1 ? '' : 's'} para continuar.`
-            : 'Tudo pronto. Cadastrar não consulta os equipamentos.'}
-        </span>
-        <span className="grow" />
-        <Button onClick={p.cancel}>Cancelar</Button>
-        <Button
-          kind="primary"
-          disabled={s.busy || !!open || !ready}
-          onClick={() => void s.confirm()}
-        >
-          Cadastrar {ready} equipamentos
-        </Button>
-      </div>
-      {s.error && (
-        <Button onClick={() => void s.review(s.items.map((item) => item.row))}>
-          Atualizar prévia
-        </Button>
-      )}
-      {editing && (
-        <Correction
-          item={editing}
-          state={s}
-          credentials={p.credentials}
-          close={() => setEditing(undefined)}
-        />
-      )}
-      {bulk && (
-        <SelectionDialog
-          mode={bulk}
-          state={s}
-          credentials={p.credentials}
-          close={() => setBulk(undefined)}
-        />
-      )}
     </>
+  );
+}
+function PreviewFooter(
+  p: ImportPreviewProps & { open: number; ready: number },
+) {
+  const s = p.state,
+    { open, ready } = p;
+  return (
+    <div className="bar import-footer">
+      <span className="muted">
+        {open
+          ? `Resolva ${open} linha${open === 1 ? '' : 's'} para continuar.`
+          : 'Tudo pronto. Cadastrar não consulta os equipamentos.'}
+      </span>
+      <span className="grow" />
+      <Button onClick={p.cancel}>Cancelar</Button>
+      <Button
+        kind="primary"
+        disabled={s.busy || !!open || !ready}
+        onClick={() => void s.confirm()}
+      >
+        Cadastrar {ready} equipamentos
+      </Button>
+    </div>
   );
 }
