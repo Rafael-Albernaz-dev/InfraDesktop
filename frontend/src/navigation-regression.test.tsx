@@ -373,6 +373,8 @@ it('returns to Lista after a CPE opens its linked session on the concentrator', 
     PPPoEContextCounts: vi.fn(async () => reply({ groups: [] })),
     GetDeviceMonitoring: vi.fn(async () => reply()),
     GetRadioLink: vi.fn(async () => reply()),
+    StartPPPoERead: vi.fn(() => new Promise(() => {})),
+    CancelPPPoEReadOperation: vi.fn(async () => reply()),
   };
   vi.stubGlobal('go', { presentation: { App: bindings } });
   try {
@@ -385,8 +387,12 @@ it('returns to Lista after a CPE opens its linked session on the concentrator', 
     expect(await screen.findByRole('region', { name: 'Detalhes da sessão' }))
       .toHaveTextContent('X');
     expect(location.hash).toBe('#sessao/X');
+    await waitFor(() => expect(bindings.StartPPPoERead).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(await screen.findByRole('heading', { name: 'Concentrador exemplo' })).toBeVisible();
+    expect(bindings.CancelPPPoEReadOperation).toHaveBeenCalledWith(
+      'company', 'activation', 'concentrator', expect.any(String),
+    );
     expect(screen.getByRole('tab', { name: 'Sessões' })).toHaveAttribute(
       'aria-selected',
       'true',
