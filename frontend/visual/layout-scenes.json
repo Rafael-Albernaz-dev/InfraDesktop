@@ -341,7 +341,9 @@
   {
     "id": "ficha-sw-norte-resumo",
     "reference": "ficha-sw-norte-resumo",
-    "route": "ficha-sw-norte-resumo"
+    "route": "ficha-sw-norte-resumo",
+    "device": "SW-NORTE",
+    "tab": "Resumo"
   },
   {
     "id": "importar-arquivo",

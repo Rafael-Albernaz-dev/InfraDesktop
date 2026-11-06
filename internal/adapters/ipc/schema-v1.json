@@ -184,7 +184,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 21,
+  "product_revision": 22,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -300,7 +300,8 @@
       "port",
       "transport",
       "user",
-      "secret"
+      "secret",
+      "block"
     ],
     "inventory.enroll-status": [
       "operation_id",

@@ -39,9 +39,6 @@ func (a *App) GetEquipment(profile, activation, id string) EquipmentResult {
 }
 func (a *App) SaveEquipment(profile, activation string, d DeviceInput) EquipmentResult {
 	op := deviceOperation(d)
-	if op == "inventory.enroll" && d.Block != "" {
-		return EquipmentResult{Code: string(equipment.Invalid), Profile: profile, Activation: activation}
-	}
 	return a.equipmentCall(op, profile, activation, makeDeviceInput(d))
 }
 func (a *App) SetEquipmentActive(profile, activation, id, operation string, revision uint64, active bool) EquipmentResult {

@@ -1,12 +1,13 @@
+import { prepareBase5Devices, createBase5List, prepareBase5Scene } from '../src/inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
-import {
-  RadioRoles,
-  RadioTransports,
-  RadioFamilies,
-} from '../src/radio-contract';
+import { RadioRoles, RadioTransports, RadioFamilies } from '../src/radio-contract';
 // Synthetic documentation addresses only. No production state or credentials are read.
 import type { Device } from '../src/equipment-api';
+const visualScene = new URLSearchParams(location.search).get('scene') || '';
+const base5Scenes = new Set(['equipamentos', 'equipamentos-colunas', 'equipamentos-selecao', 'credenciais',
+  'codigo', 'ficha-ccr-centro-sesso-es', 'ficha-sw-norte-resumo', 'seguranca-erro', 'seguranca-codigo']);
+const isBase5Scene = base5Scenes.has(visualScene);
 const time = Date.parse('2026-11-04T12:00:00Z');
 const entries = [
   ['CCR-CENTRO', 'concentrator', '192.0.2.1', '6.49', '12d4h', 8, 12],
@@ -65,6 +66,7 @@ const devices = entries.map(
       : undefined,
   }),
 ) as Device[];
+if (isBase5Scene) prepareBase5Devices(devices, visualScene, time);
 const credentials = [
   {
     id: 'concentrator',
@@ -319,11 +321,19 @@ export function installFixture() {
       ...data,
     },
   });
+  const listInventory = createBase5List(devices, result);
+  let savedColumns: string[] = visualScene === 'equipamentos-colunas'
+    ? ['equipment','role','status','block','model','address','online','offline','uptime','cpu','last_reading','memory','voltage'] : [];
   Object.assign(window, {
     go: {
       presentation: {
         App: {
           ...radioFixtureOperations(result, radioReading),
+          Status: async () => ({ code:'OK', columns:savedColumns }),
+          SetInventoryColumns: async (columns: string[]) => { savedColumns = columns; return { code:'OK', columns }; },
+          ListEquipmentFiltered: async (_p: string, _a: string, f: { search:string; cursor:number; inactive:boolean;
+            role:string; block:string; block_empty:boolean; model:string }) =>
+            listInventory(f.search, f.cursor, f.inactive, f.role, f.block, f.block_empty, f.model),
           ListEquipment: async (
             _p: string,
             _a: string,
@@ -331,7 +341,7 @@ export function installFixture() {
             _cursor: number,
             inactive: boolean,
           ) =>
-            result({
+            isBase5Scene ? listInventory(search, _cursor, inactive) : result({
               devices: devices.filter(
                 (d) => (inactive || d.active) && d.name.includes(search),
               ),
@@ -584,4 +594,5 @@ export function installFixture() {
       },
     },
   });
+  prepareBase5Scene(visualScene);
 }

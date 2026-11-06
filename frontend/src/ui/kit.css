@@ -305,6 +305,26 @@ tr.click:focus td {
 .toolbar .grow {
   flex: 1;
 }
+.inventory-scroll { overflow-x: auto; }
+.inventory-check { width: 32px; text-align: center; }
+.inventory-toolbar label, .inventory-toolbar button { white-space: nowrap; }
+.inventory-toolbar input[aria-label='Buscar'] { width: 180px; }
+.inventory-toolbar select[aria-label='Estado'] { width: 90px; }
+.inventory-toolbar select[aria-label='Estado']:disabled { color: var(--g22); opacity: 1; }
+.inventory-toolbar select[aria-label='Papel'], .inventory-toolbar select[aria-label='Bloco'] { width: 150px; }
+.inventory-toolbar select[aria-label='Modelo'] { width: 160px; }
+.inventory-popover { position: relative; }
+.inventory-menu { min-width: 270px; max-height: 420px; overflow: auto; }
+.inventory-scroll th[data-column='status'] { width: 74.921875px; min-width: 74.921875px; }
+.inventory-standard th[data-column='status'] { width: 76.90625px; min-width: 76.90625px; }
+.inventory-standard th[data-column='role'] { width: 147.515625px; min-width: 147.515625px; }
+.inventory-standard th[data-column='cpu'] { width: 49.578125px; min-width: 49.578125px; }
+.inventory-column-row { display: flex; align-items: center; gap: 8px; padding: 3px 6px; }
+.inventory-column-row label { flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.inventory-column-row button { padding: 0 6px; height: 24px; }
+.inventory-selection { display: flex; gap: 8px; align-items: center; padding: 6px 8px;
+  margin-bottom: 8px; border: 1px solid var(--g99); background: var(--ge8); }
+.inventory-selection .grow { flex: 1; }
 .crumb {
   color: var(--g55);
   margin-bottom: 6px;

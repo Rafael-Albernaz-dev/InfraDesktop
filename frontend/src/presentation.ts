@@ -1,3 +1,4 @@
+import { listInventory, bulkInventory } from './inventory-bindings';
 import {
   SetCredentialDefault,
   GetRadioIndexPage,
@@ -58,7 +59,6 @@ import {
   EnrollmentStatus,
   InspectTrust,
   ListCredentials,
-  ListEquipment,
   PutCredential,
   QueryStatus,
   SaveEquipment,
@@ -136,6 +136,9 @@ export type EquipmentResult = {
     total_devices?: number;
     operation_state?: string;
     credential_defaults?: Record<string, string>;
+    blocks?: string[];
+    models?: string[];
+    bulk_receipt?: { items: { id: string; revision: number }[] };
   };
 };
 export type DeviceInput = Omit<
@@ -147,7 +150,8 @@ export type CredentialInput = Omit<
   'convertValues'
 >;
 const equipmentBindings = {
-  list: ListEquipment,
+  list: listInventory,
+  bulk: bulkInventory,
   enrollmentStatus: EnrollmentStatus,
   get: GetEquipment,
   save: (profile: string, activation: string, input: DeviceInput) =>
@@ -173,7 +177,6 @@ export const equipmentAPI: {
     ...args: Parameters<(typeof equipmentBindings)[K]>
   ) => Promise<EquipmentResult>;
 } = equipmentBindings;
-
 export type PPQuery = {
   state?: '' | 'ONLINE' | 'OFFLINE';
   search: string;
@@ -538,7 +541,6 @@ export const pppoeAPI: {
   export: ExportPPPoE,
   exportOperational: ExportPPPoEOperational,
 };
-
 const readBindings = {
   start: StartPPPoERead,
   stop: StopPPPoETraffic,
@@ -552,13 +554,11 @@ export const pppoeReadAPI: {
     ...args: Parameters<(typeof readBindings)[K]>
   ) => Promise<PPResult>;
 } = readBindings;
-
 export const deviceMonitoringAPI = {
   current: GetDeviceMonitoring as (
     ...args: Parameters<typeof GetDeviceMonitoring>
   ) => Promise<PPResult>,
 };
-
 import type { RadioResult, RadioInput, RadioLinkChoice } from './radio-api';
 export const radioAPI = {
   indexPage: (

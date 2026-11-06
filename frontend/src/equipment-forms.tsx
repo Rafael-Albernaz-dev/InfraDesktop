@@ -1,4 +1,4 @@
-import { Select } from './ui/Select';
+import { DeviceRoleSelect } from './equipment-role-select';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from './desktop';
 import { DeviceCredentialSection } from './equipment-form-credentials';
@@ -18,13 +18,8 @@ import {
   validEquipmentSecret,
   validEquipmentText,
 } from './equipment-validation';
-import { RadioRoles, RadioTransports } from './radio-contract';
+import { RadioTransports } from './radio-contract';
 export { ProtectedDialog } from './protected-dialog';
-const RADIO_ROLE_VALUES: string[] = [
-  RadioRoles.ap,
-  RadioRoles.cpe,
-  RadioRoles.ptp,
-];
 function validateDeviceDraft(
   draft: DeviceInput,
   existing: boolean,
@@ -94,47 +89,12 @@ function UncertainEnrollmentNotice(props: {
     </div>
   );
 }
-function DeviceRoleSelect(props: {
-  draft: DeviceInput;
-  change: (values: Partial<DeviceInput>) => void;
-  device?: Device;
-  defaults: Record<string, string>;
-  setExisting: (v: boolean) => void;
-}) {
-  const { draft, change, device, defaults, setExisting } = props;
-  return (
-    <label className="field">
-      Papel do equipamento
-      <Select
-        aria-label="Papel do equipamento"
-        value={draft.role}
-        onChange={(e) => {
-          const role = e.target.value;
-          if (!device && RADIO_ROLE_VALUES.includes(role)) {
-            setExisting(true);
-            change({
-              role,
-              credential_id: defaults[role] || '',
-              user: '',
-              secret: '',
-            });
-          } else change({ role });
-        }}
-      >
-        <option value="other">Outro</option>
-        <option value="concentrator">Concentrador</option>
-        <option value={RadioRoles.ap}>AP</option>
-        <option value={RadioRoles.cpe}>CPE</option>
-        <option value={RadioRoles.ptp}>PTP (somente cadastro)</option>
-      </Select>
-    </label>
-  );
-}
 function DeviceFormFields(props: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;
   device?: Device;
   defaults: Record<string, string>;
+  blocks?: string[];
   existing: boolean;
   setExisting: (v: boolean) => void;
   credentials: Credential[];
@@ -188,6 +148,14 @@ function DeviceFormFields(props: {
           {message('port')}
         </label>
       </details>
+      <label className="field">
+        Bloco
+        <input aria-label="Bloco" value={draft.block} maxLength={80} list="device-block-suggestions"
+          onChange={(e) => change({ block: e.target.value })} />
+        <datalist id="device-block-suggestions">
+          {(props.blocks || []).map((block) => <option key={block} value={block} />)}
+        </datalist>
+      </label>
       <DeviceCredentialSection {...props} />
     </fieldset>
   );
@@ -201,6 +169,7 @@ function isDraftDirty(
   return (
     uncertain ||
     draft.name !== (device?.name || '') ||
+    draft.block !== (device?.block || '') ||
     draft.role !== (device?.role || 'other') ||
     draft.address !== (device?.address || '') ||
     draft.port !== (device?.port || 22) ||
@@ -389,6 +358,7 @@ function DeviceFormBody(props: {
   setRetry: (v: boolean) => void;
   device?: Device;
   defaults: Record<string, string>;
+  blocks?: string[];
   existing: boolean;
   setExisting: (v: boolean) => void;
   credentials: Credential[];
@@ -421,6 +391,7 @@ function DeviceFormBody(props: {
 }
 export function DeviceForm(props: {
   defaults: Record<string, string>;
+  blocks?: string[];
   device?: Device;
   credentials: Credential[];
   disabled: boolean;

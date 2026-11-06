@@ -5,21 +5,6 @@
     "reason": "Dado ainda sem percurso nesta ficha"
   },
   {
-    "id": "equipamentos",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
-    "id": "equipamentos-colunas",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
-    "id": "equipamentos-selecao",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
     "id": "credenciais",
     "owner": "L-BASE-5A",
     "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
@@ -31,11 +16,6 @@
   },
   {
     "id": "ficha-ccr-centro-sesso-es",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
-    "id": "ficha-sw-norte-resumo",
     "owner": "L-BASE-5A",
     "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
   },

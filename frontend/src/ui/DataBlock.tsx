@@ -16,7 +16,7 @@ export type DataState =
       disabled?: boolean;
     }
   | { state: 'not-supported'; resource: string }
-  | { state: 'unbuilt'; slice: string };
+  | { state: 'unbuilt'; slice: string; label?: string };
 
 function StateContent(p: DataState) {
   switch (p.state) {
@@ -65,7 +65,7 @@ function StateContent(p: DataState) {
     case 'not-supported':
       return <p>Este modelo não informa {p.resource}</p>;
     case 'unbuilt':
-      return <p>Ainda não existe ({p.slice})</p>;
+      return <p>{p.label && `${p.label} · `}Ainda não existe ({p.slice})</p>;
   }
 }
 

@@ -7,6 +7,7 @@ import {
 } from './equipment-summary-tab';
 import { EquipmentChain } from './equipment-chain';
 import { equipmentType } from './equipment-layout';
+import { driverOwners } from './equipment-roles';
 import { HeaderActionHost } from './ui/HeaderAction';
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { RefreshOpening } from './use-refresh-on-open';
@@ -137,6 +138,10 @@ function HealthTab({ p }: { p: Props }) {
 }
 function SheetContent({ p, tab }: { p: Props; tab: string }) {
   if (tab === 'Acesso') return <AccessTab p={p} />;
+  if (tab === 'Resumo' && driverOwners[p.selected.role || ''])
+    return <DataBlock title="Resumo" source="cadastro local" data={{
+      state: 'unbuilt', slice: driverOwners[p.selected.role || ''], label: 'Não feito',
+    }} />;
   if (tab === 'Resumo') return <SummaryTab p={p} />;
   if (tab === 'Interfaces e saúde') return <HealthTab p={p} />;
   if (tab === 'Sessões' || tab === 'Serviços')
@@ -179,7 +184,8 @@ export function EquipmentDetailPane(p: Props) {
   const isRadio = [RadioRoles.ap, RadioRoles.cpe, RadioRoles.ptp].some(
     (r) => r === role,
   );
-  useSummaryRefresh(p, tab, isRadio);
+  const noDriver = Boolean(driverOwners[role]);
+  useSummaryRefresh(p, tab, isRadio || noDriver);
   const saved = latestSavedReading(device);
   const readingAge = saved.at
     ? `há ${formatDuration((p.displayNow - Date.parse(saved.at)) / 1000)}`
@@ -214,14 +220,14 @@ export function EquipmentDetailPane(p: Props) {
         title={device.name}
         meta={
           <>
-            {device.name} · {equipmentType(role)} ·{' '}
+            {device.name} · {equipmentType(role)}{device.block && ` · ${device.block}`} ·{' '}
             {saved.version || 'Não informado nesta leitura'} ·{' '}
             {saved.at ? `atualizado ${readingAge}` : readingAge}
           </>
         }
       >
         <Button onClick={back}>Voltar</Button>
-        {isRadio || tab === 'Sessões' || tab === 'Serviços' ? (
+        {noDriver ? null : isRadio || tab === 'Sessões' || tab === 'Serviços' ? (
           <div ref={setRadioActions} className="actions header-actions" />
         ) : (
           <Button

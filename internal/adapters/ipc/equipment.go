@@ -12,7 +12,7 @@ import (
 var equipmentFields = map[string][]string{
 	"credential.default-set":  {"id", "operation_id", "role", "credential_id"},
 	"trust.reset":             {"operation_id", "id", "revision"},
-	"inventory.enroll":        {"operation_id", "id", "name", "role", "address", "port", "transport", "user", "secret"},
+	"inventory.enroll":        {"operation_id", "id", "name", "role", "address", "port", "transport", "user", "secret", "block"},
 	"inventory.enroll-status": {"operation_id", "id"},
 	"inventory.list":          {"search", "cursor", "inactive", "include_inactive", "role", "block", "block_empty", "model"},
 	"inventory.get":           {"id"},

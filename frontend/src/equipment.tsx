@@ -35,7 +35,10 @@ function EquipmentCapabilityBody(p: {
         ) : (
           <>
             <EquipmentInventoryPane
+              key={[profile, activation].join('|')}
               {...s}
+              profile={profile}
+              activation={activation}
               connected={connected}
               primaryInHeader={primaryInHeader}
               locked={locked}

@@ -1,3 +1,6 @@
+import { useCredentialsCatalogEffect } from './equipment-credential-effect';
+import { retireOlderPendingRevisions } from './equipment-pending-revisions';
+import { useInventoryFilterState } from './inventory-filter-state';
 import { useEquipmentNavigator } from './equipment-navigator';
 import type { LinkedSessionTarget } from './linked-session-navigation';
 import {
@@ -11,7 +14,6 @@ import {
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
 import {
-  useCredentialsCatalogEffect,
   useDetailDeviceSyncEffects,
   useDeviceListEffect,
   useJobPollEffect,
@@ -21,27 +23,8 @@ import { id } from './equipment-reading';
 import { useDisplayNow } from './equipment-snapshot';
 import { fieldForEquipmentCode } from './equipment-validation';
 import { RadioRoles } from './radio-contract';
+import { driverOwners } from './equipment-roles';
 
-function retireOlderPendingRevisions(
-  profile: string,
-  activation: string,
-  device: Device,
-) {
-  for (const operationKind of ['query', 'inspect']) {
-    const prefix =
-      [profile, activation, operationKind, device.id].join('|') + '|';
-    for (const old of pendingStarts.keys()) {
-      const oldRevision = Number(old.slice(prefix.length));
-      if (
-        old.startsWith(prefix) &&
-        Number.isSafeInteger(oldRevision) &&
-        Number.isSafeInteger(device.revision) &&
-        oldRevision < device.revision
-      )
-        pendingStarts.delete(old);
-    }
-  }
-}
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,
   after?: (r: EquipmentResult) => void,
@@ -151,8 +134,8 @@ function useQueuedConnectEffect(
   const queuedConnect = useEffectEvent((device: Device) => {
     setConnectRequest(undefined);
     if (
-      device.fingerprint &&
-      (device.role === RadioRoles.ap || device.role === RadioRoles.cpe)
+      Boolean(driverOwners[device.role || '']) ||
+      (device.fingerprint && (device.role === RadioRoles.ap || device.role === RadioRoles.cpe))
     )
       return;
     void startOperation(device.fingerprint ? 'query' : 'inspect', device);
@@ -171,6 +154,7 @@ function useQueuedConnectEffect(
 }
 
 function useEquipmentStore(profile: string, activation: string) {
+  const inventoryFilters = useInventoryFilterState();
   const [credentialRefresh, reloadCredentials] = useState(0);
   const [credentialDefaults, setCredentialDefaults] = useState<
     Record<string, string>
@@ -208,6 +192,7 @@ function useEquipmentStore(profile: string, activation: string) {
     [jobDevice, setJobDevice] = useState<Device>(),
     [consumedCreate, consumeCreate] = useState(0);
   return {
+    ...inventoryFilters,
     credentialRefresh,
     reloadCredentials,
     credentialDefaults,

@@ -51,8 +51,8 @@ func TestRadioWireRejectsCommandsAndUnknownFields(t *testing.T) {
 }
 
 func TestRadioLiveContractRevisionAndTiming(t *testing.T) {
-	if ProductRevision != 21 {
-		t.Fatal("standalone radio fields require IPC21")
+	if ProductRevision != 22 {
+		t.Fatal("inventory additions require IPC22")
 	}
 	raw,
 		e := json.Marshal(equipment.RadioCost{Measurements: []equipment.RadioMeasurement{{AP: equipment.RadioTiming{CommandSeconds: .4,

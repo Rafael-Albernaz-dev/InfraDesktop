@@ -223,7 +223,7 @@ func (s *Service) mutateEnroll(st *State, q Command, v *View) Code {
 		return Limit
 	}
 	d := Device{
-		Role: q.Role, ID: q.ID, Name: q.Name, Address: q.Address, Port: q.Port,
+		Role: q.Role, ID: q.ID, Name: q.Name, Block: q.Block, Address: q.Address, Port: q.Port,
 		Transport: q.Transport, CredentialID: q.ID, Revision: 1, Active: true,
 	}
 	if c := ValidateDevice(d); c != OK {

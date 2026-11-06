@@ -8,14 +8,12 @@ import {
 } from './equipment-credential-form';
 import { DeviceForm, ProtectedDialog } from './equipment-forms';
 import { id } from './equipment-reading';
-
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,
   after?: (r: EquipmentResult) => void,
   refreshList?: boolean,
   inlineFields?: boolean,
 ) => Promise<EquipmentResult | undefined>;
-
 export const VAULT_NOTICE =
   'Cofre indisponível. Confira a credencial do serviço nesta instalação.';
 
@@ -189,6 +187,7 @@ export function DeviceFormDialog(p: {
   ready: boolean;
   credentials: Credential[];
   credentialDefaults: Record<string, string>;
+  blocks: string[];
   locked: boolean;
   profile: string;
   activation: string;
@@ -207,6 +206,7 @@ export function DeviceFormDialog(p: {
         device={p.shownForm === 'new' ? undefined : p.shownForm}
         credentials={p.credentials}
         defaults={p.credentialDefaults}
+        blocks={p.blocks}
         disabled={p.locked}
         vault={p.vault}
         contextKey={[p.profile, p.activation].join('|')}

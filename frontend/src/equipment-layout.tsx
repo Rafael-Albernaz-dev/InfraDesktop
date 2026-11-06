@@ -1,10 +1,4 @@
-import { RadioRoles } from './radio-contract';
+import { roleGroups } from './equipment-roles';
 
-const labels: Record<string, string> = {
-  concentrator: 'Concentrador',
-  [RadioRoles.ap]: 'AP',
-  [RadioRoles.cpe]: 'CPE',
-  [RadioRoles.ptp]: 'PTP',
-  other: 'Outro',
-};
+const labels: Record<string, string> = Object.fromEntries(roleGroups.flatMap(([, roles]) => roles));
 export const equipmentType = (role = 'other') => labels[role] || labels.other;

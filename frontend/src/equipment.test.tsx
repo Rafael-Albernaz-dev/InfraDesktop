@@ -388,7 +388,7 @@ it('inactive filtering stays explicit; no remote work happens while listing or e
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));
   await waitFor(() =>
-    expect(api.list).toHaveBeenLastCalledWith('X', 'a', '', 0, true),
+    expect(api.list).toHaveBeenLastCalledWith('X', 'a', '', 0, true, { role: '', block: '', block_empty: false, model: '' }),
   );
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));

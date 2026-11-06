@@ -1,7 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
-import type { Credential, Device, Job } from './equipment-api';
+import type { Device, Job } from './equipment-api';
 import { pendingStarts } from './equipment-receipts';
+function clearPendingStartsForJob(
+  profile: string,
+  activation: string,
+  current: Job,
+) {
+  const prefix =
+    [
+      profile,
+      activation,
+      current.kind === 'trust.inspect' ? 'inspect' : 'query',
+      current.device_id,
+    ].join('|') + '|';
+  for (const [key, operation] of pendingStarts) {
+    if (key.startsWith(prefix) && operation) pendingStarts.delete(key);
+  }
+}
+
 function reconcileListedSelection(
   old: Device | undefined,
   devices: Device[],
@@ -26,6 +43,11 @@ export function useDeviceListEffect(p: {
   search: string;
   cursor: number;
   inactive: boolean;
+  roleFilter: string;
+  blockFilter: string;
+  modelFilter: string;
+  setBlocks: (v: string[]) => void;
+  setModels: (v: string[]) => void;
   connected: boolean;
   refresh: number;
   detailOpen: boolean;
@@ -50,7 +72,13 @@ export function useDeviceListEffect(p: {
     if (!p.profile || !p.connected) return;
     void (async () => {
       try {
-        const r = await api.list(
+        const filters = p.roleFilter || p.blockFilter || p.modelFilter || p.inactive ? {
+          role: p.roleFilter, block: p.blockFilter.startsWith('b:') ? p.blockFilter.slice(2) : '',
+          block_empty: p.blockFilter === 'none', model: p.modelFilter,
+        } : undefined;
+        const r = filters ? await api.list(
+          p.profile, p.activation, p.search, p.cursor, p.inactive, filters,
+        ) : await api.list(
           p.profile,
           p.activation,
           p.search,
@@ -63,6 +91,8 @@ export function useDeviceListEffect(p: {
         p.setListError('');
         const list = r.data.devices || [];
         p.setDevices(list);
+        p.setBlocks(r.data.blocks || []);
+        p.setModels(r.data.models || []);
         const tot = r.data.total_devices ?? list.length;
         p.setTotal(tot);
         p.onTotal?.([p.profile, p.activation].join('|'), tot);
@@ -86,12 +116,17 @@ export function useDeviceListEffect(p: {
     p.search,
     p.cursor,
     p.inactive,
+    p.roleFilter,
+    p.blockFilter,
+    p.modelFilter,
     p.connected,
     p.refresh,
     p.onTotal,
     generationRef,
     p.setListError,
     p.setDevices,
+    p.setBlocks,
+    p.setModels,
     p.setTotal,
     p.setNext,
     p.setVault,
@@ -99,69 +134,6 @@ export function useDeviceListEffect(p: {
     p.setSelected,
   ]);
 }
-export function useCredentialsCatalogEffect(p: {
-  profile: string;
-  activation: string;
-  connected: boolean;
-  credentialRefresh: number;
-  setCredentialDefaults: (v: Record<string, string>) => void;
-  setCredentialCatalog: (v: { key: string; value: Credential[] }) => void;
-  setCredentialError: (v: string) => void;
-}) {
-  useEffect(() => {
-    if (!p.profile || !p.connected) return;
-    let stopped = false;
-    void (async () => {
-      const all: Credential[] = [];
-      let page = 0;
-      do {
-        const r = await api.credentials(p.profile, p.activation, page);
-        if (stopped) return;
-        if (r.code !== 'OK' || !r.data) throw new Error(r.code);
-        all.push(...(r.data.credentials || []));
-        p.setCredentialDefaults(r.data.credential_defaults || {});
-        page = r.data.next_cursor;
-      } while (page);
-      p.setCredentialCatalog({
-        key: [p.profile, p.activation].join('|'),
-        value: all,
-      });
-      p.setCredentialError('');
-    })().catch(() => {
-      if (!stopped)
-        p.setCredentialError(equipmentMessage('SERVICE_UNAVAILABLE'));
-    });
-    return () => {
-      stopped = true;
-    };
-  }, [
-    p.profile,
-    p.activation,
-    p.connected,
-    p.credentialRefresh,
-    p.setCredentialDefaults,
-    p.setCredentialCatalog,
-    p.setCredentialError,
-  ]);
-}
-
-function clearPendingStartsForJob(
-  profile: string,
-  activation: string,
-  current: Job,
-) {
-  const prefix =
-    [
-      profile,
-      activation,
-      current.kind === 'trust.inspect' ? 'inspect' : 'query',
-      current.device_id,
-    ].join('|') + '|';
-  for (const [key, operation] of pendingStarts) {
-    if (key.startsWith(prefix) && operation) pendingStarts.delete(key);
-  }
-}
-
 export function useJobPollEffect(p: {
   job?: Job;
   profile: string;
