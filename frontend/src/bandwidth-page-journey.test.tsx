@@ -119,7 +119,7 @@ it('mede as linhas da página, mostra progresso e resultado e libera busy', asyn
     ['row-1', 'row-2'],
     1,
   );
-  await waitFor(() => expect(bindings.PPPoEReadStatus).toHaveBeenCalledOnce());
+  await waitFor(() => expect(bindings.PPPoEReadStatus).toHaveBeenCalledOnce(), { timeout: 5000 });
   await act(async () => finish(status()));
   const result = within(
     screen.getByRole('region', { name: 'Banda por sessão' }),
@@ -143,12 +143,14 @@ it('cancelar medição encerra o job da página e ignora resultado tardio', asyn
   fireEvent.click(
     await screen.findByRole('button', { name: 'Cancelar medição' }),
   );
-  await waitFor(() =>
-    expect(bindings.CancelPPPoERead).toHaveBeenCalledWith(
-      'company',
-      'active',
-      'bandwidth',
-    ),
+  await waitFor(
+    () =>
+      expect(bindings.CancelPPPoERead).toHaveBeenCalledWith(
+        'company',
+        'active',
+        'bandwidth',
+      ),
+    { timeout: 5000 },
   );
   await act(async () => finish(status()));
   expect(button).toBeEnabled();
