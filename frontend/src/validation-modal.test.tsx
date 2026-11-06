@@ -40,14 +40,17 @@ beforeEach(() => {
   vi.mocked(api.credentials).mockResolvedValue(result());
 });
 async function open(profile: string) {
-  render(
+  const view = render(
     <Equipment profile={profile} activation="a" connected createRequest={0} />,
   );
   const opener = await screen.findByRole('button', {
     name: 'Adicionar equipamento',
   });
   opener.focus();
-  fireEvent.click(opener);
+  view.rerender(
+    <Equipment profile={profile} activation="a" connected createRequest={1} />,
+  );
+  return view;
 }
 function fill(address = '10.0.0.1') {
   for (const [label, value] of [
@@ -129,7 +132,7 @@ it('blocks close during send and retains uncertain receipt IDs without another p
       resolve = r;
     });
   });
-  await open('pending-guard');
+  const view = await open('pending-guard');
   fill();
   save();
   const dialog = screen.getByRole('dialog');
@@ -151,8 +154,8 @@ it('blocks close during send and retains uncertain receipt IDs without another p
   fireEvent.click(
     within(confirmation).getByRole('button', { name: 'Descartar alterações' }),
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Adicionar equipamento' }),
+  view.rerender(
+    <Equipment profile="pending-guard" activation="a" connected createRequest={2} />,
   );
   expect(
     screen.getByRole('button', { name: 'Conferir cadastro' }),
@@ -304,12 +307,14 @@ it.each([
   },
 );
 it('closes a pristine draft, restores opener and keeps Escape/X on confirmation safe', async () => {
-  await open('focus-clean');
+  const view = await open('focus-clean');
   const opener = screen.getByRole('button', { name: 'Adicionar equipamento' });
   fireEvent.keyDown(screen.getByLabelText('Nome'), { key: 'Escape' });
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(opener).toHaveFocus();
-  fireEvent.click(opener);
+  view.rerender(
+    <Equipment profile="focus-clean" activation="a" connected createRequest={2} />,
+  );
   fill();
   fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
   let confirmation = screen.getByRole('dialog', {

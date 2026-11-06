@@ -11,12 +11,14 @@ export function InventoryToolbar({
   columns,
   saveColumns,
   busy,
+  onAdd,
 }: {
   p: InventoryState;
   locked: boolean;
   columns: string[];
   saveColumns: (v: string[]) => void;
   busy: boolean;
+  onAdd?: () => void;
 }) {
   const change = (action: () => void) => {
     action();
@@ -91,7 +93,7 @@ export function InventoryToolbar({
       {filtered && <Button onClick={clear}>Limpar filtros</Button>}
       <span className="grow" />
       <InventoryColumnsMenu value={columns} save={saveColumns} busy={busy} />
-      <Button kind="primary" disabled={locked} onClick={() => p.setForm('new')}>
+      <Button kind="primary" disabled={locked} onClick={() => onAdd ? onAdd() : p.setForm('new')}>
         Adicionar equipamento
       </Button>
     </div>

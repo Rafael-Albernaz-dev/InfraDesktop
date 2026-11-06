@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Device } from './equipment-api';
 import { ppReadMessage } from './pppoe-context';
 export { ppReadMessage } from './pppoe-context';
@@ -464,7 +464,6 @@ function usePPReadMutations(p: {
 
 export function usePPReadState(pProps: PPReadPanelProps) {
   const s = usePPReadStateVars();
-  const autoStarted = useRef(false);
   const generation = useRef(0);
   const activeJob = useRef('');
   const privateResultJob = useRef('');
@@ -497,17 +496,6 @@ export function usePPReadState(pProps: PPReadPanelProps) {
     lastSample,
     valid,
   });
-  const autoStartTraffic = useEffectEvent(() => {
-    if (!autoStarted.current) {
-      autoStarted.current = true;
-      void start('traffic');
-    }
-  });
-  useEffect(() => {
-    if (!pProps.traffic || pProps.blocked || !pProps.rows.length) return;
-    const timer = setTimeout(() => autoStartTraffic(), 0);
-    return () => clearTimeout(timer);
-  }, [pProps.traffic, pProps.blocked, pProps.rows.length]);
   usePPReadPollEffect({
     s,
     pProps,

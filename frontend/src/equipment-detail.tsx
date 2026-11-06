@@ -9,7 +9,8 @@ import { EquipmentChain } from './equipment-chain';
 import { equipmentType } from './equipment-layout';
 import { driverOwners } from './equipment-roles';
 import { HeaderActionHost } from './ui/HeaderAction';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useLayoutEffect, useRef, useState } from 'react';
+import { SessionRoute } from './session-navigation';
 import type { RefreshOpening } from './use-refresh-on-open';
 import type { useEquipmentState } from './equipment-state';
 import type { Device } from './equipment-api';
@@ -153,6 +154,7 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
         device={p.selected}
         section={tab === 'Sessões' ? 'sessions' : 'services'}
         sessionTarget={p.sessionTarget}
+        onSessionConsumed={() => p.setSessionTarget(undefined)}
         refreshAvailable={
           p.connected && p.vault && !p.locked && !equipmentQueryRunning(p)
         }
@@ -172,6 +174,7 @@ function SheetContent({ p, tab }: { p: Props; tab: string }) {
   );
 }
 export function EquipmentDetailPane(p: Props) {
+  const sessionRoute = useContext(SessionRoute);
   const { surfaceRef, detailReadRef, detailSurfaceRef } = p;
   const [tab, setTab] = useState(
     p.sessionTarget?.deviceID === p.selected.id ? 'Sessões' : 'Resumo',
@@ -216,6 +219,7 @@ export function EquipmentDetailPane(p: Props) {
       className="equipment-sheet"
       aria-label="Ficha do equipamento"
     >
+      <div hidden={sessionRoute?.active}>
       <PageHeader
         title={device.name}
         meta={
@@ -272,6 +276,7 @@ export function EquipmentDetailPane(p: Props) {
         value={tab}
         onChange={setTab}
       />
+      </div>
       <HeaderActionHost value={radioActions}>
         {isRadio && (
           <RadioEquipment

@@ -52,8 +52,25 @@ try {
         await page.getByRole('cell', { name: step.ready, exact: true }).waitFor();
       }
       if (scene.session) {
-        await page.getByRole('button', { name: 'Detalhar cliente-0001 *0', exact: true }).click();
-        await page.locator('.ch-plot canvas').waitFor();
+        await page.getByRole('button', { name: scene.sessionRow || 'Detalhar cliente-0001 *0', exact: true }).click();
+        await page.getByRole('region', { name: 'Detalhes da sessão', exact: true }).waitFor();
+        if (scene.id !== 'sessao-offline') await page.locator('.session-screen .chain').waitFor();
+        if (scene.sessionTab) await page.getByRole('tab', { name: scene.sessionTab, exact: true }).click();
+        if (scene.sessionLive) {
+          await page.getByRole('button', { name: 'Ver ao vivo', exact: true }).click();
+          await page.locator('.ch-plot canvas').waitFor();
+        }
+      }
+    }
+    if (scene.id === 'adicionar' || scene.id === 'importar-arquivo' || scene.id === 'importar-fim' || scene.id === 'importar-previa' || scene.id === 'importar-corrigir') {
+      await page.getByRole('button', { name: 'Adicionar equipamento', exact: true }).click();
+      await page.getByRole('heading', { name: 'Adicionar equipamento', exact: true }).waitFor();
+      if (scene.id.startsWith('importar-')) await page.getByRole('tab', { name: 'Importar arquivo', exact: true }).click();
+      if (scene.id === 'importar-fim' || scene.id === 'importar-previa' || scene.id === 'importar-corrigir') {
+        await page.getByRole('button', { name: 'Escolher arquivo', exact: true }).click();
+        await page.getByRole('table', { name: 'Prévia da importação' }).waitFor();
+        if (scene.id === 'importar-fim') await page.getByRole('button', { name: /Cadastrar \d+ equipamentos/ }).click();
+        if (scene.id === 'importar-corrigir') await page.getByRole('row').filter({ hasText: 'AP-OESTE' }).filter({ hasNotText: 'AP-OESTE-B' }).getByRole('button', { name: 'Corrigir' }).click();
       }
     }
     await page.mouse.move(0, 0);

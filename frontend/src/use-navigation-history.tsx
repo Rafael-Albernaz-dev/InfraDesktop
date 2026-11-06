@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { createNavigationHistory, sameStep } from './navigation-history';
 import type { NavigationStep } from './navigation-history';
 
@@ -9,6 +9,7 @@ type NavigationState = {
   step: NavigationStep;
   blocked: boolean;
   restore: (step: NavigationStep) => void;
+  attempt?: (action: () => void) => void;
 };
 function editable(target: EventTarget | null): boolean {
   return (
@@ -28,13 +29,13 @@ export function useNavigationHistory(state: NavigationState) {
   const {
     authenticated,
     scope: nextScope,
-    step: { route, device },
+    step: { route, device, session },
   } = state;
   useLayoutEffect(() => {
     current.current = state;
   });
   useLayoutEffect(() => {
-    const step = { route, device };
+    const step = { route, device, session };
     if (!authenticated || scope.current !== nextScope) {
       scope.current = authenticated ? nextScope : '';
       pending.current = undefined;
@@ -54,23 +55,26 @@ export function useNavigationHistory(state: NavigationState) {
       history.current.record(origin);
     }
     history.current.record(step);
-  }, [nextScope, authenticated, route, device]);
-  useEffect(() => {
-    const target = state.root?.ownerDocument;
-    if (!target) return;
-    const back = () => {
-      const s = current.current;
-      if (
-        !s.authenticated ||
-        s.blocked ||
-        s.root?.querySelector('[role="dialog"]')
-      )
-        return;
+  }, [nextScope, authenticated, route, device, session]);
+  const back = useCallback(() => {
+    const s = current.current;
+    if (
+      !s.authenticated ||
+      s.blocked ||
+      s.root?.querySelector('[role="dialog"]')
+    ) return;
+    const run = () => {
       const previous = history.current.back();
       if (!previous) return;
       pending.current = { target: previous, origin: s.step };
       s.restore(previous);
     };
+    if (s.attempt) s.attempt(run);
+    else run();
+  }, []);
+  useEffect(() => {
+    const target = state.root?.ownerDocument;
+    if (!target) return;
     const key = (event: KeyboardEvent) => {
       const isBack = event.key === 'Backspace' && !editable(event.target);
       const isAltLeft =
@@ -94,5 +98,6 @@ export function useNavigationHistory(state: NavigationState) {
       target.removeEventListener('keydown', key);
       target.removeEventListener('mousedown', mouse);
     };
-  }, [state.root]);
+  }, [state.root, back]);
+  return back;
 }

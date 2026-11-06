@@ -33,6 +33,7 @@ export function PPReadScopeBody(p: { s: ReadState; pProps: PPReadPanelProps }) {
           <SessionTraffic
             key={row.row_id}
             row={row}
+            startedAt={result.started_at}
             live={Boolean(s.job && !s.stoppedTraffic && !s.deadlineReached)}
           />
         ))}

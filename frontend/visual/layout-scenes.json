@@ -393,22 +393,42 @@
   {
     "id": "sessao-enlace",
     "reference": "sessao-enlace",
-    "route": "sessao-enlace"
+    "route": "sessao-enlace",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Lista",
+    "session": true,
+    "sessionTab": "Enlace"
   },
   {
     "id": "sessao-historico",
     "reference": "sessao-historico",
-    "route": "sessao-historico"
+    "route": "sessao-historico",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Lista",
+    "session": true,
+    "sessionTab": "Histórico"
   },
   {
     "id": "sessao-informacoes",
     "reference": "sessao-informacoes",
-    "route": "sessao-informacoes"
+    "route": "sessao-informacoes",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Lista",
+    "session": true,
+    "sessionTab": "Informações"
   },
   {
     "id": "sessao-offline",
     "reference": "sessao-offline",
-    "route": "sessao-offline"
+    "route": "sessao-offline",
+    "device": "CCR-CENTRO",
+    "tab": "Sessões",
+    "sub": "Lista",
+    "session": true,
+    "sessionRow": "Detalhar cliente-0007 *6"
   },
   {
     "id": "sessao-trafego-ao-vivo",
@@ -423,7 +443,8 @@
         "button": "Medir banda da página",
         "ready": "78 Mbps"
       }
-    ]
+    ],
+    "sessionLive": true
   },
   {
     "id": "visao",

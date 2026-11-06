@@ -464,11 +464,8 @@ it('Q03 late X inventory and credential responses cannot populate the remounted 
   expect(api.credentials).toHaveBeenCalledWith('X', 'a', 0);
   expect(api.credentials).toHaveBeenCalledWith('Y', 'b', 0);
   await beginAdd();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Usar credencial existente' }),
-  );
   expect(
-    screen.getByRole('option', { name: 'Fresh Y · reader-y' }),
+    screen.getByRole('option', { name: 'Fresh Y' }),
   ).toBeInTheDocument();
   expect(screen.queryByText(/Late X/)).not.toBeInTheDocument();
 });
@@ -1166,12 +1163,12 @@ it('first enrollment retains one CTA and the frozen empty inventory layout', asy
   const add = screen.getAllByRole('button', { name: /Adicionar/ });
   expect(add).toHaveLength(1);
   fireEvent.click(add[0]);
-  expect(screen.getByLabelText('Usuário')).toBeInTheDocument();
-  expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password');
-  expect(screen.queryByLabelText('Alias')).not.toBeInTheDocument();
-  expect(
-    screen.getByRole('button', { name: 'Usar credencial existente' }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Adicionar equipamento' })).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), { target: { value: '__add__' } });
+  const dialog = screen.getByRole('dialog', { name: 'Credenciais de consulta' });
+  expect(within(dialog).getByLabelText('Usuário remoto')).toBeInTheDocument();
+  expect(within(dialog).getByLabelText('Alias')).toBeInTheDocument();
+  expect(within(dialog).getByLabelText('Senha remota')).toHaveAttribute('type', 'password');
 });
 it('lost direct response clears the password, blocks blind resend and reconciles after closing/reopening', async () => {
   let submitted: Record<string, unknown> | undefined;
@@ -1527,27 +1524,14 @@ it('a blocked vault explains the disabled direct form inside its dialog exactly 
     'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
   );
   await beginAdd();
-  const dialog = screen.getByRole('dialog', { name: 'Adicionar equipamento' });
-  expect(
-    within(dialog).getByText(
-      'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
-    ),
-  ).toBeInTheDocument();
-  expect(
-    screen.getAllByText(
-      'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
-    ),
-  ).toHaveLength(1);
-  expect(within(dialog).getByLabelText('Senha')).toBeDisabled();
-  expect(
-    within(dialog).getByRole('button', {
-      name: /^Salvar (equipamento|e conectar)$/,
-    }),
-  ).toBeDisabled();
-  fireEvent.click(
-    within(dialog).getByRole('button', { name: 'Usar credencial existente' }),
-  );
-  expect(within(dialog).getByLabelText('Credencial de consulta')).toBeEnabled();
+  expect(screen.getByText('Cofre indisponível. Confira a credencial do serviço nesta instalação.')).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), { target: { value: '__add__' } });
+  const dialog = screen.getByRole('dialog', { name: 'Credenciais de consulta' });
+  expect(within(dialog).getByLabelText('Senha remota')).toBeDisabled();
+  expect(within(dialog).getByRole('button', { name: 'Salvar credencial' })).toBeDisabled();
+  expect(screen.getAllByText('Cofre indisponível. Confira a credencial do serviço nesta instalação.')).toHaveLength(1);
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+  expect(screen.getByLabelText('Credencial de consulta')).toBeEnabled();
 });
 it.each(['OK', 'TRUST_CHANGED'])(
   'late inspection status %s cannot open a second dialog or place an error on a newer form',
@@ -1586,7 +1570,7 @@ it.each(['OK', 'TRUST_CHANGED'])(
     );
     await waitFor(() => expect(api.status).toHaveBeenCalledTimes(1));
     await beginAdd();
-    await screen.findByRole('dialog', { name: 'Adicionar equipamento' });
+    await screen.findByRole('heading', { name: 'Adicionar equipamento' });
     await act(async () =>
       resolve({
         ...data(),
@@ -1603,10 +1587,8 @@ it.each(['OK', 'TRUST_CHANGED'])(
         },
       }),
     );
-    expect(screen.getAllByRole('dialog')).toHaveLength(1);
-    expect(
-      screen.getByRole('dialog', { name: 'Adicionar equipamento' }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Primeira conexão' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Adicionar equipamento' })).toBeVisible();
     expect(
       screen.queryByText(/A chave do destino mudou/),
     ).not.toBeInTheDocument();

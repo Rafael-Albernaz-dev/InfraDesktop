@@ -312,6 +312,7 @@ export function PPPoEPing({
   observation,
   row,
   blocked,
+  compact = false,
 }: {
   profile: string;
   activation: string;
@@ -319,6 +320,7 @@ export function PPPoEPing({
   observation: string;
   row: string;
   blocked: boolean;
+  compact?: boolean;
 }) {
   const view = useDiagnostic(profile, activation, device, 'ping', {
     observation,
@@ -333,17 +335,18 @@ export function PPPoEPing({
       ? 'Sondando…'
       : view.uncertain
         ? 'Conferir andamento'
-        : 'Sondar IP pelo concentrador';
+        : compact ? 'Ping' : 'Sondar IP pelo concentrador';
   return (
     <section
       aria-label="Sondagem da sessão pelo concentrador"
       className="pppoe-diagnostics"
     >
-      <h3>Ping pelo concentrador</h3>
-      <p>
+      {!compact && <h3>Ping pelo concentrador</h3>}
+      {!compact && <p>
         3 pacotes · intervalo de 200 ms · contexto main, quando comprovado. A
         sessão é revalidada antes da sondagem.
-      </p>
+      </p>}
+      {compact && !view.loading && !view.error && !view.meta && <p>Ainda sem leitura</p>}
       <Button
         type="submit"
         disabled={
@@ -385,10 +388,10 @@ export function PPPoEPing({
               : 'Nenhuma sondagem boa disponível.'}
           </p>
         )}
-      {!view.loading && !view.error && !view.meta && (
+      {!compact && !view.loading && !view.error && !view.meta && (
         <p>Nenhuma sondagem armazenada para esta sessão.</p>
       )}
-      {(view.error || view.pageError) && (
+      {(compact || view.error || view.pageError) && (
         <Button type="submit" onClick={view.reopen}>
           Reabrir sondagem armazenada
         </Button>
@@ -399,9 +402,10 @@ export function PPPoEPing({
           metaDate={view.meta.provenance.ended_at}
         />
       )}
-      <p>
-        Não responder não significa estar offline. A validação e a sondagem
-        ocorrem em uma janela; resposta ICMP não comprova navegação saudável.
+      <p className={compact ? 'muted' : undefined}
+        title={compact ? 'A validação e a sondagem ocorrem em uma janela; resposta ICMP não comprova navegação saudável.' : undefined}>
+        Não responder não significa estar offline.
+        {!compact && ' A validação e a sondagem ocorrem em uma janela; resposta ICMP não comprova navegação saudável.'}
       </p>
     </section>
   );

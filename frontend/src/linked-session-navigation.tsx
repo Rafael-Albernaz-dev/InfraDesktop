@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { usePPPoEState } from './pppoe-state';
 import { pppoeAPI } from './presentation';
+import type { PPRow } from './presentation';
 export type LinkedSessionTarget = {
   deviceID: string;
   observation: string;
@@ -9,6 +10,7 @@ export type LinkedSessionTarget = {
 export function useOpenLinkedSession(
   s: ReturnType<typeof usePPPoEState>,
   target?: LinkedSessionTarget,
+  onOpen?: (row: PPRow) => void,
 ) {
   const consumed = useRef('');
   const open = useEffectEvent(() => {
@@ -31,7 +33,9 @@ export function useOpenLinkedSession(
       (r) => {
         s.setPair(undefined);
         s.setDetailTab('traffic');
-        s.select(r.data?.rows?.[0]);
+        const row = r.data?.rows?.[0];
+        s.select(row);
+        if (row) onOpen?.(row);
       },
     );
   });
@@ -40,6 +44,7 @@ export function useOpenLinkedSession(
     ? [context, target.deviceID, target.observation, target.row].join('|')
     : '';
   useEffect(() => {
+    if (!key) consumed.current = '';
     if (!key || !current || loading || consumed.current === key) return;
     consumed.current = key;
     open();

@@ -295,7 +295,7 @@ it('a minute can disclose both a gap and an observed drop', async () => {
   await screen.findByText('Lacuna de continuidade · Queda brusca observada');
   view.unmount();
 });
-it('L06T: entering traffic starts once with visible IDs; stop preserves graph and exit cancels retained job', async () => {
+it('L06T: explicit traffic starts once with visible IDs; stop preserves graph and exit cancels retained job', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
       total: 1,
@@ -346,6 +346,8 @@ it('L06T: entering traffic starts once with visible IDs; stop preserves graph an
       traffic
     />,
   );
+  expect(readAPI.start).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(1));
   expect(vi.mocked(readAPI.start).mock.calls[0].slice(4, 8)).toEqual([
     'traffic',
@@ -377,7 +379,7 @@ it('L06T: entering traffic starts once with visible IDs; stop preserves graph an
     ),
   );
 });
-it('L06T: uncertain auto-start is cancelled on context change and BUSY has only explicit retry', async () => {
+it('L06T: uncertain explicit start is cancelled on context change and BUSY has only explicit retry', async () => {
   const late = deferred();
   vi.mocked(readAPI.start)
     .mockReturnValueOnce(late.promise)
@@ -392,6 +394,7 @@ it('L06T: uncertain auto-start is cancelled on context change and BUSY has only 
     traffic: true,
   };
   const view = render(<PPPoEReadPanel {...props} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(1));
   const operation = vi.mocked(readAPI.start).mock.calls[0][3];
   view.rerender(<PPPoEReadPanel {...props} rows={['other-row']} />);
@@ -403,6 +406,8 @@ it('L06T: uncertain auto-start is cancelled on context change and BUSY has only 
       operation,
     ),
   );
+  expect(readAPI.start).toHaveBeenCalledTimes(1);
+  fireEvent.click(await screen.findByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(readAPI.start).toHaveBeenCalledTimes(2));
   await screen.findByRole('button', { name: 'Ver ao vivo' });
   await act(async () =>
@@ -449,6 +454,7 @@ it('L06T: stop has no deadline or silent renewal after sixty seconds', async () 
     />,
   );
   try {
+    fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
@@ -502,6 +508,7 @@ for (const terminal of [false, true]) {
       />,
     );
     try {
+      fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1);
       });

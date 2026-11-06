@@ -102,6 +102,8 @@ function PPPoEReadContent(props: PPReadPanelProps) {
       <div className="actions">
         <PPReadActionButtons s={s} pProps={props} />
       </div>
+      {props.evidence === 'log' && <p className="muted">Até 50 eventos, com horário informado pelo equipamento.</p>}
+      {props.evidence === 'secret' && <p className="muted">Apenas nesta consulta. Não é salva nem exportada, e a senha nunca é exibida.</p>}
     </>
   );
   return (

@@ -1,4 +1,3 @@
-import { useCallback, useRef } from 'react';
 import { access } from './presentation';
 import { Desktop } from './desktop';
 import type { Page } from './desktop';
@@ -21,7 +20,8 @@ function renderInventory(
   profileId: string,
   activationId: string,
   connected: boolean,
-  credentialsPage: boolean,
+  route: RouteName,
+  setPage: (page: Page) => void,
   inv: ReturnType<typeof useInventoryNavigation>,
 ) {
   return (
@@ -32,7 +32,10 @@ function renderInventory(
       connected={connected}
       createRequest={inv.inventoryAction}
       primaryInHeader
-      credentialsPage={credentialsPage}
+      credentialsPage={route === 'credentials'}
+      addPage={route === 'adicionar'}
+      onAdd={() => setPage('adicionar')}
+      onAddBack={() => setPage('equipment')}
       targetID={
         inv.inventoryTarget.key === inv.contextPair
           ? inv.inventoryTarget.id
@@ -79,15 +82,13 @@ export function AuthenticatedShell(props: {
   brand: ReturnType<typeof useBrandState>;
   operations: ReturnType<typeof useEquipmentOperations>;
   perform: PerformFn;
+  registerNavigationGuard: (attempt?: NavigationAttempt) => void;
+  attemptNavigation: NavigationAttempt;
   root: HTMLDivElement | null;
   setRoot: (root: HTMLDivElement | null) => void;
 }) {
   const { theme, route, setPage, session, inv, brand, operations, perform } =
     props;
-  const navigationGuard = useRef<NavigationAttempt | undefined>(undefined);
-  const registerNavigationGuard = useCallback((attempt?: NavigationAttempt) => {
-    navigationGuard.current = attempt;
-  }, []);
   const { view, connected, busy, error, dialog } = session;
   const company = (view.companies || []).find((c) => c.id === view.profile_id);
   const open = (title: string) => {
@@ -100,7 +101,7 @@ export function AuthenticatedShell(props: {
   const hasDevices =
     inv.inventoryState.key === inv.contextPair && inv.inventoryState.total > 0;
   return (
-    <NavigationGuard.Provider value={registerNavigationGuard}>
+    <NavigationGuard.Provider value={props.registerNavigationGuard}>
       <Desktop
         onRoot={props.setRoot}
         operations={operations}
@@ -115,12 +116,12 @@ export function AuthenticatedShell(props: {
           view.profile_id,
           view.activation_id,
           connected,
-          route === 'credentials',
+          route,
+          setPage,
           inv,
         )}
         addEquipment={() => {
-          setPage('equipment');
-          inv.addInventory((n) => n + 1);
+          setPage('adicionar');
         }}
         page={route}
         navigate={(next: Page) => {
@@ -135,11 +136,7 @@ export function AuthenticatedShell(props: {
             setPage(normalizeRoute(next));
             close();
           };
-          if (props.root?.querySelector('[role="dialog"]')) {
-            navigationGuard.current?.(navigate);
-            return;
-          }
-          navigate();
+          props.attemptNavigation(navigate);
         }}
         brand={{
           ...brand.savedBrand,

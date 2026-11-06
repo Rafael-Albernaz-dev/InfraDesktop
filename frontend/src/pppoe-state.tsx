@@ -55,7 +55,7 @@ function usePPPoEViewState(
   const [statusFailed, setStatusFailed] = useState(false);
   const [statusRetry, retryStatus] = useState(0);
   const [detailTab, setDetailTab] = useState<
-    'traffic' | 'information' | 'link'
+    'traffic' | 'information' | 'link' | 'history'
   >('traffic');
   const [pair, setPair] = useState<{ left?: PPRow; right?: PPRow }>();
   const [referencesState, setReferencesState] = useState<

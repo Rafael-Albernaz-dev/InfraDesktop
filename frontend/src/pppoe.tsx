@@ -3,34 +3,21 @@ import { useOpenLinkedSession } from './linked-session-navigation';
 import type { LinkedSessionTarget } from './linked-session-navigation';
 import { useSessionsTabRefresh } from './automatic-tab-refresh';
 import { readingUpdateState } from './reading-update-state';
-import type { ReactNode } from 'react';
 import { ContextCounts } from './pppoe-context';
 import { readingAge } from './equipment-reading-format';
 import { CSVNotice } from './pppoe-csv-notice';
 import { PPPoEHeader, PPPoEStatusBanners } from './pppoe-header';
-import { useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
+import { SessionRoute } from './session-navigation';
+import type { PPRow } from './presentation';
 import type { Device } from './equipment-api';
-import {
-  DeviceMonitoring,
-  PPPoEDiagnostics,
-  PPPoEReadPanel,
-} from './pppoe-diagnostics';
-import {
-  PPPoECompareView,
-  PPPoEPairDetail,
-  PPPoEReferencesView,
-  PPPoESessionDetail,
-} from './pppoe-session-detail';
-import {
-  PPPoEObsActions,
-  PPPoEPaginationActions,
-  PPPoESessionFilters,
-  PPPoESessionsTable,
-} from './pppoe-sessions-view';
+import { PPPoEReadPanel } from './pppoe-diagnostics';
+import { PPPoETabContent } from './pppoe-observation-view';
+import { PPPoESessionDetail } from './pppoe-session-screen';
 import type { PPPoERefs, PPPoETab } from './pppoe-state';
 import { usePPPoEState } from './pppoe-state';
 import { DataBlock } from './ui/DataBlock';
-import { pppoeAPI as api } from './presentation';
+import { Button } from './ui/Button';
 const PPPOE_TABS: readonly [PPPoETab, string][] = [
   ['sessions', 'Sessões'],
   ['compare', 'Comparação'],
@@ -39,175 +26,6 @@ const PPPOE_TABS: readonly [PPPoETab, string][] = [
   ['radius', 'RADIUS'],
   ['monitoring', 'Monitoramento'],
 ];
-type State = ReturnType<typeof usePPPoEState>;
-function PPPoESessionsSection(p: {
-  s: State;
-  refs: PPPoERefs;
-  detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
-  disabled: boolean;
-  openEquipment?: (id: string) => void;
-  actions: ReactNode;
-}) {
-  const { s, refs, detailTriggerRef, disabled } = p;
-  if (!s.current) return null;
-  return (
-    <>
-      <PPPoESessionFilters {...s} searchControlRef={refs.searchControlRef} />
-      {p.actions}
-      <CSVNotice />
-      {s.pageState === 'loading' && (
-        <p role="status">Carregando página armazenada…</p>
-      )}
-      <PPPoESessionsTable
-        rows={s.rows}
-        profile={s.profile}
-        activation={s.activation}
-        deviceId={s.device.id}
-        observation={s.current.observation_id}
-        openEquipment={p.openEquipment}
-        showPlan={s.showPlan}
-        fastTrack={s.fastTrack}
-        contextOmitted={s.current.context_omitted}
-        onDetail={(row, trigger) => {
-          detailTriggerRef.current = trigger;
-          void s.runDetail(
-            () =>
-              api.detail(
-                s.profile,
-                s.activation,
-                s.device.id,
-                s.current!.observation_id,
-                row.row_id,
-              ),
-            (r) => {
-              s.setPair(undefined);
-              s.setDetailTab('traffic');
-              s.select(r.data?.rows?.[0]);
-            },
-          );
-        }}
-      />
-      {s.pageState === 'ready' && !s.rows.length && (
-        <p>
-          {s.current.count === 0
-            ? 'Nenhuma sessão ativa nesta leitura completa.'
-            : 'Nenhuma sessão corresponde aos filtros.'}
-        </p>
-      )}
-      <PPPoEPaginationActions {...s} searchControlRef={refs.searchControlRef} />
-      <p className="muted">
-        ONLINE: vista na última leitura concluída. OFFLINE: vista antes e
-        ausente nesta leitura.
-      </p>
-      {s.selected && (
-        <PPPoESessionDetail
-          {...s}
-          selected={s.selected}
-          current={s.current}
-          disabled={disabled}
-          openEquipment={p.openEquipment}
-          detailHeadingRef={refs.detailHeadingRef}
-          detailTriggerRef={refs.detailTriggerRef}
-          detailIntentRef={refs.detailIntentRef}
-        />
-      )}
-    </>
-  );
-}
-function PPPoEObsBody(p: {
-  s: State;
-  refs: PPPoERefs;
-  disabled: boolean;
-  openEquipment?: (id: string) => void;
-}) {
-  const { s, refs, disabled, openEquipment } = p;
-  if (!s.current || (s.tab !== 'sessions' && s.tab !== 'compare')) return null;
-  return (
-    <>
-      {s.tab === 'sessions' ? (
-        <PPPoESessionsSection
-          s={s}
-          refs={refs}
-          detailTriggerRef={refs.detailTriggerRef}
-          disabled={disabled}
-          openEquipment={openEquipment}
-          actions={
-            <PPPoEObsActions
-              {...s}
-              deviceId={s.device.id}
-              current={s.current}
-              disabled={disabled}
-              exportControlRef={refs.exportControlRef}
-              csvExportControlRef={refs.csvExportControlRef}
-              lifeRef={refs.lifeRef}
-              exportFocusRef={refs.exportFocusRef}
-            />
-          }
-        />
-      ) : (
-        <PPPoECompareView {...s} />
-      )}
-      {s.pair && (
-        <PPPoEPairDetail
-          {...s}
-          pair={s.pair}
-          pairHeadingRef={refs.pairHeadingRef}
-          detailTriggerRef={refs.detailTriggerRef}
-          detailIntentRef={refs.detailIntentRef}
-        />
-      )}
-      {s.tab === 'compare' && (
-        <PPPoEPaginationActions
-          {...s}
-          searchControlRef={refs.searchControlRef}
-        />
-      )}
-    </>
-  );
-}
-function PPPoETabContent(p: {
-  s: State;
-  refs: PPPoERefs;
-  disabled: boolean;
-  openEquipment?: (id: string) => void;
-}) {
-  const { s, refs, disabled, openEquipment } = p;
-  return (
-    <>
-      {s.tab === 'monitoring' && (
-        <DeviceMonitoring
-          profile={s.profile}
-          activation={s.activation}
-          device={s.device}
-        />
-      )}
-      {(s.tab === 'catalog' || s.tab === 'radius') && (
-        <PPPoEDiagnostics
-          key={s.context + '|' + s.tab}
-          profile={s.profile}
-          activation={s.activation}
-          device={s.device}
-          scope={s.tab}
-          blocked={disabled}
-        />
-      )}
-      <PPPoEObsBody
-        s={s}
-        refs={refs}
-        disabled={disabled}
-        openEquipment={openEquipment}
-      />
-      {s.tab === 'references' && (
-        <PPPoEReferencesView
-          {...s}
-          disabled={disabled}
-          referencesHeadingRef={refs.referencesHeadingRef}
-          savedReferences={s.savedReferences}
-        />
-      )}
-    </>
-  );
-}
 export function PPPoE({
   profile,
   activation,
@@ -216,6 +34,7 @@ export function PPPoE({
   section = 'sessions',
   refreshAvailable = false,
   sessionTarget,
+  onSessionConsumed,
 }: {
   profile: string;
   activation: string;
@@ -224,6 +43,7 @@ export function PPPoE({
   section?: 'sessions' | 'services';
   refreshAvailable?: boolean;
   sessionTarget?: LinkedSessionTarget;
+  onSessionConsumed?: () => void;
   openEquipment?: (id: string) => void;
 }) {
   const detailTriggerRef = useRef<HTMLElement | null>(null);
@@ -261,9 +81,85 @@ export function PPPoE({
     refs,
     section === 'services' ? 'catalog' : 'sessions',
   );
+  const navigation = useContext(SessionRoute);
+  const wasActive = useRef(false);
+  const returnFocus = useRef<{ container: Element; label: string } | undefined>(undefined);
+  const active = navigation ? navigation.active : !!s.selected;
+  const openSession = (row: PPRow) => {
+    if (!s.current) return;
+    navigation?.open({
+      device: device.id,
+      observation: s.current.observation_id,
+      row: row.row_id,
+      login: row.login,
+    });
+  };
+  useEffect(() => {
+    if (wasActive.current && !active) {
+      s.select(undefined);
+      const origin = returnFocus.current;
+      queueMicrotask(() => {
+        const focused = origin?.container.ownerDocument.activeElement;
+        if (focused && focused !== origin?.container.ownerDocument.body &&
+            focused.isConnected && origin?.container.contains(focused)) return;
+        const button = Array.from(origin?.container.querySelectorAll('button') || [])
+          .find((element) => element.getAttribute('aria-label') === origin?.label);
+        if (button) button.focus();
+        else searchControlRef.current?.focus();
+      });
+    }
+    wasActive.current = active;
+  }, [active]);
+  const rememberFocus = (element: HTMLElement) => {
+    const container = element.closest('.pppoe-workspace')?.parentElement;
+    const label = element.getAttribute('aria-label');
+    if (container && label) returnFocus.current = { container, label };
+  };
   useSessionsTabRefresh(s, refreshAvailable);
-  useOpenLinkedSession(s, sessionTarget);
+  const restoredTarget = navigation?.target;
+  const selectedMatches = !restoredTarget || (
+    restoredTarget.device === device.id &&
+    restoredTarget.observation === s.current?.observation_id &&
+    restoredTarget.row === s.selected?.row_id &&
+    restoredTarget.login === s.selected?.login
+  );
+  const targetToLoad = restoredTarget && !selectedMatches ? {
+    deviceID: restoredTarget.device,
+    observation: restoredTarget.observation,
+    row: restoredTarget.row,
+  } : !navigation?.active ? sessionTarget : undefined;
+  useOpenLinkedSession(s, targetToLoad, (row) => {
+    if (navigation?.active && navigation.target &&
+        (row.row_id !== navigation.target.row || row.login !== navigation.target.login)) {
+      s.select(undefined);
+      s.setError('A sessão retornada não corresponde ao alvo solicitado.');
+      return;
+    }
+    if (!navigation?.active) {
+      onSessionConsumed?.();
+      openSession(row);
+    }
+  });
   const disabled = s.busy || Boolean(s.job);
+  if (active && !selectedMatches) {
+    return <section aria-label="Detalhes da sessão">
+      <p role={s.error ? 'alert' : 'status'}>{s.error || 'Carregando sessão…'}</p>
+      <Button onClick={() => navigation?.back()}>Voltar</Button>
+    </section>;
+  }
+  if (active && s.selected && s.current) {
+    return <PPPoESessionDetail
+      {...s}
+      selected={s.selected}
+      current={s.current}
+      disabled={disabled}
+      openEquipment={(id) => { navigation?.leave(); openEquipment?.(id); }}
+      detailHeadingRef={detailHeadingRef}
+      detailTriggerRef={detailTriggerRef}
+      detailIntentRef={detailIntentRef}
+      back={() => navigation?.back()}
+    />;
+  }
   return (
     <section
       className="pppoe-workspace"
@@ -291,6 +187,8 @@ export function PPPoE({
           refs={refs}
           disabled={disabled}
           openEquipment={openEquipment}
+          onOpenSession={openSession}
+          onFocusOrigin={rememberFocus}
         />
       ) : (
         <DataBlock
@@ -311,6 +209,8 @@ export function PPPoE({
               refs={refs}
               disabled={disabled}
               openEquipment={openEquipment}
+              onOpenSession={openSession}
+              onFocusOrigin={rememberFocus}
             />,
             observationReadingStatus(s, disabled),
           )}

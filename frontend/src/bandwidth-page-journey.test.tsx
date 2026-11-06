@@ -169,7 +169,7 @@ it('Conferir andamento reconcilia o mesmo job sem reenviar a medição', async (
   expect(bindings.PPPoEReadStatus).toHaveBeenCalledTimes(2);
   expect(bindings.StartPPPoERead).toHaveBeenCalledOnce();
 });
-it('painel da sessão mede só a linha selecionada e apresenta o resultado', async () => {
+it('tela da sessão mede só a linha selecionada e apresenta o resultado', async () => {
   const { bindings, rows, status } = journey();
   bindings.PPPoEReadStatus.mockImplementation(async () =>
     status('SUCCEEDED', 'bandwidth', [rows[0]]),
@@ -178,7 +178,7 @@ it('painel da sessão mede só a linha selecionada e apresenta o resultado', asy
     await screen.findByRole('button', { name: 'Detalhar cliente-1 *1' }),
   );
   const panel = within(
-    await screen.findByRole('complementary', { name: 'Detalhes da sessão' }),
+    await screen.findByRole('region', { name: 'Detalhes da sessão' }),
   );
   fireEvent.click(await panel.findByRole('button', { name: 'Medir banda' }));
   await waitFor(() =>

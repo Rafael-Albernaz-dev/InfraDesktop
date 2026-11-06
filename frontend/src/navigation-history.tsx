@@ -1,8 +1,10 @@
 import type { RouteName } from './desktop-model';
+import type { SessionRouteTarget } from './session-navigation';
 
-export type NavigationStep = { route: RouteName; device: string };
+export type NavigationStep = { route: RouteName; device: string; session?: SessionRouteTarget };
 export function sameStep(a: NavigationStep, b: NavigationStep): boolean {
-  return a.route === b.route && a.device === b.device;
+  return a.route === b.route && a.device === b.device &&
+    a.session?.row === b.session?.row && a.session?.observation === b.session?.observation;
 }
 export function createNavigationHistory(limit = 50) {
   let steps: NavigationStep[] = [];

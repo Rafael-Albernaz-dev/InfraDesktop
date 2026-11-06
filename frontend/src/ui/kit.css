@@ -1,5 +1,4 @@
-[data-theme='dark'] .dd,
-[data-theme='dark'] .drawer {
+[data-theme='dark'] .dd {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
 }
 .tema {
@@ -481,7 +480,7 @@ a.elo {
   color: var(--g44);
   margin: 10px 0;
 }
-.drawer {
+.comparison-panel {
   z-index: 20;
   position: fixed;
   top: 0;
@@ -494,14 +493,8 @@ a.elo {
   overflow: auto;
   box-shadow: -4px 0 10px rgba(0, 0, 0, 0.15);
 }
-.drawer .dh {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.drawer .dh h2 {
-  flex: 1;
-  margin: 0;
+.app:has(.comparison-panel) > .col {
+  padding-right: 440px;
 }
 .actions {
   display: flex;
@@ -616,7 +609,6 @@ a.elo {
   margin-bottom: 10px;
 }
 main a,
-.drawer a,
 .dlg a {
   color: var(--g22);
 }
@@ -732,19 +724,10 @@ nav.side .subm {
     animation: none;
   }
 }
-.drawer .ch-top {
-  gap: 10px;
-}
-.drawer .ch-stat b {
-  font-size: 15px;
-}
 .ch-plot {
   position: relative;
   width: 100%;
   height: 200px;
-}
-.drawer .ch-plot {
-  height: 170px;
 }
 .ch-tip {
   position: absolute;
@@ -939,9 +922,6 @@ body.com-painel .col {
 }
 .header-actions {
   margin: 0;
-}
-.app:has(.session-panel) > .col {
-  padding-right: 440px;
 }
 .companies-page .toolbar h1,
 .settings-card h2 {
@@ -1176,3 +1156,26 @@ body.com-painel .col {
 .radio-clients-table th:first-child {
   width: 38%;
 }
+
+.add-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; max-width: 640px; }
+.import-steps { display: flex; gap: 6px; align-items: center; margin: 0 0 12px; color: var(--g66); }
+.import-steps b { color: var(--g11); }
+.import-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.import-card { border: 1px solid var(--g99); background: var(--gff); padding: 10px; }
+.import-card h2 { margin-top: 0; }
+.import-footer { margin-top: 12px; }
+.add-equipment .head h1 { margin: 0 0 12px; }
+.import-status-error { color: var(--erro); font-weight: 600; }
+p.import-status-error { margin: 0 0 8px; }
+.import-check { width: 32px; text-align: center; }
+.import-reason { white-space: normal; min-width: 220px; }
+.correction-form { display: block; max-width: none; }
+.correction-form { display: grid; grid-template-columns: minmax(0, 1fr) 100px; gap: 0 10px; }
+.correction-form > :nth-child(1), .correction-form > :nth-child(2),
+.correction-form > :nth-child(5), .correction-form > :nth-child(6) { grid-column: 1 / -1; }
+.correction-form > :nth-child(3) { grid-column: 2; grid-row: 3; }
+.correction-form > :nth-child(4) { grid-column: 1; grid-row: 3; }
+.correction-form > :last-child { margin-bottom: 0; }
+
+.session-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.session-info-block .bb > p { margin: 4px 0; }

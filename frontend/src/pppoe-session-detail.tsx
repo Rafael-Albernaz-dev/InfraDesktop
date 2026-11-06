@@ -1,13 +1,8 @@
-import { DataBlock } from './ui/DataBlock';
 import { DataTable } from './ui/DataTable';
-import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
-import { Tabs } from './ui/Tabs';
-import type { Device } from './equipment-api';
 import { formatDate, uptimeTitle } from './network-format';
 import { COMPARE_CATEGORIES } from './pppoe-context';
-import { PPPoEReadPanel } from './pppoe-diagnostics';
 import { formatPPUptime } from './pppoe-format';
 import type {
   PPDelta,
@@ -16,198 +11,7 @@ import type {
   PPReference,
   PPRow,
 } from './presentation';
-import { RadioLinkPanel } from './radio';
 
-function SessionInformationTab(p: {
-  selected: PPRow;
-  current: PPObservation;
-  profile: string;
-  activation: string;
-  device: Device;
-  disabled: boolean;
-  fastTrack?: number;
-  openEquipment?: (id: string) => void;
-}) {
-  const { selected, current, profile, activation, device, disabled } = p;
-  const isOffline = selected.state === 'OFFLINE';
-  return (
-    <>
-      <SessionAuthInfo
-        selected={selected}
-        current={current}
-        fastTrack={p.fastTrack}
-      />
-      <SessionConnectivityTab
-        profile={profile}
-        activation={activation}
-        device={device}
-        observation={current.observation_id}
-        row={selected.row_id}
-        uptime={selected.uptime}
-        disabled={disabled}
-        isOffline={isOffline}
-        openEquipment={p.openEquipment}
-      />
-      {(['log', 'secret'] as const).map((evidence) => (
-        <PPPoEReadPanel
-          key={evidence}
-          profile={profile}
-          activation={activation}
-          device={device}
-          observation={current.observation_id}
-          rows={[]}
-          logRow={selected.row_id}
-          evidence={evidence}
-          panel
-          blocked={disabled || isOffline}
-        />
-      ))}
-    </>
-  );
-}
-function SessionDetailNav({
-  detailTab,
-  setDetailTab,
-}: {
-  detailTab: 'traffic' | 'information' | 'link';
-  setDetailTab: (t: 'traffic' | 'information' | 'link') => void;
-}) {
-  return (
-    <Tabs
-      label="Detalhes da sessão"
-      items={[
-        ['traffic', 'Tráfego'],
-        ['information', 'Informações'],
-        ['link', 'Enlace'],
-      ]}
-      value={detailTab}
-      onChange={setDetailTab}
-    />
-  );
-}
-export function PPPoESessionDetail(p: {
-  selected: PPRow;
-  current: PPObservation;
-  detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
-  detailTab: 'traffic' | 'information' | 'link';
-  setDetailTab: (t: 'traffic' | 'information' | 'link') => void;
-  profile: string;
-  activation: string;
-  device: Device;
-  disabled: boolean;
-  fastTrack?: number;
-  detailIntentRef: React.MutableRefObject<number>;
-  select: (r: PPRow | undefined) => void;
-  detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
-  openEquipment?: (id: string) => void;
-}) {
-  const {
-    selected,
-    current,
-    detailHeadingRef,
-    detailTab,
-    setDetailTab,
-    profile,
-    activation,
-    device,
-    disabled,
-    fastTrack,
-    detailIntentRef,
-    select,
-    detailTriggerRef,
-    openEquipment,
-  } = p;
-  return (
-    <aside className="drawer session-panel" aria-label="Detalhes da sessão">
-      <div className="dh">
-        <h2 tabIndex={-1} ref={detailHeadingRef}>
-          Sessão {selected.login}
-        </h2>
-        <Button
-          label="Fechar detalhe"
-          onClick={() => {
-            ++detailIntentRef.current;
-            select(undefined);
-            detailTriggerRef.current?.focus();
-          }}
-        >
-          Fechar
-        </Button>
-      </div>
-      <p className="muted">
-        Concentrador: {device.name} · {selected.state || 'ONLINE'}
-      </p>
-      <SessionDetailNav detailTab={detailTab} setDetailTab={setDetailTab} />
-      {detailTab === 'traffic' ? (
-        selected.state === 'OFFLINE' ? (
-          <DataBlock
-            title="Tráfego"
-            source={`SSH (${device.name})`}
-            data={{
-              state: 'ready',
-              content: <p>Sem leitura: sessão OFFLINE</p>,
-            }}
-          />
-        ) : (
-          <>
-            <PPPoEReadPanel
-              profile={profile}
-              activation={activation}
-              device={device}
-              observation={current.observation_id}
-              rows={[selected.row_id]}
-              traffic
-              panel
-              blocked={disabled}
-            />
-            <PPPoEReadPanel
-              profile={profile}
-              activation={activation}
-              device={device}
-              observation={current.observation_id}
-              rows={[selected.row_id]}
-              panel
-              bandwidthOnly
-              blocked={disabled}
-            />
-            <PPPoEReadPanel
-              profile={profile}
-              activation={activation}
-              device={device}
-              observation={current.observation_id}
-              rows={[]}
-              panel
-              allowTop
-              blocked={disabled}
-            />
-          </>
-        )
-      ) : detailTab === 'link' ? (
-        <RadioLinkPanel
-          profile={profile}
-          activation={activation}
-          device={device}
-          observation={current.observation_id}
-          row={selected.row_id}
-          pppoeUptime={formatPPUptime(selected.uptime)}
-          blocked={disabled || selected.state === 'OFFLINE'}
-          onOpenEquipment={openEquipment}
-        />
-      ) : (
-        <SessionInformationTab
-          selected={selected}
-          current={current}
-          profile={profile}
-          activation={activation}
-          device={device}
-          disabled={disabled}
-          fastTrack={fastTrack}
-          openEquipment={openEquipment}
-        />
-      )}
-    </aside>
-  );
-}
 export function PPPoEPairDetail(p: {
   pair: { left?: PPRow; right?: PPRow };
   pairHeadingRef: React.RefObject<HTMLHeadingElement | null>;
@@ -218,7 +22,7 @@ export function PPPoEPairDetail(p: {
   const { pair, pairHeadingRef, detailIntentRef, setPair, detailTriggerRef } =
     p;
   return (
-    <aside aria-label="Detalhes da comparação">
+    <aside className="comparison-panel" aria-label="Detalhes da comparação">
       <h2 tabIndex={-1} ref={pairHeadingRef}>
         Sessões do par
       </h2>

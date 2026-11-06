@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { SessionRoute } from './session-navigation';
 import type { DesktopProps, RouteName } from './desktop-model';
 import { Button } from './ui/Button';
 import { ProductBrand } from './ui/ProductBrand';
@@ -19,7 +20,7 @@ export function Sidebar({
     title: string;
   }>();
   const expanded =
-    (route === 'equipment' || route === 'credentials') &&
+    (route === 'equipment' || route === 'credentials' || route === 'adicionar' || route === 'sessao') &&
     (!closedAt ||
       closedAt.request !== expandRequest ||
       closedAt.title !== detailTitle);
@@ -67,7 +68,7 @@ export function Sidebar({
         <div className="subm">
           <a
             href="#equipamentos"
-            className={route === 'equipment' ? 'on' : ''}
+            className={route === 'equipment' || route === 'adicionar' || route === 'sessao' ? 'on' : ''}
             aria-current={route === 'equipment' ? 'page' : undefined}
             onClick={(e) => navigateTo(e, 'equipment')}
           >
@@ -95,6 +96,7 @@ export function Topbar({
   route: RouteName;
   detailTitle?: string;
 }) {
+  const session = useContext(SessionRoute);
   const [menu, setMenu] = useState('');
   const profileTrigger = useRef<HTMLButtonElement>(null);
   const profileMenu = useRef<HTMLDivElement>(null);
@@ -123,6 +125,8 @@ export function Topbar({
           ? 'Configurações'
           : route === 'credentials'
             ? 'Credenciais'
+            : route === 'adicionar'
+              ? 'Adicionar equipamento'
             : 'Equipamentos';
   return (
     <header
@@ -135,7 +139,7 @@ export function Topbar({
       }}
     >
       <nav className="bc" aria-label="Caminho">
-        {(route === 'credentials' ||
+        {(route === 'credentials' || route === 'adicionar' || route === 'sessao' ||
           (route === 'equipment' && detailTitle)) && (
           <>
             <a
@@ -150,9 +154,16 @@ export function Topbar({
             <span aria-hidden="true">›</span>
           </>
         )}
-        <b aria-current="page">
-          {route === 'equipment' && detailTitle ? detailTitle : title}
-        </b>
+        {route === 'sessao' && detailTitle && (
+          <>
+            <a href="#equipamentos" onClick={(event) => {
+              event.preventDefault(); session?.back();
+            }}>{detailTitle}</a>
+            <span aria-hidden="true">›</span>
+          </>
+        )}
+        <b aria-current="page">{route === 'sessao' ? session?.target?.login :
+          route === 'equipment' && detailTitle ? detailTitle : title}</b>
       </nav>
       <div className="wrap">
         <Button

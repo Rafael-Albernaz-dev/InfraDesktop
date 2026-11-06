@@ -47,7 +47,7 @@ export function SessionCPE(p: {
           d.code !== 'OK' ||
           d.profile_id !== p.profile ||
           d.activation_id !== p.activation ||
-          !d.data?.device
+          d.data?.device?.id !== id
         )
           throw Error('device unavailable');
         setState({ key, id, name: d.data.device.name });

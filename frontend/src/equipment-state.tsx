@@ -297,6 +297,7 @@ export function useEquipmentState(props: {
   activation: string;
   connected: boolean;
   createRequest: number;
+  addVisible?: boolean;
   onTotal?: (context: string, total: number) => void;
   targetID?: string;
   onSelect?: (id: string) => void;
@@ -307,6 +308,7 @@ export function useEquipmentState(props: {
     activation,
     connected,
     createRequest,
+    addVisible,
     onTotal,
     targetID,
     onSelect,
@@ -346,7 +348,7 @@ export function useEquipmentState(props: {
   };
   useLayoutEffect(() => {
     surfaceRef.current += 1;
-  }, [s.selected?.id, shownForm, s.credentialForm, profile, activation]);
+  }, [s.selected?.id, shownForm, s.credentialForm, profile, activation, addVisible]);
   useDeviceListEffect({
     ...s,
     generationRef,

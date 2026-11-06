@@ -8,6 +8,10 @@ import { EquipmentInventoryPane } from './equipment-inventory';
 import { useEquipmentState } from './equipment-state';
 import { EquipmentCredentials } from './equipment-credentials';
 import { RadioRoles } from './radio-contract';
+import { AddEquipment } from './add-equipment';
+import { useState } from 'react';
+import { SessionRoute } from './session-navigation';
+import type { SessionRouteTarget } from './session-navigation';
 
 function EquipmentCapabilityBody(p: {
   s: ReturnType<typeof useEquipmentState>;
@@ -16,16 +20,23 @@ function EquipmentCapabilityBody(p: {
   connected: boolean;
   primaryInHeader: boolean;
   credentialsPage?: boolean;
+  addPage?: boolean;
+  onAdd?: () => void;
+  onAddBack?: () => void;
   locked: boolean;
   trustOpen: boolean;
   onBackReady?: (back?: () => void) => void;
 }) {
   const { s, profile, activation, connected, primaryInHeader, locked } = p;
+  const adding = p.addPage;
   return (
     <div className="equipment-capability">
       <EquipmentBanners s={s} locked={locked} trustOpen={p.trustOpen} />
       <div>
-        {p.credentialsPage ? (
+        {adding ? (
+          <AddEquipment key={[profile, activation].join("|")} s={s} profile={profile} activation={activation}
+            locked={locked} back={() => p.onAddBack?.()} />
+        ) : p.credentialsPage ? (
           <EquipmentCredentials
             s={s}
             profile={profile}
@@ -42,6 +53,7 @@ function EquipmentCapabilityBody(p: {
               connected={connected}
               primaryInHeader={primaryInHeader}
               locked={locked}
+              onAdd={p.onAdd}
             />
             {s.selected && s.detailOpen && (
               <EquipmentDetailPane
@@ -91,6 +103,9 @@ export type EquipmentProps = {
   createRequest: number;
   primaryInHeader?: boolean;
   credentialsPage?: boolean;
+  addPage?: boolean;
+  onAdd?: () => void;
+  onAddBack?: () => void;
   onTotal?: (context: string, total: number) => void;
   targetID?: string;
   onSelect?: (id: string) => void;
@@ -100,11 +115,21 @@ export type EquipmentProps = {
 };
 
 export function Equipment(props: EquipmentProps) {
+  const external = useContext(SessionRoute);
+  const [localSession, setLocalSession] = useState<SessionRouteTarget>();
   return (
+    <SessionRoute.Provider value={external || {
+      active: !!localSession,
+      target: localSession,
+      open: setLocalSession,
+      back: () => setLocalSession(undefined),
+      leave: () => setLocalSession(undefined),
+    }}>
     <EquipmentContext
       key={props.credentialsPage ? 'credentials' : 'equipment'}
       {...props}
     />
+    </SessionRoute.Provider>
   );
 }
 
@@ -116,7 +141,9 @@ function EquipmentContext(props: EquipmentProps) {
     primaryInHeader = false,
     onBlockedChange,
   } = props;
-  const s = useEquipmentState(props);
+  const [localAdd, setLocalAdd] = useState(false);
+  const adding = !!props.addPage || localAdd;
+  const s = useEquipmentState({ ...props, addVisible: adding });
   useEffect(() => {
     onBlockedChange?.(s.busy || s.job?.state === 'RUNNING');
     return () => onBlockedChange?.(false);
@@ -154,6 +181,9 @@ function EquipmentContext(props: EquipmentProps) {
       connected={connected}
       primaryInHeader={primaryInHeader}
       credentialsPage={props.credentialsPage}
+      addPage={adding}
+      onAdd={() => props.onAdd ? props.onAdd() : setLocalAdd(true)}
+      onAddBack={() => { setLocalAdd(false); props.onAddBack?.(); }}
       locked={locked}
       trustOpen={trustOpen}
       onBackReady={props.onBackReady}

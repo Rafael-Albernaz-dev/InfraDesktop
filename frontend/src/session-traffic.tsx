@@ -19,9 +19,11 @@ const elapsed = (seconds: number) =>
 export function SessionTraffic({
   row,
   live,
+  startedAt,
 }: {
   row: PPReadRow;
   live: boolean;
+  startedAt?: string;
 }) {
   const t = row.traffic;
   if (!t) return <p>Não informado nesta leitura</p>;
@@ -55,7 +57,14 @@ export function SessionTraffic({
           },
         ]}
         format={(value) => (value == null ? '—' : formatRate(value))}
-        formatX={elapsed}
+        formatX={(seconds) => {
+          const start = Date.parse(startedAt || '');
+          return Number.isFinite(start)
+            ? new Date(start + seconds * 1000).toLocaleTimeString('pt-BR', {
+                hour12: false,
+              })
+            : elapsed(seconds);
+        }}
         xSteps={[2, 5, 10, 20, 30, 60, 120, 300]}
         live={live}
         label={'Gráfico de tráfego de ' + row.login}

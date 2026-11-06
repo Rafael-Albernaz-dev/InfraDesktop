@@ -237,9 +237,8 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
   fireEvent.click(
     await screen.findByRole('button', { name: 'Adicionar equipamento' }),
   );
-  const form = within(
-    await screen.findByRole('dialog', { name: 'Adicionar equipamento' }),
-  );
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  const form = within(screen.getByRole('main'));
   fireEvent.change(form.getByLabelText('Nome'), {
     target: { value: 'Concentrador sintético' },
   });
@@ -256,7 +255,7 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
   fireEvent.change(form.getByLabelText('Credencial de consulta'), {
     target: { value: 'credential' },
   });
-  fireEvent.click(form.getByRole('button', { name: /Salvar/ }));
+  fireEvent.click(form.getByRole('button', { name: /^Salvar$/ }));
   const trust = within(
     await screen.findByRole('dialog', { name: 'Primeira conexão' }),
   );
@@ -323,6 +322,10 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
       name: 'Detalhar cliente-sintetico *1',
     }),
   );
+  const session = within(
+    await screen.findByRole('region', { name: 'Detalhes da sessão' }),
+  );
+  fireEvent.click(session.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() =>
     expect(bindings.StartPPPoERead).toHaveBeenCalledWith(
       'company',
@@ -334,9 +337,6 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
       ['row'],
       2,
     ),
-  );
-  const session = within(
-    screen.getByRole('complementary', { name: 'Detalhes da sessão' }),
   );
   fireEvent.click(await session.findByRole('button', { name: 'Parar' }));
   await waitFor(() => expect(bindings.StopPPPoETraffic).toHaveBeenCalledOnce());
@@ -360,7 +360,7 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
       ),
     ).toBe(true),
   );
-  fireEvent.click(session.getByRole('button', { name: 'Fechar detalhe' }));
+  fireEvent.click(session.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   expect(
     await screen.findByRole('heading', { name: 'Equipamentos' }),

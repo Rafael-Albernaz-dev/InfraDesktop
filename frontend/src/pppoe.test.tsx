@@ -141,6 +141,7 @@ it('budget-omitted context preserves sessions, explains detail and avoids unknow
     screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
+  fireEvent.click(screen.getByText(/Mais informações/));
   await screen.findByText(
     'Contexto não incluído por limite. VLAN, IPv6 e plano indisponíveis nesta leitura.',
   );
@@ -230,13 +231,13 @@ it.each(['success', 'error', 'reject'] as const)(
         );
     });
     expect(
-      screen.queryByRole('complementary', { name: 'Detalhes da sessão' }),
+      screen.queryByRole('region', { name: 'Detalhes da sessão' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(search).toHaveFocus();
   },
 );
-it('A-H01: closing an existing detail invalidates its pending replacement, while a fresh detail still works', async () => {
+it('A-H01: returning and changing the filter invalidates a pending detail, while a fresh detail still works', async () => {
   const old = deferredPP();
   vi.mocked(api.detail)
     .mockResolvedValueOnce(result({ rows: [rows[0]], total: 1 }))
@@ -246,21 +247,20 @@ it('A-H01: closing an existing detail invalidates its pending replacement, while
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
-  await screen.findByRole('complementary', { name: 'Detalhes da sessão' });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
-  );
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar detalhe' }));
+  await screen.findByRole('region', { name: 'Detalhes da sessão' });
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Detalhar duplicado row-2' }));
+  fireEvent.change(screen.getByLabelText('Buscar sessões'), { target: { value: 'nova intenção' } });
   await act(async () => old.resolve(result({ rows: [rows[1]], total: 1 })));
   expect(
-    screen.queryByRole('complementary', { name: 'Detalhes da sessão' }),
+    screen.queryByRole('region', { name: 'Detalhes da sessão' }),
   ).not.toBeInTheDocument();
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   expect(
-    await screen.findByRole('complementary', { name: 'Detalhes da sessão' }),
+    await screen.findByRole('region', { name: 'Detalhes da sessão' }),
   ).toHaveTextContent('row-2');
 });
 it('A-H01: changing comparison reference rejects a late pair before requesting its second leg', async () => {
@@ -347,7 +347,7 @@ it.each(['none', 'loading', 'reject'] as const)(
     expect(api.compare).not.toHaveBeenCalled();
   },
 );
-it('A-H01: closing an already open detail by clearing filters keeps focus on search', async () => {
+it('A-H01: returning to the list and clearing filters keeps focus on search', async () => {
   vi.mocked(api.detail).mockResolvedValue(
     result({ rows: [rows[0]], total: 1 }),
   );
@@ -357,14 +357,15 @@ it('A-H01: closing an already open detail by clearing filters keeps focus on sea
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
-  await screen.findByRole('complementary', { name: 'Detalhes da sessão' });
+  await screen.findByRole('region', { name: 'Detalhes da sessão' });
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   await act(async () =>
     fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' })),
   );
   expect(
-    screen.queryByRole('complementary', { name: 'Detalhes da sessão' }),
+    screen.queryByRole('region', { name: 'Detalhes da sessão' }),
   ).not.toBeInTheDocument();
-  expect(search).toHaveFocus();
+  expect(screen.getByLabelText('Buscar sessões')).toHaveFocus();
 });
 it('A-H01: newer detail wins when two queries resolve in reverse order', async () => {
   const first = deferredPP(),
@@ -382,11 +383,11 @@ it('A-H01: newer detail wins when two queries resolve in reverse order', async (
   await act(async () => second.resolve(result({ rows: [rows[1]], total: 1 })));
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   expect(
-    screen.getByRole('complementary', { name: 'Detalhes da sessão' }),
+    screen.getByRole('region', { name: 'Detalhes da sessão' }),
   ).toHaveTextContent('row-2');
   await act(async () => first.resolve(result({ rows: [rows[0]], total: 1 })));
   expect(
-    screen.getByRole('complementary', { name: 'Detalhes da sessão' }),
+    screen.getByRole('region', { name: 'Detalhes da sessão' }),
   ).toHaveTextContent('row-2');
 });
 it('A-H01: filter change keeps a durable pending save and its successful reconciliation', async () => {
@@ -514,7 +515,7 @@ it('filters and recovers locally, keeps page and detail IDs immutable', async ()
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
-  await screen.findByRole('complementary', { name: 'Detalhes da sessão' });
+  await screen.findByRole('region', { name: 'Detalhes da sessão' });
   expect(api.detail).toHaveBeenCalledWith(
     'company',
     'active',
@@ -522,6 +523,7 @@ it('filters and recovers locally, keeps page and detail IDs immutable', async ()
     'observation-a',
     'row-2',
   );
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(screen.getByRole('button', { name: 'Próxima página' }));
   await waitFor(() =>
     expect(vi.mocked(api.list).mock.calls.at(-1)?.at(-1)).toBe('signed-page'),

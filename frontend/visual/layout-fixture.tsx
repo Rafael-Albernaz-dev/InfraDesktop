@@ -1,3 +1,4 @@
+import { importFixtureOperations } from '../src/inventory-import-layout-fixture';
 import { prepareBase5Devices, createBase5List, prepareBase5Scene } from '../src/inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
@@ -8,7 +9,7 @@ const visualScene = new URLSearchParams(location.search).get('scene') || '';
 const base5Scenes = new Set(['equipamentos', 'equipamentos-colunas', 'equipamentos-selecao', 'credenciais',
   'codigo', 'ficha-ccr-centro-sesso-es', 'ficha-sw-norte-resumo', 'seguranca-erro', 'seguranca-codigo']);
 const isBase5Scene = base5Scenes.has(visualScene);
-const time = Date.parse('2026-11-04T12:00:00Z');
+const time = Date.parse(visualScene === 'sessao-trafego-ao-vivo' ? '2026-11-04T16:47:40Z' : '2026-11-04T12:00:00Z');
 const entries = [
   ['CCR-CENTRO', 'concentrator', '192.0.2.1', '6.49', '12d4h', 8, 12],
   ['AP-NORTE', RadioRoles.ap, '192.0.2.20', '6.48', '30d1h', 14, 240],
@@ -329,6 +330,7 @@ export function installFixture() {
       presentation: {
         App: {
           ...radioFixtureOperations(result, radioReading),
+          ...importFixtureOperations(visualScene, result),
           Status: async () => ({ code:'OK', columns:savedColumns }),
           SetInventoryColumns: async (columns: string[]) => { savedColumns = columns; return { code:'OK', columns }; },
           ListEquipmentFiltered: async (_p: string, _a: string, f: { search:string; cursor:number; inactive:boolean;
@@ -431,7 +433,7 @@ export function installFixture() {
             row: string,
           ) =>
             result({
-              link: row === 'row-0' ? { cpe_id: 'CPE-0001' } : undefined,
+              link: row === 'row-0' ? { cpe_id: 'CPE-0001', ap_id: 'AP-NORTE', concentrator_id: 'CCR-CENTRO' } : undefined,
             }),
           PPPoEContextCounts: async () =>
             result({

@@ -227,9 +227,7 @@ function PPReadTriggerButtons(p: {
           )}
         </>
       )}
-      {pProps.traffic &&
-        !s.locked &&
-        (s.error || s.result || s.stoppedTraffic) && (
+      {pProps.traffic && !s.locked && (
           <Button type="submit" onClick={() => void s.start('traffic')}>
             Ver ao vivo
           </Button>

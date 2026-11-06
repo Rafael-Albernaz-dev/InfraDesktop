@@ -2,7 +2,9 @@ import { DetailTitle } from './ui/DetailTitle';
 import { Button } from './ui/Button';
 import { CompanyList, Settings } from './desktop-pages';
 import { Sidebar, Topbar } from './desktop-shell';
-import { useCallback, useState } from 'react';
+import { useCallback, useContext, useState } from 'react';
+import { SessionRoute } from './session-navigation';
+import type { SessionRouteTarget } from './session-navigation';
 import type { DesktopProps, Page } from './desktop-model';
 import { normalizeRoute } from './desktop-model';
 import { DialogHost } from './ui/Dialog';
@@ -42,6 +44,15 @@ export function Statusbar({
 export function Desktop(
   p: DesktopProps & { onRoot?: (root: HTMLDivElement | null) => void },
 ) {
+  const externalSession = useContext(SessionRoute);
+  const [localSession, setLocalSession] = useState<SessionRouteTarget>();
+  const session = externalSession || {
+    active: !!localSession,
+    target: localSession,
+    open: setLocalSession,
+    back: () => setLocalSession(undefined),
+    leave: () => setLocalSession(undefined),
+  };
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const onRoot = p.onRoot;
   const attachRoot = useCallback(
@@ -51,7 +62,7 @@ export function Desktop(
     },
     [onRoot],
   );
-  const route = normalizeRoute(p.page);
+  const route = session.active ? 'sessao' : normalizeRoute(p.page);
   const [detailTitle, setDetailTitle] = useState('');
   const [expandRequest, setExpandRequest] = useState(0);
   const navigationProps = {
@@ -64,6 +75,7 @@ export function Desktop(
     },
   };
   return (
+    <SessionRoute.Provider value={session}>
     <DialogHost value={host}>
       <DetailTitle value={setDetailTitle}>
         <div
@@ -125,5 +137,6 @@ export function Desktop(
         </div>
       </DetailTitle>
     </DialogHost>
+    </SessionRoute.Provider>
   );
 }

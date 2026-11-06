@@ -170,26 +170,28 @@ it.each(['mouse', 'alt-left', 'backspace'])(
   },
 );
 
-it('does not navigate on backspace in search or on any back trigger with a dialog', async () => {
+it('guards each back trigger when the add screen has changes', async () => {
   await inventory();
-  fireEvent.keyDown(screen.getByRole('textbox', { name: 'Buscar' }), {
-    key: 'Backspace',
-  });
+  fireEvent.keyDown(screen.getByRole('textbox', { name: 'Buscar' }), { key: 'Backspace' });
   expect(screen.getByRole('heading', { name: 'Equipamentos' })).toBeVisible();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Adicionar equipamento' }),
-  );
-  expect(screen.getByRole('dialog')).toBeVisible();
-  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
-    key: 'ArrowLeft',
-    altKey: true,
-  });
-  fireEvent.keyDown(screen.getByRole('main').ownerDocument, {
-    key: 'Backspace',
-  });
-  fireEvent.mouseDown(screen.getByRole('main').ownerDocument, { button: 3 });
-  expect(screen.getByRole('dialog')).toBeVisible();
-  expect(screen.getByRole('heading', { name: 'Equipamentos' })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar equipamento' }));
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'AP novo' } });
+  const doc = screen.getByRole('main').ownerDocument;
+  for (const trigger of [
+    () => fireEvent.keyDown(doc, { key: 'ArrowLeft', altKey: true }),
+    () => fireEvent.keyDown(doc, { key: 'Backspace' }),
+    () => fireEvent.mouseDown(doc, { button: 3 }),
+  ]) {
+    trigger();
+    const dialog = screen.getByRole('dialog', { name: 'Descartar alterações?' });
+    expect(dialog).toBeVisible();
+    fireEvent.keyDown(doc, { key: 'ArrowLeft', altKey: true });
+    fireEvent.keyDown(doc, { key: 'Backspace' });
+    fireEvent.mouseDown(doc, { button: 3 });
+    expect(screen.getByRole('dialog', { name: 'Descartar alterações?' })).toBeVisible();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Continuar editando' }));
+  }
+  expect(screen.getByRole('heading', { name: 'Adicionar equipamento' })).toBeVisible();
 });
 
 it('blocks back navigation while an equipment operation is pending', async () => {
@@ -380,9 +382,11 @@ it('returns to Lista after a CPE opens its linked session on the concentrator', 
     fireEvent.click(await screen.findByRole('cell', { name: 'CPE exemplo' }));
     fireEvent.click(await screen.findByRole('tab', { name: 'Cliente' }));
     fireEvent.click(await screen.findByRole('link', { name: 'X' }));
-    expect(
-      await screen.findByRole('heading', { name: 'Concentrador exemplo' }),
-    ).toBeVisible();
+    expect(await screen.findByRole('region', { name: 'Detalhes da sessão' }))
+      .toHaveTextContent('X');
+    expect(location.hash).toBe('#sessao/X');
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(await screen.findByRole('heading', { name: 'Concentrador exemplo' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Sessões' })).toHaveAttribute(
       'aria-selected',
       'true',

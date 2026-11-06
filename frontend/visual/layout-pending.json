@@ -5,52 +5,12 @@
     "reason": "Dado ainda sem percurso nesta ficha"
   },
   {
-    "id": "adicionar",
-    "owner": "L-BASE-5B",
-    "reason": "Rev. 6: tela Adicionar e importação"
-  },
-  {
-    "id": "importar-arquivo",
-    "owner": "L-BASE-5B",
-    "reason": "Rev. 6: tela Adicionar e importação"
-  },
-  {
-    "id": "importar-previa",
-    "owner": "L-BASE-5B",
-    "reason": "Rev. 6: tela Adicionar e importação"
-  },
-  {
-    "id": "importar-corrigir",
-    "owner": "L-BASE-5B",
-    "reason": "Rev. 6: tela Adicionar e importação"
-  },
-  {
-    "id": "importar-fim",
-    "owner": "L-BASE-5B",
-    "reason": "Rev. 6: tela Adicionar e importação"
-  },
-  {
-    "id": "sessao-trafego-ao-vivo",
-    "owner": "L-BASE-5C",
-    "reason": "Rev. 6: sessão em tela completa"
-  },
-  {
-    "id": "sessao-informacoes",
-    "owner": "L-BASE-5C",
-    "reason": "Rev. 6: sessão em tela completa"
-  },
-  {
     "id": "sessao-enlace",
     "owner": "L-BASE-5C",
     "reason": "Rev. 6: sessão em tela completa"
   },
   {
     "id": "sessao-historico",
-    "owner": "L-BASE-5C",
-    "reason": "Rev. 6: sessão em tela completa"
-  },
-  {
-    "id": "sessao-offline",
     "owner": "L-BASE-5C",
     "reason": "Rev. 6: sessão em tela completa"
   },

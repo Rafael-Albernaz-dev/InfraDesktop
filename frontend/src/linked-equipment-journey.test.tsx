@@ -83,7 +83,7 @@ afterEach(() => {
   cleanup();
   vi.stubGlobal('go', undefined);
 });
-it('Cliente da CPE lê o login na última observação e abre Sessões com o painel da linha', async () => {
+it('Cliente da CPE lê o login na última observação e abre a tela da sessão vinculada', async () => {
   const { cpe, bindings } = fixtures();
   render(
     <Equipment
@@ -110,17 +110,13 @@ it('Cliente da CPE lê o login na última observação e abre Sessões com o pai
     '',
   );
   fireEvent.click(user);
-  expect(
-    await screen.findByRole('heading', { name: 'Concentrador sintético' }),
-  ).toBeVisible();
-  expect(screen.getByRole('tab', { name: 'Sessões' })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
-  const panel = await screen.findByRole('complementary', {
+  const panel = await screen.findByRole('region', {
     name: 'Detalhes da sessão',
   });
   expect(panel).toHaveTextContent('X');
+  fireEvent.click(within(panel).getByRole('button', { name: 'Voltar' }));
+  expect(await screen.findByRole('heading', { name: 'Concentrador sintético' })).toBeVisible();
+  expect(screen.getByRole('tab', { name: 'Sessões' })).toHaveAttribute('aria-selected', 'true');
   expect(bindings.GetPPPoESession).toHaveBeenCalledWith(
     'company',
     'active',

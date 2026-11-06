@@ -14,6 +14,7 @@ type Props = ReturnType<typeof useEquipmentState> & {
   connected: boolean;
   primaryInHeader: boolean;
   locked: boolean;
+  onAdd?: () => void;
 };
 export function EquipmentInventoryPane(p: Props) {
   const preferences = useColumnPreferences();
@@ -30,6 +31,7 @@ export function EquipmentInventoryPane(p: Props) {
         columns={preferences.visible}
         saveColumns={(v) => void preferences.save(v)}
         busy={preferences.busy}
+        onAdd={p.onAdd}
       />
       {preferences.error && <p role="alert">{preferences.error}</p>}
       {selected.length > 0 && (

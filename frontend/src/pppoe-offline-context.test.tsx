@@ -130,11 +130,13 @@ it('L06D-S1: stable context shows negotiated IPv6 and unavailable fields without
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
+  fireEvent.click(screen.getByText(/Mais informações/));
   expect(await screen.findByText('Sim')).toBeInTheDocument();
   expect(screen.getByText('Sem prefixo delegado')).toBeInTheDocument();
-  expect(screen.getByText('10 Mbps / 5 Mbps')).toBeInTheDocument();
+  expect(screen.getAllByText('10 Mbps / 5 Mbps').find((element) => element.closest('.kv'))).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   expect(
-    within(screen.getByRole('cell', { name: 'service' }).closest('tr')!)
+    within((await screen.findByRole('cell', { name: 'service' })).closest('tr')!)
       .getAllByRole('cell')
       .map((cell) => cell.textContent),
   ).toEqual(['100', 'service', '2', 'Não informado nesta leitura']);
@@ -170,6 +172,7 @@ it.each([
       await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
     );
     fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
+    fireEvent.click(screen.getByText(/Mais informações/));
     expect(await screen.findByText(label)).toBeInTheDocument();
     expect(
       screen.queryByText('disabled-default-canary'),
@@ -180,7 +183,7 @@ it.each([
     expect(
       screen.getByText('Limite de plano (fila dinâmica) — download / upload'),
     ).toBeInTheDocument();
-    expect(screen.getByText('10 Mbps / 5 Mbps')).toBeInTheDocument();
+    expect(screen.getAllByText('10 Mbps / 5 Mbps').find((element) => element.closest('.kv'))).toBeVisible();
     expect(
       screen.getAllByRole('button', { name: 'Ver evidência do secret' }),
     ).toHaveLength(1);
@@ -278,9 +281,9 @@ it('L06T3: FastTrack marks every displayed plan limit without a router action', 
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   expect(
-    await screen.findByText('limite lido, não garantido'),
+    (await screen.findAllByText('limite lido, não garantido')).find((element) => element.closest('.kv')),
   ).toBeInTheDocument();
-  expect(screen.getByText('100 Mbps / 50 Mbps')).toHaveAttribute(
+  expect(screen.getAllByText('100 Mbps / 50 Mbps').find((element) => element.closest('.kv'))).toHaveAttribute(
     'title',
     '100.000.000 bit/s download / 50.000.000 bit/s upload',
   );
