@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	"infradesktop/internal/modules/equipment"
 )
@@ -142,6 +143,13 @@ func loadEquipmentOperations(ctx context.Context, q queryer, st *equipment.State
 		var op equipment.Operation
 		if err = rows.Scan(&op.ID, &op.Stamp, &op.Entity); err != nil {
 			return err
+		}
+		if strings.HasPrefix(op.Stamp, "inventory.bulk-update:") {
+			var receipt equipment.BulkReceipt
+			if err = json.Unmarshal([]byte(op.Entity), &receipt); err != nil {
+				return err
+			}
+			op.BulkReceipt = &receipt
 		}
 		st.Operations = append(st.Operations, op)
 	}

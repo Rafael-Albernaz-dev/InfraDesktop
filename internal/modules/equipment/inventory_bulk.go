@@ -12,3 +12,8 @@ type BulkUpdate struct {
 type BulkReceipt struct {
 	Items []BulkItem `json:"items"`
 }
+
+type Operation struct {
+	ID, Stamp, Entity string
+	BulkReceipt       *BulkReceipt
+}

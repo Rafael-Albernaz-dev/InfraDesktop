@@ -2,16 +2,16 @@ import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { AppOverlays } from './app-session';
 
-export function prepareSecurityVisual(scene: string) {
+export function prepareSecurityVisual(scene: string, doc: Document) {
   if (scene !== 'seguranca-erro' && scene !== 'seguranca-codigo') return;
   let requested = false;
   const observer = new MutationObserver(() => {
-    const app = document.querySelector<HTMLElement>(
+    const app = doc.querySelector<HTMLElement>(
       '.app[data-route="settings"]',
     );
     if (app) {
       observer.disconnect();
-      const host = document.createElement('div');
+      const host = doc.createElement('div');
       app.appendChild(host);
       const root = createRoot(host);
       flushSync(() =>
@@ -34,7 +34,7 @@ export function prepareSecurityVisual(scene: string) {
       );
       return;
     }
-    const button = document.querySelector<HTMLButtonElement>(
+    const button = doc.querySelector<HTMLButtonElement>(
       'button[aria-label="Configurações"]',
     );
     if (button && !requested) {
@@ -42,7 +42,7 @@ export function prepareSecurityVisual(scene: string) {
       button.click();
     }
   });
-  observer.observe(document.documentElement, {
+  observer.observe(doc.documentElement, {
     childList: true,
     subtree: true,
   });

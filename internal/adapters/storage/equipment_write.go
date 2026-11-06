@@ -85,8 +85,16 @@ func persistEquipmentOperations(ctx context.Context, tx *sql.Tx, old, current []
 		if previous[op.ID] {
 			continue
 		}
+		entity := op.Entity
+		if op.BulkReceipt != nil {
+			body, err := json.Marshal(op.BulkReceipt)
+			if err != nil {
+				return equipment.Unavailable
+			}
+			entity = string(body)
+		}
 		if _, err := tx.ExecContext(ctx, "INSERT INTO equipment_operations VALUES(?,?,?) ON CONFLICT(id) DO NOTHING",
-			op.ID, op.Stamp, op.Entity); err != nil {
+			op.ID, op.Stamp, entity); err != nil {
 			return equipment.Unavailable
 		}
 	}

@@ -155,7 +155,7 @@ function inspect(name, code) {
           "EnrollmentStatus",
           "InspectTrust",
           "ListCredentials",
-          "ListEquipment",
+          "ListEquipment", "ListEquipmentFiltered", "BulkUpdateEquipment", "SetInventoryColumns",
           "PutCredential",
           "QueryStatus",
           "SaveEquipment",

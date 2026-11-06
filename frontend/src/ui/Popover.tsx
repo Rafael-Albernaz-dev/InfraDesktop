@@ -23,11 +23,12 @@ export function Popover({
         root.current?.querySelector('button')?.focus();
       }
     };
-    document.addEventListener('mousedown', outside);
-    document.addEventListener('keydown', key);
+    const owner = root.current?.ownerDocument;
+    owner?.addEventListener('mousedown', outside);
+    owner?.addEventListener('keydown', key);
     return () => {
-      document.removeEventListener('mousedown', outside);
-      document.removeEventListener('keydown', key);
+      owner?.removeEventListener('mousedown', outside);
+      owner?.removeEventListener('keydown', key);
     };
   }, [open]);
   return (

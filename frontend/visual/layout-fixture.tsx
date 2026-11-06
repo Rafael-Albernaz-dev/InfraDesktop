@@ -594,5 +594,5 @@ export function installFixture() {
       },
     },
   });
-  prepareBase5Scene(visualScene);
+  prepareBase5Scene(visualScene, document);
 }

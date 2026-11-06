@@ -1,4 +1,4 @@
-import { listInventory, bulkInventory } from './inventory-bindings';
+import { createInventoryBindings } from './inventory-bindings';
 import {
   SetCredentialDefault,
   GetRadioIndexPage,
@@ -18,16 +18,13 @@ import {
   CancelPPPoERead,
   CancelPPPoEReadOperation,
   PPPoEReadPage,
-  StartPPPoECatalog,
-  StartPPPoERadius,
-  StartPPPoEPing,
+  StartPPPoECatalog, StartPPPoERadius, StartPPPoEPing,
   PPPoEDiagnosticStatus,
   CancelPPPoEDiagnostic,
   GetPPPoEDiagnostic,
   ListPPPoEDiagnostic,
   PPPoECollectionStatus,
-  CancelPPPoECollection,
-  GetPPPoECurrent,
+  CancelPPPoECollection, GetPPPoECurrent,
   GetPPPoEObservation,
   ListPPPoESessions,
   PPPoEContextCounts,
@@ -47,8 +44,7 @@ import {
   SelectCompany,
   SetTheme,
   RenewRecovery,
-  CopyRecovery,
-  AckRecovery,
+  CopyRecovery, AckRecovery,
   SaveRecovery,
   GetBrand,
   SaveBrand,
@@ -58,7 +54,7 @@ import {
   GetEquipment,
   EnrollmentStatus,
   InspectTrust,
-  ListCredentials,
+  ListCredentials, ListEquipment, ListEquipmentFiltered, BulkUpdateEquipment, SetInventoryColumns,
   PutCredential,
   QueryStatus,
   SaveEquipment,
@@ -80,6 +76,7 @@ export const access: {
   createCompany: (name: string) => Promise<Result>;
   selectCompany: (id: string) => Promise<Result>;
   setTheme: (theme: string) => Promise<Result>;
+  setColumns: (columns: string[]) => Promise<Result>;
   renewRecovery: (password: string, replacePending: boolean) => Promise<Result>;
   copyRecovery: () => Promise<string>;
   ackRecovery: () => Promise<Result>;
@@ -99,6 +96,7 @@ export const access: {
   createCompany: CreateCompany,
   selectCompany: SelectCompany,
   setTheme: SetTheme,
+  setColumns: SetInventoryColumns,
   renewRecovery: RenewRecovery,
   copyRecovery: CopyRecovery,
   ackRecovery: AckRecovery,
@@ -150,8 +148,9 @@ export type CredentialInput = Omit<
   'convertValues'
 >;
 const equipmentBindings = {
-  list: listInventory,
-  bulk: bulkInventory,
+  ...createInventoryBindings(ListEquipment,
+    (p, a, input) => ListEquipmentFiltered(p, a, input as presentation.InventoryFilters),
+    (p, a, o, input) => BulkUpdateEquipment(p, a, o, input as equipment.BulkUpdate)),
   enrollmentStatus: EnrollmentStatus,
   get: GetEquipment,
   save: (profile: string, activation: string, input: DeviceInput) =>

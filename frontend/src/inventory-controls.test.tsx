@@ -12,14 +12,14 @@ import type { Device, EquipmentResult } from './equipment-api';
 import { RadioRoles } from './radio-contract';
 
 const prefs = vi.hoisted(() => ({ saved: [] as string[] }));
-vi.mock('../wailsjs/go/presentation/App', () => ({
-  Status: vi.fn(async () => ({ code: 'OK', columns: prefs.saved })),
-  SetInventoryColumns: vi.fn(async (columns: string[]) => {
-    prefs.saved = columns;
-    return { code: 'OK', columns };
-  }),
-}));
 vi.mock('./presentation', () => ({
+  access: {
+    status: vi.fn(async () => ({ code: 'OK', columns: prefs.saved })),
+    setColumns: vi.fn(async (columns: string[]) => {
+      prefs.saved = columns;
+      return { code: 'OK', columns };
+    }),
+  },
   deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
     start: vi.fn(),
@@ -148,12 +148,12 @@ it('persists a hidden column after remount and closes the menu only on escape or
     ).not.toBeInTheDocument(),
   );
   expect(screen.getByRole('menu', { name: 'Colunas' })).toBeVisible();
-  fireEvent.keyDown(document, { key: 'Escape' });
+  fireEvent.keyDown(screen.getByRole('menu', { name: 'Colunas' }), { key: 'Escape' });
   expect(
     screen.queryByRole('menu', { name: 'Colunas' }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Colunas' }));
-  fireEvent.mouseDown(document.body);
+  fireEvent.mouseDown(first.baseElement);
   expect(
     screen.queryByRole('menu', { name: 'Colunas' }),
   ).not.toBeInTheDocument();

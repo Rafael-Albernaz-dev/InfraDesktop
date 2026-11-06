@@ -102,8 +102,8 @@ export function createBase5List(
   };
 }
 
-export function prepareBase5Scene(visualScene: string) {
-  prepareSecurityVisual(visualScene);
+export function prepareBase5Scene(visualScene: string, doc: Document) {
+  prepareSecurityVisual(visualScene, doc);
   if (
     ![
       'equipamentos-colunas',
@@ -122,12 +122,12 @@ export function prepareBase5Scene(visualScene: string) {
     const step = steps[0];
     const target =
       step === 'Colunas'
-        ? [...document.querySelectorAll('button')].find(
+        ? [...doc.querySelectorAll('button')].find(
             (b) => b.textContent === step,
           )
         : step === 'SW-NORTE'
-          ? document.querySelector<HTMLElement>('[data-device-id="SW-NORTE"]')
-          : document.querySelector<HTMLInputElement>(
+          ? doc.querySelector<HTMLElement>('[data-device-id="SW-NORTE"]')
+          : doc.querySelector<HTMLInputElement>(
               `input[aria-label="${step}"]`,
             );
     if (!target) return;
@@ -137,7 +137,7 @@ export function prepareBase5Scene(visualScene: string) {
       target.closest('tr')?.focus();
     if (!steps.length) observer.disconnect();
   });
-  observer.observe(document.documentElement, {
+  observer.observe(doc.documentElement, {
     childList: true,
     subtree: true,
   });

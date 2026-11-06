@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { SetInventoryColumns, Status } from '../wailsjs/go/presentation/App';
+import { access } from './presentation';
 import { columns, defaultColumns } from './inventory-columns';
 import { Popover } from './ui/Popover';
 import { Checkbox } from './ui/Checkbox';
@@ -16,7 +16,7 @@ export function useColumnPreferences() {
     const request = generation.current;
     void (async () => {
       try {
-        const result = await Status();
+        const result = await access.status();
         if (
           alive &&
           request === generation.current &&
@@ -39,7 +39,7 @@ export function useColumnPreferences() {
     setBusy(true);
     setError('');
     try {
-      const result = await SetInventoryColumns(next);
+      const result = await access.setColumns(next);
       if (result.code !== 'OK') throw new Error(result.code);
       setVisible(result.columns || next);
     } catch {

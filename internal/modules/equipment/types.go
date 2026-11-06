@@ -129,8 +129,6 @@ type SealedCredential struct {
 	Envelope []byte
 }
 
-type Operation struct{ ID, Stamp, Entity string }
-
 type State struct {
 	CredentialDefaults    map[string]string
 	Installation, Company string

@@ -2,7 +2,7 @@ package inventory
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"infradesktop/internal/modules/equipment"
 )
 
@@ -10,11 +10,13 @@ func (s *Service) bulkUpdate(ctx context.Context, q Command, v *View) Code {
 	if c := validateBulk(q); c != OK {
 		return c
 	}
-	raw, err := json.Marshal(q.Bulk)
-	if err != nil {
-		return Invalid
+	mode, value := "block", ""
+	if q.Bulk.Block != nil {
+		value = *q.Bulk.Block
+	} else {
+		mode, value = "credential", *q.Bulk.CredentialID
 	}
-	stamp := "inventory.bulk-update:" + string(raw)
+	stamp := fmt.Sprintf("inventory.bulk-update:%q:%q:%v", mode, value, q.Bulk.Items)
 	mutated := false
 	c := s.Store.UpdateEquipment(ctx, q.Scope.Profile, func(st *State) Code {
 		return applyBulk(st, q, stamp, v, &mutated)
@@ -77,11 +79,10 @@ func replayBulk(st *State, q Command, stamp string, v *View) (bool, Code) {
 		if op.Stamp != stamp {
 			return true, Revision
 		}
-		var receipt equipment.BulkReceipt
-		if json.Unmarshal([]byte(op.Entity), &receipt) != nil {
+		if op.BulkReceipt == nil {
 			return true, Unavailable
 		}
-		v.BulkReceipt = &receipt
+		v.BulkReceipt = op.BulkReceipt
 		return true, OK
 	}
 	return false, OK
@@ -101,11 +102,7 @@ func commitBulk(st *State, q Command, stamp string, v *View, mutated *bool) Code
 		d.Revision++
 		receipt.Items = append(receipt.Items, equipment.BulkItem{ID: d.ID, Revision: d.Revision})
 	}
-	body, err := json.Marshal(receipt)
-	if err != nil {
-		return Unavailable
-	}
-	st.Operations = append(st.Operations, Operation{ID: q.Operation, Stamp: stamp, Entity: string(body)})
+	st.Operations = append(st.Operations, Operation{ID: q.Operation, Stamp: stamp, BulkReceipt: &receipt})
 	v.BulkReceipt, *mutated = &receipt, true
 	return OK
 }
