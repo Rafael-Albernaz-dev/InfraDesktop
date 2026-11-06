@@ -22,7 +22,6 @@ export function usePPReadCleanup(p: {
     renewalTimerRef,
   } = p;
   useEffect(() => {
-    generationRef.current += 1;
     return () => {
       clearTimeout(renewalTimerRef.current);
       generationRef.current += 1;
