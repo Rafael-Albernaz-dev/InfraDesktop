@@ -30,7 +30,7 @@ function renderInventory(
       profile={profileId}
       activation={activationId}
       connected={connected}
-      createRequest={inv.inventoryAction}
+      createRequest={0}
       primaryInHeader
       credentialsPage={route === 'credentials'}
       addPage={route === 'adicionar'}
@@ -132,7 +132,6 @@ export function AuthenticatedShell(props: {
               inv.detailBack.current?.();
               inv.selectInventory('');
             }
-            inv.addInventory(0);
             setPage(normalizeRoute(next));
             close();
           };

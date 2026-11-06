@@ -4,7 +4,6 @@ export function useInventoryNavigation(
   profileId: string,
   activationId: string,
 ) {
-  const [inventoryAction, addInventory] = useState(0);
   const [inventoryTarget, setInventoryTarget] = useState({ key: '', id: '' });
   const [inventoryDetail, setInventoryDetail] = useState(false);
   const [inventoryBlocked, setInventoryBlocked] = useState(false);
@@ -25,8 +24,6 @@ export function useInventoryNavigation(
   );
   return {
     contextPair,
-    inventoryAction,
-    addInventory,
     inventoryTarget,
     inventoryDetail,
     inventoryBlocked,

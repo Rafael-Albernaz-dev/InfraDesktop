@@ -5,14 +5,9 @@
     "reason": "Dado ainda sem percurso nesta ficha"
   },
   {
-    "id": "sessao-enlace",
-    "owner": "L-BASE-5C",
-    "reason": "Rev. 6: sessão em tela completa"
-  },
-  {
     "id": "sessao-historico",
-    "owner": "L-BASE-5C",
-    "reason": "Rev. 6: sessão em tela completa"
+    "owner": "L-PULSO",
+    "reason": "Histórico de conexões ainda não implementado"
   },
   {
     "id": "criar",

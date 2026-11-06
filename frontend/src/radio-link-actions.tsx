@@ -4,51 +4,63 @@ import type { RadioLinkState } from './radio-link-state';
 import { RadioModes } from './radio-contract';
 import { radioCostLabel } from './radio-cost-label';
 
-export function RadioLinkRunActions({ state }: { state: RadioLinkState }) {
+export function RadioLinkRunActions({
+  state,
+  part = 'all',
+}: {
+  state: RadioLinkState;
+  part?: 'all' | 'update' | 'measurement';
+}) {
   const { blocked, radio, editing, link, cost } = state;
+  if (radio.busy)
+    return part === 'measurement' ? null : (
+      <Button
+        type="submit"
+        className="primary"
+        onClick={() => void radio.stop()}
+      >
+        Parar
+      </Button>
+    );
+  if (!link || editing) return null;
+  const update = (
+    <Button
+      type="submit"
+      className={part === 'all' ? 'primary' : ''}
+      disabled={blocked}
+      onClick={() => void radio.start(RadioModes.once)}
+    >
+      Atualizar
+    </Button>
+  );
+  if (part === 'update') return update;
   return (
-    <>
-      {radio.busy ? (
-        <Button
-          type="submit"
-          className="primary"
-          onClick={() => void radio.stop()}
-        >
-          Parar
-        </Button>
-      ) : (
-        link &&
-        !editing && (
-          <div className="radio-actions">
-            <Button
-              type="submit"
-              className="primary"
-              disabled={blocked}
-              onClick={() => void radio.start(RadioModes.once)}
-            >
-              Atualizar
-            </Button>
-            <Button
-              type="submit"
-              disabled={blocked}
-              onClick={() => void radio.start(RadioModes.measure)}
-            >
-              Testar carga do ao vivo
-            </Button>
-            <Button
-              type="submit"
-              disabled={blocked || !cost?.enabled}
-              onClick={() => void radio.start(RadioModes.live)}
-            >
-              Ver ao vivo
-            </Button>
-          </div>
-        )
-      )}
-    </>
+    <div className={part === 'measurement' ? 'actions' : 'radio-actions'}>
+      {part === 'all' && update}
+      <Button
+        type="submit"
+        disabled={blocked}
+        onClick={() => void radio.start(RadioModes.measure)}
+      >
+        Testar carga do ao vivo
+      </Button>
+      <Button
+        type="submit"
+        disabled={blocked || !cost?.enabled}
+        onClick={() => void radio.start(RadioModes.live)}
+      >
+        Ver ao vivo
+      </Button>
+    </div>
   );
 }
-export function RadioLinkCost({ state }: { state: RadioLinkState }) {
+export function RadioLinkCost({
+  state,
+  session = false,
+}: {
+  state: RadioLinkState;
+  session?: boolean;
+}) {
   const { editing, link, cost } = state;
   return (
     <>
@@ -56,7 +68,9 @@ export function RadioLinkCost({ state }: { state: RadioLinkState }) {
         <p>
           {cost
             ? radioCostLabel(cost)
-            : 'Ao vivo desligado: custo dos ticks ainda não medido nesta execução.'}
+            : session
+              ? 'Ao vivo desligado: custo ainda não medido.'
+              : 'Ao vivo desligado: custo dos ticks ainda não medido nesta execução.'}
         </p>
       )}
     </>

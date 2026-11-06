@@ -1,10 +1,10 @@
+import { sessionLinkFixture } from '../src/session-link-fixture';
 import { importFixtureOperations } from '../src/inventory-import-layout-fixture';
 import { prepareBase5Devices, createBase5List, prepareBase5Scene } from '../src/inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
 import { RadioRoles, RadioTransports, RadioFamilies } from '../src/radio-contract';
-// Synthetic documentation addresses only. No production state or credentials are read.
-import type { Device } from '../src/equipment-api';
+import type { Device } from '../src/equipment-api'; // Fixtures use documentation addresses, not production data.
 const visualScene = new URLSearchParams(location.search).get('scene') || '';
 const base5Scenes = new Set(['equipamentos', 'equipamentos-colunas', 'equipamentos-selecao', 'credenciais',
   'codigo', 'ficha-ccr-centro-sesso-es', 'ficha-sw-norte-resumo', 'seguranca-erro', 'seguranca-codigo']);
@@ -433,7 +433,7 @@ export function installFixture() {
             row: string,
           ) =>
             result({
-              link: row === 'row-0' ? { cpe_id: 'CPE-0001', ap_id: 'AP-NORTE', concentrator_id: 'CCR-CENTRO' } : undefined,
+              link: row === 'row-0' ? sessionLinkFixture(time) : undefined,
             }),
           PPPoEContextCounts: async () =>
             result({

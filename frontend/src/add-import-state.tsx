@@ -27,6 +27,8 @@ export function useImportState(profile: string, activation: string) {
   const message = (code: string) =>
     code === 'IMPORT_PASSWORD_REJECTED'
       ? 'O arquivo contém uma coluna ou chave de senha e foi recusado.'
+      : code === 'REVISION_CONFLICT'
+        ? 'O inventário mudou. Revise a prévia antes de confirmar novamente.'
       : code === 'IMPORT_FILE_INVALID' || code === 'INVALID_REQUEST'
         ? 'Arquivo inválido ou fora dos limites permitidos.'
         : 'Não foi possível concluir. Confira a empresa e tente novamente.';
@@ -43,6 +45,10 @@ export function useImportState(profile: string, activation: string) {
         credential,
       );
       if (!alive.current || r.code === 'IMPORT_CANCELLED') return;
+      if (r.code === 'OK' && own(r) && !r.data?.import_items?.length) {
+        setError('Não há linhas de equipamentos no arquivo.');
+        return;
+      }
       if (r.code !== 'OK' || !own(r) || !r.data?.import_items) {
         setError(message(r.code));
         return;
