@@ -21,8 +21,14 @@ func TestProductSchemaSnapshot(t *testing.T) {
 	if e = json.Unmarshal(b, &schema); e != nil {
 		t.Fatal(e)
 	}
-	if schema.Version != 1 || len(schema.Operations) != 16 {
+	if schema.Version != 1 || len(schema.Operations) != 17 {
 		t.Fatal("schema snapshot version/count")
+	}
+	samples := map[string]any{
+		"contract_revision": ProductRevision, "expected_activation": "activation",
+		"brand":        Branding{Name: "", Logo: "", Accent: "teal"},
+		"operation_id": "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa", "expected_profile": "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
+		"remember": false, "replace_pending": false, "columns": []string{"equipment"},
 	}
 	for op, fields := range schema.Operations {
 		q := map[string]any{"version": 1, "request_id": "snapshot", "op": op}
@@ -31,20 +37,8 @@ func TestProductSchemaSnapshot(t *testing.T) {
 				continue
 			}
 			q[f] = ""
-			if f == "contract_revision" {
-				q[f] = ProductRevision
-			}
-			if f == "expected_activation" {
-				q[f] = "activation"
-			}
-			if f == "brand" {
-				q[f] = Branding{Name: "", Logo: "", Accent: "teal"}
-			}
-			if f == "operation_id" || f == "expected_profile" {
-				q[f] = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
-			}
-			if f == "remember" || f == "replace_pending" {
-				q[f] = false
+			if sample, ok := samples[f]; ok {
+				q[f] = sample
 			}
 		}
 		b, _ := json.Marshal(q)
