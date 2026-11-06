@@ -42,11 +42,11 @@ func TestBulkUpdateAtomicRevisionCompanyAndReplay(t *testing.T) {
 	q.Bulk.Block = &block
 	q.Bulk.CredentialID = nil
 	result := equipmentCall(t, s, q, equipment.OK)
-	if result.BulkReceipt == nil || len(result.BulkReceipt.Items) != 2 || result.BulkReceipt.Items[0].Revision != 2 {
+	if result.BulkReceipt == nil || len(result.BulkReceipt.Items) != 2 || result.BulkReceipt.Items[0].Revision != 1 {
 		t.Fatal("missing receipt", result.BulkReceipt)
 	}
 	replayed := equipmentCall(t, s, q, equipment.OK)
-	if replayed.BulkReceipt == nil || replayed.BulkReceipt.Items[0].Revision != 2 {
+	if replayed.BulkReceipt == nil || replayed.BulkReceipt.Items[0].Revision != 1 {
 		t.Fatal("invalid replay", replayed.BulkReceipt)
 	}
 	block = "different"
@@ -55,8 +55,8 @@ func TestBulkUpdateAtomicRevisionCompanyAndReplay(t *testing.T) {
 	q.Operation = uuid.NewString()
 	q.Bulk.Block = nil
 	q.Bulk.CredentialID = &credential.ID
-	q.Bulk.Items[0].Revision = 2
-	q.Bulk.Items[1].Revision = 2
+	q.Bulk.Items[0].Revision = 1
+	q.Bulk.Items[1].Revision = 1
 	equipmentCall(t, s, q, equipment.OK)
 }
 

@@ -21,7 +21,7 @@ func (s *Service) bulkUpdate(ctx context.Context, q Command, v *View) Code {
 	c := s.Store.UpdateEquipment(ctx, q.Scope.Profile, func(st *State) Code {
 		return applyBulk(st, q, stamp, v, &mutated)
 	})
-	if c == OK && mutated {
+	if c == OK && mutated && q.Bulk.Block == nil {
 		for _, item := range q.Bulk.Items {
 			s.Invalidate(q.Scope.Profile, item.ID, false)
 		}
@@ -99,7 +99,9 @@ func commitBulk(st *State, q Command, stamp string, v *View, mutated *bool) Code
 			d.CredentialID = *q.Bulk.CredentialID
 			d.Result, d.LastAttempt = nil, nil
 		}
-		d.Revision++
+		if q.Bulk.Block == nil {
+			d.Revision++
+		}
 		receipt.Items = append(receipt.Items, equipment.BulkItem{ID: d.ID, Revision: d.Revision})
 	}
 	st.Operations = append(st.Operations, Operation{ID: q.Operation, Stamp: stamp, BulkReceipt: &receipt})

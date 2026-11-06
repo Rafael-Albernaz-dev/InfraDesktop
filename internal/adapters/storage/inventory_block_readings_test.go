@@ -59,6 +59,11 @@ func TestBlockOnlyUpdatePreservesSavedReadings(t *testing.T) {
 				t.Fatalf("radio incompatible: %v %s", radio, code)
 			}
 			q.Operation = uuid.NewString()
+			if mode == "bulk" {
+				q.Bulk.Items[0].Revision = d.Revision + 1
+			} else {
+				q.Revision = d.Revision + 1
+			}
 			equipmentCall(t, s, q, equipment.Revision)
 		})
 	}
@@ -111,7 +116,7 @@ func TestBlockReadingFailureRollsBackDeviceAndSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = j.st.unit.Exec(`CREATE TRIGGER fail_snapshot_revision BEFORE UPDATE ON device_equipment_snapshot
+	_, err = j.st.unit.Exec(`CREATE TRIGGER fail_device_block BEFORE UPDATE ON devices
 		BEGIN SELECT RAISE(ABORT, 'synthetic failure'); END`)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +129,7 @@ func TestBlockReadingFailureRollsBackDeviceAndSnapshot(t *testing.T) {
 	equipmentCall(t, s, q, equipment.Unavailable)
 	state, code := j.st.ReadEquipment(context.Background(), companyX)
 	if code != equipment.OK || len(state.Devices) != 1 || state.Devices[0].Revision != d.Revision || state.Devices[0].Block != d.Block {
-		t.Fatal("device changed despite snapshot failure", code, state.Devices)
+		t.Fatal("device changed despite transaction failure", code, state.Devices)
 	}
 	var revision uint64
 	err = j.st.unit.QueryRow(`SELECT revision FROM device_equipment_snapshot WHERE device_id=?`, d.ID).Scan(&revision)

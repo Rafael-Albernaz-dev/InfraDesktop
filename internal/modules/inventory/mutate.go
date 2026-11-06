@@ -71,7 +71,7 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 	c := s.Store.UpdateEquipment(ctx, q.Scope.Profile, func(st *State) Code {
 		return s.applyMutationState(st, q, &stamp, v, &mutated)
 	})
-	if c == OK && mutated {
+	if c == OK && mutated && !blockUpdateKeptRevision(q, v) {
 		s.Invalidate(q.Scope.Profile, q.ID, q.Op == "credential.put")
 	}
 	return c
@@ -318,7 +318,7 @@ func prepareDeviceUpdate(old *Device, q Command, d *Device) Code {
 	if old == nil || old.Revision != q.Revision {
 		return Revision
 	}
-	d.Revision = old.Revision + 1
+	d.Revision = deviceUpdateRevision(*d, *old, q.Op)
 	d.Active = old.Active
 	if q.Op == "inventory.set-active" {
 		*d = *old
