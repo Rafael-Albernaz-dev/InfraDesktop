@@ -86,6 +86,6 @@ it('requires discard before switching a dirty credential and cancel preserves th
   expect(screen.getByLabelText('Alias')).toHaveValue('Shared');
   expect(
     screen.getByRole('button', { name: 'Salvar credencial' }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   expect(api.putCredential).not.toHaveBeenCalled();
 });

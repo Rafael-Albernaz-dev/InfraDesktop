@@ -353,6 +353,11 @@
       "operation_id",
       "role",
       "credential_id"
+    ],
+    "credential.delete": [
+      "operation_id",
+      "id",
+      "revision"
     ]
   },
   "equipment": {
@@ -386,6 +391,7 @@
     "error_codes": [
       "VAULT_UNAVAILABLE",
       "CREDENTIAL_NOT_FOUND",
+      "CREDENTIAL_IN_USE",
       "DEVICE_INACTIVE",
       "REVISION_CONFLICT",
       "TRUST_REQUIRED",

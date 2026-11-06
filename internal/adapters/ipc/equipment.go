@@ -22,6 +22,7 @@ var equipmentFields = map[string][]string{
 	"inventory.update":         {"operation_id", "id", "revision", "name", "role", "address", "port", "transport", "credential_id", "block"},
 	"inventory.set-active":     {"operation_id", "id", "revision", "active"},
 	"credential.list":          {"cursor"},
+	"credential.delete":        {"operation_id", "id", "revision"},
 	"credential.put":           {"operation_id", "id", "revision", "alias", "user", "secret", "affected_links"},
 	"trust.inspect":            {"operation_id", "id", "revision"},
 	"trust.confirm":            {"operation_id", "job_id", "id", "revision", "fingerprint"},

@@ -37,6 +37,9 @@ ON CONFLICT(singleton) DO UPDATE SET envelope=excluded.envelope`, current.Wrappe
 	return persistEquipmentOperations(ctx, tx, old.Operations, current.Operations)
 }
 func persistEquipmentCredentials(ctx context.Context, tx *sql.Tx, old, current equipment.State) equipment.Code {
+	if c := deleteRemovedCredentials(ctx, tx, old.Credentials, current.Credentials); c != equipment.OK {
+		return c
+	}
 	previous := map[string][]byte{}
 	for _, c := range old.Credentials {
 		b, err := json.Marshal(c)

@@ -1,11 +1,6 @@
 import { Button, Dialog } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
-import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
-import {
-  CredentialForm,
-  CredentialPicker,
-  DefaultCredentialDetails,
-} from './equipment-credential-form';
+import type { Device, EquipmentResult, Job } from './equipment-api';
 import { DeviceForm, ProtectedDialog } from './equipment-forms';
 import { id } from './equipment-reading';
 export type EquipmentPerformFn = (
@@ -222,57 +217,5 @@ export function DeviceFormDialog(p: {
   );
 }
 
-export function CredentialFormDialog(p: {
-  credentialForm: Credential | 'new';
-  setCredentialForm: (v: Credential | 'new' | undefined) => void;
-  error: string;
-  vault: boolean;
-  ready: boolean;
-  profile: string;
-  activation: string;
-  locked: boolean;
-  defaultBusy: boolean;
-  setDefaultBusy: (v: boolean) => void;
-  credentialDefaults: Record<string, string>;
-  credentials: Credential[];
-  defaultContextRef: React.MutableRefObject<string>;
-  reloadCredentials: React.Dispatch<React.SetStateAction<number>>;
-  setCredentialError: (v: string) => void;
-  perform: EquipmentPerformFn;
-}) {
-  return (
-    <ProtectedDialog
-      title="Credenciais de consulta"
-      close={() => p.setCredentialForm(undefined)}
-    >
-      <DialogNotices error={p.error} vault={p.vault} ready={p.ready} />
-      <p>
-        Reutilizáveis somente nesta empresa. Substituir aqui não altera a senha
-        no equipamento.
-      </p>
-      <DefaultCredentialDetails {...p} />
-      <CredentialPicker
-        disabled={p.locked}
-        credentials={p.credentials}
-        selected={p.credentialForm}
-        select={p.setCredentialForm}
-      />
-      <CredentialForm
-        key={p.credentialForm === 'new' ? 'new' : p.credentialForm.id}
-        credential={p.credentialForm === 'new' ? undefined : p.credentialForm}
-        disabled={p.locked || !p.vault}
-        save={(d) =>
-          p.perform(
-            () => api.putCredential(p.profile, p.activation, d),
-            () => {
-              p.setCredentialForm(undefined);
-              p.reloadCredentials((n) => n + 1);
-            },
-            true,
-            true,
-          )
-        }
-      />
-    </ProtectedDialog>
-  );
-}
+
+export { CredentialFormDialog } from './credential-form-dialog';

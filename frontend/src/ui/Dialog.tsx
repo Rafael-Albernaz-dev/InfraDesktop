@@ -70,7 +70,7 @@ export function Dialog({
     return () => {
       if (before?.isConnected) before.focus();
     };
-  }, [showClose]);
+  }, [showClose, title]);
   const content = (
     <div
       className="modal-backdrop dlg-bg"

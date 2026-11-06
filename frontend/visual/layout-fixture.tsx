@@ -1,3 +1,5 @@
+import { prepareCredentialScene, credentialSceneReady, visualCredentials } from './layout-credential';
+export { credentialSceneReady };
 import { sessionLinkFixture } from '../src/session-link-fixture';
 import { importFixtureOperations } from '../src/inventory-import-layout-fixture';
 import { prepareBase5Devices, createBase5List, prepareBase5Scene } from '../src/inventory-layout-fixture';
@@ -7,7 +9,8 @@ import { RadioRoles, RadioTransports, RadioFamilies } from '../src/radio-contrac
 import type { Device } from '../src/equipment-api'; // Fixtures use documentation addresses, not production data.
 const visualScene = new URLSearchParams(location.search).get('scene') || '';
 const base5Scenes = new Set(['equipamentos', 'equipamentos-colunas', 'equipamentos-selecao', 'credenciais',
-  'codigo', 'ficha-ccr-centro-sesso-es', 'ficha-sw-norte-resumo', 'seguranca-erro', 'seguranca-codigo']);
+  'codigo', 'credencial-editar', 'credencial-excluir', 'ficha-ccr-centro-sesso-es',
+  'ficha-sw-norte-resumo', 'seguranca-erro', 'seguranca-codigo']);
 const isBase5Scene = base5Scenes.has(visualScene);
 const time = Date.parse(visualScene === 'sessao-trafego-ao-vivo' ? '2026-11-04T16:47:40Z' : '2026-11-04T12:00:00Z');
 const entries = [
@@ -68,29 +71,7 @@ const devices = entries.map(
   }),
 ) as Device[];
 if (isBase5Scene) prepareBase5Devices(devices, visualScene, time);
-const credentials = [
-  {
-    id: 'concentrator',
-    alias: 'leitura-concentrador',
-    user: 'leitura-01',
-    revision: 1,
-    links: 1,
-  },
-  {
-    id: 'radio',
-    alias: 'leitura-radio',
-    user: 'leitura-02',
-    revision: 1,
-    links: 3,
-  },
-  {
-    id: RadioRoles.ptp,
-    alias: 'leitura-ptp',
-    user: 'leitura-03',
-    revision: 1,
-    links: 1,
-  },
-];
+const credentials = visualCredentials(visualScene);
 const sessions = Array.from({ length: 25 }, (_, i) => ({
   row_id: `row-${i}`,
   remote_id: `*${i}`,
@@ -597,4 +578,5 @@ export function installFixture() {
     },
   });
   prepareBase5Scene(visualScene, document);
+  prepareCredentialScene(visualScene);
 }

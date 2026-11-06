@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-const RoleOther Role = equipment.RoleOther
-
-func validRadioDefaultRole(r Role) bool {
-	return r == RoleAP || r == RoleCPE || r == RolePTP
-}
-
 func canonicalizeMutation(q *Command) Code {
 	if q.Op == "inventory.enroll" || q.Op == "inventory.create" || q.Op == "inventory.update" {
 		q.Name = strings.TrimSpace(q.Name)
@@ -72,7 +66,7 @@ func (s *Service) mutate(ctx context.Context, q Command, v *View) Code {
 		return s.applyMutationState(st, q, &stamp, v, &mutated)
 	})
 	if c == OK && mutated && !blockUpdateKeptRevision(q, v) {
-		s.Invalidate(q.Scope.Profile, q.ID, q.Op == "credential.put")
+		s.Invalidate(q.Scope.Profile, q.ID, q.Op == "credential.put" || q.Op == "credential.delete")
 	}
 	return c
 }
@@ -129,6 +123,8 @@ func (s *Service) dispatchMutationOp(st *State, q Command, stamp *string, v *Vie
 		return mutateCredentialDefault(st, q, v)
 	case "credential.put":
 		return s.mutateCredentialPut(st, q, v)
+	case "credential.delete":
+		return deleteCredential(st, q)
 	case "inventory.enroll":
 		return s.mutateEnroll(st, q, v)
 	case "trust.reset":
@@ -159,10 +155,13 @@ func (s *Service) mutateCredentialPut(st *State, q Command, v *View) Code {
 	if !s.VaultReady(st) {
 		return VaultUnavailable
 	}
+	old := CredentialByID(st, q.ID)
+	if c := s.preserveCredentialSecret(st, old, &q); c != OK {
+		return c
+	}
 	if c := ValidateCredential(q.Alias, q.User, q.Secret); c != OK {
 		return c
 	}
-	old := CredentialByID(st, q.ID)
 	revision, c := nextCredentialRevision(st, old, q)
 	if c != OK {
 		return c

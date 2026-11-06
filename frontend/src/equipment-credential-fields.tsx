@@ -41,8 +41,6 @@ export function CredentialFormFields(props: {
   draft: CredentialInput;
   setDraft: (d: CredentialInput) => void;
   credential?: Credential;
-  confirmed: boolean;
-  setConfirmed: (v: boolean) => void;
   disabled: boolean;
   attrs: ReturnType<typeof useFieldErrors>['attrs'];
   message: ReturnType<typeof useFieldErrors>['message'];
@@ -51,8 +49,6 @@ export function CredentialFormFields(props: {
     draft,
     setDraft,
     credential,
-    confirmed,
-    setConfirmed,
     disabled,
     attrs,
     message,
@@ -60,7 +56,7 @@ export function CredentialFormFields(props: {
   return (
     <>
       <label className="field">
-        Alias
+        Nome
         <input
           required
           maxLength={80}
@@ -73,7 +69,7 @@ export function CredentialFormFields(props: {
         {message('alias')}
       </label>
       <label className="field">
-        Usuário remoto
+        Usuário
         <input
           required
           maxLength={80}
@@ -87,10 +83,10 @@ export function CredentialFormFields(props: {
         {message('user')}
       </label>
       <label className="field">
-        Senha remota
+        Senha
         <input
           type="password"
-          required
+          required={!credential}
           maxLength={1024}
           autoComplete="new-password"
           disabled={disabled}
@@ -101,18 +97,7 @@ export function CredentialFormFields(props: {
         />
         {message('secret')}
       </label>
-      {credential && (
-        <label className="check">
-          <input
-            disabled={disabled}
-            type="checkbox"
-            checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
-          />
-          Substituir o acesso usado por {credential.links} equipamentos,
-          inclusive inativos.
-        </label>
-      )}
+      {credential && <p className="muted">Deixe vazio para manter a senha atual.</p>}
     </>
   );
 }

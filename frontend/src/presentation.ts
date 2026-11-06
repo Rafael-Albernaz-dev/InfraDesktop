@@ -61,6 +61,7 @@ import {
   InspectTrust,
   ListCredentials, ListEquipment, ListEquipmentFiltered, BulkUpdateEquipment, SetInventoryColumns,
   PutCredential,
+  DeleteCredential,
   QueryStatus,
   SaveEquipment,
   SetEquipmentActive,
@@ -155,6 +156,7 @@ const equipmentBindings = {
     SaveEquipment(profile, activation, input as presentation.DeviceInput),
   active: SetEquipmentActive,
   credentials: ListCredentials,
+  deleteCredential: DeleteCredential,
   setDefault: SetCredentialDefault,
   putCredential: (
     profile: string,

@@ -109,12 +109,13 @@ function submitCredentialForm(args: {
   submitting: React.MutableRefObject<boolean>;
   alive: React.MutableRefObject<boolean>;
   save: (d: CredentialInput) => Promise<EquipmentResult | undefined>;
+  existing: boolean;
 }) {
-  const { draft, setDraft, setSent, setErrors, submitting, alive, save } = args;
+  const { draft, setDraft, setSent, setErrors, submitting, alive, save, existing } = args;
   const errors: Record<string, string> = {};
   if (!validEquipmentText(draft.alias)) errors.alias = fieldMessages.alias;
   if (!validEquipmentText(draft.user)) errors.user = fieldMessages.user;
-  if (!validEquipmentSecret(draft.secret)) errors.secret = fieldMessages.secret;
+  if ((!existing || draft.secret) && !validEquipmentSecret(draft.secret)) errors.secret = fieldMessages.secret;
   setErrors(errors);
   if (Object.keys(errors).length) return;
   submitting.current = true;
@@ -124,7 +125,7 @@ function submitCredentialForm(args: {
     user: draft.user.trim(),
   };
   setDraft({ ...draft, secret: '' });
-  setSent(true);
+  setSent(Boolean(draft.secret));
   void (async () => {
     try {
       const result = await save(request);
@@ -151,20 +152,23 @@ function useInitialCredentialDraft(credential?: Credential) {
     secret: '',
     affected_links: credential?.links || 0,
   }));
-  const [confirmed, setConfirmed] = useState(false);
   const [sent, setSent] = useState(false);
-  return { draft, setDraft, confirmed, setConfirmed, sent, setSent };
+  return { draft, setDraft, sent, setSent };
 }
 export function CredentialForm({
   credential,
   disabled,
   save,
+  onDelete,
+  usedReason,
 }: {
   credential?: Credential;
   disabled: boolean;
   save: (d: CredentialInput) => Promise<EquipmentResult | undefined>;
+  onDelete?: () => void;
+  usedReason?: string;
 }) {
-  const { draft, setDraft, confirmed, setConfirmed, sent, setSent } =
+  const { draft, setDraft, sent, setSent } =
     useInitialCredentialDraft(credential);
   const submitting = useRef(false);
   const { ref: formRef, setErrors, attrs, message } = useFieldErrors(disabled);
@@ -179,8 +183,7 @@ export function CredentialForm({
     dirty:
       draft.alias !== (credential?.alias || '') ||
       draft.user !== (credential?.user || '') ||
-      draft.secret !== '' ||
-      confirmed,
+      draft.secret !== '',
     blocked: submitting.current,
   }));
   return (
@@ -189,7 +192,7 @@ export function CredentialForm({
       ref={formRef}
       onSubmit={(e) => {
         e.preventDefault();
-        if (submitting.current || disabled || (credential && !confirmed))
+        if (submitting.current || disabled)
           return;
         submitCredentialForm({
           draft,
@@ -199,6 +202,7 @@ export function CredentialForm({
           submitting,
           alive,
           save,
+          existing: Boolean(credential),
         });
       }}
     >
@@ -206,8 +210,6 @@ export function CredentialForm({
         draft={draft}
         setDraft={setDraft}
         credential={credential}
-        confirmed={confirmed}
-        setConfirmed={setConfirmed}
         disabled={disabled}
         attrs={attrs}
         message={message}
@@ -219,13 +221,17 @@ export function CredentialForm({
         </p>
       )}
       <div className="dialog-actions">
+        {credential && <>
+          <Button disabled={disabled || Boolean(usedReason)} title={usedReason} onClick={onDelete}>Excluir credencial</Button>
+          <span className="grow" />
+        </>}
         <Button disabled={disabled} onClick={cancel}>
           Cancelar
         </Button>
         <Button
           type="submit"
           className="btn primary"
-          disabled={disabled || Boolean(credential && !confirmed)}
+          disabled={disabled}
         >
           Salvar credencial
         </Button>

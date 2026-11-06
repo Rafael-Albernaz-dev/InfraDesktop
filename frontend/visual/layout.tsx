@@ -10,7 +10,7 @@ import type { DataState } from '../src/ui/DataBlock';
 import { Chart } from '../src/ui/Chart';
 import '../src/ui/tokens.css';
 import '../src/ui/kit.css';
-import { installFixture } from './layout-fixture';
+import { credentialSceneReady, installFixture } from './layout-fixture';
 const query = new URLSearchParams(location.search),
   scene = query.get('scene') || 'login';
 installFixture();
@@ -190,7 +190,7 @@ function Vitrine() {
 function Scene() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)));
+    void credentialSceneReady().then(() => requestAnimationFrame(() => requestAnimationFrame(() => setReady(true))));
   }, []);
   const [theme, setTheme] = useState(query.get('theme') || 'light');
   const mode =
@@ -208,7 +208,7 @@ function Scene() {
           ? 'settings'
           : scene === 'visao'
             ? 'overview'
-            : scene === 'credenciais'
+            : scene === 'credenciais' || scene.startsWith('credencial-')
               ? 'credentials'
               : 'equipment',
   );

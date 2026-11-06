@@ -98,6 +98,8 @@ func (c *Client) exchange(parent context.Context, q Request) Response {
 	}
 
 	switch r.Code {
+	case foundation.Code("CREDENTIAL_IN_USE"):
+		r.Data = nil
 	case foundation.OK:
 		if r.Data == nil {
 			return failure()

@@ -338,7 +338,7 @@ it('persists a real form request with stable operation ID and explicit company c
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
   );
 });
-it('shared credential replacement requires affected-link acknowledgement and clears typed secret', async () => {
+it('shared credential replacement sends affected links and clears typed secret', async () => {
   vi.mocked(api.putCredential).mockResolvedValue({
     ...data(),
     code: 'SERVICE_UNAVAILABLE',
@@ -360,10 +360,7 @@ it('shared credential replacement requires affected-link acknowledgement and cle
   fireEvent.change(screen.getByLabelText('Senha remota'), {
     target: { value: 'isolated test secret' },
   });
-  expect(
-    screen.getByRole('button', { name: 'Salvar credencial' }),
-  ).toBeDisabled();
-  fireEvent.click(screen.getByRole('checkbox', { name: /2 equipamentos/ }));
+  expect(screen.getByRole('button', { name: 'Salvar credencial' })).toBeEnabled();
   fireEvent.click(screen.getByRole('button', { name: 'Salvar credencial' }));
   await waitFor(() => expect(api.putCredential).toHaveBeenCalledTimes(1));
   expect(vi.mocked(api.putCredential).mock.calls[0][2].affected_links).toBe(2);
@@ -1673,7 +1670,6 @@ it('Q03 updates the credential catalog after successful replacement and recovers
   fireEvent.change(screen.getByLabelText('Senha remota'), {
     target: { value: 'synthetic replacement secret' },
   });
-  fireEvent.click(screen.getByRole('checkbox', { name: /2 equipamentos/ }));
   vi.mocked(api.credentials)
     .mockResolvedValueOnce({ ...data(), code: 'SERVICE_UNAVAILABLE' })
     .mockResolvedValue({

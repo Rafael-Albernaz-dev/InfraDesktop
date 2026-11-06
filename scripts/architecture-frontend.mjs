@@ -160,6 +160,7 @@ function inspect(name, code) {
           "ListCredentials",
           "ListEquipment", "ListEquipmentFiltered", "BulkUpdateEquipment", "SetInventoryColumns",
           "PutCredential",
+          "DeleteCredential",
           "QueryStatus",
           "SaveEquipment",
           "SetEquipmentActive",

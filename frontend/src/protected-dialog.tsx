@@ -34,10 +34,12 @@ export function ProtectedDialog({
   title,
   close,
   children,
+  showClose = true,
 }: {
   title: string;
   close: () => void;
   children: ReactNode;
+  showClose?: boolean;
 }) {
   const guard = useRef<() => DraftState>(() => ({
     dirty: false,
@@ -78,6 +80,7 @@ export function ProtectedDialog({
     >
       <Dialog
         portal
+        showClose={showClose}
         title={title}
         close={requestClose}
         dismissOnBackdrop={false}
