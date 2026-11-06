@@ -10,7 +10,7 @@ import (
 
 // A block is presentation metadata; only an otherwise identical device can inherit a saved reading.
 func onlyBlockChanged(before, after equipment.Device) bool {
-	if before.Revision+1 != after.Revision || before.Block == after.Block {
+	if before.Revision+1 != after.Revision {
 		return false
 	}
 	before.Block, after.Block = "", ""
