@@ -2,11 +2,11 @@ package inventory_test
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/inventory"
@@ -19,9 +19,15 @@ func (renewalAuth) WithAuthorization(_ context.Context, _ uint32, _ access.Comma
 	return f(1)
 }
 
+var fixtureIDCounter atomic.Uint64
+
+func fixtureUUID() string {
+	return fmt.Sprintf("00000000-0000-4000-8000-%012x", fixtureIDCounter.Add(1))
+}
+
 type renewalIDs struct{}
 
-func (renewalIDs) ID() (string, equipment.Code) { return uuid.NewString(), equipment.OK }
+func (renewalIDs) ID() (string, equipment.Code) { return fixtureUUID(), equipment.OK }
 
 type renewalVault struct{ equipment.Vault }
 
@@ -75,15 +81,15 @@ func TestTrafficWindowsPruneJobsWithoutPersistingReadings(t *testing.T) {
 	clock := func() time.Time { return time.Unix(seconds.Load(), 0) }
 	inv := inventory.New(renewalAuth{}, store, renewalVault{}, renewalRemote{}, renewalIDs{}, clock)
 	defer inv.Close()
-	d := equipment.Device{ID: uuid.NewString(), Revision: 1, Active: true, Fingerprint: "synthetic", CredentialID: uuid.NewString()}
+	d := equipment.Device{ID: fixtureUUID(), Revision: 1, Active: true, Fingerprint: "synthetic", CredentialID: fixtureUUID()}
 	store.target = equipment.PPTarget{
 		Device: d, Credential: equipment.SealedCredential{Metadata: equipment.Credential{ID: d.CredentialID, Revision: 1}},
 	}
 	store.row = equipment.PPRow{
-		ID: uuid.NewString(), RemoteID: "*1", SessionID: "synthetic", State: "ONLINE", Uptime: equipment.PPInterval{Known: true},
+		ID: fixtureUUID(), RemoteID: "*1", SessionID: "synthetic", State: "ONLINE", Uptime: equipment.PPInterval{Known: true},
 	}
 	store.observation = &equipment.PPObservation{
-		ID: uuid.NewString(), DeviceID: d.ID, Provenance: equipment.PPProvenance{
+		ID: fixtureUUID(), DeviceID: d.ID, Provenance: equipment.PPProvenance{
 			Epoch: inv.Epoch, Connection: equipment.PPConnection(d), Revision: 1,
 			CredentialRevision: 1, Sample: equipment.PPInterval{Known: true},
 		},
@@ -93,7 +99,7 @@ func TestTrafficWindowsPruneJobsWithoutPersistingReadings(t *testing.T) {
 	service := pppoe.New(inv, nil)
 	for window := 0; window < 100; window++ {
 		in := equipment.PPInput{
-			DeviceID: d.ID, Revision: 1, Operation: uuid.NewString(), Scope: "traffic",
+			DeviceID: d.ID, Revision: 1, Operation: fixtureUUID(), Scope: "traffic",
 			ObservationID: store.observation.ID, RowIDs: []string{store.row.ID},
 		}
 		v, code := service.HandlePP(context.Background(), q, in)

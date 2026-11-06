@@ -3,12 +3,11 @@ package inventory
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"infradesktop/internal/modules/equipment"
 )
 
 func TestBlockOnlyKeepsRevisionAndStillRejectsStaleWrites(t *testing.T) {
-	original := Device{ID: uuid.NewString(), Name: "Sintetico", Address: "192.0.2.1", Port: 22,
+	original := Device{ID: "00000000-0000-4000-8000-000000000001", Name: "Sintetico", Address: "192.0.2.1", Port: 22,
 		Transport: equipment.TransportSSH, Role: equipment.RoleOther, Revision: 7, Active: true}
 	for _, mode := range []string{"edit", "bulk"} {
 		t.Run(mode, func(t *testing.T) {
@@ -28,7 +27,7 @@ func TestBlockOnlyKeepsRevisionAndStillRejectsStaleWrites(t *testing.T) {
 				return
 			}
 			block := "Torre sintetica"
-			q := Command{Operation: uuid.NewString(), Bulk: &equipment.BulkUpdate{
+			q := Command{Operation: "00000000-0000-4000-8000-000000000002", Bulk: &equipment.BulkUpdate{
 				Block: &block, Items: []equipment.BulkItem{{ID: original.ID, Revision: 7}},
 			}}
 			var v View
@@ -39,7 +38,7 @@ func TestBlockOnlyKeepsRevisionAndStillRejectsStaleWrites(t *testing.T) {
 			if st.Devices[0].Revision != 7 || v.BulkReceipt.Items[0].Revision != 7 {
 				t.Fatalf("block changed revision: %d", st.Devices[0].Revision)
 			}
-			q.Operation = uuid.NewString()
+			q.Operation = "00000000-0000-4000-8000-000000000003"
 			q.Bulk.Items[0].Revision = 6
 			if code := applyBulk(&st, q, "stale", &v, &changed); code != Revision {
 				t.Fatalf("stale accepted: %s", code)
@@ -49,7 +48,7 @@ func TestBlockOnlyKeepsRevisionAndStillRejectsStaleWrites(t *testing.T) {
 }
 
 func TestBlockAndNameStillAdvanceRevision(t *testing.T) {
-	old := Device{ID: uuid.NewString(), Name: "Antes", Address: "192.0.2.1", Port: 22,
+	old := Device{ID: "00000000-0000-4000-8000-000000000004", Name: "Antes", Address: "192.0.2.1", Port: 22,
 		Transport: equipment.TransportSSH, Role: equipment.RoleOther, Revision: 7, Active: true}
 	next := old
 	next.Name = "Depois"

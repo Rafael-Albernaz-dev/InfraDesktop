@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/inventory"
@@ -56,7 +55,7 @@ func (r runningBlockRemote) Query(
 func TestBlockOnlyLeavesRunningQueryAbleToFinish(t *testing.T) {
 	for _, mode := range []string{"edit", "bulk"} {
 		t.Run(mode, func(t *testing.T) {
-			id, credential := uuid.NewString(), uuid.NewString()
+			id, credential := fixtureUUID(), fixtureUUID()
 			device := equipment.Device{ID: id, Name: "Sintetico", Address: "192.0.2.1", Port: 22,
 				Transport: equipment.TransportSSH, Role: equipment.RoleOther, Revision: 1, Active: true,
 				Fingerprint: "synthetic", CredentialID: credential}
@@ -68,13 +67,13 @@ func TestBlockOnlyLeavesRunningQueryAbleToFinish(t *testing.T) {
 			service := inventory.New(renewalAuth{}, store, runningBlockVault{}, remote, renewalIDs{}, time.Now)
 			defer service.Close()
 			scope := access.Command{Profile: "company", ExpectedProfile: "company", Activation: "active", ExpectedActivation: "active"}
-			start := equipment.Command{Op: "device.query-start", Scope: scope, ID: id, Revision: 1, Operation: uuid.NewString()}
+			start := equipment.Command{Op: "device.query-start", Scope: scope, ID: id, Revision: 1, Operation: fixtureUUID()}
 			view, code := service.Handle(context.Background(), start)
 			if code != equipment.OK || view.Job == nil {
 				t.Fatal("start", code)
 			}
 			<-remote.entered
-			update := equipment.Command{Scope: scope, ID: id, Revision: 1, Operation: uuid.NewString()}
+			update := equipment.Command{Scope: scope, ID: id, Revision: 1, Operation: fixtureUUID()}
 			if mode == "edit" {
 				update.Op = "inventory.update"
 				update.Name = device.Name
