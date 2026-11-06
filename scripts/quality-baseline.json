@@ -19639,7 +19639,7 @@
     "Functions": null
   },
   "frontend/src/use-pppoe-read-job.tsx": {
-    "Lines": 120,
+    "Lines": 113,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -20567,6 +20567,20 @@
   },
   "frontend/src/equipment-test-fixture.ts": {
     "Lines": 22,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-status-retry.ts": {
+    "Lines": 16,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-cancel-reconcile.test.tsx": {
+    "Lines": 127,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,

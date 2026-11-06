@@ -1,8 +1,7 @@
 import type { ReadContext } from './pppoe-read-lifecycle';
 import { currentRead, validRead } from './pppoe-read-lifecycle';
 import { ppReadMessage } from './pppoe-context-actions';
-import type { PPResult } from './presentation';
-import { pppoeReadAPI as api } from './presentation';
+import { pppoeReadAPI as api, type PPResult } from './presentation';
 import { mergeTrafficWindows } from './pppoe-traffic-windows';
 function acceptSample(c: ReadContext, r: PPResult) {
   if (!r.data?.read) return;
@@ -39,7 +38,8 @@ function completeRead(c: ReadContext, r: PPResult) {
   else if (scope === 'traffic' && l.window) {
     l.history = l.window;
     l.retries = 0;
-    c.schedule(Math.max(0, 55000 - (performance.now() - l.liveStarted)));
+    if (l.operatorStopped) c.send({ type: 'parado' });
+    else c.schedule(Math.max(0, 55000 - (performance.now() - l.liveStarted)));
   } else if (scope === 'traffic')
     c.send({ type: 'falhou', error: 'Leitura de tráfego sem amostras.' });
 }

@@ -1,3 +1,5 @@
+import { retryReadStatus } from './pppoe-read-status-retry';
+import { cancelRead, pageRead } from './pppoe-read-cancel';
 import { useReadLifetime } from './pppoe-read-lifetime';
 import {
   useCallback,
@@ -14,7 +16,6 @@ import { createReadLifecycle } from './pppoe-read-lifecycle';
 import type { ReadContext } from './pppoe-read-lifecycle';
 import type { PPReadPanelProps } from './pppoe-read-props';
 import { startRead } from './pppoe-read-start';
-import { cancelRead, pageRead } from './pppoe-read-cancel';
 import { pollRead } from './pppoe-read-poll';
 import { scheduleTraffic, trafficFailed } from './use-traffic-renewal';
 import { RadioModes } from './radio-contract';
@@ -97,17 +98,9 @@ export function usePPPoEReadJob(p: PPReadPanelProps) {
       cancel: () => cancelRead(context),
       page: (cursor: string) => pageRead(context, cursor),
       retryPoll: (value: React.SetStateAction<number>) =>
-        send({
-          type: 'metadata',
-          values: {
-            pollRetry:
-              typeof value === 'function'
-                ? value(snapshot.current.pollRetry)
-                : value,
-          },
-        }),
+        retryReadStatus(context, value),
     }),
-    [context, send],
+    [context],
   );
   const [doc, setDoc] = useState<Document | null>(null);
   const setRoot = useCallback((node: HTMLElement | null) => {
