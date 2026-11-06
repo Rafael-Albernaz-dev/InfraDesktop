@@ -85,13 +85,14 @@ export function PPPoE({
   const wasActive = useRef(false);
   const returnFocus = useRef<{ container: Element; label: string } | undefined>(undefined);
   const active = navigation ? navigation.active : !!s.selected;
-  const openSession = (row: PPRow) => {
+  const openSession = (row: PPRow, originDevice?: string) => {
     if (!s.current) return;
     navigation?.open({
       device: device.id,
       observation: s.current.observation_id,
       row: row.row_id,
       login: row.login,
+      ...(originDevice ? { originDevice } : {}),
     });
   };
   useEffect(() => {
@@ -137,7 +138,7 @@ export function PPPoE({
     }
     if (!navigation?.active) {
       onSessionConsumed?.();
-      openSession(row);
+      openSession(row, targetToLoad?.originDevice);
     }
   });
   const disabled = s.busy || Boolean(s.job);

@@ -415,7 +415,7 @@ export function useEquipmentState(props: {
     ...actions,
     openById,
     openSession: (target: LinkedSessionTarget) =>
-      openById(target.deviceID, target),
+      openById(target.deviceID, { ...target, originDevice: s.selected?.id }),
     shownForm,
     closeForm,
     perform,

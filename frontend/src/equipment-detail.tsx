@@ -9,7 +9,7 @@ import { EquipmentChain } from './equipment-chain';
 import { equipmentType } from './equipment-layout';
 import { driverOwners } from './equipment-roles';
 import { HeaderActionHost } from './ui/HeaderAction';
-import { useContext, useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { SessionRoute } from './session-navigation';
 import type { RefreshOpening } from './use-refresh-on-open';
 import type { useEquipmentState } from './equipment-state';
@@ -177,8 +177,12 @@ export function EquipmentDetailPane(p: Props) {
   const sessionRoute = useContext(SessionRoute);
   const { surfaceRef, detailReadRef, detailSurfaceRef } = p;
   const [tab, setTab] = useState(
-    p.sessionTarget?.deviceID === p.selected.id ? 'Sessões' : 'Resumo',
+    p.sessionTarget?.deviceID === p.selected.id ? 'Sessões' :
+      sessionRoute?.returnOrigin === p.selected.id ? 'Cliente' : 'Resumo',
   );
+  useEffect(() => {
+    if (sessionRoute?.returnOrigin === p.selected.id) sessionRoute.consumeReturnOrigin?.();
+  }, [sessionRoute, p.selected.id]);
   const radioRefreshDecision = useRef<RefreshOpening | undefined>(undefined);
   const [radioActions, setRadioActions] = useState<HTMLDivElement | null>(null);
   const [chainHost, setChainHost] = useState<HTMLDivElement | null>(null);

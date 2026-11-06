@@ -6,6 +6,7 @@ export type LinkedSessionTarget = {
   deviceID: string;
   observation: string;
   row: string;
+  originDevice?: string;
 };
 export function useOpenLinkedSession(
   s: ReturnType<typeof usePPPoEState>,

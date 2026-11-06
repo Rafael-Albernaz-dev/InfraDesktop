@@ -5,10 +5,13 @@ export type SessionRouteTarget = {
   observation: string;
   row: string;
   login: string;
+  originDevice?: string;
 };
 export type SessionNavigation = {
   active: boolean;
   target?: SessionRouteTarget;
+  returnOrigin?: string;
+  consumeReturnOrigin?: () => void;
   open: (target: SessionRouteTarget) => void;
   back: () => void;
   leave: () => void;

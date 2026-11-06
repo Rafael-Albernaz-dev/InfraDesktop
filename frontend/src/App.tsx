@@ -24,6 +24,7 @@ export default function App() {
   const [sessionTarget, setSessionTarget] = useState<{
     scope: string; target: SessionRouteTarget;
   }>();
+  const [returnOrigin, setReturnOrigin] = useState('');
   const navigationGuardRef = useRef<NavigationAttempt | undefined>(undefined);
   const registerNavigationGuard = useCallback((attempt?: NavigationAttempt) => { navigationGuardRef.current = attempt; }, []);
   const attemptNavigation = useCallback((action: () => void) => {
@@ -57,6 +58,7 @@ export default function App() {
     blocked:
       session.busy || session.securityLockedRef.current || inv.inventoryBlocked,
     restore: (step) => {
+      setReturnOrigin(sessionActive && selectedSession?.originDevice === step.device ? step.device : '');
       if (inv.inventoryDetail && step.device !== inv.inventoryTarget.id)
         inv.detailBack.current?.();
       inv.selectInventory(step.device);
@@ -95,7 +97,10 @@ export default function App() {
     <SessionRoute.Provider value={{
       active: sessionActive,
       target: sessionActive ? selectedSession : undefined,
+      returnOrigin,
+      consumeReturnOrigin: () => setReturnOrigin(''),
       open: (target) => {
+        setReturnOrigin('');
         setSessionTarget({ scope: inv.contextPair, target });
         setPage('sessao');
       },

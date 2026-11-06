@@ -14,6 +14,12 @@ export function createNavigationHistory(limit = 50) {
     },
     record(step: NavigationStep) {
       if (steps.length && sameStep(steps[steps.length - 1], step)) return;
+      const origin = step.session?.originDevice;
+      const previous = steps[steps.length - 1];
+      const before = steps[steps.length - 2];
+      if (origin && previous?.route === 'equipment' &&
+          previous.device === step.session?.device && before?.route === 'equipment' &&
+          before.device === origin) steps.pop();
       steps.push(step);
       if (steps.length > limit) steps.shift();
     },
