@@ -3,14 +3,14 @@ export type Intent =
   | 'login'
   | 'register'
   | 'recover' | 'reset'
-  | 'renew'
+  | 'renew' | 'password'
   | 'company'
   | 'brand'
   | 'theme'
   | 'ack'
   | 'general';
 // Intent → message → available action. Raw backend text is never displayed.
-export function message(code: string, intent: Intent): string {
+export function message(code: string, intent: Intent, reason?: string): string {
   const resetNotice = resetVerificationMessage(code);
   if (resetNotice) return resetNotice;
   if (
@@ -18,12 +18,10 @@ export function message(code: string, intent: Intent): string {
     ['INVALID_REQUEST', 'UNAUTHENTICATED'].includes(code)
   )
     return 'Usuário ou senha não conferem';
-  if (code === 'UNAUTHENTICATED')
-    return intent === 'renew'
-      ? 'SENHA INCORRETA'
-      : intent === 'recover'
-        ? 'Usuário ou código não conferem.'
-        : 'Entre novamente para continuar.';
+  if (code === 'UNAUTHENTICATED') {
+    if ((intent === 'renew' || intent === 'password') && reason === 'PASSWORD_INCORRECT') return 'SENHA INCORRETA';
+    return intent === 'recover' ? 'Usuário ou código não conferem.' : 'Entre novamente para continuar.';
+  }
   if (code === 'INVALID_REQUEST') {
     if (intent === 'register' || intent === 'recover' || intent === 'reset')
       return 'Use uma nova senha de 8 a 128 caracteres e confira o usuário.';

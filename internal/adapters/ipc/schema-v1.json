@@ -189,6 +189,18 @@
       "name",
       "password",
       "reset_nonce"
+    ],
+    "access.change-password": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision",
+      "session",
+      "profile_id",
+      "activation_id",
+      "current_password",
+      "password"
     ]
   },
   "test_harness_only": [

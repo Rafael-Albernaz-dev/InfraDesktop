@@ -54,7 +54,7 @@ func (c *Client) exchangeFrame(ctx context.Context, q Request) (Response, error)
 	if strict(body, &response) != nil || response.Version != 1 || response.RequestID != q.RequestID {
 		return Response{}, bad
 	}
-	if !validErrorDetail(response) {
+	if !validErrorDetailForOperation(q.Op, response) {
 		return Response{}, bad
 	}
 	return response, nil

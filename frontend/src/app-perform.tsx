@@ -36,7 +36,7 @@ export function createPerformAction(
       }
       if (r.code !== 'OK') {
         if (operationSurface === session.surfaceRef.current)
-          session.setError(message(r.code, intent));
+          session.setError(message(r.code, intent, r.error_reason));
         return false;
       }
       const ownsSurface = operationSurface === session.surfaceRef.current;

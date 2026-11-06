@@ -264,6 +264,7 @@ function Scene() {
           logout={noop}
           unavailable={noop}
           security={noop}
+          changePassword={async () => true}
           inventory={
             scene === 'vitrine' ? (
               <Vitrine />

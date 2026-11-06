@@ -4,6 +4,9 @@ import "infradesktop/internal/adapters/ipc"
 
 func accountResult(r ipc.Response) Result {
 	v := Result{Code: string(r.Code), RequestID: r.RequestID, Companies: []ipc.Company{}}
+	if r.ErrorDetail != nil {
+		v.ErrorReason = r.ErrorDetail.Reason
+	}
 	if d := r.Data; d != nil {
 		v.Instance, v.Activation, v.Profile, v.Heartbeat = d.Instance, d.Activation, d.Profile, d.Heartbeat
 		v.Setup, v.Authenticated, v.Name, v.Theme, v.Columns = d.Setup, d.Authenticated, d.Name, d.Theme, d.Columns

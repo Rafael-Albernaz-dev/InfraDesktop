@@ -12,7 +12,8 @@ func isAccessOperation(op string) bool {
 
 func accessCommand(q Request, owner string, brand access.Branding) access.Command {
 	return access.Command{Owner: owner, Op: q.Op, Session: q.Session, Grant: q.Grant, Name: q.Name,
-		Password: q.Password, Recovery: q.Recovery, ResetNonce: q.ResetNonce, Remember: q.Remember, Profile: q.Profile, Activation: q.Activation,
+		Password: q.Password, CurrentPassword: q.CurrentPassword, Recovery: q.Recovery,
+		ResetNonce: q.ResetNonce, Remember: q.Remember, Profile: q.Profile, Activation: q.Activation,
 		Theme: q.Theme, Columns: &q.Columns, Operation: q.Operation, Replace: q.Replace,
 		ExpectedProfile: q.ExpectedProfile, ExpectedActivation: q.ExpectedActivation, Brand: brand}
 }

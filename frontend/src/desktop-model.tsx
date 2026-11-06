@@ -127,6 +127,8 @@ export type DesktopProps = {
   enter: (id: string) => void;
   logout: () => void;
   security?: () => void;
+  changePassword?: (current: string, next: string) => Promise<boolean>;
+  passwordError?: string;
   unavailable: (title: string) => void;
   operations?: Operations;
   openEquipment?: (id: string) => void;

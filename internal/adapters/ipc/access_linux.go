@@ -48,6 +48,9 @@ func (s *Server) dispatchAccess(ctx context.Context, uid uint32, q Request, owne
 	v, c := s.account.Handle(ctx, uid, accessCommand(q, owner, brand))
 	r.Code = foundation.Code(c)
 	if c != access.OK {
+		if c == access.Unauthorized && v.ErrorReason == access.WrongPasswordReason {
+			r.ErrorDetail = &ErrorDetail{Reason: access.WrongPasswordReason}
+		}
 		return r
 	}
 	d := accessData(v, s.identity.Instance, int64(time.Since(s.started)/time.Second))

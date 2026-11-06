@@ -12,6 +12,7 @@ import (
 type Result struct {
 	Columns        []string      `json:"columns,omitempty"`
 	Code           string        `json:"code"`
+	ErrorReason    string        `json:"error_reason,omitempty"`
 	RequestID      string        `json:"request_id"`
 	Instance       string        `json:"instance_id"`
 	Activation     string        `json:"activation_id"`
@@ -62,7 +63,8 @@ func (a *App) call(q ipc.Request) Result {
 	defer a.mu.Unlock()
 	defer a.syncRecoveryPending()
 	switch q.Op {
-	case "access.register", "access.login", "access.logout", "company.select", "company.create", "access.recover", "access.renew-recovery", "access.ack-recovery", "access.ack-issued":
+	case "access.register", "access.login", "access.logout", "access.change-password",
+		"company.select", "company.create", "access.recover", "access.renew-recovery", "access.ack-recovery", "access.ack-issued":
 		a.ppGeneration++
 	}
 	intent, blocked := a.prepareResetVerification(q)
@@ -102,6 +104,9 @@ func (a *App) SetTheme(theme string) Result {
 	return a.call(ipc.Request{Op: "preferences.theme", Theme: theme})
 }
 
+func (a *App) ChangePassword(current, next string) Result {
+	return a.call(ipc.Request{Op: "access.change-password", CurrentPassword: current, Password: next})
+}
 func (a *App) RenewRecovery(password string, replacePending bool) Result {
 	return a.call(ipc.Request{Op: "access.renew-recovery", Password: password, Replace: replacePending})
 }

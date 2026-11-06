@@ -26,7 +26,7 @@ func accessAllowed(q Request) (map[string]bool, foundation.Code) {
 	case "access.resume":
 		a["grant"] = true
 	case "access.snapshot", "access.logout", "company.create", "company.select", "preferences.theme",
-		"preferences.columns", "access.renew-recovery", "access.ack-recovery", "company.brand-get", "company.brand-set":
+		"preferences.columns", "access.renew-recovery", "access.change-password", "access.ack-recovery", "company.brand-get", "company.brand-set":
 		a["session"], a["profile_id"], a["activation_id"] = true, true, true
 		addAuthenticatedAccessFields(q.Op, a)
 	}
@@ -34,6 +34,9 @@ func accessAllowed(q Request) (map[string]bool, foundation.Code) {
 }
 
 func addAuthenticatedAccessFields(op string, a map[string]bool) {
+	if op == "access.change-password" {
+		a["password"], a["current_password"] = true, true
+	}
 	if op == "company.brand-get" || op == "company.brand-set" {
 		a["expected_profile"], a["expected_activation"] = true, true
 		if op == "company.brand-set" {

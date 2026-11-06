@@ -160,9 +160,11 @@ export function AuthenticatedShell(props: {
           )
         }
         security={() => open('Segurança')}
+        changePassword={(current, next) => perform(() => access.changePassword(current, next), undefined, true, 'password')}
+        passwordError={route === 'settings' ? error : ''}
         logout={() => open('Sair desta instalação?')}
         unavailable={(name) => open(name + ' indisponível')}
-        error={dialog ? '' : error}
+        error={dialog || route === 'settings' ? '' : error}
       >
         <AuthenticatedOverlays
           session={session}

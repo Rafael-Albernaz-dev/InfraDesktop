@@ -10,16 +10,17 @@ import (
 type Code string
 
 const (
-	OK           Code = "OK"
-	Invalid      Code = "INVALID_REQUEST"
-	Unauthorized Code = "UNAUTHENTICATED"
-	Changed      Code = "PROFILE_CHANGED"
-	Busy         Code = "BUSY"
-	Unavailable  Code = "SERVICE_UNAVAILABLE"
-	Conflict     Code = "ACCOUNT_EXISTS"
-	Limited      Code = "TRY_LATER"
-	SessionTTL        = 12 * time.Hour
-	GrantTTL          = 30 * 24 * time.Hour
+	WrongPasswordReason      = "PASSWORD_INCORRECT"
+	OK                  Code = "OK"
+	Invalid             Code = "INVALID_REQUEST"
+	Unauthorized        Code = "UNAUTHENTICATED"
+	Changed             Code = "PROFILE_CHANGED"
+	Busy                Code = "BUSY"
+	Unavailable         Code = "SERVICE_UNAVAILABLE"
+	Conflict            Code = "ACCOUNT_EXISTS"
+	Limited             Code = "TRY_LATER"
+	SessionTTL               = 12 * time.Hour
+	GrantTTL                 = 30 * 24 * time.Hour
 )
 
 type Verifier struct {
@@ -75,18 +76,18 @@ type resetChallenge struct {
 type Command struct {
 	Columns                                                                             *[]string
 	Op, Session, Grant, Name, Password, Recovery, Profile, Activation, Theme, Operation string
-	ExpectedProfile, ExpectedActivation, ResetNonce                                     string
+	ExpectedProfile, ExpectedActivation, ResetNonce, CurrentPassword                    string
 	Brand                                                                               Branding
 	Remember, Replace                                                                   bool
 	// Owner is a transport-authenticated opaque process identity, never a wire field.
 	Owner string
 }
 type View struct {
-	Columns                                                                []string
-	Setup, Authenticated                                                   bool
-	Name, Theme, Profile, Activation, Session, Grant, Recovery, ResetNonce string
-	Companies                                                              []Company
-	Brand                                                                  *Branding
+	Columns                                                                             []string
+	Setup, Authenticated                                                                bool
+	Name, Theme, Profile, Activation, Session, Grant, Recovery, ResetNonce, ErrorReason string
+	Companies                                                                           []Company
+	Brand                                                                               *Branding
 }
 type session struct {
 	Owner   string
@@ -246,54 +247,4 @@ func ValidCompanyID(id string) bool {
 		}
 	}
 	return true
-}
-
-func (s *Service) renewRecovery(ctx context.Context, uid uint32, q Command) (View, Code) {
-	if !validExistingPassword(q.Password) {
-		return View{}, Unauthorized
-	}
-	select {
-	case s.kdf <- struct{}{}:
-		defer func() { <-s.kdf }()
-	default:
-		return View{}, Busy
-	}
-	st, c := s.renewalState(ctx, uid, q)
-	if c != OK {
-		return View{}, c
-	}
-	if c = s.reserve(ctx); c != OK {
-		return View{}, c
-	}
-	if !s.crypto.Verify(q.Password, st.Account.Password) {
-		return View{}, Unauthorized
-	}
-	recovery, c := s.crypto.Token()
-	if c != OK {
-		return View{}, c
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	c = s.store.Update(ctx, func(current *State) Code {
-		if c := s.authorized(*current, uid, q); c != OK {
-			return c
-		}
-		if current.Account.Epoch != st.Account.Epoch || !s.crypto.Equal(current.Account.Password.Hash, st.Account.Password.Hash) || !s.crypto.Equal(current.Account.Recovery, st.Account.Recovery) {
-			return Unauthorized
-		}
-		current.Account.Recovery = s.crypto.Digest(recovery)
-		current.Failures = 0
-		current.NextAttempt = time.Time{}
-		st = *current
-		return OK
-	})
-	if c != OK {
-		return View{}, c
-	}
-	s.authorizationVersion++
-	s.pendingRecovery[q.Session] = true
-	v := s.view(st)
-	v.Authenticated = true
-	v.Recovery = recovery
-	return v, OK
 }

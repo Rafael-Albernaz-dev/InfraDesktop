@@ -20,6 +20,8 @@ func (s *Service) Handle(ctx context.Context, uid uint32, q Command) (View, Code
 		return s.handleCredentials(ctx, uid, q)
 	case "access.check-issued", "access.ack-issued":
 		return s.handleIssuedRecovery(ctx, q)
+	case "access.change-password":
+		return s.changePassword(ctx, uid, q)
 	case "access.renew-recovery":
 		return s.renewRecovery(ctx, uid, q)
 	case "access.resume":

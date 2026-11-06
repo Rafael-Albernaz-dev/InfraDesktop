@@ -4,7 +4,7 @@ import { Security } from './security';
 import { message } from './microcopy';
 
 it('shows incorrect password in the error variant and no theme controls', () => {
-  const error = message('UNAUTHENTICATED', 'renew');
+  const error = message('UNAUTHENTICATED', 'renew', 'PASSWORD_INCORRECT');
   render(
     <Security
       recovery=""

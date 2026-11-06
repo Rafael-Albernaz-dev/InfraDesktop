@@ -37,6 +37,7 @@ type Request struct {
 	Label              string                `json:"label,omitempty"`
 	Name               string                `json:"name,omitempty"`
 	Password           string                `json:"password,omitempty"`
+	CurrentPassword    string                `json:"current_password,omitempty"`
 	ResetNonce         string                `json:"reset_nonce,omitempty"`
 	Recovery           string                `json:"recovery,omitempty"`
 	Grant              string                `json:"grant,omitempty"`
@@ -238,7 +239,7 @@ func validate(b []byte) (Request, foundation.Code) {
 	case "access.bootstrap", "access.register", "access.login", "access.recover", "access.resume",
 		"access.reset-begin", "access.reset-complete",
 		"access.snapshot", "access.logout", "company.create", "company.select", "preferences.theme",
-		"preferences.columns", "access.renew-recovery", "access.ack-recovery", "access.check-issued",
+		"preferences.columns", "access.renew-recovery", "access.change-password", "access.ack-recovery", "access.check-issued",
 		"access.ack-issued", "company.brand-get", "company.brand-set":
 		var code foundation.Code
 		allowed, code = accessAllowed(q)

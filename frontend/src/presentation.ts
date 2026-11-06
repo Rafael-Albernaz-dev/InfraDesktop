@@ -43,6 +43,7 @@ import {
   Login,
   Recover,
   ResetAccount,
+  ChangePassword,
   Logout,
   CreateCompany,
   SelectCompany,
@@ -70,13 +71,14 @@ import type { equipment, presentation } from '../wailsjs/go/models';
 export type Result = Omit<
   presentation.Result,
   'convertValues' | 'product_version'
-> & { product_version?: string };
+> & { product_version?: string; error_reason?: string };
 export const access: {
   status: () => Promise<Result>;
   register: (name: string, password: string) => Promise<Result>;
   login: (name: string, password: string, remember: boolean) => Promise<Result>;
   recover: (name: string, code: string, password: string) => Promise<Result>;
   resetAccount: (name: string, password: string) => Promise<Result>;
+  changePassword: (current: string, next: string) => Promise<Result>;
   logout: () => Promise<Result>;
   createCompany: (name: string) => Promise<Result>;
   selectCompany: (id: string) => Promise<Result>;
@@ -98,6 +100,7 @@ export const access: {
   login: Login,
   recover: Recover,
   resetAccount: ResetAccount,
+  changePassword: ChangePassword,
   logout: Logout,
   createCompany: CreateCompany,
   selectCompany: SelectCompany,

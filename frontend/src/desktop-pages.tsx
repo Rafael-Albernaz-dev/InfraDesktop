@@ -3,8 +3,8 @@ import type { Branding } from './desktop-model';
 import type { DesktopProps } from './desktop-model';
 import { Button } from './ui/Button';
 import { DataTable } from './ui/DataTable';
-import { Field } from './ui/Field';
 import { ProductBrand } from './ui/ProductBrand';
+import { SettingsPassword } from './settings-password';
 export function CompanyList({ p }: { p: DesktopProps }) {
   return (
     <div className="solo companies-page">
@@ -78,30 +78,7 @@ export function Settings({ p }: { p: DesktopProps }) {
   return (
     <>
       <h1>Configurações</h1>
-      <div className="card settings-card">
-        <h2>Senha</h2>
-        <Field
-          layout="form"
-          label="Senha atual"
-          type="password"
-          autoComplete="current-password"
-        />
-        <Field
-          layout="form"
-          label="Nova senha"
-          type="password"
-          autoComplete="new-password"
-        />
-        <Field
-          layout="form"
-          label="Confirmar nova senha"
-          type="password"
-          autoComplete="new-password"
-        />
-        <Button kind="primary" disabled title="Ainda não existe (L-CONTA)">
-          Alterar senha
-        </Button>
-      </div>
+      <SettingsPassword p={p} />
       <div className="card settings-card">
         <h2>Código de recuperação</h2>
         <Button onClick={p.security} disabled={p.busy || !p.connected}>
