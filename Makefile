@@ -95,7 +95,7 @@ test-equipment-smoke:
 .PHONY: quality
 quality:
 	go test ./scripts/qualityrules ./scripts/qualitydup -count=1
-	cd frontend && node --test eslint-quality.check.mjs eslint-config.check.mjs eslint-hook-alias.check.mjs
+	cd frontend && node --test eslint-quality.check.mjs eslint-config.check.mjs eslint-hook-alias.check.mjs eslint-quality-report.check.mjs
 	go run ./scripts/quality.go
 	cd frontend && ./node_modules/.bin/eslint . --max-warnings 0 --no-inline-config
 	node --test scripts/layout-guard.test.mjs

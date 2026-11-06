@@ -7,6 +7,7 @@ export function createReadLifecycle() {
     disposed: false,
     automaticStarted: false,
     generation: 0,
+    jobGeneration: 0,
     activeJob: '',
     privateJob: '',
     operation: '',
@@ -38,11 +39,4 @@ export function validRead(p: PPReadPanelProps, r: PPResult) {
 }
 export function currentRead(c: ReadContext, g: number) {
   return !c.life.current.disposed && c.life.current.generation === g;
-}
-export function readTarget(p: PPReadPanelProps, mode: string) {
-  if (['top', 'health', 'operations'].includes(mode))
-    return { obs: '', rows: [] };
-  if (['log', 'secret'].includes(mode))
-    return { obs: p.observation, rows: p.logRow ? [p.logRow] : [] };
-  return { obs: p.observation, rows: p.rows };
 }

@@ -1,5 +1,6 @@
+import { prepareRead, readTarget } from './pppoe-read-request';
 import type { ReadContext } from './pppoe-read-lifecycle';
-import { currentRead, readTarget, validRead } from './pppoe-read-lifecycle';
+import { currentRead, validRead } from './pppoe-read-lifecycle';
 import { ppReadMessage } from './pppoe-context-actions';
 import type { PPResult } from './presentation';
 import { RadioCodes } from './radio-contract';
@@ -20,32 +21,6 @@ const rejected = [
   'DEADLINE_EXCEEDED',
   'SERVICE_UNAVAILABLE',
 ];
-function prepare(c: ReadContext, mode: string, preserve: boolean) {
-  const l = c.life.current;
-  if (l.privateJob)
-    void api
-      .cancel(
-        c.latest.current.profile,
-        c.latest.current.activation,
-        l.privateJob,
-      )
-      .catch(() => {});
-  l.privateJob = '';
-  l.operation = crypto.randomUUID();
-  l.generation++;
-  l.requestedAt = performance.now();
-  l.liveStarted = l.requestedAt;
-  l.sampleClock = l.liveStarted;
-  l.lastSample = '';
-  if (!preserve) {
-    l.history = undefined;
-    l.retries = 0;
-  }
-  if (mode === 'traffic') l.window = undefined;
-  l.operatorStopped = false;
-  c.send({ type: 'solicitado', scope: mode, preserve });
-  return l.generation;
-}
 export async function startRead(
   c: ReadContext,
   mode: string,
@@ -54,7 +29,7 @@ export async function startRead(
   const l = c.life.current,
     p = c.latest.current;
   if (l.operation || l.activeJob || (mode === 'traffic' && l.hidden)) return;
-  const g = prepare(c, mode, preserve),
+  const g = prepareRead(c, mode, preserve),
     target = readTarget(p, mode);
   try {
     const r = await api.start(
@@ -106,6 +81,7 @@ async function acceptStart(
   }
   l.operation = '';
   l.activeJob = r.data.job.id;
+  l.jobGeneration = g;
   if (mode === 'secret' || mode === 'traffic') l.privateJob = r.data.job.id;
   c.send({ type: 'iniciado', job: r.data.job.id });
 }

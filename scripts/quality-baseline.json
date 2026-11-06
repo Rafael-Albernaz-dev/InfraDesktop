@@ -19576,7 +19576,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-read-lifecycle.ts": {
-    "Lines": 48,
+    "Lines": 42,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -19611,7 +19611,7 @@
     "Functions": null
   },
   "frontend/src/pppoe-read-start.ts": {
-    "Lines": 111,
+    "Lines": 87,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -19639,7 +19639,7 @@
     "Functions": null
   },
   "frontend/src/use-pppoe-read-job.tsx": {
-    "Lines": 156,
+    "Lines": 120,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -20536,5 +20536,33 @@
         "Complexity": 4
       }
     ]
+  },
+  "frontend/src/pppoe-read-lifetime.ts": {
+    "Lines": 41,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/traffic-strict-mode.test.tsx": {
+    "Lines": 84,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-cancel-before-poll.test.tsx": {
+    "Lines": 73,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/pppoe-read-request.ts": {
+    "Lines": 36,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
   }
 }

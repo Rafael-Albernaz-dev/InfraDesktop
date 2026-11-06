@@ -1,3 +1,4 @@
+import { useReadLifetime } from './pppoe-read-lifetime';
 import {
   useCallback,
   useEffect,
@@ -16,7 +17,6 @@ import { startRead } from './pppoe-read-start';
 import { cancelRead, pageRead } from './pppoe-read-cancel';
 import { pollRead } from './pppoe-read-poll';
 import { scheduleTraffic, trafficFailed } from './use-traffic-renewal';
-import { pppoeReadAPI as api } from './presentation';
 import { RadioModes } from './radio-contract';
 function useReadClock(c: ReadContext, job: string, scope: string) {
   useEffect(() => {
@@ -42,42 +42,6 @@ function useReadClock(c: ReadContext, job: string, scope: string) {
       clearTimeout(initial);
     };
   }, [c, job, scope]);
-}
-function readLifetime(
-  c: ReadContext,
-  profile: string,
-  activation: string,
-  deviceId: string,
-) {
-  const l = c.life.current;
-  l.disposed = false;
-  return () => {
-    l.disposed = true;
-    clearTimeout(l.renewalTimer);
-    clearTimeout(l.pollTimer);
-    l.generation++;
-    const id = l.activeJob || l.privateJob,
-      op = l.operation;
-    l.activeJob = '';
-    l.privateJob = '';
-    l.operation = '';
-    if (id) void api.cancel(profile, activation, id).catch(() => {});
-    else if (op)
-      void api
-        .cancelOperation(profile, activation, deviceId, op)
-        .catch(() => {});
-  };
-}
-function useReadCleanup(c: ReadContext, p: PPReadPanelProps) {
-  const {
-    profile,
-    activation,
-    device: { id: deviceId },
-  } = p;
-  useEffect(
-    () => readLifetime(c, profile, activation, deviceId),
-    [c, profile, activation, deviceId],
-  );
 }
 function automaticTraffic(c: ReadContext) {
   const p = c.latest.current,
@@ -118,11 +82,11 @@ export function usePPPoEReadJob(p: PPReadPanelProps) {
     };
     return c;
   }, [send]);
-  useReadCleanup(context, p);
+  useReadLifetime(context, p);
   useAutomaticTraffic(context, p);
   useEffect(() => {
     if (!state.job) return;
-    void pollRead(context, context.life.current.generation);
+    void pollRead(context, context.life.current.jobGeneration);
     return () => clearTimeout(context.life.current.pollTimer);
   }, [context, state.job, state.pollRetry]);
   useReadClock(context, state.job, state.scope);
