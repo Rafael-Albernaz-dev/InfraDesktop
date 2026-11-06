@@ -1,0 +1,95 @@
+import { render, waitFor } from '@testing-library/react';
+import { expect, it, vi } from 'vitest';
+import { PPPoE } from './pppoe';
+import { SessionRoute } from './session-navigation';
+import { pppoeAPI } from './presentation';
+import type { Device } from './equipment-api';
+
+vi.mock('./presentation', async (original) => ({
+  ...(await original<typeof import('./presentation')>()),
+  pppoeAPI: Object.fromEntries(
+    'current,references,list,detail,groups,start,status,cancel'
+      .split(',')
+      .map((key) => [key, vi.fn()]),
+  ),
+  deviceMonitoringAPI: { current: vi.fn() },
+}));
+const response = (data: object = {}) => ({
+  code: 'OK',
+  profile_id: 'company',
+  activation_id: 'active',
+  data: { total: 0, ...data },
+});
+it('opens the exact linked session target as its own navigation step', async () => {
+  const open = vi.fn(),
+    consumed = vi.fn();
+  const device = {
+    id: 'router-fixture',
+    name: 'Sintético',
+    revision: 1,
+    active: true,
+  } as Device;
+  const row = {
+    row_id: 'row-fixture',
+    login: 'usuario sintético',
+    remote_id: '*1',
+    address: '192.0.2.1',
+    uptime: { known: true, min: 1, max: 1 },
+  };
+  vi.mocked(pppoeAPI.current).mockResolvedValue(
+    response({
+      current: {
+        observation_id: 'obs-fixture',
+        count: 1,
+        quality: { status: 'complete' },
+        provenance: { ended_at: '2026-11-06T00:00:00Z' },
+      },
+    }) as never,
+  );
+  vi.mocked(pppoeAPI.references).mockResolvedValue(
+    response({ references: [] }) as never,
+  );
+  vi.mocked(pppoeAPI.list).mockResolvedValue(
+    response({ rows: [row], total: 1 }) as never,
+  );
+  vi.mocked(pppoeAPI.groups).mockResolvedValue(
+    response({ groups: [] }) as never,
+  );
+  vi.mocked(pppoeAPI.detail).mockResolvedValue(
+    response({ rows: [row], total: 1 }) as never,
+  );
+  render(
+    <SessionRoute.Provider
+      value={{ active: false, open, back: () => {}, leave: () => {} }}
+    >
+      <PPPoE
+        profile="company"
+        activation="active"
+        device={device}
+        back={() => {}}
+        sessionTarget={{
+          deviceID: 'router-fixture',
+          observation: 'obs-fixture',
+          row: 'row-fixture',
+        }}
+        onSessionConsumed={consumed}
+      />
+    </SessionRoute.Provider>,
+  );
+  await waitFor(() =>
+    expect(open).toHaveBeenCalledWith({
+      device: 'router-fixture',
+      observation: 'obs-fixture',
+      row: 'row-fixture',
+      login: 'usuario sintético',
+    }),
+  );
+  expect(pppoeAPI.detail).toHaveBeenCalledWith(
+    'company',
+    'active',
+    'router-fixture',
+    'obs-fixture',
+    'row-fixture',
+  );
+  expect(consumed).toHaveBeenCalledOnce();
+});
