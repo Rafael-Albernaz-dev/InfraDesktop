@@ -56,10 +56,7 @@ try {
         await page.getByRole('region', { name: 'Detalhes da sessão', exact: true }).waitFor();
         if (scene.id !== 'sessao-offline') await page.locator('.session-screen .chain').waitFor();
         if (scene.sessionTab) await page.getByRole('tab', { name: scene.sessionTab, exact: true }).click();
-        if (scene.sessionLive) {
-          await page.getByRole('button', { name: 'Ver ao vivo', exact: true }).click();
-          await page.locator('.ch-plot canvas').waitFor();
-        }
+        if (scene.id === 'sessao-trafego-ao-vivo') await page.locator('.ch-plot canvas').waitFor();
       }
     }
     if (scene.id === 'adicionar' || scene.id === 'importar-arquivo' || scene.id === 'importar-fim' || scene.id === 'importar-previa' || scene.id === 'importar-corrigir') {

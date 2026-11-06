@@ -3,6 +3,7 @@ import { RadioModes } from './radio-contract';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
 import { readingAge } from './equipment-reading-format';
+import { useEffect, useRef } from 'react';
 
 import type { PPReadPanelProps } from './pppoe-read-state';
 import { usePPReadState } from './pppoe-read-state';
@@ -12,6 +13,12 @@ export { PPPoEDiagnostics, PPPoEPing } from './pppoe-diag-views';
 
 function PPPoEReadContent(props: PPReadPanelProps) {
   const s = usePPReadState(props);
+  const automaticTrafficStarted = useRef(false);
+  useEffect(() => {
+    if (!props.traffic || props.blocked || !props.rows.length || automaticTrafficStarted.current) return;
+    automaticTrafficStarted.current = true;
+    void s.start('traffic');
+  }, [props.traffic, props.blocked, props.rows.length, s.start]);
   if (
     !props.rows.length &&
     !props.allowTop &&

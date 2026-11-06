@@ -227,7 +227,7 @@ function PPReadTriggerButtons(p: {
           )}
         </>
       )}
-      {pProps.traffic && !s.locked && (
+      {pProps.traffic && !s.locked && (s.stoppedTraffic || s.error) && (
           <Button type="submit" onClick={() => void s.start('traffic')}>
             Ver ao vivo
           </Button>
@@ -278,7 +278,7 @@ export function PPReadActionButtons(p: {
   const { s, pProps } = p;
   const isObservingLive = s.scope === RadioModes.live && !s.deadlineReached;
   const cancelText =
-    pProps.traffic && s.job
+    pProps.traffic && (s.job || s.renewing)
       ? 'Parar'
       : !s.job
         ? 'Cancelar solicitação pendente'
@@ -288,7 +288,7 @@ export function PPReadActionButtons(p: {
   return (
     <>
       <PPReadTriggerButtons s={s} pProps={pProps} />
-      {(s.job || s.pending || s.starting) && (
+      {(s.job || s.pending || s.starting || s.renewing) && (
         <Button
           type="submit"
           disabled={s.cancelling}
@@ -307,7 +307,8 @@ export function PPReadActionButtons(p: {
 }
 
 function progressStatusText(scope: string): string {
-  if (scope === RadioModes.live || scope === 'traffic') {
+  if (scope === 'traffic') return 'Aguardando primeira amostra.';
+  if (scope === RadioModes.live) {
     return 'Observação limitada a 60 s; atualização aproximada a cada 2 s.';
   }
   if (scope === 'operations')
@@ -336,16 +337,13 @@ export function PPReadStatusBanners(p: {
           término.
         </p>
       ) : (
-        (s.starting || s.job) &&
-        !s.error &&
-        (!pProps.traffic || !s.result) && (
+        (s.starting || s.job) && !s.error && !pProps.traffic && (
           <p role="status">{progressStatusText(s.scope)}</p>
         )
       )}
       {pProps.traffic && (
         <p className="muted">
-          {trafficNotice} Observação de até 60 s; gráfico retido em memória por
-          5 min.
+          {trafficNotice} Gráfico retido em memória por 5 min.
         </p>
       )}
       {s.stoppedTraffic && <p role="status">Observação parada.</p>}

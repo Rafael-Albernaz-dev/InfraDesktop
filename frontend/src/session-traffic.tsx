@@ -1,4 +1,4 @@
-import { RateValue } from './pppoe-read-views';
+import { SessionRatePair } from './session-rate-pair';
 import { KeyValues } from './ui/KeyValues';
 import { Chart } from './ui/Chart';
 import type { PPReadRow } from './presentation';
@@ -76,17 +76,11 @@ export function SessionTraffic({
         rows={[
           [
             'Média',
-            <>
-              <RateValue rate={t.average_download} /> /{' '}
-              <RateValue rate={t.average_upload} />
-            </>,
+            <SessionRatePair download={t.average_download} upload={t.average_upload} />,
           ],
           [
             'Pico amostrado',
-            <>
-              <RateValue rate={t.peak_download} /> /{' '}
-              <RateValue rate={t.peak_upload} />
-            </>,
+            <SessionRatePair download={t.peak_download} upload={t.peak_upload} />,
           ],
           [
             'Total da observação',

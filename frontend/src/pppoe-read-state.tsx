@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { usePPReadStateVars } from './pppoe-read-vars';
+import { usePPReadCleanup } from './pppoe-read-cleanup';
+import type { ReadState } from './pppoe-read-vars';
+export type { ReadState } from './pppoe-read-vars';
 import type { Device } from './equipment-api';
 import { ppReadMessage } from './pppoe-context';
 export { ppReadMessage } from './pppoe-context';
 import { RadioCodes, RadioModes } from './radio-contract';
 import type { PPReadResult, PPResult } from './presentation';
 import { pppoeReadAPI as readAPI } from './presentation';
+import { mergeTrafficWindows } from './pppoe-traffic-windows';
 export type PPReadPanelProps = {
   profile: string;
   activation: string;
@@ -41,109 +46,7 @@ const READ_REJECTED = [
   RadioCodes.UNSUPPORTED,
 ];
 
-function usePPReadStateVars() {
-  const [job, setJob] = useState('');
-  const [starting, setStarting] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
-  const [pageCursor, setPageCursor] = useState('');
-  const [next, setNext] = useState('');
-  const [pageBusy, setPageBusy] = useState(false);
-  const [resultJob, setResultJob] = useState('');
-  const [error, setError] = useState('');
-  const [failureReason, setFailureReason] = useState('');
-  const [result, setResult] = useState<PPReadResult>();
-  const [scope, setScope] = useState('bandwidth');
-  const [pollRetry, retryPoll] = useState(0);
-  const [statusLatency, setStatusLatency] = useState<number>();
-  const [firstStatus, setFirstStatus] = useState<number>();
-  const [deadlineReached, setDeadlineReached] = useState(false);
-  const [sampleAge, setSampleAge] = useState(0);
-  const [stoppedTraffic, setStoppedTraffic] = useState(false);
-  return {
-    job,
-    setJob,
-    starting,
-    setStarting,
-    pending,
-    setPending,
-    cancelling,
-    setCancelling,
-    pageCursor,
-    setPageCursor,
-    next,
-    setNext,
-    pageBusy,
-    setPageBusy,
-    resultJob,
-    setResultJob,
-    error,
-    setError,
-    failureReason,
-    setFailureReason,
-    result,
-    setResult,
-    scope,
-    setScope,
-    pollRetry,
-    retryPoll,
-    statusLatency,
-    setStatusLatency,
-    firstStatus,
-    setFirstStatus,
-    deadlineReached,
-    setDeadlineReached,
-    sampleAge,
-    setSampleAge,
-    stoppedTraffic,
-    setStoppedTraffic,
-  };
-}
-export type ReadState = ReturnType<typeof usePPReadStateVars>;
 
-function usePPReadCleanup(p: {
-  profile: string;
-  activation: string;
-  deviceId: string;
-  generationRef: React.MutableRefObject<number>;
-  activeJobRef: React.MutableRefObject<string>;
-  privateResultJobRef: React.MutableRefObject<string>;
-  pendingOperationRef: React.MutableRefObject<string>;
-}) {
-  const {
-    profile,
-    activation,
-    deviceId,
-    generationRef,
-    activeJobRef,
-    privateResultJobRef,
-    pendingOperationRef,
-  } = p;
-  useEffect(() => {
-    generationRef.current += 1;
-    return () => {
-      generationRef.current += 1;
-      const id = activeJobRef.current || privateResultJobRef.current;
-      const op = pendingOperationRef.current;
-      activeJobRef.current = '';
-      privateResultJobRef.current = '';
-      pendingOperationRef.current = '';
-      if (id) void readAPI.cancel(profile, activation, id).catch(() => {});
-      else if (op)
-        void readAPI
-          .cancelOperation(profile, activation, deviceId, op)
-          .catch(() => {});
-    };
-  }, [
-    profile,
-    activation,
-    deviceId,
-    generationRef,
-    activeJobRef,
-    privateResultJobRef,
-    pendingOperationRef,
-  ]);
-}
 
 function resolveStartTarget(
   mode: string,
@@ -177,6 +80,8 @@ function usePPReadStartAction(p: {
   requestedAt: React.MutableRefObject<number>;
   sampleClock: React.MutableRefObject<number>;
   lastSample: React.MutableRefObject<string>;
+  trafficHistory: React.MutableRefObject<PPReadResult | undefined>;
+  trafficWindow: React.MutableRefObject<PPReadResult | undefined>;
   valid: (r: PPResult) => boolean;
 }) {
   const {
@@ -190,9 +95,11 @@ function usePPReadStartAction(p: {
     requestedAt,
     sampleClock,
     lastSample,
+    trafficHistory,
+    trafficWindow,
     valid,
   } = p;
-  return async (mode: string) => {
+  return async (mode: string, renewing = false) => {
     requestedAt.current = performance.now();
     s.setStatusLatency(undefined);
     s.setFirstStatus(undefined);
@@ -212,7 +119,11 @@ function usePPReadStartAction(p: {
     s.setStarting(true);
     s.setError('');
     s.setFailureReason('');
-    s.setResult(undefined);
+    if (!renewing) {
+      trafficHistory.current = undefined;
+      s.setResult(undefined);
+    }
+    if (mode === 'traffic') trafficWindow.current = undefined;
     s.setNext('');
     s.setPageCursor('');
     s.setResultJob('');
@@ -281,6 +192,11 @@ function usePPReadPollEffect(p: {
   sampleClock: React.MutableRefObject<number>;
   lastSample: React.MutableRefObject<string>;
   liveStarted: React.MutableRefObject<number>;
+  trafficHistory: React.MutableRefObject<PPReadResult | undefined>;
+  trafficWindow: React.MutableRefObject<PPReadResult | undefined>;
+  renewalTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | undefined>;
+  restartTraffic: React.MutableRefObject<() => void>;
+  blocked: React.MutableRefObject<boolean>;
 }) {
   const {
     s,
@@ -291,12 +207,29 @@ function usePPReadPollEffect(p: {
     sampleClock,
     lastSample,
     liveStarted,
+    trafficHistory,
+    trafficWindow,
+    renewalTimer,
+    restartTraffic,
+    blocked,
   } = p;
   useEffect(() => {
     if (!s.job) return;
     let alive = true;
     const g = generation.current;
     let timer: ReturnType<typeof setTimeout>;
+    const cancelFailedTraffic = () => {
+      if (s.scope !== 'traffic') return;
+      void readAPI.cancel(pProps.profile, pProps.activation, s.job).then((response) => {
+        if (!alive || g !== generation.current) return;
+        if (response.code === 'OK' && response.profile_id === pProps.profile && response.activation_id === pProps.activation) {
+          activeJob.current = '';
+          s.setJob('');
+        } else s.setError('Falha na leitura; cancelamento não confirmado.');
+      }).catch(() => {
+        if (alive && g === generation.current) s.setError('Falha na leitura; cancelamento não confirmado.');
+      });
+    };
     const poll = async () => {
       try {
         const beforeStatus = performance.now();
@@ -318,6 +251,7 @@ function usePPReadPollEffect(p: {
           !r.data?.job
         ) {
           s.setError(ppReadMessage(r.code));
+          cancelFailedTraffic();
           return;
         }
         s.setError('');
@@ -327,7 +261,11 @@ function usePPReadPollEffect(p: {
             sampleClock.current = performance.now();
             s.setSampleAge(0);
           }
-          s.setResult(r.data.read);
+          const reading = s.scope === 'traffic'
+            ? mergeTrafficWindows(trafficHistory.current, r.data.read)
+            : r.data.read;
+          if (s.scope === 'traffic') trafficWindow.current = reading;
+          s.setResult(reading);
           s.setNext(r.data.next_cursor || '');
         }
         if (r.data.job.state === 'RUNNING') {
@@ -339,15 +277,28 @@ function usePPReadPollEffect(p: {
         s.setDeadlineReached(false);
         if (r.data.job.code === 'OK' && s.scope === 'operations')
           pProps.onRead?.();
-        if (r.data.job.code !== 'OK') {
+        if (r.data.job.code !== 'OK' || r.data.job.state !== 'SUCCEEDED') {
           s.setError(ppReadMessage(r.data.job.code));
           s.setFailureReason(r.error?.reason || '');
+        } else if (s.scope === 'traffic' && trafficWindow.current) {
+          trafficHistory.current = trafficWindow.current;
+          s.setRenewing(true);
+          const delay = Math.max(0, 55000 - (performance.now() - liveStarted.current));
+          renewalTimer.current = setTimeout(() => {
+            s.setRenewing(false);
+            if (blocked.current) s.setStoppedTraffic(true);
+            else restartTraffic.current();
+          }, delay);
+        } else if (s.scope === 'traffic') {
+          s.setError('Leitura de tráfego sem amostras.');
         }
       } catch {
-        if (alive && g === generation.current)
+        if (alive && g === generation.current) {
           s.setError(
             'Estado da leitura indisponível. Consulte o estado ou cancele a solicitação.',
           );
+          cancelFailedTraffic();
+        }
       }
     };
     void poll();
@@ -369,7 +320,7 @@ function usePPReadPollEffect(p: {
     const tick = () => {
       const now = performance.now();
       s.setSampleAge(Math.max(0, now - sampleClock.current));
-      if (s.job && now - liveStarted.current >= 60000) {
+      if (s.scope === RadioModes.live && s.job && now - liveStarted.current >= 60000) {
         s.setDeadlineReached(true);
         clearInterval(timer);
       }
@@ -389,10 +340,17 @@ function usePPReadMutations(p: {
   generation: React.MutableRefObject<number>;
   activeJob: React.MutableRefObject<string>;
   pendingOperation: React.MutableRefObject<string>;
+  renewalTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | undefined>;
   valid: (r: PPResult) => boolean;
 }) {
-  const { s, pProps, generation, activeJob, pendingOperation, valid } = p;
+  const { s, pProps, generation, activeJob, pendingOperation, renewalTimer, valid } = p;
   async function cancel() {
+    if (s.renewing) {
+      clearTimeout(renewalTimer.current);
+      s.setRenewing(false);
+      s.setStoppedTraffic(true);
+      return;
+    }
     const id = activeJob.current;
     const op = pendingOperation.current;
     if (!id && !op) return;
@@ -472,6 +430,11 @@ export function usePPReadState(pProps: PPReadPanelProps) {
   const requestedAt = useRef(0);
   const sampleClock = useRef(0);
   const lastSample = useRef('');
+  const trafficHistory = useRef<PPReadResult | undefined>(undefined);
+  const trafficWindow = useRef<PPReadResult | undefined>(undefined);
+  const renewalTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const blocked = useRef(Boolean(pProps.blocked));
+  useEffect(() => { blocked.current = Boolean(pProps.blocked); }, [pProps.blocked]);
   usePPReadCleanup({
     profile: pProps.profile,
     activation: pProps.activation,
@@ -480,6 +443,7 @@ export function usePPReadState(pProps: PPReadPanelProps) {
     activeJobRef: activeJob,
     privateResultJobRef: privateResultJob,
     pendingOperationRef: pendingOperation,
+    renewalTimerRef: renewalTimer,
   });
   const valid = (r: PPResult) =>
     r.profile_id === pProps.profile && r.activation_id === pProps.activation;
@@ -494,8 +458,12 @@ export function usePPReadState(pProps: PPReadPanelProps) {
     requestedAt,
     sampleClock,
     lastSample,
+    trafficHistory,
+    trafficWindow,
     valid,
   });
+  const restartTraffic = useRef(() => {});
+  useEffect(() => { restartTraffic.current = () => { void start('traffic', true); }; }, [start]);
   usePPReadPollEffect({
     s,
     pProps,
@@ -505,6 +473,11 @@ export function usePPReadState(pProps: PPReadPanelProps) {
     sampleClock,
     lastSample,
     liveStarted,
+    trafficHistory,
+    trafficWindow,
+    renewalTimer,
+    restartTraffic,
+    blocked,
   });
   const { cancel, page } = usePPReadMutations({
     s,
@@ -512,12 +485,14 @@ export function usePPReadState(pProps: PPReadPanelProps) {
     generation,
     activeJob,
     pendingOperation,
+    renewalTimer,
     valid,
   });
   const locked =
     pProps.blocked ||
     s.starting ||
     s.pending ||
+    s.renewing ||
     Boolean(s.job) ||
     s.cancelling ||
     s.pageBusy;

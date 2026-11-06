@@ -219,7 +219,7 @@ it.each(['button', 'alt-left', 'backspace', 'mouse'])(
   },
 );
 
-it('cancels a live observation on leaving and never starts it silently on return', async () => {
+it('cancels a live observation on leaving and starts it again on return', async () => {
   vi.mocked(pppoeReadAPI.start).mockResolvedValue(
     pp({ job: { id: 'live-fixture', state: 'RUNNING', code: 'OK' }, total: 0 }),
   );
@@ -229,8 +229,6 @@ it('cancels a live observation on leaving and never starts it silently on return
   await openList();
   fireEvent.click(screen.getByRole('button', { name: /Detalhar primeiro/ }));
   await screen.findByRole('heading', { name: 'primeiro' });
-  expect(pppoeReadAPI.start).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(pppoeReadAPI.start).toHaveBeenCalledOnce());
   await waitFor(() => expect(pppoeReadAPI.status).toHaveBeenCalled());
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
@@ -245,10 +243,10 @@ it('cancels a live observation on leaving and never starts it silently on return
     await screen.findByRole('button', { name: /Detalhar primeiro/ }),
   );
   await screen.findByRole('heading', { name: 'primeiro' });
-  expect(pppoeReadAPI.start).toHaveBeenCalledOnce();
+  await waitFor(() => expect(pppoeReadAPI.start).toHaveBeenCalledTimes(2));
 });
 
-it('cancels live on a tab change and requires an explicit new start', async () => {
+it('cancels live on a tab change and starts it on returning to traffic', async () => {
   vi.mocked(pppoeReadAPI.start).mockResolvedValue(
     pp({ job: { id: 'live-tab', state: 'RUNNING', code: 'OK' }, total: 0 }),
   );
@@ -258,7 +256,6 @@ it('cancels live on a tab change and requires an explicit new start', async () =
   await openList();
   fireEvent.click(screen.getByRole('button', { name: /Detalhar primeiro/ }));
   await screen.findByRole('heading', { name: 'primeiro' });
-  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(pppoeReadAPI.status).toHaveBeenCalled());
   fireEvent.click(screen.getByRole('tab', { name: 'Informações' }));
   await waitFor(() =>
@@ -269,8 +266,8 @@ it('cancels live on a tab change and requires an explicit new start', async () =
     ),
   );
   fireEvent.click(screen.getByRole('tab', { name: 'Tráfego' }));
-  expect(pppoeReadAPI.start).toHaveBeenCalledOnce();
-  expect(screen.getByRole('button', { name: 'Ver ao vivo' })).toBeEnabled();
+  await waitFor(() => expect(pppoeReadAPI.start).toHaveBeenCalledTimes(2));
+  expect(screen.queryByRole('button', { name: 'Ver ao vivo' })).not.toBeInTheDocument();
 });
 
 it('shows an offline session without initiating traffic', async () => {
@@ -307,7 +304,6 @@ it('clears the visible session and its URL when changing company', async () => {
   await openList();
   fireEvent.click(screen.getByRole('button', { name: /Detalhar primeiro/ }));
   await screen.findByRole('heading', { name: 'primeiro' });
-  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(pppoeReadAPI.status).toHaveBeenCalled());
   fireEvent.click(screen.getByRole('link', { name: /Empresa um/ }));
   await waitFor(() =>
@@ -492,7 +488,6 @@ it('does not show a prior session when the target observation changes', async ()
   expect(
     await screen.findByRole('heading', { name: 'primeiro' }),
   ).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() => expect(pppoeReadAPI.status).toHaveBeenCalled());
   fireEvent.click(screen.getByRole('button', { name: 'Trocar alvo' }));
   await waitFor(() =>

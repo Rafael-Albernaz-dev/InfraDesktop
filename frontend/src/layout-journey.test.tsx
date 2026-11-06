@@ -325,7 +325,6 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
   const session = within(
     await screen.findByRole('region', { name: 'Detalhes da sessão' }),
   );
-  fireEvent.click(session.getByRole('button', { name: 'Ver ao vivo' }));
   await waitFor(() =>
     expect(bindings.StartPPPoERead).toHaveBeenCalledWith(
       'company',
