@@ -61,7 +61,8 @@ it('microcopy preserves operation intent, actions and safe credential ambiguity'
   expect(message('INVALID_REQUEST', 'recover')).toContain('nova senha');
   expect(message('INVALID_REQUEST', 'company')).toContain('empresa');
   expect(message('INVALID_REQUEST', 'company')).not.toContain('senha');
-  expect(message('UNAUTHENTICATED', 'renew')).toBe('SENHA INCORRETA');
+  expect(message('UNAUTHENTICATED', 'renew')).toBe('Entre novamente para continuar.');
+  expect(message('UNAUTHENTICATED', 'renew', 'PASSWORD_INCORRECT')).toBe('SENHA INCORRETA');
   expect(message('BUSY', 'company')).toContain('Aguarde');
   expect(message('BUSY', 'company')).not.toContain('Feche');
   expect(message('VERSION_INCOMPATIBLE', 'general')).toContain('Atualize');
@@ -80,6 +81,7 @@ it('rejecting renewal never suggests a first issuance and security shortcut does
   vi.mocked(access.renewRecovery).mockResolvedValue({
     ...state,
     code: 'UNAUTHENTICATED',
+    error_reason: 'PASSWORD_INCORRECT',
   });
   render(<App />);
   fireEvent.click(await screen.findByText('Catalog X'));
@@ -107,7 +109,7 @@ it('rejecting renewal never suggests a first issuance and security shortcut does
 it('a rejected retry does not erase earlier unknown commit', async () => {
   vi.mocked(access.renewRecovery)
     .mockResolvedValueOnce({ ...state, code: 'DEADLINE_EXCEEDED' })
-    .mockResolvedValueOnce({ ...state, code: 'UNAUTHENTICATED' });
+    .mockResolvedValueOnce({ ...state, code: 'UNAUTHENTICATED', error_reason: 'PASSWORD_INCORRECT' });
   render(<App />);
   fireEvent.click(await screen.findByText('Catalog X'));
   fireEvent.click(await screen.findByRole('button', { name: 'Configurações' }));

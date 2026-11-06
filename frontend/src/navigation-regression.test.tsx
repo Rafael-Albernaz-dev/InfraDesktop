@@ -389,11 +389,11 @@ it('returns to Lista after a CPE opens its linked session on the concentrator', 
     expect(location.hash).toBe('#sessao/X');
     await waitFor(() => expect(bindings.StartPPPoERead).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
-    expect(await screen.findByRole('heading', { name: 'Concentrador exemplo' })).toBeVisible();
+    expect(await screen.findByRole('heading', { name: 'CPE exemplo' })).toBeVisible();
     expect(bindings.CancelPPPoEReadOperation).toHaveBeenCalledWith(
       'company', 'activation', 'concentrator', expect.any(String),
     );
-    expect(screen.getByRole('tab', { name: 'Sessões' })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: 'Cliente' })).toHaveAttribute(
       'aria-selected',
       'true',
     );
