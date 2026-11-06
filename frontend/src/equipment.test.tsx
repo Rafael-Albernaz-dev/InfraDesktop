@@ -1,3 +1,4 @@
+import { device, data } from './equipment-test-fixture';
 import { findDevicePrimary } from './test-navigation';
 import { beginAdd, openDeviceSheet } from './test-navigation';
 import {
@@ -49,26 +50,6 @@ vi.mock('./presentation', () => ({
     cancel: vi.fn(),
   },
 }));
-const device = {
-  id: 'device-X',
-  role: 'concentrator',
-  name: 'Router X',
-  address: '127.0.0.1',
-  port: 22,
-  transport: 'ssh',
-  credential_id: 'credential',
-  revision: 1,
-  active: true,
-  fingerprint: '',
-  trust_origin: '',
-} as Device;
-const data = (devices: Device[] = [device]) =>
-  ({
-    code: 'OK',
-    profile_id: 'X',
-    activation_id: 'a',
-    data: { devices, credentials: [], next_cursor: 0, vault_available: true },
-  }) as EquipmentResult;
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(monitoringAPI.current).mockImplementation(
@@ -362,6 +343,10 @@ it('shared credential replacement sends affected links and clears typed secret',
   });
   expect(screen.getByRole('button', { name: 'Salvar credencial' })).toBeEnabled();
   fireEvent.click(screen.getByRole('button', { name: 'Salvar credencial' }));
+  fireEvent.click(
+    within(await screen.findByRole('dialog', { name: 'Substituir acesso?' }))
+      .getByRole('button', { name: 'Substituir acesso' }),
+  );
   await waitFor(() => expect(api.putCredential).toHaveBeenCalledTimes(1));
   expect(vi.mocked(api.putCredential).mock.calls[0][2].affected_links).toBe(2);
   expect(screen.getByLabelText('Senha remota')).toHaveValue('');
@@ -1688,6 +1673,10 @@ it('Q03 updates the credential catalog after successful replacement and recovers
       },
     });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar credencial' }));
+  fireEvent.click(
+    within(await screen.findByRole('dialog', { name: 'Substituir acesso?' }))
+      .getByRole('button', { name: 'Substituir acesso' }),
+  );
   await screen.findByRole('button', { name: 'Recarregar credenciais' });
   const inventoryCalls = vi.mocked(api.list).mock.calls.length;
   fireEvent.click(

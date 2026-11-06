@@ -239,7 +239,7 @@
     "Functions": null
   },
   "frontend/src/equipment.test.tsx": {
-    "Lines": 2030,
+    "Lines": 1960,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -20560,6 +20560,13 @@
   },
   "frontend/src/pppoe-read-request.ts": {
     "Lines": 36,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-test-fixture.ts": {
+    "Lines": 22,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
