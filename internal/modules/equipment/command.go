@@ -3,6 +3,7 @@ package equipment
 import "infradesktop/internal/modules/access"
 
 type Command struct {
+	Import                                                          *ImportInput
 	Bulk                                                            *BulkUpdate
 	Authority                                                       uint64
 	Op                                                              string
@@ -14,8 +15,7 @@ type Command struct {
 	Revision                                                        uint64
 	Port                                                            int
 	Active, Inactive, IncludeInactive, BlockEmpty                   bool
-	Cursor                                                          int
+	Cursor, Affected                                                int
 	Search, Block, Model                                            string
-	Affected                                                        int
 	JobID, Fingerprint                                              string
 }

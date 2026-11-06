@@ -26,18 +26,20 @@ type RunningJob struct {
 }
 
 type Service struct {
-	Auth   Authorizer
-	Store  Store
-	Vault  Vault
-	Remote Remote
-	IDs    IDs
-	Now    func() time.Time
-	Mu     sync.Mutex
-	Jobs   map[string]*RunningJob
-	Closed bool
-	WG     sync.WaitGroup
-	Epoch  string
-	Origin time.Time
+	Parser   ImportParser
+	Digester ImportDigester
+	Auth     Authorizer
+	Store    Store
+	Vault    Vault
+	Remote   Remote
+	IDs      IDs
+	Now      func() time.Time
+	Mu       sync.Mutex
+	Jobs     map[string]*RunningJob
+	Closed   bool
+	WG       sync.WaitGroup
+	Epoch    string
+	Origin   time.Time
 }
 
 func New(auth Authorizer, store Store, vault Vault, remote Remote, ids IDs, now func() time.Time) *Service {
@@ -97,6 +99,8 @@ func (s *Service) dispatchAuthorized(ctx context.Context, q Command, v *View) Co
 		return c
 	case "trust.confirm":
 		return s.confirm(ctx, q, v)
+	case "inventory.import-preview", "inventory.import-confirm":
+		return s.handleImport(ctx, q, v)
 	case "inventory.bulk-update":
 		return s.bulkUpdate(ctx, q, v)
 	case "inventory.list", "inventory.get", "credential.list", "inventory.enroll-status":

@@ -2,6 +2,7 @@ package importfile
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -17,9 +18,17 @@ const maxFile = 2 * 1024 * 1024
 const maxRows = 500
 
 var errFile = errors.New("arquivo inválido ou excede o limite")
-var errPassword = errors.New("arquivo contém campo de senha")
+var errPassword = inventory.ErrImportSecret
 
 type Parser struct{}
+
+func (Parser) Digest(rows []inventory.ImportRow) (string, error) {
+	data, err := json.Marshal(rows)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(data)), nil
+}
 
 func (Parser) Parse(name string, data []byte) ([]inventory.ImportRow, error) {
 	if len(data) > maxFile {

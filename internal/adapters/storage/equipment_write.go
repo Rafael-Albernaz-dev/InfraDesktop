@@ -86,8 +86,12 @@ func persistEquipmentOperations(ctx context.Context, tx *sql.Tx, old, current []
 			continue
 		}
 		entity := op.Entity
-		if op.BulkReceipt != nil {
-			body, err := json.Marshal(op.BulkReceipt)
+		if op.BulkReceipt != nil || op.ImportReceipt != nil {
+			var receipt any = op.BulkReceipt
+			if op.ImportReceipt != nil {
+				receipt = op.ImportReceipt
+			}
+			body, err := json.Marshal(receipt)
 			if err != nil {
 				return equipment.Unavailable
 			}

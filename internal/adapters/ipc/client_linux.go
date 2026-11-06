@@ -2,10 +2,8 @@ package ipc
 
 import (
 	"context"
+	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
-	"net"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 )
@@ -90,52 +88,15 @@ func (c *Client) exchange(parent context.Context, q Request) Response {
 		}
 		return Response{Version: 1, RequestID: q.RequestID, Code: code}
 	}
-	if safeDir(c.dir, c.uid) != nil {
+	r, err := c.exchangeFrame(ctx, q)
+	if err != nil {
 		return failure()
 	}
-	socket := filepath.Join(c.dir, "service.sock")
-	if _, e := privateFile(socket, c.uid, os.ModeSocket); e != nil {
-		return failure()
+	if r.Code == foundation.Code(equipment.ImportSecret) {
+		r.Data = nil
+		return r
 	}
-	conn, e := (&net.Dialer{}).DialContext(ctx, "unix", socket)
-	if e != nil {
-		return failure()
-	}
-	defer conn.Close()
-	uc, ok := conn.(*net.UnixConn)
-	if !ok {
-		return failure()
-	}
-	uid, e := peerUID(uc)
-	if e != nil || uid != c.uid {
-		return failure()
-	}
-	stop := context.AfterFunc(ctx, func() { conn.Close() })
-	defer stop()
-	deadline, _ := ctx.Deadline()
-	_ = conn.SetDeadline(deadline)
-	limit := MaxFrame
-	if q.Op == "company.brand-set" {
-		limit = MaxBrandFrame
-	}
-	if writeFrameLimit(conn, q, limit) != nil {
-		return failure()
-	}
-	limit = MaxFrame
-	if q.Op == "company.brand-get" || q.Op == "company.brand-set" {
-		limit = MaxBrandFrame
-	}
-	b, e := readFrameLimit(conn, uint32(limit))
-	if e != nil {
-		return failure()
-	}
-	var r Response
-	if strict(b, &r) != nil || r.Version != 1 || r.RequestID != q.RequestID {
-		return failure()
-	}
-	if !validErrorDetail(r) {
-		return failure()
-	}
+
 	switch r.Code {
 	case foundation.OK:
 		if r.Data == nil {

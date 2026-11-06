@@ -192,7 +192,7 @@ func (s *Server) handle(ctx context.Context, c *net.UnixConn) {
 		r = Response{Version: 1, RequestID: r.RequestID, Code: foundation.Deadline}
 	}
 	limit := MaxFrame
-	if q.Op == "company.brand-get" || q.Op == "company.brand-set" {
+	if q.Op == "company.brand-get" || q.Op == "company.brand-set" || isImport(q.Op) {
 		limit = MaxBrandFrame
 	}
 	_ = writeFrameLimit(c, r, limit)

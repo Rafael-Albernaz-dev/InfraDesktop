@@ -29,7 +29,7 @@ const (
 	Limit                   Code = "LIMIT_EXCEEDED"
 	Cancelled               Code = "CANCELLED"
 	Partial                 Code = "PARTIAL"
-	MaxDevices                   = 256
+	MaxDevices                   = 500
 	MaxCredentials               = 128
 	PageSize                     = 16
 	MaxJobs                      = 32
@@ -175,6 +175,8 @@ type Job struct {
 }
 
 type View struct {
+	ImportItems        []ImportItem      `json:"import_items,omitempty"`
+	ImportReceipt      *ImportReceipt    `json:"import_receipt,omitempty"`
 	BulkReceipt        *BulkReceipt      `json:"bulk_receipt,omitempty"`
 	Blocks             []string          `json:"blocks,omitempty"`
 	Models             []string          `json:"models,omitempty"`

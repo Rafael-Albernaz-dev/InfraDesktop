@@ -63,3 +63,13 @@ func WaitIdle(t interface {
 	}
 	t.Fatal("jobs not released")
 }
+
+func SetParser(service *equipment.Service, parser inventory.ImportParser) bool {
+	fixture, ok := service.Handler.(*tracked)
+	if !ok {
+		return false
+	}
+	fixture.inv.Parser = parser
+	fixture.inv.Digester, ok = parser.(inventory.ImportDigester)
+	return ok
+}

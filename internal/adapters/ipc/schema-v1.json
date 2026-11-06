@@ -184,7 +184,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 22,
+  "product_revision": 23,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,
@@ -219,6 +219,13 @@
       "block",
       "block_empty",
       "model"
+    ],
+    "inventory.import-preview": [
+      "import"
+    ],
+    "inventory.import-confirm": [
+      "operation_id",
+      "import"
     ],
     "inventory.bulk-update": [
       "operation_id",

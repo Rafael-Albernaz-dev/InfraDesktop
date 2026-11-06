@@ -16,4 +16,5 @@ type BulkReceipt struct {
 type Operation struct {
 	ID, Stamp, Entity string
 	BulkReceipt       *BulkReceipt
+	ImportReceipt     *ImportReceipt
 }

@@ -151,6 +151,13 @@ func loadEquipmentOperations(ctx context.Context, q queryer, st *equipment.State
 			}
 			op.BulkReceipt = &receipt
 		}
+		if strings.HasPrefix(op.Stamp, "inventory.import-confirm:") {
+			var receipt equipment.ImportReceipt
+			if err = json.Unmarshal([]byte(op.Entity), &receipt); err != nil {
+				return err
+			}
+			op.ImportReceipt = &receipt
+		}
 		st.Operations = append(st.Operations, op)
 	}
 	return rows.Err()
