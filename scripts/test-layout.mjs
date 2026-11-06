@@ -56,6 +56,7 @@ try {
         await page.locator('.ch-plot canvas').waitFor();
       }
     }
+    await page.mouse.move(0, 0);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     await page.addStyleTag({ content: '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}' });

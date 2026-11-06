@@ -29,7 +29,7 @@ func (j *ppJourney) diagnostic(in equipment.PPInput, want equipment.Code) *equip
 	for time.Now().Before(deadline) {
 		r = j.call("pppoe.diagnostic-status", equipment.PPInput{JobID: id}, foundation.OK)
 		job := r.Data.PPPoE.Job
-		if job.State != "RUNNING" {
+		if job.State != "RUNNING" && fixtureJobReleased(j.svc, id) {
 			if job.Code != want {
 				j.t.Fatalf("diagnostic job %+v want %s", job, want)
 			}

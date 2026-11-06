@@ -46,7 +46,7 @@ func awaitJob(t *testing.T, s *equipment.Service, q equipment.Command, id string
 	q.JobID = id
 	for time.Now().Before(deadline) {
 		v := equipmentCall(t, s, q, equipment.OK)
-		if v.Job.State != "RUNNING" {
+		if v.Job.State != "RUNNING" && fixtureJobReleased(s, id) {
 			return *v.Job
 		}
 		time.Sleep(10 * time.Millisecond)

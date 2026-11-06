@@ -102,12 +102,14 @@ func persistEquipmentOperations(ctx context.Context, tx *sql.Tx, old, current []
 }
 func persistEquipmentDevices(ctx context.Context, tx *sql.Tx, old, current []equipment.Device) equipment.Code {
 	previous := map[string][]byte{}
+	previousDevices := map[string]equipment.Device{}
 	for _, d := range old {
 		b, err := json.Marshal(d)
 		if err != nil {
 			return equipment.Unavailable
 		}
 		previous[d.ID] = b
+		previousDevices[d.ID] = d
 	}
 	for _, d := range current {
 		b, err := json.Marshal(d)
@@ -116,6 +118,11 @@ func persistEquipmentDevices(ctx context.Context, tx *sql.Tx, old, current []equ
 		}
 		if bytes.Equal(b, previous[d.ID]) {
 			continue
+		}
+		if before, ok := previousDevices[d.ID]; ok {
+			if err := preserveBlockReadings(ctx, tx, before, d); err != nil {
+				return equipment.Unavailable
+			}
 		}
 		if code := persistEquipmentDevice(ctx, tx, d); code != equipment.OK {
 			return code

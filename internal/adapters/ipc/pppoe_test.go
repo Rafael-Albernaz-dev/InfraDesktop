@@ -127,13 +127,13 @@ func (j *ppJourney) call(op string, in equipment.PPInput, want foundation.Code) 
 	return r
 }
 func (j *ppJourney) collect(op string) *equipment.PPObservation {
-	j.t.Helper()
+	waitBeforeCollect(j)
 	r := j.call("pppoe.collect-start", equipment.PPInput{DeviceID: j.device, Revision: 2, Operation: op}, foundation.OK)
 	id := r.Data.PPPoE.Job.ID
 	deadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(deadline) {
 		r = j.call("pppoe.collect-status", equipment.PPInput{JobID: id}, foundation.OK)
-		if r.Data.PPPoE.Job.State != "RUNNING" {
+		if r.Data.PPPoE.Job.State != "RUNNING" && fixtureJobReleased(j.svc, id) {
 			if r.Data.PPPoE.Job.Code != equipment.OK && !(j.mode.Load() == 1 && r.Data.PPPoE.Job.Code == equipment.Limit && r.Data.PPPoE.Job.State == "FAILED") {
 				j.t.Fatal(r.Data.PPPoE.Job)
 			}
