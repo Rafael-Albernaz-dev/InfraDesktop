@@ -22,8 +22,8 @@ func TestFocalAccountClientEquipmentCodes(t *testing.T) {
 			Codes []foundation.Code `json:"error_codes"`
 		}
 	}
-	// 23 original codes + the four PING_* codes added in f390a6a.
-	if e = json.Unmarshal(b, &schema); e != nil || len(schema.Equipment.Codes) != 27 {
+	// Original codes, four PING_* codes and CREDENTIAL_IN_USE.
+	if e = json.Unmarshal(b, &schema); e != nil || len(schema.Equipment.Codes) != 28 {
 		t.Fatal("equipment error schema drift", e)
 	}
 	for _, code := range append(schema.Equipment.Codes, foundation.Code("UNKNOWN_FUTURE_CODE")) {
