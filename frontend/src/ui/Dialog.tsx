@@ -1,10 +1,9 @@
-import { createContext, useContext, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
-import { Button } from './Button';
+import { useContext,useEffect,useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '../icons';
-
-export const DialogHost = createContext<HTMLElement | null>(null);
+import { Button } from './Button';
+import { DialogHost } from './dialog-host';
 const FOCUSABLE =
   'input:not(:disabled):not([type="hidden"]),button:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]';
 

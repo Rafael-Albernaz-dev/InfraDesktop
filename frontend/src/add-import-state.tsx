@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect,useRef,useState } from 'react';
+import { id } from './equipment-reading-format';
+import type { ImportItem,ImportRow } from './presentation';
 import { inventoryImportAPI } from './presentation';
-import type { ImportItem, ImportRow } from './presentation';
-import { id } from './equipment-reading';
 
 type Receipt = { created: number; ignored: number };
 export function useImportState(profile: string, activation: string) {

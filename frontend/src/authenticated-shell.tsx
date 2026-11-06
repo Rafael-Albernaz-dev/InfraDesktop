@@ -1,19 +1,15 @@
-import { access } from './presentation';
-import { Desktop } from './desktop';
+import { AppOverlays } from './app-session';
+import type { PerformFn } from './access-session';
+import { createBrandSaver,useAccessSession,useBrandState } from './access-session';
 import type { Page } from './desktop';
-import { normalizeRoute, type RouteName } from './desktop-model';
+import { Desktop } from './desktop';
+import { normalizeRoute,type RouteName } from './desktop-model';
 import { Equipment } from './equipment';
 import { useEquipmentOperations } from './equipment-operations';
-import { NavigationGuard } from './navigation-guard';
-import type { NavigationAttempt } from './navigation-guard';
-import {
-  AppOverlays,
-  createBrandSaver,
-  useAccessSession,
-  useBrandState,
-} from './app-session';
-import type { PerformFn } from './app-session';
 import type { useInventoryNavigation } from './inventory-navigation';
+import type { NavigationAttempt } from './navigation-guard';
+import { NavigationGuard } from './navigation-guard';
+import { access } from './presentation';
 
 function renderInventory(
   brandKey: string,

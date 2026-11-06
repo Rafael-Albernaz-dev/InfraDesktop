@@ -1,15 +1,15 @@
-import { useDisplayNow } from './equipment-snapshot';
 import { Fragment } from 'react';
-import { Button } from './ui/Button';
+import type { Credential,Device,Job } from './equipment-api';
 import { equipmentAPI as api } from './equipment-api';
-import type { Credential, Device, Job } from './equipment-api';
+import { id } from './equipment-reading-format';
+import { useDisplayNow } from './equipment-snapshot';
 import type { EquipmentPerformFn } from './equipment-state';
-import { id } from './equipment-reading';
 import {
-  formatDate,
-  formatDuration,
-  formatTrustOrigin,
+formatDate,
+formatDuration,
+formatTrustOrigin,
 } from './network-format';
+import { Button } from './ui/Button';
 function SSHKeyDetails(p: {
   selected: Device;
   locked: boolean;

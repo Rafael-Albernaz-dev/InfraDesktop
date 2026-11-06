@@ -1,16 +1,16 @@
-import { DataTable } from './ui/DataTable';
-import { Select } from './ui/Select';
-import { Button } from './ui/Button';
-import { formatDate, uptimeTitle } from './network-format';
-import { COMPARE_CATEGORIES } from './pppoe-context';
+import { formatDate,uptimeTitle } from './network-format';
+import { COMPARE_CATEGORIES } from './pppoe-context-actions';
 import { formatPPUptime } from './pppoe-format';
 import type {
-  PPDelta,
-  PPObservation,
-  PPQuery,
-  PPReference,
-  PPRow,
+PPDelta,
+PPObservation,
+PPQuery,
+PPReference,
+PPRow,
 } from './presentation';
+import { Button } from './ui/Button';
+import { DataTable } from './ui/DataTable';
+import { Select } from './ui/Select';
 
 export function PPPoEPairDetail(p: {
   pair: { left?: PPRow; right?: PPRow };

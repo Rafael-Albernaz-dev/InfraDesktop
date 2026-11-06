@@ -1,21 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NavigationAttempt } from './navigation-guard';
+import { useCallback,useEffect,useRef,useState } from 'react';
+import { createPerformAction } from './app-perform';
+import { UnauthenticatedShell } from './app-session';
+import { useAccessSession,useBrandState } from './access-session';
+import { AuthenticatedShell } from './authenticated-shell';
 import type { Page } from './desktop';
 import { normalizeRoute } from './desktop-model';
-import './ui/tokens.css';
-import './ui/kit.css';
 import { useEquipmentOperations } from './equipment-operations';
-import { useNavigationHistory } from './use-navigation-history';
-import {
-  createPerformAction,
-  UnauthenticatedShell,
-  useAccessSession,
-  useBrandState,
-} from './app-session';
 import { useInventoryNavigation } from './inventory-navigation';
-import { AuthenticatedShell } from './authenticated-shell';
-import { SessionRoute } from './session-navigation';
+import type { NavigationAttempt } from './navigation-guard';
 import type { SessionRouteTarget } from './session-navigation';
+import { SessionRoute } from './session-navigation';
+import './ui/kit.css';
+import './ui/tokens.css';
+import { useNavigationHistory } from './use-navigation-history';
 
 export default function App() {
   const [theme, setTheme] = useState('light');

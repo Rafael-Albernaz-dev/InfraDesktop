@@ -1,16 +1,15 @@
-import { Summary } from './equipment-summary-blocks';
-import type { ReadingUpdateStatus } from './reading-update-state';
-import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useRef,useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
+import { readingAge,stamp } from './equipment-reading-format';
+import { Summary } from './equipment-summary-blocks';
 import { formatDate } from './network-format';
-import { readingAge, stamp } from './equipment-reading-format';
+import type { ReadingUpdateStatus } from './reading-update-state';
+import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
 import { DataTable } from './ui/DataTable';
 import { Pager } from './ui/Pager';
-import { Button } from './ui/Button';
-export { id, stamp, latestSavedReading } from './equipment-reading-format';
 function classifyInterfaceKind(kind: string): string {
   const value = kind.toLowerCase();
   if (['ether', 'wlan', 'wifi', 'w60g', 'lte'].includes(value))

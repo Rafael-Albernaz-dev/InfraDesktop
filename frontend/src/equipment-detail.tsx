@@ -1,35 +1,32 @@
-import { EquipmentQueryFailure } from './equipment-reading-status';
+import { useContext,useEffect,useLayoutEffect,useRef,useState } from 'react';
 import {
-  SummaryTab,
-  equipmentQueryRunning,
-  equipmentReadBlocked,
-  useSummaryRefresh,
-} from './equipment-summary-tab';
-import { EquipmentChain } from './equipment-chain';
-import { equipmentType } from './equipment-layout';
-import { driverOwners } from './equipment-roles';
-import { HeaderActionHost } from './ui/HeaderAction';
-import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { SessionRoute } from './session-navigation';
-import type { RefreshOpening } from './use-refresh-on-open';
-import type { useEquipmentState } from './equipment-state';
+EquipmentAccessDetails,
+EquipmentSecondaryActions,
+} from './equipment-access';
 import type { Device } from './equipment-api';
 import { equipmentAPI as api } from './equipment-api';
-import {
-  EquipmentAccessDetails,
-  EquipmentSecondaryActions,
-} from './equipment-access';
-import { EquipmentReading, latestSavedReading } from './equipment-reading';
+import { EquipmentChain } from './equipment-chain';
 import { EquipmentInsights } from './equipment-insights';
+import { equipmentType } from './equipment-layout';
+import { EquipmentReading } from './equipment-reading';
+import { latestSavedReading } from './equipment-reading-format';
+import { EquipmentQueryFailure } from './equipment-reading-status';
+import { driverOwners } from './equipment-role-options';
+import type { useEquipmentState } from './equipment-state';
+import { SummaryTab } from './equipment-summary-tab';
+import { equipmentQueryRunning,equipmentReadBlocked,useSummaryRefresh } from './equipment-summary-refresh';
 import { formatDuration } from './network-format';
-import { DeviceMonitoring, PPPoEReadPanel } from './pppoe-diagnostics';
 import { PPPoE } from './pppoe';
+import { DeviceMonitoring,PPPoEReadPanel } from './pppoe-diagnostics';
 import { RadioEquipment } from './radio';
 import { RadioRoles } from './radio-contract';
+import { SessionRoute } from './session-navigation';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
+import { HeaderActionHost } from './ui/HeaderAction';
 import { PageHeader } from './ui/PageHeader';
 import { Tabs } from './ui/Tabs';
+import type { RefreshOpening } from './use-refresh-on-open';
 
 export type Props = ReturnType<typeof useEquipmentState> & {
   selected: Device;

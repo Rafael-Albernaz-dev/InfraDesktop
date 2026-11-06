@@ -1,1 +1,1 @@
-export { Icon, Brand } from './ui/icons';
+export { Brand,Icon } from './ui/icons';

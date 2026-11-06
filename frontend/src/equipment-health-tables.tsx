@@ -1,16 +1,11 @@
-import { DataTable } from './ui/DataTable';
-import type { PPReadRow } from './presentation';
+import { displayPort } from './equipment-port-format';
 import {
-  exactNumber,
-  exactRate,
-  formatDate,
-  portLabel,
+exactNumber,
+exactRate,
+formatDate
 } from './network-format';
-export const displayPort = (port?: PPReadRow['port']) =>
-  portLabel(port)
-    .replace(/^DOWN$/, 'Parada')
-    .replace(/(\d)([KMG]bps)/g, '$1 $2')
-    .replace(/-(full|half)/, ' · $1');
+import type { PPReadRow } from './presentation';
+import { DataTable } from './ui/DataTable';
 export function EquipmentPorts({
   ports,
   compact = false,

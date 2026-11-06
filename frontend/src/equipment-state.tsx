@@ -1,29 +1,29 @@
-import { useCredentialsCatalogEffect } from './equipment-credential-effect';
-import { retireOlderPendingRevisions } from './equipment-pending-revisions';
-import { useInventoryFilterState } from './inventory-filter-state';
-import { useEquipmentNavigator } from './equipment-navigator';
-import type { LinkedSessionTarget } from './linked-session-navigation';
 import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useLayoutEffect,
-  useRef,
-  useState,
+useCallback,
+useEffect,
+useEffectEvent,
+useLayoutEffect,
+useRef,
+useState,
 } from 'react';
-import { equipmentAPI as api, equipmentMessage } from './equipment-api';
-import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
+import type { Credential,Device,EquipmentResult,Job } from './equipment-api';
+import { equipmentAPI as api,equipmentMessage } from './equipment-api';
+import { useCredentialsCatalogEffect } from './equipment-credential-effect';
 import {
-  useDetailDeviceSyncEffects,
-  useDeviceListEffect,
-  useJobPollEffect,
+useDetailDeviceSyncEffects,
+useDeviceListEffect,
+useJobPollEffect,
 } from './equipment-effects';
-import { acceptEquipmentAuthority, pendingStarts } from './equipment-receipts';
-import { id } from './equipment-reading';
+import { useEquipmentNavigator } from './equipment-navigator';
+import { retireOlderPendingRevisions } from './equipment-pending-revisions';
+import { id } from './equipment-reading-format';
+import { acceptEquipmentAuthority,pendingStarts } from './equipment-receipts';
+import { driverOwners } from './equipment-role-options';
 import { useDisplayNow } from './equipment-snapshot';
 import { fieldForEquipmentCode } from './equipment-validation';
+import { useInventoryFilterState } from './inventory-filter-state';
+import type { LinkedSessionTarget } from './linked-session-navigation';
 import { RadioRoles } from './radio-contract';
-import { driverOwners } from './equipment-roles';
 
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,

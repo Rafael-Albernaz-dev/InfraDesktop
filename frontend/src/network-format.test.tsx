@@ -1,35 +1,34 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { render,screen } from '@testing-library/react';
+import { describe,expect,it } from 'vitest';
 import {
-  TechnicalDetail,
-  exactRate,
-  exactVolume,
-  formatAbsent,
-  formatAge,
-  formatAtScale,
-  formatDateWithAge,
-  formatDeviceModel,
-  formatDuration,
-  formatEquipmentRole,
-  formatFirmwareVersion,
-  formatIPAddress,
-  formatLinkOrigin,
-  formatMacAddress,
-  formatRadioFamily,
-  formatRadioMode,
-  formatRadioQuality,
-  formatRange,
-  formatRate,
-  formatRouterDuration,
-  formatTextOrAbsent,
-  formatTickReason,
-  formatTrustOrigin,
-  formatVolume,
-  networkScale,
-  sanitizeVisibleText,
+TechnicalDetail,
+exactRate,
+exactVolume,
+formatAbsent,
+formatAge,
+formatAtScale,
+formatDateWithAge,
+formatDeviceModel,
+formatDuration,
+formatEquipmentRole,
+formatFirmwareVersion,
+formatIPAddress,
+formatLinkOrigin,
+formatMacAddress,
+formatRadioFamily,
+formatRadioMode,
+formatRadioQuality,
+formatRange,
+formatRate,
+formatRouterDuration,
+formatTextOrAbsent,
+formatTickReason,
+formatTrustOrigin,
+formatVolume,
+networkScale,
+sanitizeVisibleText,
 } from './network-format';
-import { RadioFamilies, RadioRoles } from './radio-contract';
+import { RadioFamilies,RadioRoles } from './radio-contract';
 const absent = 'Não informado nesta leitura';
 
 describe('L06T3 units and exact audit values', () => {

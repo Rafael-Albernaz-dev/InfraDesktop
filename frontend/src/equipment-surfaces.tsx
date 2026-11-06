@@ -1,14 +1,9 @@
-import { queryFailureOwnsDetail } from './equipment-reading-status';
+import { CredentialFormDialog,DeviceFormDialog,ResetTrustDialog,TrustConfirmDialog } from './equipment-dialogs';
+import { VAULT_NOTICE } from './vault-notice';
+import { queryFailureOwnsDetail } from './equipment-query-failure';
+import type { useEquipmentState } from './equipment-state';
 import { RadioCodes } from './radio-contract';
 import { Button } from './ui/Button';
-import {
-  CredentialFormDialog,
-  DeviceFormDialog,
-  ResetTrustDialog,
-  TrustConfirmDialog,
-  VAULT_NOTICE,
-} from './equipment-dialogs';
-import type { useEquipmentState } from './equipment-state';
 export function EquipmentBanners(p: {
   s: ReturnType<typeof useEquipmentState>;
   locked: boolean;

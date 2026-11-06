@@ -1,5 +1,5 @@
 export { equipmentAPI } from './presentation';
-export type { Device, Credential, Job, EquipmentResult, DeviceInput, CredentialInput } from './presentation';
+export type { Credential,CredentialInput,Device,DeviceInput,EquipmentResult,Job } from './presentation';
 export const equipmentMessage = (code: string) =>
   ({
     VAULT_UNAVAILABLE:

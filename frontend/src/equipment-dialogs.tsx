@@ -1,16 +1,15 @@
-import { Button, Dialog } from './desktop';
+import { Button,Dialog } from './desktop';
+import type { Credential,Device,EquipmentResult,Job } from './equipment-api';
 import { equipmentAPI as api } from './equipment-api';
-import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
-import { DeviceForm, ProtectedDialog } from './equipment-forms';
-import { id } from './equipment-reading';
+import { VAULT_NOTICE } from './vault-notice';
+import { DeviceForm,ProtectedDialog } from './equipment-forms';
+import { id } from './equipment-reading-format';
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,
   after?: (r: EquipmentResult) => void,
   refreshList?: boolean,
   inlineFields?: boolean,
 ) => Promise<EquipmentResult | undefined>;
-export const VAULT_NOTICE =
-  'Cofre indisponível. Confira a credencial do serviço nesta instalação.';
 
 function DialogNotices({
   error,

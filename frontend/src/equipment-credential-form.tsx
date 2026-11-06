@@ -1,23 +1,23 @@
-import { CredentialFormFields } from './equipment-credential-fields';
-import { Select } from './ui/Select';
-import { DataBlock } from './ui/DataBlock';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment,useEffect,useRef,useState } from 'react';
 import { Button } from './desktop';
-import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type {
-  Credential,
-  CredentialInput,
-  EquipmentResult,
+Credential,
+CredentialInput,
+EquipmentResult,
 } from './equipment-api';
-import { useDraftProtection, useFieldErrors } from './equipment-draft';
-import { id } from './equipment-reading';
+import { equipmentAPI as api,equipmentMessage } from './equipment-api';
+import { CredentialFormFields } from './equipment-credential-fields';
+import { useDraftProtection,useFieldErrors } from './equipment-draft';
+import { id } from './equipment-reading-format';
 import {
-  fieldForEquipmentCode,
-  fieldMessages,
-  validEquipmentSecret,
-  validEquipmentText,
+fieldForEquipmentCode,
+fieldMessages,
+validEquipmentSecret,
+validEquipmentText,
 } from './equipment-validation';
 import { RadioRoles } from './radio-contract';
+import { DataBlock } from './ui/DataBlock';
+import { Select } from './ui/Select';
 const DEFAULT_CREDENTIAL_ROLES = [
   RadioRoles.ap,
   RadioRoles.cpe,

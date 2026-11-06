@@ -1,15 +1,15 @@
-import { PPReadResultMetadata, PPReadResultView } from './pppoe-read-result';
+import { useEffect,useRef } from 'react';
+import { readingAge } from './equipment-reading-format';
+import { PPReadResultMetadata,PPReadResultView } from './pppoe-read-result';
 import { RadioModes } from './radio-contract';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
-import { readingAge } from './equipment-reading-format';
-import { useEffect, useRef } from 'react';
 
 import type { PPReadPanelProps } from './pppoe-read-state';
 import { usePPReadState } from './pppoe-read-state';
-import { PPReadActionButtons, PPReadStatusBanners } from './pppoe-read-views';
+import { PPReadActionButtons,PPReadStatusBanners } from './pppoe-read-views';
 export { DeviceMonitoring } from './device-monitoring';
-export { PPPoEDiagnostics, PPPoEPing } from './pppoe-diag-views';
+export { PPPoEDiagnostics,PPPoEPing } from './pppoe-diag-views';
 
 function PPPoEReadContent(props: PPReadPanelProps) {
   const s = usePPReadState(props);

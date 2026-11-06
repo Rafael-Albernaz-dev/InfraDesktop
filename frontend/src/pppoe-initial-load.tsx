@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
+import { equipmentMessage } from './equipment-api';
+import { pppoeErrorMessage } from './pppoe-context-actions';
 import type { SharedCtx } from './pppoe-state';
 import type { PPResult } from './presentation';
 import { pppoeAPI as api } from './presentation';
-import { equipmentMessage } from './equipment-api';
-import { pppoeErrorMessage } from './pppoe-context';
 function formatAttemptStatus(r: PPResult): string {
   const a = r.data?.attempt;
   if (

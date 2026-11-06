@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { Credential } from './equipment-api';
-import type { ImportItem } from './presentation';
-import type { useImportState } from './add-import-state';
 import { AddEquipmentFields } from './add-equipment-fields';
-import { roleGroups } from './equipment-roles';
 import { ImportSteps } from './add-import-file';
+import type { useImportState } from './add-import-state';
+import type { Credential } from './equipment-api';
+import { roleGroups } from './equipment-role-options';
+import type { ImportItem } from './presentation';
 import { Button } from './ui/Button';
 import { Checkbox } from './ui/Checkbox';
 import { DataTable } from './ui/DataTable';

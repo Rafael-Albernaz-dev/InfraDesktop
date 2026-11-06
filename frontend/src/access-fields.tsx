@@ -1,6 +1,6 @@
+import type { AccessProps,useAccessFields } from './use-access-fields';
 import { Button } from './ui/Button';
 import { Field } from './ui/Field';
-import type { AccessProps, useAccessFields } from './access-screen';
 type Fields = ReturnType<typeof useAccessFields>;
 function PasswordField({ s }: { s: Fields }) {
   return (

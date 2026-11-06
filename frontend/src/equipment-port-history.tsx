@@ -1,10 +1,10 @@
-import type { PPReadRow } from './presentation';
-import { DataBlock } from './ui/DataBlock';
-import { Button } from './ui/Button';
-import { DataTable } from './ui/DataTable';
-import { exactNumber, formatDate } from './network-format';
-import { displayPort } from './equipment-health-tables';
+import { displayPort } from './equipment-port-format';
 import { readingAge } from './equipment-reading-format';
+import { exactNumber,formatDate } from './network-format';
+import type { PPReadRow } from './presentation';
+import { Button } from './ui/Button';
+import { DataBlock } from './ui/DataBlock';
+import { DataTable } from './ui/DataTable';
 export function EquipmentPortHistory({
   read,
   limited,

@@ -1,6 +1,6 @@
 // Isolated test UI for retained draft behavior; never imported by the application.
 import type { Branding } from './desktop-model';
-import { useBrandDraft } from './desktop-pages';
+import { useBrandDraft } from './use-brand-draft';
 import { Button } from './ui/Button';
 export function BrandDraftHarness(p: {
   brand: Branding;

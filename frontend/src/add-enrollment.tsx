@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect,useRef,useState } from 'react';
+import type { EquipmentResult } from './equipment-api';
 import { equipmentAPI } from './equipment-api';
 import type { EquipmentPerformFn } from './equipment-dialogs';
-import type { EquipmentResult } from './equipment-api';
-import type { ImportRow } from './presentation';
+import { id } from './equipment-reading-format';
 import { pendingEnrollments } from './equipment-receipts';
+import { fieldForEquipmentCode,fieldMessages } from './equipment-validation';
+import type { ImportRow } from './presentation';
 import { RadioTransports } from './radio-contract';
-import { fieldForEquipmentCode, fieldMessages } from './equipment-validation';
-import { id } from './equipment-reading';
 
 export function useAddEnrollment(p: {
   perform: EquipmentPerformFn;

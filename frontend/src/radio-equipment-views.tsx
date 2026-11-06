@@ -1,28 +1,24 @@
-import { RadioUnsupportedNotice } from './radio-equipment-parts';
+import type { ReactNode } from 'react';
+import { Fragment } from 'react';
+import { useDisplayNow } from './equipment-snapshot';
 import {
-  RadioClients,
-  RadioInterfaces,
-  radioRatePair,
-} from './radio-equipment-tables';
-import { KeyValues } from './ui/KeyValues';
-import { Button } from './ui/Button';
+formatDuration,
+formatMetric,
+formatRouterDuration,
+} from './network-format';
+import type { RadioReading } from './radio-api';
+import { RadioFamilies,RadioModes,RadioRoles } from './radio-contract';
+import { RadioUnsupportedNotice } from './radio-equipment-parts';
+import type { RadioEquipmentState } from './radio-equipment-state';
 import { createEquipmentPage } from './radio-equipment-state';
 import { equipmentRadioError } from './radio-equipment-status';
-import type { DataState } from './ui/DataBlock';
-import type { ReactNode } from 'react';
-import { RadioFamilies, RadioModes } from './radio-contract';
-import { useDisplayNow } from './equipment-snapshot';
-import { Fragment } from 'react';
-import type { RadioEquipmentState } from './radio-equipment-state';
-import type { RadioReading } from './radio-api';
+import { RadioClients,RadioInterfaces } from './radio-equipment-tables';
 import { RadioReadingDetails } from './radio-reading-details';
-import {
-  formatMetric,
-  formatRouterDuration,
-  formatDuration,
-} from './network-format';
+import { radioRatePair } from './radio-table-format';
+import { Button } from './ui/Button';
+import type { DataState } from './ui/DataBlock';
 import { DataBlock } from './ui/DataBlock';
-import { RadioRoles } from './radio-contract';
+import { KeyValues } from './ui/KeyValues';
 
 type Ready = RadioEquipmentState & { reading: RadioReading };
 type ViewProps = {

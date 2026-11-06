@@ -2,10 +2,10 @@ import type { RadioCost } from './radio-api';
 import type { RadioLinkState } from './radio-link-state';
 
 import {
-  TechnicalDetail,
-  formatDate,
-  formatMetric,
-  sanitizeVisibleText,
+TechnicalDetail,
+formatDate,
+formatMetric,
+sanitizeVisibleText,
 } from './network-format';
 import { Reading } from './radio-reading';
 
@@ -131,7 +131,5 @@ function RadioTickRow({
 }
 
 export {
-  RadioLinkRunActions,
-  RadioLinkCost,
-  RadioLinkBusyStatus,
+RadioLinkBusyStatus,RadioLinkCost,RadioLinkRunActions
 } from './radio-link-actions';

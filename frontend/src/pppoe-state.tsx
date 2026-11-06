@@ -1,27 +1,23 @@
-import { usePPPoEInitialLoad } from './pppoe-initial-load';
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback,useEffect,useLayoutEffect,useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import {
-  acceptEquipmentAuthority,
-  pendingPPPoE as pending,
+acceptEquipmentAuthority,
+pendingPPPoE as pending,
 } from './equipment-receipts';
 import { useEquipmentSnapshot } from './equipment-snapshot';
 import {
-  createOpenPairHandler,
-  createRemoveHandler,
-  createSaveHandler,
-  createUpdateHandler,
-  FRESH_QUERY,
-  pppoeErrorMessage,
-} from './pppoe-context';
+ createOpenPairHandler, createRemoveHandler, createSaveHandler,
+ createUpdateHandler, FRESH_QUERY, pppoeErrorMessage
+} from './pppoe-context-actions';
+import { usePPPoEInitialLoad } from './pppoe-initial-load';
 import type {
-  PPDelta,
-  PPObservation,
-  PPQuery,
-  PPReference,
-  PPResult,
-  PPRow,
+PPDelta,
+PPObservation,
+PPQuery,
+PPReference,
+PPResult,
+PPRow,
 } from './presentation';
 import { pppoeAPI as api } from './presentation';
 export type PPPoETab =

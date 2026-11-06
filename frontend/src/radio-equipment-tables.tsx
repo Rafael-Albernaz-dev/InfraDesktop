@@ -1,10 +1,9 @@
-import { radioMetric } from './radio-table-format';
-export { radioMetric, radioRatePair } from './radio-table-format';
+import { formatMetric } from './network-format';
+import type { RadioReading } from './radio-api';
 import { RadioClientRow } from './radio-client-row';
 import type { RadioEquipmentState } from './radio-equipment-state';
-import type { RadioReading } from './radio-api';
+import { radioMetric } from './radio-table-format';
 import { DataTable } from './ui/DataTable';
-import { formatMetric } from './network-format';
 type Ready = RadioEquipmentState & { reading: RadioReading };
 export function RadioClients({ state }: { state: Ready }) {
   if (!state.reading.clients.length) return <p>Nenhum cliente encontrado</p>;

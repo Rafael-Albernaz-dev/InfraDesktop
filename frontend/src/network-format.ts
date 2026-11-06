@@ -1,8 +1,8 @@
+import { RadioFamilies,RadioModes,RadioRoles } from './radio-contract';
 import { tickFieldReason } from './radio-tick-reason';
-import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
-export { formatPPUptime } from './pppoe-format';
-export { message, recoveryActionMessage } from './microcopy';
+export { message,recoveryActionMessage } from './microcopy';
 export type { Intent } from './microcopy';
+export { formatPPUptime } from './pppoe-format';
 
 /** Shared pt-BR network presentation. Inputs remain raw for sorting and CSV. */
 export type NetworkNumber = number | string | bigint | null | undefined;
@@ -21,7 +21,7 @@ function numeric(value: NetworkNumber): number | undefined {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
-const digits = (n: number) => (n < 10 ? 2 : n < 100 ? 1 : 0);
+const digits = (n: number) => { if (n < 10) return 2; if (n < 100) return 1; return 0; };
 export function networkScale(
   maximum: NetworkNumber,
   kind: 'volume' | 'rate',
@@ -277,13 +277,12 @@ export function portLabel(port?: {
   if (port?.running === false) return 'DOWN';
   if (port?.running !== true || port.speed_bps === undefined)
     return unavailable;
+  const duplex = port.full_duplex ? '-full' : '-half';
   return (
     formatRate(port.speed_bps).replace(' ', '') +
     (port.full_duplex === undefined
       ? ' · duplex indisponível'
-      : port.full_duplex
-        ? '-full'
-        : '-half')
+      : duplex)
   );
 }
 
@@ -498,11 +497,7 @@ export function formatTickReason(reason?: string | null): {
   };
 }
 
-import {
-  sanitizeToken,
-  scrubSecrets,
-  sanitizeVisibleText,
-  TechnicalDetail,
-} from './network-sanitize';
+import { TechnicalDetail } from './network-sanitize';
+import { sanitizeToken,sanitizeVisibleText,scrubSecrets } from './network-text';
 
-export { sanitizeToken, scrubSecrets, sanitizeVisibleText, TechnicalDetail };
+export { sanitizeToken,sanitizeVisibleText,scrubSecrets,TechnicalDetail };

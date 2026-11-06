@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { Device } from './equipment-api';
 import type { useEquipmentState } from './equipment-state';
-import { InventoryToolbar } from './inventory-toolbar';
-import { InventoryTable } from './inventory-table';
-import { useColumnPreferences } from './inventory-preferences';
 import { InventoryBulkDialog } from './inventory-bulk-dialog';
+import { useColumnPreferences } from './inventory-column-preferences';
+import { InventoryTable } from './inventory-table';
+import { InventoryToolbar } from './inventory-toolbar';
 import { Button } from './ui/Button';
 import { Pager } from './ui/Pager';
 

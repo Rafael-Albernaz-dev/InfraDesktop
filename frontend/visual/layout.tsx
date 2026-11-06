@@ -1,21 +1,21 @@
 // Isolated synthetic fixture: imports the product views, never the frozen renderer.
+import { useEffect,useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useEffect, useState } from 'react';
 import { AccessScreen } from '../src/access-screen';
+import type { Page } from '../src/desktop';
 import { Desktop } from '../src/desktop';
 import { Equipment } from '../src/equipment';
-import type { Page } from '../src/desktop';
-import { DataBlock } from '../src/ui/DataBlock';
-import type { DataState } from '../src/ui/DataBlock';
 import { Chart } from '../src/ui/Chart';
-import '../src/ui/tokens.css';
+import type { DataState } from '../src/ui/DataBlock';
+import { DataBlock } from '../src/ui/DataBlock';
 import '../src/ui/kit.css';
-import { credentialSceneReady, installFixture } from './layout-fixture';
+import '../src/ui/tokens.css';
+import { credentialSceneReady,installFixture } from './layout-fixture';
 const query = new URLSearchParams(location.search),
   scene = query.get('scene') || 'login';
 installFixture();
 const noop = () => {};
-function Vitrine() {
+export function Vitrine() {
   const states: [string, DataState][] = [
     ['Sem leitura', { state: 'unread', action: noop }],
     ['Carregando', { state: 'loading' }],
@@ -187,7 +187,7 @@ function Vitrine() {
     </>
   );
 }
-function Scene() {
+export function Scene() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     void credentialSceneReady().then(() => requestAnimationFrame(() => requestAnimationFrame(() => setReady(true))));

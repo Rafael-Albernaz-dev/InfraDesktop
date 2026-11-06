@@ -1,14 +1,14 @@
-import { createEquipmentPage } from './radio-equipment-state';
-import { useEffect, useState } from 'react';
-import type { RadioEquipmentState } from './radio-equipment-state';
-import type { LinkedSessionTarget } from './linked-session-navigation';
-import type { PPRow } from './presentation';
-import { pppoeAPI, equipmentAPI } from './presentation';
-import { FRESH_QUERY } from './pppoe-context';
+import { useEffect,useState } from 'react';
 import { equipmentMessage } from './equipment-api';
 import { readingAge } from './equipment-reading-format';
-import { DataBlock } from './ui/DataBlock';
+import type { LinkedSessionTarget } from './linked-session-navigation';
+import { FRESH_QUERY } from './pppoe-context-actions';
+import type { PPRow } from './presentation';
+import { equipmentAPI,pppoeAPI } from './presentation';
+import type { RadioEquipmentState } from './radio-equipment-state';
+import { createEquipmentPage } from './radio-equipment-state';
 import type { DataState } from './ui/DataBlock';
+import { DataBlock } from './ui/DataBlock';
 import { KeyValues } from './ui/KeyValues';
 
 type LinkedSessionView = {
