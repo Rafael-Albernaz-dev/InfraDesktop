@@ -1,5 +1,8 @@
+import type { EquipmentResult, ImportRow } from './inventory-import-types';
+export type { EquipmentResult, ImportRow, ImportItem } from './inventory-import-types';
 import { createInventoryBindings } from './inventory-bindings';
 import {
+  ChooseInventoryImport, ReviewInventoryImport, ConfirmInventoryImport, SaveInventoryTemplate,
   SetCredentialDefault,
   GetRadioIndexPage,
   GetRadio,
@@ -119,25 +122,14 @@ export type Credential = Omit<equipment.Credential, 'convertValues'>;
 export type Job = Omit<equipment.Job, 'convertValues' | 'result'> & {
   result?: Observation;
 };
-export type EquipmentResult = {
-  code: string;
-  profile_id: string;
-  activation_id: string;
-  data?: {
-    devices: Device[];
-    credentials: Credential[];
-    device?: Device;
-    credential?: Credential;
-    job?: Job;
-    next_cursor: number;
-    vault_available: boolean;
-    total_devices?: number;
-    operation_state?: string;
-    credential_defaults?: Record<string, string>;
-    blocks?: string[];
-    models?: string[];
-    bulk_receipt?: { items: { id: string; revision: number }[] };
-  };
+export const inventoryImportAPI = {
+  choose: (p: string, a: string, b: string, c: string) =>
+    ChooseInventoryImport(p, a, b, c) as Promise<EquipmentResult & { filename?: string }>,
+  review: (p: string, a: string, rows: ImportRow[]) =>
+    ReviewInventoryImport(p, a, rows) as Promise<EquipmentResult>,
+  confirm: (p: string, a: string, op: string, rows: ImportRow[]) =>
+    ConfirmInventoryImport(p, a, op, rows) as Promise<EquipmentResult>,
+  template: SaveInventoryTemplate,
 };
 export type DeviceInput = Omit<
   presentation.DeviceInput,

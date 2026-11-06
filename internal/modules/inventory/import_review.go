@@ -72,9 +72,22 @@ func importDevice(row equipment.ImportRow, id, credential string) (Device, strin
 	d := Device{ID: id, Name: strings.TrimSpace(row.Name), Address: address, Port: port, Transport: TransportSSH,
 		Role: role, Block: row.Block, CredentialID: credential, Revision: 1, Active: true}
 	if code := ValidateDevice(d); code != OK {
-		return Device{}, string(code)
+		return Device{}, importValidationReason(code)
 	}
 	return d, ""
+}
+
+func importValidationReason(code Code) string {
+	switch code {
+	case InvalidDeviceName:
+		return "Nome inválido"
+	case InvalidDeviceAddress:
+		return "IP inválido"
+	case InvalidDevicePort:
+		return "Porta inválida"
+	default:
+		return "Dados inválidos"
+	}
 }
 
 func reviewImportRow(st *State, row equipment.ImportRow, existing, seen map[string]bool) equipment.ImportItem {
