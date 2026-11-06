@@ -89,11 +89,8 @@ func CopyJob(j *RunningJob) *Job       { v := j.View; return &v }
 func ValidID(id string) bool           { return access.ValidCompanyID(id) }
 
 func ValidateCredential(alias, user, secret string) Code {
-	if !ValidText(alias, 80) {
-		return InvalidCredentialAlias
-	}
-	if !ValidText(user, 80) {
-		return InvalidCredentialUser
+	if code := validateCredentialIdentity(alias, user); code != OK {
+		return code
 	}
 	if len(secret) < 1 || len(secret) > 1024 {
 		return InvalidCredentialSecret

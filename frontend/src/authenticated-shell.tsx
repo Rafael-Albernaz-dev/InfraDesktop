@@ -1,9 +1,13 @@
-import { AppOverlays } from './app-session';
 import type { PerformFn } from './access-session';
-import { createBrandSaver,useAccessSession,useBrandState } from './access-session';
+import {
+  createBrandSaver,
+  useAccessSession,
+  useBrandState,
+} from './access-session';
+import { AuthenticatedOverlays } from './app-session';
 import type { Page } from './desktop';
 import { Desktop } from './desktop';
-import { normalizeRoute,type RouteName } from './desktop-model';
+import { normalizeRoute, type RouteName } from './desktop-model';
 import { Equipment } from './equipment';
 import { useEquipmentOperations } from './equipment-operations';
 import type { useInventoryNavigation } from './inventory-navigation';
@@ -45,31 +49,7 @@ function renderInventory(
     />
   );
 }
-function AuthenticatedOverlays(props: {
-  session: ReturnType<typeof useAccessSession>;
-  perform: PerformFn;
-  close: () => void;
-  setPage: (p: Page) => void;
-}) {
-  const { session, perform, close, setPage } = props;
-  return (
-    <AppOverlays
-      dialog={session.dialog}
-      close={close}
-      recovery={session.recovery}
-      busy={session.busy}
-      error={session.error}
-      recoveryUncertain={session.recoveryUncertain}
-      securityLockedRef={session.securityLockedRef}
-      workingRef={session.workingRef}
-      perform={perform}
-      setRecovery={session.setRecovery}
-      setRecoveryUncertain={session.setRecoveryUncertain}
-      setPage={setPage}
-    />
-  );
-}
-export function AuthenticatedShell(props: {
+type AuthenticatedShellProps = {
   theme: string;
   route: RouteName;
   setPage: (p: Page) => void;
@@ -82,7 +62,8 @@ export function AuthenticatedShell(props: {
   attemptNavigation: NavigationAttempt;
   root: HTMLDivElement | null;
   setRoot: (root: HTMLDivElement | null) => void;
-}) {
+};
+export function AuthenticatedShell(props: AuthenticatedShellProps) {
   const { theme, route, setPage, session, inv, brand, operations, perform } =
     props;
   const { view, connected, busy, error, dialog } = session;
@@ -156,8 +137,16 @@ export function AuthenticatedShell(props: {
           )
         }
         security={() => open('Segurança')}
-        changePassword={(current, next) => perform(() => access.changePassword(current, next), undefined, true, 'password')}
+        changePassword={(current, next) =>
+          perform(
+            () => access.changePassword(current, next),
+            undefined,
+            true,
+            'password',
+          )
+        }
         passwordError={route === 'settings' && !dialog ? error : ''}
+        passwordErrorKind={session.errorKind}
         logout={() => open('Sair desta instalação?')}
         unavailable={(name) => open(name + ' indisponível')}
         error={dialog || route === 'settings' ? '' : error}

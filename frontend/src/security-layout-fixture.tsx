@@ -6,9 +6,7 @@ export function prepareSecurityVisual(scene: string, doc: Document) {
   if (scene !== 'seguranca-erro' && scene !== 'seguranca-codigo') return;
   let requested = false;
   const observer = new MutationObserver(() => {
-    const app = doc.querySelector<HTMLElement>(
-      '.app[data-route="settings"]',
-    );
+    const app = doc.querySelector<HTMLElement>('.app[data-route="settings"]');
     if (app) {
       observer.disconnect();
       const host = doc.createElement('div');
@@ -22,6 +20,9 @@ export function prepareSecurityVisual(scene: string, doc: Document) {
             recovery={scene === 'seguranca-codigo' ? 'XXXX-XXXX-XXXX' : ''}
             busy={false}
             error={scene === 'seguranca-erro' ? 'SENHA INCORRETA' : ''}
+            errorKind={
+              scene === 'seguranca-erro' ? 'incorrect-password' : 'general'
+            }
             recoveryUncertain={false}
             securityLockedRef={{ current: false }}
             workingRef={{ current: false }}

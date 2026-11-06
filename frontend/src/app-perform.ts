@@ -25,7 +25,7 @@ export function createPerformAction(
       acceptIntent(session, r, intent);
       if (r.code !== 'OK') {
         if (operationSurface === session.surfaceRef.current)
-          session.setError(message(r.code, intent, r.error_reason));
+          session.setOperationError(r, intent);
         return false;
       }
       applyAccessResult(session, r, { operationSurface, applyResult, after });

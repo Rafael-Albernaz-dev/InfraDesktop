@@ -43,7 +43,7 @@
     "Functions": null
   },
   "frontend/src/app-session.tsx": {
-    "Lines": 169,
+    "Lines": 136,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -71,7 +71,7 @@
     "Functions": null
   },
   "frontend/src/desktop-model.tsx": {
-    "Lines": 189,
+    "Lines": 147,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -120,7 +120,7 @@
     "Functions": null
   },
   "frontend/src/equipment-credential-form.tsx": {
-    "Lines": 243,
+    "Lines": 172,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -274,7 +274,7 @@
     "Functions": null
   },
   "frontend/src/microcopy.ts": {
-    "Lines": 69,
+    "Lines": 62,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -596,7 +596,7 @@
     "Functions": null
   },
   "frontend/src/security.tsx": {
-    "Lines": 116,
+    "Lines": 99,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -14089,155 +14089,120 @@
     ]
   },
   "internal/modules/inventory/mutate.go": {
-    "Lines": 342,
+    "Lines": 281,
     "LongLines": 0,
     "MaxFunction": 31,
     "MaxComplexity": 11,
     "Functions": [
       {
-        "Name": "validInventoryRole",
-        "Start": 12,
-        "End": 14,
-        "Lines": 3,
-        "Complexity": 5
-      },
-      {
-        "Name": "validRadioDefaultRole",
-        "Start": 16,
-        "End": 18,
-        "Lines": 3,
-        "Complexity": 3
-      },
-      {
         "Name": "canonicalizeMutation",
-        "Start": 20,
-        "End": 42,
+        "Start": 11,
+        "End": 33,
         "Lines": 23,
         "Complexity": 11
       },
       {
         "Name": "buildMutationStamp",
-        "Start": 44,
-        "End": 55,
-        "Lines": 12,
-        "Complexity": 3
+        "Start": 35,
+        "End": 49,
+        "Lines": 15,
+        "Complexity": 4
       },
       {
         "Name": "mutate",
-        "Start": 57,
-        "End": 78,
+        "Start": 51,
+        "End": 72,
         "Lines": 22,
-        "Complexity": 7
+        "Complexity": 9
       },
       {
         "Name": "applyMutationState",
-        "Start": 80,
-        "End": 93,
+        "Start": 74,
+        "End": 87,
         "Lines": 14,
         "Complexity": 4
       },
       {
         "Name": "checkMutationReplay",
-        "Start": 95,
-        "End": 117,
+        "Start": 89,
+        "End": 111,
         "Lines": 23,
         "Complexity": 6
       },
       {
         "Name": "matchingMutationStamp",
-        "Start": 119,
-        "End": 124,
+        "Start": 113,
+        "End": 118,
         "Lines": 6,
         "Complexity": 3
       },
       {
         "Name": "dispatchMutationOp",
-        "Start": 126,
-        "End": 141,
-        "Lines": 16,
-        "Complexity": 6
+        "Start": 120,
+        "End": 137,
+        "Lines": 18,
+        "Complexity": 7
       },
       {
         "Name": "mutateCredentialDefault",
-        "Start": 143,
-        "End": 156,
+        "Start": 139,
+        "End": 152,
         "Lines": 14,
         "Complexity": 4
       },
       {
-        "Name": "mutateCredentialPut",
-        "Start": 158,
-        "End": 184,
-        "Lines": 27,
-        "Complexity": 5
-      },
-      {
-        "Name": "nextCredentialRevision",
-        "Start": 186,
-        "End": 200,
-        "Lines": 15,
-        "Complexity": 6
-      },
-      {
-        "Name": "saveCredentialItem",
-        "Start": 202,
-        "End": 213,
-        "Lines": 12,
-        "Complexity": 4
-      },
-      {
         "Name": "mutateEnroll",
-        "Start": 215,
-        "End": 245,
+        "Start": 154,
+        "End": 184,
         "Lines": 31,
         "Complexity": 8
       },
       {
         "Name": "canEnrollNewDevice",
-        "Start": 247,
-        "End": 252,
+        "Start": 186,
+        "End": 191,
         "Lines": 6,
         "Complexity": 4
       },
       {
         "Name": "mutateTrustReset",
-        "Start": 254,
-        "End": 272,
+        "Start": 193,
+        "End": 211,
         "Lines": 19,
         "Complexity": 5
       },
       {
         "Name": "mutateDeviceSave",
-        "Start": 274,
-        "End": 302,
+        "Start": 213,
+        "End": 241,
         "Lines": 29,
         "Complexity": 8
       },
       {
         "Name": "prepareDeviceCreate",
-        "Start": 304,
-        "End": 315,
+        "Start": 243,
+        "End": 254,
         "Lines": 12,
         "Complexity": 5
       },
       {
         "Name": "prepareDeviceUpdate",
-        "Start": 317,
-        "End": 338,
+        "Start": 256,
+        "End": 277,
         "Lines": 22,
         "Complexity": 6
       },
       {
         "Name": "sameDeviceEndpoint",
-        "Start": 340,
-        "End": 342,
+        "Start": 279,
+        "End": 281,
         "Lines": 3,
         "Complexity": 3
       },
       {
-        "Name": "function literal at 71",
-        "Start": 71,
-        "End": 73,
+        "Name": "function literal at 65",
+        "Start": 65,
+        "End": 67,
         "Lines": 3,
         "Complexity": 1
       }
@@ -14717,9 +14682,9 @@
     ]
   },
   "internal/modules/inventory/validation.go": {
-    "Lines": 151,
+    "Lines": 148,
     "LongLines": 0,
-    "MaxFunction": 12,
+    "MaxFunction": 11,
     "MaxComplexity": 6,
     "Functions": [
       {
@@ -14781,42 +14746,42 @@
       {
         "Name": "ValidateCredential",
         "Start": 91,
-        "End": 102,
-        "Lines": 12,
-        "Complexity": 5
+        "End": 99,
+        "Lines": 9,
+        "Complexity": 4
       },
       {
         "Name": "CredentialByID",
-        "Start": 104,
-        "End": 111,
+        "Start": 101,
+        "End": 108,
         "Lines": 8,
         "Complexity": 3
       },
       {
         "Name": "DeviceByID",
-        "Start": 113,
-        "End": 120,
+        "Start": 110,
+        "End": 117,
         "Lines": 8,
         "Complexity": 3
       },
       {
         "Name": "CredentialLinks",
-        "Start": 122,
-        "End": 130,
+        "Start": 119,
+        "End": 127,
         "Lines": 9,
         "Complexity": 3
       },
       {
         "Name": "SameScope",
-        "Start": 132,
-        "End": 139,
+        "Start": 129,
+        "End": 136,
         "Lines": 8,
         "Complexity": 6
       },
       {
         "Name": "JobUsesEndpoint",
-        "Start": 141,
-        "End": 151,
+        "Start": 138,
+        "End": 148,
         "Lines": 11,
         "Complexity": 4
       }
@@ -19499,7 +19464,7 @@
     ]
   },
   "frontend/src/access-session.ts": {
-    "Lines": 318,
+    "Lines": 291,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -20121,5 +20086,455 @@
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
+  },
+  "frontend/src/authenticated-shell.tsx": {
+    "Lines": 163,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/expired-session-error.test.tsx": {
+    "Lines": 29,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/security-layout-fixture.tsx": {
+    "Lines": 50,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/security-password.test.tsx": {
+    "Lines": 28,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/settings-password.test.tsx": {
+    "Lines": 66,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/settings-password.tsx": {
+    "Lines": 83,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "internal/adapters/presentation/reset_account_linux.go": {
+    "Lines": 114,
+    "LongLines": 0,
+    "MaxFunction": 43,
+    "MaxComplexity": 13,
+    "Functions": [
+      {
+        "Name": "ResetAccount",
+        "Start": 11,
+        "End": 23,
+        "Lines": 13,
+        "Complexity": 4
+      },
+      {
+        "Name": "requestReset",
+        "Start": 25,
+        "End": 67,
+        "Lines": 43,
+        "Complexity": 13
+      },
+      {
+        "Name": "resetOutcomeUnknown",
+        "Start": 69,
+        "End": 71,
+        "Lines": 3,
+        "Complexity": 3
+      },
+      {
+        "Name": "prepareResetVerification",
+        "Start": 73,
+        "End": 95,
+        "Lines": 23,
+        "Complexity": 7
+      },
+      {
+        "Name": "clearResetIntent",
+        "Start": 97,
+        "End": 114,
+        "Lines": 18,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/adapters/storage/credential_lifecycle_test.go": {
+    "Lines": 117,
+    "LongLines": 0,
+    "MaxFunction": 47,
+    "MaxComplexity": 10,
+    "Functions": [
+      {
+        "Name": "TestCredentialKeepSecretAndDeleteTransaction",
+        "Start": 14,
+        "End": 60,
+        "Lines": 47,
+        "Complexity": 10
+      },
+      {
+        "Name": "assertCredentialDeleteRollback",
+        "Start": 62,
+        "End": 82,
+        "Lines": 21,
+        "Complexity": 6
+      },
+      {
+        "Name": "TestCredentialDeleteRejectsLinksAndDefaults",
+        "Start": 84,
+        "End": 117,
+        "Lines": 34,
+        "Complexity": 7
+      },
+      {
+        "Name": "function literal at 33",
+        "Start": 33,
+        "End": 33,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "function literal at 86",
+        "Start": 86,
+        "End": 115,
+        "Lines": 30,
+        "Complexity": 6
+      }
+    ]
+  },
+  "frontend/src/access-error-state.ts": {
+    "Lines": 13,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/access-error.tsx": {
+    "Lines": 21,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/bandwidth-after-block.test.tsx": {
+    "Lines": 186,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/security-dialog-body.tsx": {
+    "Lines": 68,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/security-error-state.test.tsx": {
+    "Lines": 43,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/shared-credential-confirm.tsx": {
+    "Lines": 25,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/shared-credential-confirmation.test.tsx": {
+    "Lines": 68,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-credential-draft.ts": {
+    "Lines": 119,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/use-session-view.ts": {
+    "Lines": 50,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "internal/adapters/presentation/admin_authorization_exit_test.go": {
+    "Lines": 30,
+    "LongLines": 0,
+    "MaxFunction": 19,
+    "MaxComplexity": 4,
+    "Functions": [
+      {
+        "Name": "TestAdministratorAuthorizationClassifiesSimulatedExecutor",
+        "Start": 12,
+        "End": 30,
+        "Lines": 19,
+        "Complexity": 4
+      },
+      {
+        "Name": "function literal at 17",
+        "Start": 17,
+        "End": 28,
+        "Lines": 12,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/adapters/presentation/reset_authorization_linux.go": {
+    "Lines": 43,
+    "LongLines": 0,
+    "MaxFunction": 22,
+    "MaxComplexity": 6,
+    "Functions": [
+      {
+        "Name": "currentUnixUser",
+        "Start": 14,
+        "End": 20,
+        "Lines": 7,
+        "Complexity": 4
+      },
+      {
+        "Name": "runResetAuthorization",
+        "Start": 22,
+        "End": 43,
+        "Lines": 22,
+        "Complexity": 6
+      }
+    ]
+  },
+  "internal/adapters/storage/credential_rename_test.go": {
+    "Lines": 113,
+    "LongLines": 0,
+    "MaxFunction": 35,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "Open",
+        "Start": 19,
+        "End": 22,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "Seal",
+        "Start": 23,
+        "End": 26,
+        "Lines": 4,
+        "Complexity": 1
+      },
+      {
+        "Name": "saveConfirmedRadioForEdit",
+        "Start": 27,
+        "End": 39,
+        "Lines": 13,
+        "Complexity": 3
+      },
+      {
+        "Name": "TestCredentialRenamePreservesSealedSecretAndSavedReadings",
+        "Start": 40,
+        "End": 74,
+        "Lines": 35,
+        "Complexity": 12
+      },
+      {
+        "Name": "assertRenamedCredentialStorage",
+        "Start": 76,
+        "End": 88,
+        "Lines": 13,
+        "Complexity": 8
+      },
+      {
+        "Name": "TestCredentialUserEditStillAdvancesConnectionRevision",
+        "Start": 90,
+        "End": 113,
+        "Lines": 24,
+        "Complexity": 9
+      },
+      {
+        "Name": "function literal at 49",
+        "Start": 49,
+        "End": 49,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "function literal at 93",
+        "Start": 93,
+        "End": 93,
+        "Lines": 1,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/adapters/storage/identical_edit_radio_profile_test.go": {
+    "Lines": 31,
+    "LongLines": 0,
+    "MaxFunction": 22,
+    "MaxComplexity": 12,
+    "Functions": [
+      {
+        "Name": "TestIdenticalEditPreservesConfirmedRadioProfile",
+        "Start": 10,
+        "End": 31,
+        "Lines": 22,
+        "Complexity": 12
+      }
+    ]
+  },
+  "internal/modules/inventory/credential_rename.go": {
+    "Lines": 37,
+    "LongLines": 0,
+    "MaxFunction": 16,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "renameCredentialOnly",
+        "Start": 4,
+        "End": 19,
+        "Lines": 16,
+        "Complexity": 7
+      },
+      {
+        "Name": "validateCredentialIdentity",
+        "Start": 20,
+        "End": 28,
+        "Lines": 9,
+        "Complexity": 3
+      },
+      {
+        "Name": "credentialEditMatches",
+        "Start": 29,
+        "End": 31,
+        "Lines": 3,
+        "Complexity": 2
+      },
+      {
+        "Name": "mutationKeptRevision",
+        "Start": 32,
+        "End": 37,
+        "Lines": 6,
+        "Complexity": 3
+      }
+    ]
+  },
+  "internal/modules/inventory/credential_rename_jobs_test.go": {
+    "Lines": 64,
+    "LongLines": 0,
+    "MaxFunction": 30,
+    "MaxComplexity": 6,
+    "Functions": [
+      {
+        "Name": "ReadEquipment",
+        "Start": 17,
+        "End": 19,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "UpdateEquipment",
+        "Start": 20,
+        "End": 22,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Available",
+        "Start": 26,
+        "End": 26,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Ready",
+        "Start": 27,
+        "End": 27,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Stamp",
+        "Start": 28,
+        "End": 28,
+        "Lines": 1,
+        "Complexity": 1
+      },
+      {
+        "Name": "Open",
+        "Start": 29,
+        "End": 31,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "Seal",
+        "Start": 32,
+        "End": 34,
+        "Lines": 3,
+        "Complexity": 1
+      },
+      {
+        "Name": "TestCredentialRenameDoesNotCancelAuthorizedJob",
+        "Start": 35,
+        "End": 64,
+        "Lines": 30,
+        "Complexity": 6
+      },
+      {
+        "Name": "function literal at 52",
+        "Start": 52,
+        "End": 52,
+        "Lines": 1,
+        "Complexity": 1
+      }
+    ]
+  },
+  "internal/modules/inventory/credential_write.go": {
+    "Lines": 64,
+    "LongLines": 0,
+    "MaxFunction": 33,
+    "MaxComplexity": 7,
+    "Functions": [
+      {
+        "Name": "mutateCredentialPut",
+        "Start": 3,
+        "End": 35,
+        "Lines": 33,
+        "Complexity": 7
+      },
+      {
+        "Name": "nextCredentialRevision",
+        "Start": 37,
+        "End": 51,
+        "Lines": 15,
+        "Complexity": 5
+      },
+      {
+        "Name": "saveCredentialItem",
+        "Start": 53,
+        "End": 64,
+        "Lines": 12,
+        "Complexity": 4
+      }
+    ]
   }
 }

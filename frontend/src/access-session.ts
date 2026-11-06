@@ -1,3 +1,4 @@
+import { useSessionView } from './use-session-view';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSessionRefs } from './access-session-refs';
 import { useLatestRef } from './use-latest-ref';
@@ -218,7 +219,7 @@ export function useAccessSession(
   setPage: (p: Page) => void,
   setTheme: (t: string) => void,
 ) {
-  const state = useSessionView();
+  const state = useSessionView(initial);
   const refs = useSessionRefs(initial),
     stateRef = useLatestRef(state);
   const { securityLockedRef, epochRef, workingRef, surfaceRef } = refs;
@@ -286,33 +287,5 @@ export function createBrandSaver(
     );
     if (committed && !success) brand.retryBrand((n) => n + 1);
     return success;
-  };
-}
-function useSessionView() {
-  const [view, setView] = useState(initial);
-  const [connected, setConnected] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [recovery, setRecovery] = useState('');
-  const [resetVerification, setResetVerification] = useState(false);
-  const [dialog, setDialog] = useState('');
-  const [recoveryUncertain, setRecoveryUncertain] = useState(false);
-  return {
-    view,
-    setView,
-    connected,
-    setConnected,
-    busy,
-    setBusy,
-    error,
-    setError,
-    recovery,
-    setRecovery,
-    resetVerification,
-    setResetVerification,
-    dialog,
-    setDialog,
-    recoveryUncertain,
-    setRecoveryUncertain,
   };
 }

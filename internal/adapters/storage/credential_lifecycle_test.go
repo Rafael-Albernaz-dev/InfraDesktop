@@ -23,15 +23,15 @@ func TestCredentialKeepSecretAndDeleteTransaction(t *testing.T) {
 	edit := q
 	edit.Operation, edit.Revision, edit.Secret, edit.Alias = uuid.NewString(), 1, "", "Edited"
 	v := equipmentCall(t, s, edit, equipment.OK)
-	if v.Credential == nil || v.Credential.Revision != 2 {
-		t.Fatal("revision did not advance")
+	if v.Credential == nil || v.Credential.Revision != 1 {
+		t.Fatal("alias-only rename did not retain revision")
 	}
 	st, c := j.st.ReadEquipment(context.Background(), companyX)
 	if c != equipment.OK {
 		t.Fatal(c)
 	}
 	safeVault := vault.New(func() ([]byte, error) { return bytes.Repeat([]byte{37}, 32), nil })
-	secret, code := safeVault.Open(st.Installation, st.Company, q.ID, 2, st.Credentials[0].Envelope, st.WrappedKey)
+	secret, code := safeVault.Open(st.Installation, st.Company, q.ID, 1, st.Credentials[0].Envelope, st.WrappedKey)
 	if code != equipment.OK || secret != q.Secret {
 		t.Fatal("saved secret not preserved")
 	}
@@ -39,7 +39,7 @@ func TestCredentialKeepSecretAndDeleteTransaction(t *testing.T) {
 	fresh.ID, fresh.Operation, fresh.Secret = uuid.NewString(), uuid.NewString(), ""
 	equipmentCall(t, s, fresh, equipment.InvalidCredentialSecret)
 	del := equipmentScope(j)
-	del.Op, del.ID, del.Operation, del.Revision = "credential.delete", q.ID, uuid.NewString(), 2
+	del.Op, del.ID, del.Operation, del.Revision = "credential.delete", q.ID, uuid.NewString(), 1
 	stale := del
 	stale.Operation, stale.Revision = uuid.NewString(), 3
 	equipmentCall(t, s, stale, equipment.Revision)

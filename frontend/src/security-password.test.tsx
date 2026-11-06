@@ -7,6 +7,7 @@ it('shows incorrect password in the error variant and no theme controls', () => 
   const error = message('UNAUTHENTICATED', 'renew', 'PASSWORD_INCORRECT');
   render(
     <Security
+      errorKind="incorrect-password"
       recovery=""
       busy={false}
       error={error}

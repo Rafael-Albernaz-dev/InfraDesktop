@@ -20,6 +20,7 @@ it('shows an incorrect current password on the settings screen', () => {
           busy: false,
           changePassword: vi.fn(),
           passwordError: 'SENHA INCORRETA',
+          passwordErrorKind: 'incorrect-password',
         } as unknown as DesktopProps
       }
     />,

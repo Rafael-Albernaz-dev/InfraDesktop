@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useState } from 'react';
+import { AccessError } from './access-error';
 import type { DesktopProps } from './desktop-model';
 import { Button } from './ui/Button';
 import { Field } from './ui/Field';
@@ -64,16 +65,10 @@ export function SettingsPassword({ p }: { p: DesktopProps }) {
         onChange={(e) => setConfirm(e.target.value)}
       />
       {(localError || p.passwordError) && (
-        <p
-          role="alert"
-          className={
-            p.passwordError === 'SENHA INCORRETA'
-              ? 'inline-error inline-error-danger'
-              : 'inline-error'
-          }
-        >
-          {localError || p.passwordError}
-        </p>
+        <AccessError
+          text={localError || p.passwordError || ''}
+          kind={localError ? 'general' : (p.passwordErrorKind ?? 'general')}
+        />
       )}
       {success && <p role="status">Senha alterada.</p>}
       <Button

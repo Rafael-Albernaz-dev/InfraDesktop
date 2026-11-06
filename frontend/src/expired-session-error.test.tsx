@@ -10,8 +10,20 @@ it('does not describe an expired recovery session as an incorrect password', () 
 });
 
 it('shows the expired session message in the recovery modal', () => {
-  render(<Security recovery="" busy={false} error={message('UNAUTHENTICATED', 'renew')} uncertain={false}
-    lock={vi.fn()} renew={vi.fn()} acknowledge={vi.fn()} />);
-  expect(screen.getByRole('alert')).toHaveTextContent('Entre novamente para continuar.');
+  render(
+    <Security
+      errorKind="general"
+      recovery=""
+      busy={false}
+      error={message('UNAUTHENTICATED', 'renew')}
+      uncertain={false}
+      lock={vi.fn()}
+      renew={vi.fn()}
+      acknowledge={vi.fn()}
+    />,
+  );
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'Entre novamente para continuar.',
+  );
   expect(screen.getByRole('alert')).not.toHaveClass('inline-error-danger');
 });

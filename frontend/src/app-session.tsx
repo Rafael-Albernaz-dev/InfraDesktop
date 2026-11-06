@@ -1,89 +1,28 @@
-import { CompanyForm } from './app-dialogs';
+import type { useAccessSession } from './access-session';
 import { PerformFn } from './access-session';
+import { CompanyForm } from './app-dialogs';
 import type { Page } from './desktop';
-import { Button,Dialog } from './desktop';
+import { Button, Dialog } from './desktop';
 import { access } from './presentation';
-import { Security } from './security';
+import { SecurityDialogBody } from './security-dialog-body';
+import type { SecurityDialogBodyProps } from './security-dialog-body';
 
-function SecurityDialogBody(props: {
-  recovery: string;
-  busy: boolean;
-  error: string;
-  recoveryUncertain: boolean;
-  securityLockedRef: React.MutableRefObject<boolean>;
-  workingRef: React.MutableRefObject<boolean>;
-  perform: PerformFn;
-  setRecovery: (v: string) => void;
-  setRecoveryUncertain: (v: boolean) => void;
-  close: () => void;
-}) {
-  const {
-    recovery,
-    busy,
-    error,
-    recoveryUncertain,
-    securityLockedRef,
-    workingRef,
-    perform,
-    setRecovery,
-    setRecoveryUncertain,
-    close,
-  } = props;
-  return (
-    <Security
-      recovery={recovery}
-      busy={busy}
-      error={error}
-      uncertain={recoveryUncertain}
-      cancel={close}
-      lock={(locked) => {
-        securityLockedRef.current = locked;
-      }}
-      renew={(password) => {
-        if (workingRef.current) return;
-        const replace = recoveryUncertain;
-        securityLockedRef.current = true;
-        void perform(
-          () => access.renewRecovery(password, replace),
-          undefined,
-          true,
-          'renew',
-        );
-      }}
-      acknowledge={() =>
-        void perform(
-          () => access.ackRecovery(),
-          () => {
-            setRecovery('');
-            setRecoveryUncertain(false);
-            securityLockedRef.current = false;
-            close();
-          },
-        )
-      }
-    />
-  );
-}
-
-export function AppOverlays(props: {
+type AppOverlaysProps = SecurityDialogBodyProps & {
   dialog: string;
-  close: () => void;
-  recovery: string;
-  busy: boolean;
-  error: string;
-  recoveryUncertain: boolean;
-  securityLockedRef: React.MutableRefObject<boolean>;
-  workingRef: React.MutableRefObject<boolean>;
-  perform: PerformFn;
-  setRecovery: (v: string) => void;
-  setRecoveryUncertain: (v: boolean) => void;
   setPage: (p: Page) => void;
-}) {
+};
+export function AppOverlays(props: AppOverlaysProps) {
   const { dialog, close, busy, error, perform, setPage } = props;
   if (!dialog) return null;
   return (
     <Dialog
-      title={dialog === 'Segurança' ? (props.recovery ? 'Guarde seu código' : 'Gerar novo código') : dialog}
+      title={
+        dialog === 'Segurança'
+          ? props.recovery
+            ? 'Guarde seu código'
+            : 'Gerar novo código'
+          : dialog
+      }
       close={close}
       showClose={dialog !== 'Segurança'}
     >
@@ -125,13 +64,14 @@ export function AppOverlays(props: {
   );
 }
 
-function LogoutDialogBody(props: {
+type LogoutDialogBodyProps = {
   busy: boolean;
   error: string;
   close: () => void;
   perform: PerformFn;
   setPage: (p: Page) => void;
-}) {
+};
+function LogoutDialogBody(props: LogoutDialogBodyProps) {
   const { busy, error, close, perform, setPage } = props;
   return (
     <>
@@ -166,4 +106,31 @@ function LogoutDialogBody(props: {
   );
 }
 
-export { CompanyForm,UnauthenticatedShell } from './app-dialogs';
+export { CompanyForm, UnauthenticatedShell } from './app-dialogs';
+
+type AuthenticatedOverlaysProps = {
+  session: ReturnType<typeof useAccessSession>;
+  perform: PerformFn;
+  close: () => void;
+  setPage: (p: Page) => void;
+};
+export function AuthenticatedOverlays(props: AuthenticatedOverlaysProps) {
+  const { session, perform, close, setPage } = props;
+  return (
+    <AppOverlays
+      dialog={session.dialog}
+      close={close}
+      recovery={session.recovery}
+      busy={session.busy}
+      error={session.error}
+      errorKind={session.errorKind}
+      recoveryUncertain={session.recoveryUncertain}
+      securityLockedRef={session.securityLockedRef}
+      workingRef={session.workingRef}
+      perform={perform}
+      setRecovery={session.setRecovery}
+      setRecoveryUncertain={session.setRecoveryUncertain}
+      setPage={setPage}
+    />
+  );
+}

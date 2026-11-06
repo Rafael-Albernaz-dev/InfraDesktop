@@ -1,27 +1,32 @@
 import { useEffect, useState } from 'react';
+import { AccessError } from './access-error';
+import type { AccessErrorKind } from './access-error-state';
 import { Button } from './desktop-controls';
 import { RecoveryActions } from './recovery-actions';
 import { RecoveryCode } from './ui/RecoveryCode';
 
-export function Security({
-  recovery,
-  busy,
-  error,
-  uncertain,
-  lock,
-  renew,
-  acknowledge,
-  cancel,
-}: {
+type SecurityProps = {
   recovery: string;
   busy: boolean;
   error: string;
+  errorKind: AccessErrorKind;
   uncertain: boolean;
   lock: (locked: boolean) => void;
   renew: (password: string) => void;
   acknowledge: () => void;
   cancel?: () => void;
-}) {
+};
+export function Security({
+  recovery,
+  busy,
+  error,
+  errorKind,
+  uncertain,
+  lock,
+  renew,
+  acknowledge,
+  cancel,
+}: SecurityProps) {
   const [password, setPassword] = useState('');
   useEffect(() => {
     if (!busy && !recovery) lock(false);
@@ -75,7 +80,7 @@ export function Security({
               invalidado. Confirme a senha para gerar outro.
             </p>
           )}
-          {error && <SecurityError error={error} />}
+          {error && <AccessError text={error} kind={errorKind} />}
           <div className="dialog-actions">
             {cancel && (
               <Button disabled={busy} onClick={cancel}>
@@ -88,22 +93,7 @@ export function Security({
           </div>
         </form>
       )}
-      {recovery && error && <SecurityError error={error} />}
+      {recovery && error && <AccessError text={error} kind={errorKind} />}
     </div>
-  );
-}
-
-function SecurityError({ error }: { error: string }) {
-  return (
-    <p
-      role="alert"
-      className={
-        error === 'SENHA INCORRETA'
-          ? 'inline-error inline-error-danger'
-          : 'inline-error'
-      }
-    >
-      {error}
-    </p>
   );
 }

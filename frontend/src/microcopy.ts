@@ -1,9 +1,12 @@
+import { accessErrorKind } from './access-error-state';
 import { resetVerificationMessage } from './reset-verification-message';
 export type Intent =
   | 'login'
   | 'register'
-  | 'recover' | 'reset'
-  | 'renew' | 'password'
+  | 'recover'
+  | 'reset'
+  | 'renew'
+  | 'password'
   | 'company'
   | 'brand'
   | 'theme'
@@ -19,18 +22,25 @@ export function message(code: string, intent: Intent, reason?: string): string {
   )
     return 'Usuário ou senha não conferem';
   if (code === 'UNAUTHENTICATED') {
-    if ((intent === 'renew' || intent === 'password') && reason === 'PASSWORD_INCORRECT') return 'SENHA INCORRETA';
-    return intent === 'recover' ? 'Usuário ou código não conferem.' : 'Entre novamente para continuar.';
+    if (accessErrorKind(code, intent, reason) === 'incorrect-password')
+      return 'SENHA INCORRETA';
+    return intent === 'recover'
+      ? 'Usuário ou código não conferem.'
+      : 'Entre novamente para continuar.';
   }
   if (code === 'INVALID_REQUEST') {
     if (intent === 'register' || intent === 'recover' || intent === 'reset')
       return 'Use uma nova senha de 8 a 128 caracteres e confira o usuário.';
-    if (intent === 'company') return 'Use um nome de empresa de 1 a 80 caracteres.';
+    if (intent === 'company')
+      return 'Use um nome de empresa de 1 a 80 caracteres.';
     return 'Confira os campos e tente novamente.';
   }
   const messages: Record<string, string> = {
+    ADMIN_AUTH_DENIED:
+      'A autorização de administrador foi negada. Confira a senha de administrador e tente novamente.',
     ADMIN_AUTH_CANCELLED: 'A autorização foi cancelada.',
-    ADMIN_AUTH_UNAVAILABLE: 'Não foi possível abrir a autorização de administrador neste computador.',
+    ADMIN_AUTH_UNAVAILABLE:
+      'Não foi possível abrir a autorização de administrador neste computador.',
     VERSION_INCOMPATIBLE: 'Atualize o InfraDesktop para abrir esta instalação.',
     TRY_LATER: 'Aguarde alguns instantes e tente novamente.',
     BUSY: 'Há uma operação em andamento. Aguarde e tente novamente.',

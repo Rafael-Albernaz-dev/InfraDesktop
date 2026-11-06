@@ -1,23 +1,18 @@
-import { Fragment,useEffect,useRef,useState } from 'react';
+import { Fragment } from 'react';
 import { Button } from './desktop';
 import type {
-Credential,
-CredentialInput,
-EquipmentResult,
+  Credential,
+  CredentialInput,
+  EquipmentResult,
 } from './equipment-api';
-import { equipmentAPI as api,equipmentMessage } from './equipment-api';
+import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { CredentialFormFields } from './equipment-credential-fields';
-import { useDraftProtection,useFieldErrors } from './equipment-draft';
 import { id } from './equipment-reading-format';
-import {
-fieldForEquipmentCode,
-fieldMessages,
-validEquipmentSecret,
-validEquipmentText,
-} from './equipment-validation';
 import { RadioRoles } from './radio-contract';
+import { SharedCredentialConfirm } from './shared-credential-confirm';
 import { DataBlock } from './ui/DataBlock';
 import { Select } from './ui/Select';
+import { useCredentialDraft } from './use-credential-draft';
 const DEFAULT_CREDENTIAL_ROLES = [
   RadioRoles.ap,
   RadioRoles.cpe,
@@ -101,143 +96,77 @@ export function DefaultCredentialDetails(props: {
   );
 }
 
-function submitCredentialForm(args: {
-  draft: CredentialInput;
-  setDraft: (d: CredentialInput) => void;
-  setSent: (v: boolean) => void;
-  setErrors: (e: Record<string, string>) => void;
-  submitting: React.MutableRefObject<boolean>;
-  alive: React.MutableRefObject<boolean>;
-  save: (d: CredentialInput) => Promise<EquipmentResult | undefined>;
-  existing: boolean;
-}) {
-  const { draft, setDraft, setSent, setErrors, submitting, alive, save, existing } = args;
-  const errors: Record<string, string> = {};
-  if (!validEquipmentText(draft.alias)) errors.alias = fieldMessages.alias;
-  if (!validEquipmentText(draft.user)) errors.user = fieldMessages.user;
-  if ((!existing || draft.secret) && !validEquipmentSecret(draft.secret)) errors.secret = fieldMessages.secret;
-  setErrors(errors);
-  if (Object.keys(errors).length) return;
-  submitting.current = true;
-  const request = {
-    ...draft,
-    alias: draft.alias.trim(),
-    user: draft.user.trim(),
-  };
-  setDraft({ ...draft, secret: '' });
-  setSent(Boolean(draft.secret));
-  void (async () => {
-    try {
-      const result = await save(request);
-      if (alive.current && result && fieldForEquipmentCode[result.code]) {
-        const field = fieldForEquipmentCode[result.code];
-        setErrors({ [field]: fieldMessages[field] });
-      }
-    } catch {
-      // perform reports transport failures; never retain the submitted secret.
-    } finally {
-      request.secret = '';
-      submitting.current = false;
-    }
-  })();
-}
-
-function useInitialCredentialDraft(credential?: Credential) {
-  const [draft, setDraft] = useState<CredentialInput>(() => ({
-    id: credential?.id || id(),
-    operation_id: id(),
-    revision: credential?.revision || 0,
-    alias: credential?.alias || '',
-    user: credential?.user || '',
-    secret: '',
-    affected_links: credential?.links || 0,
-  }));
-  const [sent, setSent] = useState(false);
-  return { draft, setDraft, sent, setSent };
-}
+type CredentialFormProps = {
+  credential?: Credential;
+  disabled: boolean;
+  save: (draft: CredentialInput) => Promise<EquipmentResult | undefined>;
+  onDelete?: () => void;
+  usedReason?: string;
+};
 export function CredentialForm({
   credential,
   disabled,
   save,
   onDelete,
   usedReason,
-}: {
-  credential?: Credential;
-  disabled: boolean;
-  save: (d: CredentialInput) => Promise<EquipmentResult | undefined>;
-  onDelete?: () => void;
-  usedReason?: string;
-}) {
-  const { draft, setDraft, sent, setSent } =
-    useInitialCredentialDraft(credential);
-  const submitting = useRef(false);
-  const { ref: formRef, setErrors, attrs, message } = useFieldErrors(disabled);
-  const alive = useRef(true);
-  useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
-  const cancel = useDraftProtection(() => ({
-    dirty:
-      draft.alias !== (credential?.alias || '') ||
-      draft.user !== (credential?.user || '') ||
-      draft.secret !== '',
-    blocked: submitting.current,
-  }));
+}: CredentialFormProps) {
+  const form = useCredentialDraft({ credential, disabled, save }),
+    { draft, setDraft, sent, validation } = form;
+  const { ref: formRef, attrs, message } = validation;
   return (
-    <form
-      noValidate
-      ref={formRef}
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (submitting.current || disabled)
-          return;
-        submitCredentialForm({
-          draft,
-          setDraft,
-          setSent,
-          setErrors,
-          submitting,
-          alive,
-          save,
-          existing: Boolean(credential),
-        });
-      }}
-    >
-      <CredentialFormFields
-        draft={draft}
-        setDraft={setDraft}
-        credential={credential}
-        disabled={disabled}
-        attrs={attrs}
-        message={message}
-      />
-      {sent && !disabled && (
-        <p role="status">
-          Digite a senha novamente para tentar salvar. A falha ao salvar não
-          verifica a senha no equipamento.
-        </p>
-      )}
-      <div className="dialog-actions">
-        {credential && <>
-          <Button disabled={disabled || Boolean(usedReason)} title={usedReason} onClick={onDelete}>Excluir credencial</Button>
-          <span className="grow" />
-        </>}
-        <Button disabled={disabled} onClick={cancel}>
-          Cancelar
-        </Button>
-        <Button
-          type="submit"
-          className="btn primary"
+    <>
+      <form
+        noValidate
+        ref={formRef}
+        onSubmit={(event) => {
+          event.preventDefault();
+          form.submit(false);
+        }}
+      >
+        <CredentialFormFields
+          draft={draft}
+          setDraft={setDraft}
+          credential={credential}
           disabled={disabled}
-        >
-          Salvar credencial
-        </Button>
-      </div>
-    </form>
+          attrs={attrs}
+          message={message}
+        />
+        {sent && !disabled && (
+          <p role="status">
+            Digite a senha novamente para tentar salvar. A falha ao salvar não
+            verifica a senha no equipamento.
+          </p>
+        )}
+        <div className="dialog-actions">
+          {credential && (
+            <>
+              <Button
+                disabled={disabled || Boolean(usedReason)}
+                title={usedReason}
+                onClick={onDelete}
+              >
+                Excluir credencial
+              </Button>
+              <span className="grow" />
+            </>
+          )}
+          <Button disabled={disabled} onClick={form.cancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" className="btn primary" disabled={disabled}>
+            Salvar credencial
+          </Button>
+        </div>
+      </form>
+      {form.confirming && (
+        <SharedCredentialConfirm
+          links={credential?.links || 0}
+          disabled={disabled}
+          cancel={() => form.setConfirming(false)}
+          confirm={() => form.submit(true)}
+        />
+      )}
+    </>
   );
 }
-
 export { CredentialPicker } from './equipment-credential-fields';

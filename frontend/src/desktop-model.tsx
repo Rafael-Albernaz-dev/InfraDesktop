@@ -1,3 +1,4 @@
+import type { AccessErrorKind } from './access-error-state';
 import type { ReactNode } from 'react';
 export type RouteName =
   | 'companies'
@@ -129,6 +130,7 @@ export type DesktopProps = {
   security?: () => void;
   changePassword?: (current: string, next: string) => Promise<boolean>;
   passwordError?: string;
+  passwordErrorKind?: AccessErrorKind;
   unavailable: (title: string) => void;
   operations?: Operations;
   openEquipment?: (id: string) => void;

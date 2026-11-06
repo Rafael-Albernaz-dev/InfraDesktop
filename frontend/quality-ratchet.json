@@ -23,7 +23,7 @@
   },
   "src/authenticated-shell.tsx": {
     "max-params": 7,
-    "max-lines-per-function": 103
+    "max-lines-per-function": 98
   },
   "src/credential-form-dialog.tsx": {
     "max-lines-per-function": 73,
@@ -37,8 +37,8 @@
     "no-nested-ternary": 1
   },
   "src/desktop-shell.tsx": {
-    "max-lines-per-function": 100,
-    "complexity": 20
+    "max-lines-per-function": 87,
+    "complexity": 19
   },
   "src/desktop.tsx": {
     "max-lines-per-function": 99,
@@ -66,15 +66,15 @@
     "max-lines-per-function": 64
   },
   "src/equipment-credential-form.tsx": {
-    "max-lines-per-function": 84
+    "max-lines-per-function": 77
   },
   "src/equipment-credentials.tsx": {
     "max-lines-per-function": 112
   },
   "src/equipment-detail.tsx": {
-    "max-lines-per-function": 100,
+    "max-lines-per-function": 88,
     "no-nested-ternary": 2,
-    "complexity": 20
+    "complexity": 18
   },
   "src/equipment-effects.tsx": {
     "complexity": 19,
@@ -112,7 +112,7 @@
     "max-lines-per-function": 94
   },
   "src/equipment-state.tsx": {
-    "max-lines-per-function": 100
+    "max-lines-per-function": 89
   },
   "src/equipment-summary-blocks.tsx": {
     "max-lines-per-function": 64
@@ -183,7 +183,7 @@
     "max-params": 6
   },
   "src/pppoe-diag-views.tsx": {
-    "max-lines-per-function": 100
+    "max-lines-per-function": 69
   },
   "src/pppoe-diagnostic-tables.tsx": {
     "no-nested-ternary": 4
@@ -223,14 +223,14 @@
     "max-lines-per-function": 79
   },
   "src/pppoe-state.tsx": {
-    "max-lines-per-function": 100,
+    "max-lines-per-function": 85,
     "complexity": 20
   },
   "src/pppoe.test.tsx": {
     "max-lines": 544
   },
   "src/pppoe.tsx": {
-    "max-lines-per-function": 100
+    "max-lines-per-function": 62
   },
   "src/presentation.ts": {
     "max-params": 7,
@@ -258,7 +258,7 @@
     "no-nested-ternary": 2
   },
   "src/security.tsx": {
-    "max-lines-per-function": 89
+    "max-lines-per-function": 81
   },
   "src/session-chain.tsx": {
     "max-lines-per-function": 76
@@ -277,7 +277,7 @@
     "max-lines-per-function": 90
   },
   "src/settings-password.tsx": {
-    "max-lines-per-function": 82
+    "max-lines-per-function": 76
   },
   "src/test-brand-draft.tsx": {
     "max-lines-per-function": 61
