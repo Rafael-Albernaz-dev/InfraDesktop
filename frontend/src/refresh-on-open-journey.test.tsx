@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import {
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -108,7 +109,10 @@ function fixtures() {
   vi.stubGlobal('go', { presentation: { App: bindings } });
   return { device, observation, bindings, result };
 }
-afterEach(() => vi.stubGlobal('go', undefined));
+afterEach(() => {
+  cleanup();
+  vi.stubGlobal('go', undefined);
+});
 function show(device: Device) {
   return render(
     <StrictMode>

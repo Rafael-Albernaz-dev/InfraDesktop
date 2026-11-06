@@ -148,7 +148,7 @@
     "Functions": null
   },
   "frontend/src/equipment-effects.tsx": {
-    "Lines": 374,
+    "Lines": 321,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -20581,6 +20581,27 @@
   },
   "frontend/src/pppoe-cancel-reconcile.test.tsx": {
     "Lines": 127,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-completion-sync.ts": {
+    "Lines": 59,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/equipment-completion-cleanup.test.tsx": {
+    "Lines": 100,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/refresh-on-open-journey.test.tsx": {
+    "Lines": 264,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
