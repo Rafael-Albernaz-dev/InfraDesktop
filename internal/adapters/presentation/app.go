@@ -28,7 +28,7 @@ type Result struct {
 }
 type App struct {
 	ppExportFS                                                      ppFileOps
-	ppGeneration                                                    uint64
+	ppGeneration, recoveryGeneration                                uint64
 	ppExporting                                                     bool
 	client                                                          *ipc.AccountClient
 	mu                                                              sync.Mutex
@@ -39,12 +39,13 @@ type App struct {
 	recovery, recoveryInstance, recoveryProfile, recoveryActivation string
 	clipboard                                                       func(context.Context, string) error
 	saveDialog                                                      func(context.Context, runtime.SaveDialogOptions) (string, error)
+	openDialog                                                      func(context.Context, runtime.OpenDialogOptions) (string, error)
 	saving                                                          bool
-	recoveryGeneration                                              uint64
 }
 
 func New(c *ipc.AccountClient) *App {
-	return &App{client: c, ctx: context.Background(), clipboard: runtime.ClipboardSetText, saveDialog: runtime.SaveFileDialog}
+	return &App{client: c, ctx: context.Background(), clipboard: runtime.ClipboardSetText,
+		saveDialog: runtime.SaveFileDialog, openDialog: runtime.OpenFileDialog}
 }
 func AttachContext(a *App, ctx context.Context) { a.mu.Lock(); a.ctx = ctx; a.mu.Unlock() }
 func (a *App) call(q ipc.Request) Result {
