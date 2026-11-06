@@ -184,13 +184,12 @@ function useEquipmentStore(profile: string, activation: string) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [listError, setListError] = useState('');
-  const [form, setForm] = useState<Device | 'new'>(),
+  const [form, setForm] = useState<Device>(),
     [credentialForm, setCredentialForm] = useState<Credential | 'new'>(),
     [job, setJob] = useState<Job>();
   const [connectRequest, setConnectRequest] = useState<Device>(),
     [resetTrust, setResetTrust] = useState(false),
-    [jobDevice, setJobDevice] = useState<Device>(),
-    [consumedCreate, consumeCreate] = useState(0);
+    [jobDevice, setJobDevice] = useState<Device>();
   return {
     ...inventoryFilters,
     credentialRefresh,
@@ -248,8 +247,6 @@ function useEquipmentStore(profile: string, activation: string) {
     setResetTrust,
     jobDevice,
     setJobDevice,
-    consumedCreate,
-    consumeCreate,
   };
 }
 
@@ -281,22 +278,16 @@ function createEquipmentActions(
     closeForm();
     if (r.data?.device) openDevice(r.data.device);
   };
-  const continueEnrollment = (r: EquipmentResult) => {
-    showSavedDevice(r);
-    if (r.data?.device) s.setConnectRequest(r.data.device);
-  };
   return {
     openDevice,
     dismissTrust,
     showSavedDevice,
-    continueEnrollment,
   };
 }
 export function useEquipmentState(props: {
   profile: string;
   activation: string;
   connected: boolean;
-  createRequest: number;
   addVisible?: boolean;
   onTotal?: (context: string, total: number) => void;
   targetID?: string;
@@ -307,7 +298,6 @@ export function useEquipmentState(props: {
     profile,
     activation,
     connected,
-    createRequest,
     addVisible,
     onTotal,
     targetID,
@@ -339,12 +329,10 @@ export function useEquipmentState(props: {
       mountedRef.current = false;
     };
   }, []);
-  const shownForm =
-    createRequest > 0 && createRequest !== s.consumedCreate ? 'new' : s.form;
+  const shownForm = s.form;
   const closeForm = () => {
     s.setError('');
     s.setForm(undefined);
-    s.consumeCreate(createRequest);
   };
   useLayoutEffect(() => {
     surfaceRef.current += 1;

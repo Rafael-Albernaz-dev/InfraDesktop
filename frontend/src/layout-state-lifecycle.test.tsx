@@ -86,7 +86,7 @@ async function showSheet(bindings = localBindings()) {
       profile="company"
       activation="active"
       connected
-      createRequest={0}
+
       targetID="router"
     />,
   );
@@ -228,7 +228,7 @@ it('não abre confiança nem aplica resultado tardio da ficha depois de trocar p
       profile="company"
       activation="active"
       connected
-      createRequest={0}
+
       targetID="router"
     />,
   );
@@ -241,7 +241,7 @@ it('não abre confiança nem aplica resultado tardio da ficha depois de trocar p
       profile="company"
       activation="active"
       connected
-      createRequest={0}
+
       targetID="router"
     />,
   );

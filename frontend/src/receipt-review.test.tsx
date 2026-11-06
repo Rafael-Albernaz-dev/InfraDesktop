@@ -93,7 +93,7 @@ for (const revision of [2, 3]) {
       },
     });
     render(
-      <Equipment profile="c" activation="a" connected createRequest={0} />,
+      <Equipment profile="c" activation="a" connected  />,
     );
     await openDeviceSheet('Receipt router');
     pendingStarts.clear();

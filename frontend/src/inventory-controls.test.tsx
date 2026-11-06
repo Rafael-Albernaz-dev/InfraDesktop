@@ -105,7 +105,7 @@ beforeEach(() => {
 
 it('does not open the sheet from a checkbox and clears selection on filter and company changes', async () => {
   const view = render(
-    <Equipment profile="X" activation="a" connected createRequest={0} />,
+    <Equipment profile="X" activation="a" connected  />,
   );
   fireEvent.click(
     await screen.findByRole('checkbox', { name: 'Selecionar Synthetic AP' }),
@@ -124,19 +124,19 @@ it('does not open the sheet from a checkbox and clears selection on filter and c
   );
   expect(screen.getByText('1 selecionado')).toBeVisible();
   view.rerender(
-    <Equipment profile="Y" activation="b" connected createRequest={0} />,
+    <Equipment profile="Y" activation="b" connected  />,
   );
   await screen.findByRole('checkbox', { name: 'Selecionar Other company' });
   expect(screen.queryByText('1 selecionado')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('checkbox', { name: 'Selecionar Other company' }));
-  view.rerender(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  view.rerender(<Equipment profile="X" activation="a" connected  />);
   await screen.findByRole('checkbox', { name: 'Selecionar Synthetic Switch' });
   expect(screen.queryByText('1 selecionado')).not.toBeInTheDocument();
 });
 
 it('persists a hidden column after remount and closes the menu only on escape or outside click', async () => {
   const first = render(
-    <Equipment profile="X" activation="a" connected createRequest={0} />,
+    <Equipment profile="X" activation="a" connected  />,
   );
   await screen.findByRole('checkbox', { name: 'Selecionar Synthetic AP' });
   fireEvent.click(screen.getByRole('button', { name: 'Colunas' }));
@@ -158,7 +158,7 @@ it('persists a hidden column after remount and closes the menu only on escape or
     screen.queryByRole('menu', { name: 'Colunas' }),
   ).not.toBeInTheDocument();
   first.unmount();
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   await waitFor(() =>
     expect(
       screen.queryByRole('columnheader', { name: 'CPU' }),
@@ -169,7 +169,7 @@ it('persists a hidden column after remount and closes the menu only on escape or
 
 it('submits selected device revisions to the bulk service without opening the sheet', async () => {
   vi.mocked(equipmentAPI.bulk).mockResolvedValue(result('X', []));
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   fireEvent.click(
     await screen.findByRole('checkbox', { name: 'Selecionar Synthetic AP' }),
   );
@@ -201,7 +201,7 @@ it('submits selected device revisions to the bulk service without opening the sh
 });
 
 it('reorders visible columns and restores the default order', async () => {
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   await screen.findByRole('checkbox', { name: 'Selecionar Synthetic AP' });
   fireEvent.click(screen.getByRole('button', { name: 'Colunas' }));
   fireEvent.click(screen.getByRole('button', { name: 'Subir Papel' }));

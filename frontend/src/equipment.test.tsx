@@ -9,7 +9,7 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { Equipment } from './equipment';
+import { Equipment } from './test-equipment-shell';
 import { Desktop, Statusbar } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
 import {
@@ -127,7 +127,7 @@ for (const active of [true, false]) {
         },
       });
       render(
-        <Equipment profile="X" activation="a" connected createRequest={0} />,
+        <Equipment profile="X" activation="a" connected  />,
       );
       await openDeviceSheet('Router X');
       fireEvent.click(
@@ -168,7 +168,7 @@ for (const failure of ['SERVICE_UNAVAILABLE', 'reject']) {
     else
       vi.mocked(api.list).mockResolvedValueOnce({ ...data(), code: failure });
     render(
-      <Equipment profile="X" activation="a" connected createRequest={0} />,
+      <Equipment profile="X" activation="a" connected  />,
     );
     await screen.findByRole('alert');
     expect(
@@ -207,7 +207,7 @@ for (const changeSurface of [true, false]) {
       },
     });
     render(
-      <Equipment profile="late" activation="a" connected createRequest={0} />,
+      <Equipment profile="late" activation="a" connected  />,
     );
     await openDeviceSheet('Router X');
     fireEvent.click(
@@ -259,7 +259,6 @@ for (const path of ['target', 'detail']) {
           profile: 'X',
           activation: 'a',
           connected: true,
-          createRequest: 0,
           targetID: path === 'target' ? device.id : undefined,
         };
         const view = render(<Equipment {...props} />);
@@ -267,7 +266,7 @@ for (const path of ['target', 'detail']) {
           fireEvent.click(await screen.findByRole('row', { name: /Router X/ }));
         await waitFor(() => expect(api.get).toHaveBeenCalledTimes(1));
         if (changed) {
-          view.rerender(<Equipment {...props} createRequest={1} />);
+          view.rerender(<Equipment {...props} addPage />);
           fireEvent.change(screen.getByLabelText('Nome'), {
             target: { value: 'Preserved draft' },
           });
@@ -302,23 +301,18 @@ it('persists a real form request with stable operation ID and explicit company c
       code: 'REVISION_CONFLICT',
     })
     .mockResolvedValueOnce(data());
-  render(<Equipment profile="X" activation="a" connected createRequest={1} />);
-  await openDeviceSheet('Router X');
+  render(<Equipment profile="X" activation="a" connected addPage />);
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
   fireEvent.change(screen.getByLabelText('Nome'), {
     target: { value: 'New destination' },
   });
   fireEvent.change(screen.getByLabelText('IP de gerenciamento'), {
     target: { value: '127.0.0.1' },
   });
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Usar credencial existente' }),
-  );
   fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
     target: { value: 'credential' },
   });
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await waitFor(() => expect(api.save).toHaveBeenCalledTimes(1));
   const first = vi.mocked(api.save).mock.calls[0];
   expect(first[0]).toBe('X');
@@ -327,7 +321,7 @@ it('persists a real form request with stable operation ID and explicit company c
   expect(first[2].operation_id).toMatch(/^[a-f0-9-]{36}$/);
   await screen.findAllByText(/O cadastro mudou/);
   expect(
-    screen.queryByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
+    screen.queryByRole('button', { name: /^Salvar$/ }),
   ).not.toBeInTheDocument();
   vi.mocked(api.enrollmentStatus).mockResolvedValue({
     ...data(),
@@ -335,9 +329,7 @@ it('persists a real form request with stable operation ID and explicit company c
   });
   fireEvent.click(screen.getByRole('button', { name: 'Conferir cadastro' }));
   await screen.findByText(/Para tentar com o mesmo cadastro/);
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await waitFor(() => expect(api.save).toHaveBeenCalledTimes(2));
   expect(vi.mocked(api.save).mock.calls[1][2].operation_id).toBe(
     first[2].operation_id,
@@ -357,7 +349,7 @@ it('shared credential replacement requires affected-link acknowledgement and cle
       profile="X"
       activation="a"
       connected
-      createRequest={0}
+
     />,
   );
   await screen.findByRole('heading', { name: 'Credenciais' });
@@ -381,7 +373,7 @@ it('shared credential replacement requires affected-link acknowledgement and cle
   ).not.toBeInTheDocument();
 });
 it('inactive filtering stays explicit; no remote work happens while listing or editing', async () => {
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   await openDeviceSheet('Router X');
   expect(api.start).not.toHaveBeenCalled();
   expect(api.inspect).not.toHaveBeenCalled();
@@ -428,7 +420,7 @@ it('Q03 late X inventory and credential responses cannot populate the remounted 
       profile="X"
       activation="a"
       connected
-      createRequest={0}
+
     />,
   );
   view.rerender(
@@ -437,7 +429,7 @@ it('Q03 late X inventory and credential responses cannot populate the remounted 
       profile="Y"
       activation="b"
       connected
-      createRequest={0}
+
     />,
   );
   await screen.findByText('Nenhum equipamento cadastrado');
@@ -488,7 +480,7 @@ it('first acceptance is deliberate without an invented origin and failed accepta
     ...data(),
     code: 'TRUST_CHANGED',
   });
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByRole('dialog', { name: 'Primeira conexão' });
@@ -569,7 +561,7 @@ it('an uncertain query start reuses its ID and never retries authentication by i
         },
       },
     });
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
@@ -618,7 +610,7 @@ it('full detail interfaces survive a subsequent list projection and a new contex
       profile="X"
       activation="a"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -650,7 +642,7 @@ it('full detail interfaces survive a subsequent list projection and a new contex
       profile="Y"
       activation="b"
       connected
-      createRequest={0}
+
     />,
   );
   await screen.findByText('Nenhum equipamento cadastrado');
@@ -662,17 +654,19 @@ it('full detail interfaces survive a subsequent list projection and a new contex
   );
   expect(screen.queryByText('ether1')).not.toBeInTheDocument();
 });
-it('clearing a consumed create request during navigation never opens a new form', async () => {
+it('leaving the Add page does not reopen it', async () => {
   const view = render(
-    <Equipment profile="X" activation="a" connected createRequest={1} />,
+    <Equipment profile="X" activation="a" connected addPage />,
   );
-  await screen.findByRole('dialog', { name: 'Adicionar equipamento' });
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
-  view.rerender(
-    <Equipment profile="X" activation="a" connected createRequest={0} />,
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  view.rerender(<Equipment profile="X" activation="a" connected />);
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('heading', { name: 'Adicionar equipamento' }),
+    ).not.toBeInTheDocument(),
   );
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });
+
 it.each(['OK', 'REVISION_CONFLICT'])(
   'late %s save cannot close or mark a reopened dialog',
   async (code) => {
@@ -685,7 +679,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         profile="late"
         activation="surface"
         connected
-        createRequest={0}
+
       />,
     );
     await openDeviceSheet('Router X');
@@ -704,7 +698,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         profile="late"
         activation="surface"
         connected
-        createRequest={0}
+
       />,
     );
     await openDeviceSheet('Router X');
@@ -736,7 +730,7 @@ it('late detail cannot restore an old selected device', async () => {
       profile="detail"
       activation="surface"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -762,7 +756,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         profile="credential-late"
         activation="surface"
         connected
-        createRequest={0}
+
       />,
     );
     await screen.findByRole('heading', { name: 'Credenciais' });
@@ -796,7 +790,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         profile="credential-late"
         activation="surface"
         connected
-        createRequest={0}
+
       />,
     );
     await screen.findByRole('heading', { name: 'Credenciais' });
@@ -849,7 +843,7 @@ it.each(['reject', 'reply'])(
         profile={'poll-' + kind}
         activation="surface"
         connected
-        createRequest={0}
+
       />,
     );
     await openDeviceSheet('Router X');
@@ -881,7 +875,7 @@ it('exhausted status recovery unlocks UI and deliberate retry reconciles the sam
       profile="poll-exhaust"
       activation="surface"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -927,7 +921,7 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
         profile="retain"
         activation="surface"
         connected
-        createRequest={0}
+
       />,
     );
   const view = mount();
@@ -1013,7 +1007,7 @@ it('service status and last valid data remain truthful after a reading, failed r
         profile="X-footer"
         activation="footer"
         connected
-        createRequest={0}
+
       />
     </>,
   );
@@ -1044,7 +1038,7 @@ it('service status and last valid data remain truthful after a reading, failed r
         profile="Y-footer"
         activation="other"
         connected
-        createRequest={0}
+
       />
     </>,
   );
@@ -1068,7 +1062,7 @@ it('an uncertain inspection retains its own ID across unmount and another operat
       profile="retain-inspect"
       activation="surface"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -1086,7 +1080,7 @@ it('an uncertain inspection retains its own ID across unmount and another operat
       profile="retain-inspect"
       activation="surface"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -1122,7 +1116,7 @@ it('cancel reconciles the running job without another authentication', async () 
       profile="cancel-status"
       activation="surface"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -1145,7 +1139,7 @@ it('cancel reconciles the running job without another authentication', async () 
 it('first enrollment retains one CTA and the frozen empty inventory layout', async () => {
   vi.mocked(api.list).mockResolvedValue(data([]));
   vi.mocked(api.credentials).mockResolvedValue(data([]));
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   await screen.findByText('Nenhum equipamento cadastrado');
   expect(
     screen.getByRole('table', { name: 'Lista de equipamentos' }),
@@ -1180,15 +1174,14 @@ it('lost direct response clears the password, blocks blind resend and reconciles
     ...data(),
     data: { ...data().data!, operation_state: 'COMMITTED', device },
   });
-  render(
-    <Equipment
-      profile="direct-lost"
-      activation="a"
-      connected
-      createRequest={1}
-    />,
-  );
-  await openDeviceSheet('Router X');
+  render(<Equipment profile="direct-lost" activation="a" connected addPage />);
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  fireEvent.change(screen.getByLabelText('Papel do equipamento'), {
+    target: { value: 'other' },
+  });
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__inline__' },
+  });
   for (const [label, value] of [
     ['Nome', 'New direct'],
     ['IP de gerenciamento', '127.0.0.1'],
@@ -1197,12 +1190,8 @@ it('lost direct response clears the password, blocks blind resend and reconciles
   ]) {
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
   }
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await screen.findByRole('button', { name: 'Conferir cadastro' });
   expect(api.save).toHaveBeenCalledTimes(1);
   expect(submitted).toMatchObject({
@@ -1214,9 +1203,9 @@ it('lost direct response clears the password, blocks blind resend and reconciles
     screen.queryByDisplayValue('transient fixture secret'),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
+    screen.queryByRole('button', { name: /^Salvar$/ }),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(
     within(
       screen.getByRole('dialog', { name: 'Descartar alterações?' }),
@@ -1251,15 +1240,14 @@ it('a missing receipt permits only a deliberate retry with the original IDs, nev
     ...data(),
     data: { ...data().data!, operation_state: 'NOT_FOUND' },
   });
-  render(
-    <Equipment
-      profile="direct-retry"
-      activation="a"
-      connected
-      createRequest={1}
-    />,
-  );
-  await openDeviceSheet('Router X');
+  render(<Equipment profile="direct-retry" activation="a" connected addPage />);
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  fireEvent.change(screen.getByLabelText('Papel do equipamento'), {
+    target: { value: 'other' },
+  });
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__inline__' },
+  });
   const fill = () => {
     for (const [label, value] of [
       ['Nome', 'Retry'],
@@ -1270,18 +1258,14 @@ it('a missing receipt permits only a deliberate retry with the original IDs, nev
       fireEvent.change(screen.getByLabelText(label), { target: { value } });
   };
   fill();
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await screen.findByRole('button', { name: 'Conferir cadastro' });
   fireEvent.click(screen.getByRole('button', { name: 'Conferir cadastro' }));
   await screen.findByText(/Para tentar com o mesmo cadastro/);
   expect(api.save).toHaveBeenCalledTimes(1);
   expect(screen.getByLabelText('Senha')).toHaveValue('');
   fill();
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await waitFor(() => expect(sent).toHaveLength(2));
   expect(sent[1].id).toBe(sent[0].id);
   expect(sent[1].operation_id).toBe(sent[0].operation_id);
@@ -1302,7 +1286,7 @@ it('inactive filtering and an empty search recover through the frozen list and e
       profile="inactive-only"
       activation="a"
       connected
-      createRequest={0}
+
     />,
   );
   await screen.findByText('Nenhum equipamento cadastrado');
@@ -1347,7 +1331,7 @@ it('the full desktop owns only one Add action in empty and populated inventory s
       logout={() => {}}
       unavailable={() => {}}
       inventory={
-        <Equipment profile="cta" activation="a" connected createRequest={0} />
+        <Equipment profile="cta" activation="a" connected  />
       }
     />,
   );
@@ -1376,7 +1360,7 @@ it('the full desktop owns only one Add action in empty and populated inventory s
           profile="cta-empty"
           activation="b"
           connected
-          createRequest={0}
+
         />
       }
     />,
@@ -1390,15 +1374,14 @@ it('an uncertain enrollment never lends its operation ID to an unrelated edit', 
     sent.push(structuredClone(d));
     return { ...data(), code: 'SERVICE_UNAVAILABLE' };
   });
-  render(
-    <Equipment
-      profile="pending-edit"
-      activation="a"
-      connected
-      createRequest={1}
-    />,
-  );
-  await openDeviceSheet('Router X');
+  render(<Equipment profile="pending-edit" activation="a" connected addPage />);
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  fireEvent.change(screen.getByLabelText('Papel do equipamento'), {
+    target: { value: 'other' },
+  });
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__inline__' },
+  });
   for (const [label, value] of [
     ['Nome', 'Uncertain'],
     ['IP de gerenciamento', '127.0.0.1'],
@@ -1406,11 +1389,9 @@ it('an uncertain enrollment never lends its operation ID to an unrelated edit', 
     ['Senha', 'fixture only'],
   ])
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await screen.findByRole('button', { name: 'Conferir cadastro' });
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(
     within(
       screen.getByRole('dialog', { name: 'Descartar alterações?' }),
@@ -1419,9 +1400,7 @@ it('an uncertain enrollment never lends its operation ID to an unrelated edit', 
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
   expect(screen.queryByLabelText('Senha')).not.toBeInTheDocument();
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar equipamento' }));
   await waitFor(() => expect(sent).toHaveLength(2));
   expect(sent[1].operation_id).not.toBe(sent[0].operation_id);
   expect(sent[1]).toMatchObject({
@@ -1442,18 +1421,8 @@ it('creation with an existing credential also reconciles a lost response without
     ...data(),
     data: { ...data().data!, operation_state: 'COMMITTED', device },
   });
-  render(
-    <Equipment
-      profile="reuse-lost"
-      activation="a"
-      connected
-      createRequest={1}
-    />,
-  );
-  await openDeviceSheet('Router X');
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Usar credencial existente' }),
-  );
+  render(<Equipment profile="reuse-lost" activation="a" connected addPage />);
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
   fireEvent.change(screen.getByLabelText('Nome'), {
     target: { value: 'Reuse' },
   });
@@ -1463,16 +1432,14 @@ it('creation with an existing credential also reconciles a lost response without
   fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
     target: { value: 'credential' },
   });
-  fireEvent.click(
-    screen.getByRole('button', { name: /^Salvar (equipamento|e conectar)$/ }),
-  );
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
   await screen.findByRole('button', { name: 'Conferir cadastro' });
   expect(sent).toMatchObject({
     credential_id: 'credential',
     user: '',
     secret: '',
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(
     within(
       screen.getByRole('dialog', { name: 'Descartar alterações?' }),
@@ -1494,15 +1461,14 @@ it('creation with an existing credential also reconciles a lost response without
   expect(api.save).toHaveBeenCalledTimes(1);
 });
 it('direct creation exposes user and password without an earlier credential form', async () => {
-  render(
-    <Equipment
-      profile="fields-red"
-      activation="a"
-      connected
-      createRequest={1}
-    />,
-  );
-  await screen.findByRole('dialog', { name: 'Adicionar equipamento' });
+  render(<Equipment profile="fields-red" activation="a" connected addPage />);
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  fireEvent.change(screen.getByLabelText('Papel do equipamento'), {
+    target: { value: 'other' },
+  });
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__inline__' },
+  });
   expect(screen.getByLabelText('Usuário')).toBeInTheDocument();
   expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password');
   expect(screen.queryByLabelText('Alias')).not.toBeInTheDocument();
@@ -1517,7 +1483,7 @@ it('a blocked vault explains the disabled direct form inside its dialog exactly 
       profile="vault-failed"
       activation="a"
       connected
-      createRequest={0}
+
     />,
   );
   await screen.findByText(
@@ -1561,7 +1527,7 @@ it.each(['OK', 'TRUST_CHANGED'])(
         profile={'inspect-form-' + code}
         activation="a"
         connected
-        createRequest={0}
+
       />,
     );
     await openDeviceSheet('Router X');
@@ -1620,7 +1586,7 @@ it('completed inspection polling on its original surface still offers deliberate
       profile="inspect-original"
       activation="a"
       connected
-      createRequest={0}
+
     />,
   );
   await openDeviceSheet('Router X');
@@ -1649,7 +1615,6 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
     profile: 'Q01',
     activation: 'a0',
     connected: true,
-    createRequest: 0,
   };
   const view = render(<Equipment {...props} />);
   for (let i = 0; i < 130; i++) {
@@ -1676,7 +1641,7 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
 });
 it('Q03 inventory filters and refresh do not reload an independent credential catalog', async () => {
   render(
-    <Equipment profile="Q03" activation="q03" connected createRequest={0} />,
+    <Equipment profile="Q03" activation="q03" connected  />,
   );
   await openDeviceSheet('Router X');
   await waitFor(() => expect(api.credentials).toHaveBeenCalledTimes(1));
@@ -1694,7 +1659,7 @@ it('Q03 updates the credential catalog after successful replacement and recovers
       profile="Q03-edit"
       activation="catalog"
       connected
-      createRequest={0}
+
     />,
   );
   await screen.findByRole('heading', { name: 'Credenciais' });
@@ -1748,7 +1713,7 @@ it('L06C: credentials remain accessible for an empty company', async () => {
       profile="X"
       activation="a"
       connected={true}
-      createRequest={0}
+
     />,
   );
   await screen.findByRole('heading', { name: 'Credenciais' });
@@ -1811,7 +1776,7 @@ it('L06D-S6: concentrator detail exposes one health entry without a saved readin
       profile="X"
       activation="a"
       connected
-      createRequest={0}
+
       targetID={device.id}
     />,
   );
@@ -1862,7 +1827,7 @@ it('L06T3: equipment list projects saved health with role and explicit reading a
       },
     ]),
   );
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected  />);
   const row = await screen.findByRole('row', { name: /Router X/ });
   expect(within(row).getByText('Concentrador')).toBeInTheDocument();
   expect(within(row).getByText('37 %')).toBeInTheDocument();
@@ -1903,7 +1868,7 @@ it.each(['cpe', 'ap', 'concentrator'])(
       },
     });
     render(
-      <Equipment profile="X" activation="a" connected createRequest={0} />,
+      <Equipment profile="X" activation="a" connected  />,
     );
     await openDeviceSheet('Router X');
     fireEvent.click(
@@ -1979,7 +1944,7 @@ it('radio enrollment uses the chosen class default and allows an explicit per-de
       },
     },
   });
-  render(<Equipment profile="X" activation="a" connected createRequest={1} />);
+  render(<Equipment profile="X" activation="a" connected addPage />);
   const role = await screen.findByRole('combobox', {
     name: 'Papel do equipamento',
   });

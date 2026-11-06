@@ -93,7 +93,7 @@ export function InventoryToolbar({
       {filtered && <Button onClick={clear}>Limpar filtros</Button>}
       <span className="grow" />
       <InventoryColumnsMenu value={columns} save={saveColumns} busy={busy} />
-      <Button kind="primary" disabled={locked} onClick={() => onAdd ? onAdd() : p.setForm('new')}>
+      <Button kind="primary" data-add-trigger disabled={locked || !onAdd} onClick={onAdd}>
         Adicionar equipamento
       </Button>
     </div>

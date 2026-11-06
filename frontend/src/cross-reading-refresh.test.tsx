@@ -111,7 +111,7 @@ function concentrator(age: number) {
       profile="company"
       activation="active"
       connected
-      createRequest={0}
+
       targetID={device.id}
     />,
   );

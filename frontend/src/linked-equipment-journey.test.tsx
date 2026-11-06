@@ -90,7 +90,7 @@ it('Cliente da CPE lê o login na última observação e abre a tela da sessão 
       profile="company"
       activation="active"
       connected
-      createRequest={0}
+
       targetID={cpe.id}
     />,
   );

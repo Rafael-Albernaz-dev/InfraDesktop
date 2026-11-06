@@ -1,5 +1,5 @@
 import { EquipmentBanners, EquipmentDialogs } from './equipment-surfaces';
-import { useContext, useEffect, useLayoutEffect } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef } from 'react';
 import { DetailTitle } from './ui/DetailTitle';
 import { Button } from './desktop';
 import { equipmentAPI as api } from './equipment-api';
@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { SessionRoute } from './session-navigation';
 import type { SessionRouteTarget } from './session-navigation';
 
-function EquipmentCapabilityBody(p: {
+function EquipmentCapabilityBody({ setSurface, ...p }: {
   s: ReturnType<typeof useEquipmentState>;
   profile: string;
   activation: string;
@@ -26,11 +26,12 @@ function EquipmentCapabilityBody(p: {
   locked: boolean;
   trustOpen: boolean;
   onBackReady?: (back?: () => void) => void;
+  setSurface: (surface: HTMLDivElement | null) => void;
 }) {
   const { s, profile, activation, connected, primaryInHeader, locked } = p;
   const adding = p.addPage;
   return (
-    <div className="equipment-capability">
+    <div className="equipment-capability" ref={setSurface}>
       <EquipmentBanners s={s} locked={locked} trustOpen={p.trustOpen} />
       <div>
         {adding ? (
@@ -100,7 +101,6 @@ export type EquipmentProps = {
   profile: string;
   activation: string;
   connected: boolean;
-  createRequest: number;
   primaryInHeader?: boolean;
   credentialsPage?: boolean;
   addPage?: boolean;
@@ -141,8 +141,17 @@ function EquipmentContext(props: EquipmentProps) {
     primaryInHeader = false,
     onBlockedChange,
   } = props;
-  const [localAdd, setLocalAdd] = useState(false);
-  const adding = !!props.addPage || localAdd;
+  const adding = !!props.addPage;
+  const [surface, setSurface] = useState<HTMLDivElement | null>(null);
+  const returnFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (adding || props.credentialsPage || !returnFocus.current) return;
+    const trigger = surface?.querySelector<HTMLButtonElement>('[data-add-trigger]');
+    if (trigger && !trigger.closest('[hidden]') && !trigger.disabled) {
+      trigger.focus({ preventScroll: true });
+      returnFocus.current = false;
+    }
+  }, [adding, props.credentialsPage, surface]);
   const s = useEquipmentState({ ...props, addVisible: adding });
   useEffect(() => {
     onBlockedChange?.(s.busy || s.job?.state === 'RUNNING');
@@ -182,8 +191,12 @@ function EquipmentContext(props: EquipmentProps) {
       primaryInHeader={primaryInHeader}
       credentialsPage={props.credentialsPage}
       addPage={adding}
-      onAdd={() => props.onAdd ? props.onAdd() : setLocalAdd(true)}
-      onAddBack={() => { setLocalAdd(false); props.onAddBack?.(); }}
+      onAdd={props.onAdd}
+      onAddBack={() => {
+        returnFocus.current = true;
+        props.onAddBack?.();
+      }}
+      setSurface={setSurface}
       locked={locked}
       trustOpen={trustOpen}
       onBackReady={props.onBackReady}

@@ -5,7 +5,7 @@ import { equipmentAPI } from './equipment-api';
 import { pendingEnrollments } from './equipment-receipts';
 import type { useEquipmentState } from './equipment-state';
 
-it('continues the first connection after a single successful save', async () => {
+it('returns after a single successful save without starting a connection', async () => {
   pendingEnrollments.clear();
   const result = {
     profile_id: 'fixture',
@@ -41,6 +41,6 @@ it('continues the first connection after a single successful save', async () => 
     target: { value: '192.0.2.31' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-  await waitFor(() => expect(continueEnrollment).toHaveBeenCalledWith(result));
-  expect(back).toHaveBeenCalledOnce();
+  await waitFor(() => expect(back).toHaveBeenCalledOnce());
+  expect(continueEnrollment).not.toHaveBeenCalled();
 });

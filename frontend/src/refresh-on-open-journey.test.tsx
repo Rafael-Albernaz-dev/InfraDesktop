@@ -116,7 +116,7 @@ function show(device: Device) {
         profile="company"
         activation="active"
         connected
-        createRequest={0}
+
         targetID={device.id}
       />
     </StrictMode>,

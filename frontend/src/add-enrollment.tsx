@@ -11,7 +11,6 @@ import { id } from './equipment-reading';
 export function useAddEnrollment(p: {
   perform: EquipmentPerformFn;
   reloadCredentials: React.Dispatch<React.SetStateAction<number>>;
-  continueEnrollment: (result: EquipmentResult) => void;
   setErrors: (errors: Record<string, string>) => void;
   profile: string;
   activation: string;
@@ -26,6 +25,7 @@ export function useAddEnrollment(p: {
   const [uncertain, setUncertain] = useState(!!receipt);
   const [checking, setChecking] = useState(false);
   const [retry, setRetry] = useState(false);
+  const [needsSecret, setNeedsSecret] = useState(false);
   const lock = useRef(false);
   const alive = useRef(true);
   useEffect(() => {
@@ -87,12 +87,12 @@ export function useAddEnrollment(p: {
     }
     if (!unknown) pendingEnrollments.delete(key);
     if (alive.current) {
+      setNeedsSecret(Boolean(secret) && result?.code !== 'OK' && !unknown);
       setUncertain(unknown);
       if (result?.code === 'OK') {
         p.reloadCredentials((n) => n + 1);
         setRetry(false);
         setIDs({ device: id(), operation: id() });
-        if (!another) p.continueEnrollment(result);
         p.saved(another);
       }
     }
@@ -118,7 +118,6 @@ export function useAddEnrollment(p: {
       if (alive.current) {
         setUncertain(false);
         p.reloadCredentials((n) => n + 1);
-        p.continueEnrollment(result);
         p.saved(false);
       }
     } else if (
@@ -133,5 +132,5 @@ export function useAddEnrollment(p: {
     if (alive.current) setChecking(false);
     lock.current = false;
   };
-  return { uncertain, checking, retry, changed, save, reconcile };
+  return { uncertain, checking, retry, needsSecret, changed, save, reconcile };
 }

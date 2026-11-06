@@ -63,7 +63,7 @@ const open = () =>
       profile="company"
       activation="a"
       connected
-      createRequest={0}
+
       credentialsPage
     />,
   );

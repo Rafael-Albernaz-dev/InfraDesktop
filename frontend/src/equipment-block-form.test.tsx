@@ -31,10 +31,7 @@ it('keeps block edits protected and applies the default credential when changing
         device={device}
         credentials={credentials}
         disabled={false}
-        vault
-        contextKey="synthetic"
         save={save}
-        reconcile={vi.fn()}
       />
     </ProtectedDialog>,
   );

@@ -272,8 +272,10 @@ function Scene() {
                 profile="visual"
                 activation="fixture"
                 connected
-                createRequest={0}
                 credentialsPage={page === 'credentials'}
+                addPage={page === 'adicionar'}
+                onAdd={() => setPage('adicionar')}
+                onAddBack={() => setPage('equipment')}
                 targetID={equipmentId}
               />
             )

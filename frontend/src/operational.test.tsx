@@ -9,7 +9,7 @@ import {
 } from '@testing-library/react';
 import { it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
-import { Equipment } from './equipment';
+import { Equipment } from './test-equipment-shell';
 import {
   access,
   equipmentAPI as api,
@@ -122,7 +122,7 @@ it('L06C-UX: equipment summary and interfaces are separate, with a visible PPPoE
       profile="X"
       activation="a"
       connected={true}
-      createRequest={0}
+
       targetID="router"
     />,
   );
@@ -192,7 +192,7 @@ it('successful query automatically opens full result without a second action', a
       },
     },
   });
-  render(<Equipment profile="X" activation="a" connected createRequest={0} />);
+  render(<Equipment profile="X" activation="a" connected />);
   await openDeviceSheet('Saved router');
   fireEvent.click(
     screen.getByRole('button', { name: /^(Atualizar|Consultar)$/ }),
@@ -260,9 +260,15 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
     };
   });
   const view = render(
-    <Equipment profile="enroll" activation="a" connected createRequest={1} />,
+    <Equipment profile="enroll" activation="a" connected addPage />,
   );
-  await screen.findByRole('dialog', { name: 'Adicionar equipamento' });
+  await screen.findByRole('heading', { name: 'Adicionar equipamento' });
+  fireEvent.change(screen.getByLabelText('Papel do equipamento'), {
+    target: { value: 'other' },
+  });
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__inline__' },
+  });
   fireEvent.change(screen.getByLabelText('Nome'), {
     target: { value: 'Saved router' },
   });
@@ -275,7 +281,14 @@ it('save guides explicit acceptance and query, then cancel/failure preserve the 
   fireEvent.change(screen.getByLabelText('Senha', { exact: true }), {
     target: { value: '  exact synthetic secret  ' },
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Salvar e conectar' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Salvar$/ }));
+  await waitFor(() => expect(api.save).toHaveBeenCalledOnce());
+  expect(api.inspect).not.toHaveBeenCalled();
+  expect(api.start).not.toHaveBeenCalled();
+  await openDeviceSheet('Saved router');
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Verificar identidade' }),
+  );
   const trust = await screen.findByRole('dialog', { name: 'Primeira conexão' });
   expect(api.save).toHaveBeenCalledTimes(1);
   expect(api.start).not.toHaveBeenCalled();
@@ -338,14 +351,7 @@ it('cancel first acceptance never authenticates and leaves a resumable saved dev
       },
     },
   });
-  render(
-    <Equipment
-      profile="cancel-first"
-      activation="a"
-      connected
-      createRequest={0}
-    />,
-  );
+  render(<Equipment profile="cancel-first" activation="a" connected />);
   await openDeviceSheet('Saved router');
   fireEvent.click(
     screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),

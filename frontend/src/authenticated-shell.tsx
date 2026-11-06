@@ -30,7 +30,7 @@ function renderInventory(
       profile={profileId}
       activation={activationId}
       connected={connected}
-      createRequest={0}
+
       primaryInHeader
       credentialsPage={route === 'credentials'}
       addPage={route === 'adicionar'}

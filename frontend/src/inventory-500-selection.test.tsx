@@ -57,7 +57,7 @@ it('selects each page of 500 synthetic devices and submits their exact revisions
       profile="company"
       activation="active"
       connected
-      createRequest={0}
+
     />,
   );
   for (let cursor = 0; cursor < 500; cursor += 16) {

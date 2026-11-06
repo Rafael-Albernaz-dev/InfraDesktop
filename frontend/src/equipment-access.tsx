@@ -96,7 +96,7 @@ export function EquipmentSecondaryActions(p: {
   activation: string;
   startOperation: (kind: 'query' | 'inspect', d: Device) => Promise<void>;
   setError: (v: string) => void;
-  setForm: (d: Device | 'new' | undefined) => void;
+  setForm: (d: Device | undefined) => void;
   setSelected: (d: Device | undefined) => void;
   perform: EquipmentPerformFn;
 }) {

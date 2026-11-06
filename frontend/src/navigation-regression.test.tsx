@@ -119,7 +119,7 @@ function EmptySelectionHarness() {
         profile="company"
         activation="activation"
         connected
-        createRequest={0}
+
         onBackReady={(next) => {
           back.current = next;
         }}

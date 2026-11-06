@@ -55,7 +55,6 @@ export function AddEquipment(p: {
     activation: p.activation,
     perform: p.s.perform,
     reloadCredentials: p.s.reloadCredentials,
-    continueEnrollment: p.s.continueEnrollment,
     setErrors: setValidationErrors,
     saved: (another) => {
       setRow(emptyRow());
@@ -187,6 +186,9 @@ export function AddEquipment(p: {
                 ? ' e digite a senha novamente.'
                 : '.'}
             </p>
+          )}
+          {enrollment.needsSecret && (
+            <p role="status">Digite a senha novamente para tentar salvar.</p>
           )}
           {singleError && (
             <p className="field-error" role="alert">

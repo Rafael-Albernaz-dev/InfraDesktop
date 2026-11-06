@@ -8,15 +8,12 @@ const radioRoles: string[] = [RadioRoles.ap, RadioRoles.cpe, RadioRoles.ptp];
 export function DeviceRoleSelect({
   draft,
   change,
-  device,
   defaults,
-  setExisting,
 }: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;
-  device?: Device;
+  device: Device;
   defaults: Record<string, string>;
-  setExisting: (v: boolean) => void;
 }) {
   return (
     <label className="field">
@@ -27,7 +24,6 @@ export function DeviceRoleSelect({
         onChange={(e) => {
           const role = e.target.value;
           if (radioRoles.includes(role)) {
-            if (!device) setExisting(true);
             change({
               role,
               credential_id: defaults[role] || '',

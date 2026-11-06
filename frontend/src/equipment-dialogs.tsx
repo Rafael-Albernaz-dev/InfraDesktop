@@ -180,7 +180,7 @@ export function ResetTrustDialog(p: {
 }
 
 export function DeviceFormDialog(p: {
-  shownForm: Device | 'new';
+  shownForm: Device;
   closeForm: () => void;
   error: string;
   vault: boolean;
@@ -193,23 +193,18 @@ export function DeviceFormDialog(p: {
   activation: string;
   perform: EquipmentPerformFn;
   reloadCredentials: React.Dispatch<React.SetStateAction<number>>;
-  continueEnrollment: (r: EquipmentResult) => void;
   showSavedDevice: (r: EquipmentResult) => void;
 }) {
-  const title =
-    p.shownForm === 'new' ? 'Adicionar equipamento' : 'Editar equipamento';
   return (
-    <ProtectedDialog title={title} close={p.closeForm}>
+    <ProtectedDialog title="Editar equipamento" close={p.closeForm}>
       <DialogNotices error={p.error} vault={p.vault} ready={p.ready} />
       <DeviceForm
-        key={p.shownForm === 'new' ? 'new' : p.shownForm.id}
-        device={p.shownForm === 'new' ? undefined : p.shownForm}
+        key={p.shownForm.id}
+        device={p.shownForm}
         credentials={p.credentials}
         defaults={p.credentialDefaults}
         blocks={p.blocks}
         disabled={p.locked}
-        vault={p.vault}
-        contextKey={[p.profile, p.activation].join('|')}
         save={(d) =>
           p.perform(
             async () => {
@@ -217,21 +212,9 @@ export function DeviceFormDialog(p: {
               if (r.code === 'OK') p.reloadCredentials((n) => n + 1);
               return r;
             },
-            p.shownForm === 'new' ? p.continueEnrollment : p.showSavedDevice,
+            p.showSavedDevice,
             true,
             true,
-          )
-        }
-        reconcile={(device, operation) =>
-          p.perform(
-            () =>
-              api.enrollmentStatus(p.profile, p.activation, device, operation),
-            (r) => {
-              if (r.data?.operation_state === 'COMMITTED') {
-                p.reloadCredentials((n) => n + 1);
-                p.continueEnrollment(r);
-              }
-            },
           )
         }
       />
