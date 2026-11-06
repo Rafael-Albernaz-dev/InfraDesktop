@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-export PATH := $(CURDIR)/.tools/go1.27.3/go/bin:$(CURDIR)/.tools/bin:$(PATH)
+export PATH := $(CURDIR)/build/tools:$(CURDIR)/.tools/go1.27.3/go/bin:$(CURDIR)/.tools/bin:$(PATH)
 export GOTOOLCHAIN := local
 export GOPROXY := off
 export GOSUMDB := off
@@ -94,6 +94,8 @@ test-equipment-smoke:
 
 .PHONY: quality
 quality:
+	go test ./scripts/qualityrules ./scripts/qualitydup -count=1
+	cd frontend && node --test eslint-quality.test.mjs
 	go run ./scripts/quality.go
 	cd frontend && ./node_modules/.bin/eslint src/
 	node --test scripts/layout-guard.test.mjs
@@ -102,3 +104,8 @@ quality:
 .PHONY: test-layout
 test-layout:
 	node scripts/test-layout.mjs
+
+.PHONY: quality-report
+quality-report:
+	go run ./scripts/quality.go -report
+	cd frontend && node eslint-quality-report.mjs

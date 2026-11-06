@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -25,6 +24,7 @@ var forbiddenTestFunction = regexp.MustCompile(`(?i)(L07|Avulso|Live2|Piloto|CPU
 var forbidden = regexp.MustCompile(`(?i)(^|_)(j|live2|piloto|cpu90|avulso|l06c|l06d|bf03|bf04)(_|$)`)
 
 func main() {
+	reportOnly := flag.Bool("report", false, "print quality measurements")
 	baseline := flag.Bool("baseline", false, "record measurements before refactoring")
 	flag.Parse()
 	measured, err := qualitymetrics.MeasureSources()
@@ -37,9 +37,16 @@ func main() {
 	fatal(err)
 	var previous report
 	fatal(json.Unmarshal(raw, &previous))
-	changed, err := changedSources()
+	changed, err := qualityrules.ChangedSources()
 	fatal(err)
+	if *reportOnly {
+		fatal(qualityrules.PrintReport(measured))
+		return
+	}
 	failures := validate(measured, previous, changed)
+	failures = append(failures, qualityrules.DuplicationGate()...)
+	failures = append(failures, qualityrules.FrontendRatchet()...)
+	failures = append(failures, qualityrules.LegacyGate(legacyRatchetOnly)...)
 	for _, failure := range failures {
 		fmt.Println(failure)
 	}
@@ -64,44 +71,7 @@ func writeBaseline(measured report) {
 	fatal(os.WriteFile("scripts/quality-baseline.json", append(raw, '\n'), 0644))
 	fmt.Printf("baseline: %d files\n", len(measured))
 }
-func git(args ...string) ([]byte, error) { return exec.Command("git", args...).Output() }
-func changedSources() (map[string][]span, error) {
-	raw, err := git("diff", "HEAD", "--unified=0", "--no-ext-diff", "--", "*.go", "*.tsx", "*.ts")
-	if err != nil {
-		return nil, err
-	}
-	result := map[string][]span{}
-	path := ""
-	hunk := regexp.MustCompile(`^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@`)
-	for _, line := range strings.Split(string(raw), "\n") {
-		if strings.HasPrefix(line, "+++ b/") {
-			path = strings.TrimPrefix(line, "+++ b/")
-			if _, ok := result[path]; !ok {
-				result[path] = nil
-			}
-		}
-		match := hunk.FindStringSubmatch(line)
-		if match == nil {
-			continue
-		}
-		start, _ := strconv.Atoi(match[1])
-		count := 1
-		if match[2] != "" {
-			count, _ = strconv.Atoi(match[2])
-		}
-		result[path] = append(result[path], span{start, start + max(count, 1) - 1})
-	}
-	raw, err = git("ls-files", "--others", "--exclude-standard", "-z")
-	if err != nil {
-		return nil, err
-	}
-	for _, path := range strings.Split(string(raw), "\x00") {
-		if strings.HasSuffix(path, ".go") || strings.HasSuffix(path, ".tsx") || strings.HasSuffix(path, ".ts") {
-			result[path] = []span{{1, int(^uint(0) >> 1)}}
-		}
-	}
-	return result, nil
-}
+func git(args ...string) ([]byte, error)           { return exec.Command("git", args...).Output() }
 func overlaps(start, end int, changed []span) bool { return qualityrules.Overlaps(start, end, changed) }
 
 func validate(current, previous report, changed map[string][]span) []string {
@@ -133,10 +103,18 @@ func validateRatchet(path string, current, previous metric) []string {
 }
 func validateChanged(path string, m metric, baselineExists bool, spans []span) []string {
 	var failures []string
-	if strings.HasSuffix(path, ".ts") && !baselineExists {
-		if _, err := git("ls-files", "--error-unmatch", path); err == nil {
+	if strings.HasSuffix(path, ".ts") {
+		err := exec.Command("git", "cat-file", "-e", "HEAD:"+path).Run()
+		if qualityrules.ExistingTSWithoutBaseline(err == nil, baselineExists) {
 			failures = append(failures, path+": BLOCK initial TypeScript baseline absent")
 		}
+	}
+	if strings.HasSuffix(path, ".go") {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return []string{err.Error()}
+		}
+		failures = append(failures, qualityrules.GoLimits(path, content, spans)...)
 	}
 	if legacyRatchetOnly[path] {
 		spans = radioFunctionSpans(m, spans)

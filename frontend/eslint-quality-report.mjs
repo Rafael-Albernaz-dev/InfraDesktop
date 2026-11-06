@@ -1,0 +1,11 @@
+import console from 'node:console';
+import { URL } from 'node:url';
+import { ESLint } from 'eslint';
+import fs from 'node:fs';
+const lint = new ESLint({ overrideConfig: { linterOptions: { noInlineConfig: true } } });
+const results = await lint.lintFiles(['src', 'visual']);
+const counts = {};
+for (const result of results) for (const message of result.messages) counts[message.ruleId] = (counts[message.ruleId] || 0) + 1;
+console.log('violations by rule:', JSON.stringify(counts));
+console.log('ratchet:', JSON.stringify(JSON.parse(fs.readFileSync(new URL('./quality-ratchet.json', import.meta.url), 'utf8')), null, 2));
+console.log('warnings:', results.reduce((n, r) => n + r.warningCount, 0));
