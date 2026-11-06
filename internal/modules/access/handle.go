@@ -10,6 +10,10 @@ func (s *Service) Handle(ctx context.Context, uid uint32, q Command) (View, Code
 		return View{}, Unauthorized
 	}
 	switch q.Op {
+	case "access.reset-begin":
+		return s.resetBegin(ctx, q)
+	case "access.reset-complete":
+		return s.resetComplete(ctx, q)
 	case "access.bootstrap":
 		return s.handleBootstrap(ctx)
 	case "access.register", "access.login", "access.recover":
@@ -79,16 +83,6 @@ func (s *Service) commitOpenSession(
 	}
 	*out = *st
 	return OK
-}
-
-func admitCredentialInput(q Command) Code {
-	if ValidName(q.Name) && passwordForOperation(q.Op, q.Password) {
-		return OK
-	}
-	if q.Op == "access.login" {
-		return Unauthorized
-	}
-	return Invalid
 }
 
 func (s *Service) handleCredentials(ctx context.Context, uid uint32, q Command) (View, Code) {

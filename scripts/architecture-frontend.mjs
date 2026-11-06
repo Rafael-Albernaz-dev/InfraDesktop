@@ -139,6 +139,7 @@ function inspect(name, code) {
           "Register",
           "Login",
           "Recover",
+          "ResetAccount",
           "Logout",
           "CreateCompany",
           "SelectCompany",

@@ -76,7 +76,7 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
   return (
     <form onSubmit={s.send}>
       <Field
-        label="Usuário"
+        label={s.mode === 'reset' ? 'Novo usuário' : 'Usuário'}
         autoComplete="username"
         required
         maxLength={80}
@@ -97,7 +97,7 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
             />
           )}
           <Field
-            label={s.mode === 'recover' ? 'Nova senha' : 'Senha'}
+            label={s.mode === 'recover' || s.mode === 'reset' ? 'Nova senha' : 'Senha'}
             type="password"
             required
             maxLength={128}
@@ -105,9 +105,9 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
             value={s.password}
             onChange={(e) => s.setPassword(e.target.value)}
           />
-          {s.mode === 'register' && (
+          {(s.mode === 'register' || s.mode === 'reset') && (
             <Field
-              label="Confirmar senha"
+              label={s.mode === 'reset' ? 'Confirmar nova senha' : 'Confirmar senha'}
               type="password"
               required
               maxLength={128}
@@ -116,9 +116,9 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
               onChange={(e) => s.setConfirm(e.target.value)}
             />
           )}
+          {s.mode === 'reset' && <p className="muted">O sistema vai pedir a senha de administrador deste computador.</p>}
           <Button
             className="lg-btn"
-            label={s.mode === 'recover' ? 'Redefinir senha' : undefined}
             type="submit"
             disabled={p.busy || !p.connected}
           >
@@ -126,8 +126,13 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
               ? 'Aguarde…'
               : s.mode === 'register'
                 ? 'Criar conta local'
-                : 'Recuperar'}
+                : s.mode === 'reset' ? 'Redefinir conta' : 'Recuperar'}
           </Button>
+          {s.mode === 'recover' && (
+            <p className="lg-alt"><Button className="link-control" disabled={p.busy || p.resetVerification}
+              title={p.resetVerification ? 'Tente entrar antes de solicitar outra redefinição.' : undefined}
+              onClick={() => s.change('reset')}>Perdi a senha e o código</Button></p>
+          )}
           <p className="lg-alt">
             <Button
               className="link-control"

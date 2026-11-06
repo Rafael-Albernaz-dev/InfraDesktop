@@ -172,6 +172,23 @@
       "expected_profile",
       "expected_activation",
       "brand"
+    ],
+    "access.reset-begin": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision"
+    ],
+    "access.reset-complete": [
+      "version",
+      "request_id",
+      "op",
+      "capability",
+      "contract_revision",
+      "name",
+      "password",
+      "reset_nonce"
     ]
   },
   "test_harness_only": [
@@ -184,7 +201,7 @@
     65536
   ],
   "budget_ms": 3000,
-  "product_revision": 23,
+  "product_revision": 24,
   "bf04": {
     "product_revision": 3,
     "branding_frame_limit": 2863104,

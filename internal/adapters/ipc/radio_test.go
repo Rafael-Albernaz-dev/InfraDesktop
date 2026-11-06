@@ -51,7 +51,7 @@ func TestRadioWireRejectsCommandsAndUnknownFields(t *testing.T) {
 }
 
 func TestRadioLiveContractRevisionAndTiming(t *testing.T) {
-	if ProductRevision != 23 {
+	if ProductRevision != 24 {
 		t.Fatal("inventory import requires IPC23")
 	}
 	raw,

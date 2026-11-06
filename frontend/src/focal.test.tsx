@@ -106,7 +106,7 @@ for (const mode of ['register', 'recover'] as const) {
       });
     fireEvent.click(
       screen.getByRole('button', {
-        name: mode === 'register' ? 'Criar conta local' : 'Redefinir senha',
+        name: mode === 'register' ? 'Criar conta local' : 'Recuperar',
       }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Voltar ao login' }));

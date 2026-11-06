@@ -42,6 +42,7 @@ import {
   Register,
   Login,
   Recover,
+  ResetAccount,
   Logout,
   CreateCompany,
   SelectCompany,
@@ -75,6 +76,7 @@ export const access: {
   register: (name: string, password: string) => Promise<Result>;
   login: (name: string, password: string, remember: boolean) => Promise<Result>;
   recover: (name: string, code: string, password: string) => Promise<Result>;
+  resetAccount: (name: string, password: string) => Promise<Result>;
   logout: () => Promise<Result>;
   createCompany: (name: string) => Promise<Result>;
   selectCompany: (id: string) => Promise<Result>;
@@ -95,6 +97,7 @@ export const access: {
   register: Register,
   login: Login,
   recover: Recover,
+  resetAccount: ResetAccount,
   logout: Logout,
   createCompany: CreateCompany,
   selectCompany: SelectCompany,

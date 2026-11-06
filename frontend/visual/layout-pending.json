@@ -10,21 +10,6 @@
     "reason": "Histórico de conexões ainda não implementado"
   },
   {
-    "id": "criar",
-    "owner": "L-CONTA",
-    "reason": "Rev. 6: conta e excluir credencial"
-  },
-  {
-    "id": "recuperar",
-    "owner": "L-CONTA",
-    "reason": "Rev. 6: conta e excluir credencial"
-  },
-  {
-    "id": "redefinir",
-    "owner": "L-CONTA",
-    "reason": "Rev. 6: conta e excluir credencial"
-  },
-  {
     "id": "credencial-editar",
     "owner": "L-CONTA",
     "reason": "Rev. 6: conta e excluir credencial"

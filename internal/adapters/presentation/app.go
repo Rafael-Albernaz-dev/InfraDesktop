@@ -27,6 +27,8 @@ type Result struct {
 	ProductVersion string        `json:"product_version"`
 }
 type App struct {
+	resetAuthorize                                                  func(context.Context, string, string) string
+	resetUnixUser                                                   func() (string, error)
 	ppExportFS                                                      ppFileOps
 	ppGeneration, recoveryGeneration                                uint64
 	ppExporting                                                     bool
@@ -45,6 +47,7 @@ type App struct {
 
 func New(c *ipc.AccountClient) *App {
 	return &App{client: c, ctx: context.Background(), clipboard: runtime.ClipboardSetText,
+		resetAuthorize: runResetAuthorization, resetUnixUser: currentUnixUser,
 		saveDialog: runtime.SaveFileDialog, openDialog: runtime.OpenFileDialog}
 }
 func AttachContext(a *App, ctx context.Context) { a.mu.Lock(); a.ctx = ctx; a.mu.Unlock() }
@@ -62,7 +65,19 @@ func (a *App) call(q ipc.Request) Result {
 	case "access.register", "access.login", "access.logout", "company.select", "company.create", "access.recover", "access.renew-recovery", "access.ack-recovery", "access.ack-issued":
 		a.ppGeneration++
 	}
+	intent, blocked := a.prepareResetVerification(q)
+	if blocked != "" {
+		return Result{Code: blocked, Companies: []ipc.Company{}}
+	}
+	if intent != nil {
+		defer intent.Close()
+	}
 	r := a.client.Call(a.ctx, q)
+	if intent != nil && (r.Code == "OK" || r.Code == "UNAUTHENTICATED") {
+		if intent.Clear() != nil {
+			return Result{Code: "RESET_VERIFICATION_REQUIRED", Companies: []ipc.Company{}}
+		}
+	}
 	a.updateRecoveryAfterCall(q, r)
 	return accountResult(r)
 }
@@ -97,6 +112,10 @@ func (a *App) AckRecovery() Result {
 		if r.Code != "OK" && r.Code != "UNAUTHENTICATED" && r.Code != "PROFILE_CHANGED" {
 			a.mu.Unlock()
 			return Result{Code: string(r.Code), Companies: []ipc.Company{}}
+		}
+		if code := a.clearResetIntent(); code != "" {
+			a.mu.Unlock()
+			return Result{Code: code, Companies: []ipc.Company{}}
 		}
 		a.accessRecoveryPending = false
 		a.recovery = ""

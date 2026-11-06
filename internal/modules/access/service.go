@@ -3,11 +3,8 @@ package access
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"time"
-	"unicode"
-	"unicode/utf8"
 )
 
 type Code string
@@ -66,21 +63,30 @@ type Crypto interface {
 	Digest(string) []byte
 	Equal([]byte, []byte) bool
 }
+
+// ResetProof consumes a privileged, one-time proof without exposing filesystem details to the domain.
+type ResetProof interface{ Consume(string) bool }
+type resetChallenge struct {
+	nonce   string
+	expires time.Time
+	epoch   uint64
+}
+
 type Command struct {
 	Columns                                                                             *[]string
 	Op, Session, Grant, Name, Password, Recovery, Profile, Activation, Theme, Operation string
-	ExpectedProfile, ExpectedActivation                                                 string
+	ExpectedProfile, ExpectedActivation, ResetNonce                                     string
 	Brand                                                                               Branding
 	Remember, Replace                                                                   bool
 	// Owner is a transport-authenticated opaque process identity, never a wire field.
 	Owner string
 }
 type View struct {
-	Columns                                                    []string
-	Setup, Authenticated                                       bool
-	Name, Theme, Profile, Activation, Session, Grant, Recovery string
-	Companies                                                  []Company
-	Brand                                                      *Branding
+	Columns                                                                []string
+	Setup, Authenticated                                                   bool
+	Name, Theme, Profile, Activation, Session, Grant, Recovery, ResetNonce string
+	Companies                                                              []Company
+	Brand                                                                  *Branding
 }
 type session struct {
 	Owner   string
@@ -101,6 +107,9 @@ type Service struct {
 	activation           string
 	authorizationVersion uint64
 	pendingRecovery      map[string]bool
+	resetOperationMu     sync.Mutex
+	resetProof           ResetProof
+	resetChallenges      map[string]resetChallenge
 }
 
 func New(store Store, crypto Crypto, now func() time.Time, uid uint32, activation string, brands ...BrandStore) *Service {
@@ -108,31 +117,12 @@ func New(store Store, crypto Crypto, now func() time.Time, uid uint32, activatio
 	if len(brands) > 0 {
 		brandStore = brands[0]
 	}
-	return &Service{store: store, brands: brandStore, issued: map[string][]byte{}, crypto: crypto, now: now, uid: uid, kdf: make(chan struct{}, 1), sessions: map[string]session{}, pendingRecovery: map[string]bool{}, activation: activation, authorizationVersion: 1}
-}
-func ValidPassword(p string) bool {
-	n := utf8.RuneCountInString(p)
-	return validExistingPassword(p) && n >= 8
-}
-func ValidName(n string) bool {
-	if !utf8.ValidString(n) || strings.TrimSpace(n) != n || utf8.RuneCountInString(n) < 1 || utf8.RuneCountInString(n) > 80 {
-		return false
+	return &Service{
+		store: store, brands: brandStore, issued: map[string][]byte{}, crypto: crypto,
+		now: now, uid: uid, kdf: make(chan struct{}, 1), sessions: map[string]session{},
+		pendingRecovery: map[string]bool{}, resetChallenges: map[string]resetChallenge{},
+		activation: activation, authorizationVersion: 1,
 	}
-	for _, r := range n {
-		if unicode.IsControl(r) {
-			return false
-		}
-	}
-	return true
-}
-func Backoff(failures uint32) time.Duration {
-	if failures > 5 {
-		return 30 * time.Second
-	}
-	if failures == 0 {
-		return 0
-	}
-	return time.Second * time.Duration(1<<(failures-1))
 }
 func (s *Service) reserve(ctx context.Context) Code {
 	return s.store.Update(ctx, func(st *State) Code {
@@ -213,6 +203,11 @@ func (s *Service) open(
 func (s *Service) Reap(alive func(string) bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	for owner := range s.resetChallenges {
+		if !alive(owner) {
+			delete(s.resetChallenges, owner)
+		}
+	}
 	for owner := range s.issued {
 		if !alive(owner) {
 			delete(s.issued, owner)

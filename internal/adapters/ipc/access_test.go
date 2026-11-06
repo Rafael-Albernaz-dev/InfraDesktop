@@ -21,7 +21,7 @@ func TestProductSchemaSnapshot(t *testing.T) {
 	if e = json.Unmarshal(b, &schema); e != nil {
 		t.Fatal(e)
 	}
-	if schema.Version != 1 || len(schema.Operations) != 17 {
+	if schema.Version != 1 || len(schema.Operations) != 19 {
 		t.Fatal("schema snapshot version/count")
 	}
 	samples := map[string]any{

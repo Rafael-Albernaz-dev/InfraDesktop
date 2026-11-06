@@ -14,6 +14,9 @@ func accessAllowed(q Request) (map[string]bool, foundation.Code) {
 	switch q.Op {
 	case "access.check-issued", "access.ack-issued":
 		a["recovery"] = true
+	case "access.reset-begin":
+	case "access.reset-complete":
+		a["name"], a["password"], a["reset_nonce"] = true, true, true
 	case "access.register":
 		a["name"], a["password"] = true, true
 	case "access.login":

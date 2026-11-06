@@ -40,7 +40,8 @@ func (a *App) shouldClearRecovery(r ipc.Response) bool {
 }
 
 func (a *App) updateEmittedRecovery(q ipc.Request, r ipc.Response) {
-	if (q.Op == "access.renew-recovery" || q.Op == "access.register" || q.Op == "access.recover") && r.Code == "OK" && r.Data != nil {
+	if (q.Op == "access.renew-recovery" || q.Op == "access.register" || q.Op == "access.recover" ||
+		q.Op == "access.reset-complete") && r.Code == "OK" && r.Data != nil {
 		a.recovery = r.Data.Recovery
 		a.renewalRecoveryPending = q.Op == "access.renew-recovery" && r.Data.Recovery != ""
 		a.recoveryGeneration++
@@ -56,7 +57,7 @@ func (a *App) updateRecoveryAcknowledgement(q ipc.Request, r ipc.Response) {
 		a.renewalRecoveryPending = false
 		a.recoveryGeneration++
 	}
-	if (q.Op == "access.register" || q.Op == "access.recover") && r.Code == "OK" && r.Data != nil {
+	if (q.Op == "access.register" || q.Op == "access.recover" || q.Op == "access.reset-complete") && r.Code == "OK" && r.Data != nil {
 		a.accessRecoveryPending = r.Data.Recovery != ""
 		a.renewalRecoveryPending = false
 	}

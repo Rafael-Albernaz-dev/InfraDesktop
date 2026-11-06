@@ -21,6 +21,8 @@ for source, target, mode in [
     ('infradesktop.desktop', 'usr/share/applications/infradesktop.desktop', 0o644),
     ('provision-technician', 'usr/lib/infradesktop/provision-technician', 0o755),
     ('provision-vault', 'usr/lib/infradesktop/provision-vault', 0o755),
+    ('reset-account', 'usr/lib/infradesktop/reset-account', 0o755),
+    ('org.infradesktop.reset-account.policy', 'usr/share/polkit-1/actions/org.infradesktop.reset-account.policy', 0o644),
     ('infradesktop-vault.conf', 'usr/share/infradesktop/infradesktop-vault.conf', 0o644),
 ]:
     dest = stage / target

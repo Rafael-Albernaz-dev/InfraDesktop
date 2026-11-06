@@ -13,6 +13,7 @@ export type AccessProps = {
   connected: boolean;
   error: string;
   recovery: string;
+  resetVerification?: boolean;
   acknowledge: () => void;
   contextChanged?: () => void;
   initialName?: string;
@@ -48,7 +49,7 @@ export function useAccessFields(p: AccessProps) {
   function send(event: FormEvent) {
     event.preventDefault();
     if (p.busy || p.recovery) return;
-    if (mode === 'register' && password !== confirm) {
+    if ((mode === 'register' || mode === 'reset') && password !== confirm) {
       setLocalError('As senhas não conferem.');
       return;
     }
@@ -93,14 +94,14 @@ export function AccessScreen(p: AccessProps) {
       ? 'Criar conta'
       : s.mode === 'recover'
         ? 'Recuperar acesso'
-        : 'Entrar';
+        : s.mode === 'reset' ? 'Redefinir conta' : 'Entrar';
   const subtitle = p.recovery
     ? 'Ele aparece só agora.'
     : s.mode === 'register'
-      ? 'A conta fica só neste computador.'
+      ? 'A conta fica só neste computador. Senha com no mínimo 8 caracteres.'
       : s.mode === 'recover'
-        ? 'Use seu código e escolha uma senha nova.'
-        : 'Use a conta local deste computador.';
+        ? 'Use seu código e escolha uma senha nova, com no mínimo 8 caracteres.'
+        : s.mode === 'reset' ? 'Empresas, equipamentos e credenciais continuam aqui.' : 'Use a conta local deste computador.';
   return (
     <div data-theme={p.theme || 'light'}>
       {p.setTheme && (

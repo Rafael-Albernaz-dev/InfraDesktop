@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-const ProductRevision = 23
+const ProductRevision = 24
 const ProductVersion = "0.6.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104
@@ -37,6 +37,7 @@ type Request struct {
 	Label              string                `json:"label,omitempty"`
 	Name               string                `json:"name,omitempty"`
 	Password           string                `json:"password,omitempty"`
+	ResetNonce         string                `json:"reset_nonce,omitempty"`
 	Recovery           string                `json:"recovery,omitempty"`
 	Grant              string                `json:"grant,omitempty"`
 	Theme              string                `json:"theme,omitempty"`
@@ -70,6 +71,7 @@ type Data struct {
 	Name             string               `json:"name,omitempty"`
 	Theme            string               `json:"theme,omitempty"`
 	Recovery         string               `json:"recovery,omitempty"`
+	ResetNonce       string               `json:"reset_nonce,omitempty"`
 	Grant            string               `json:"grant,omitempty"`
 	Companies        []Company            `json:"companies,omitempty"`
 	Session          string               `json:"session,omitempty"`
@@ -234,6 +236,7 @@ func validate(b []byte) (Request, foundation.Code) {
 			allowed["label"] = true
 		}
 	case "access.bootstrap", "access.register", "access.login", "access.recover", "access.resume",
+		"access.reset-begin", "access.reset-complete",
 		"access.snapshot", "access.logout", "company.create", "company.select", "preferences.theme",
 		"preferences.columns", "access.renew-recovery", "access.ack-recovery", "access.check-issued",
 		"access.ack-issued", "company.brand-get", "company.brand-set":

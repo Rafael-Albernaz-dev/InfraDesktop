@@ -25,7 +25,7 @@ export function UnauthenticatedShell(props: {
   return (
     <div className="app" data-theme={theme} data-route="access" data-page="1">
       <div className="client">
-        <AccessScreen
+        <AccessScreen key={session.resetVerification ? 'verify-reset' : 'access'} resetVerification={session.resetVerification}
           theme={theme}
           setTheme={setTheme}
           setup={view.setup}
@@ -52,6 +52,7 @@ export function UnauthenticatedShell(props: {
                   ? access.register(name, password)
                   : mode === 'recover'
                     ? access.recover(name, code, password)
+                    : mode === 'reset' ? access.resetAccount(name, password)
                     : access.login(name, password, remember),
               undefined,
               true,

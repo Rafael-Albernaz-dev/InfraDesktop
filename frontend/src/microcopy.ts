@@ -1,7 +1,8 @@
+import { resetVerificationMessage } from './reset-verification-message';
 export type Intent =
   | 'login'
   | 'register'
-  | 'recover'
+  | 'recover' | 'reset'
   | 'renew'
   | 'company'
   | 'brand'
@@ -10,6 +11,8 @@ export type Intent =
   | 'general';
 // Intent → message → available action. Raw backend text is never displayed.
 export function message(code: string, intent: Intent): string {
+  const resetNotice = resetVerificationMessage(code);
+  if (resetNotice) return resetNotice;
   if (
     intent === 'login' &&
     ['INVALID_REQUEST', 'UNAUTHENTICATED'].includes(code)
@@ -22,13 +25,14 @@ export function message(code: string, intent: Intent): string {
         ? 'Usuário ou código não conferem.'
         : 'Entre novamente para continuar.';
   if (code === 'INVALID_REQUEST') {
-    if (intent === 'register' || intent === 'recover')
+    if (intent === 'register' || intent === 'recover' || intent === 'reset')
       return 'Use uma nova senha de 8 a 128 caracteres e confira o usuário.';
-    if (intent === 'company')
-      return 'Use um nome de empresa de 1 a 80 caracteres.';
+    if (intent === 'company') return 'Use um nome de empresa de 1 a 80 caracteres.';
     return 'Confira os campos e tente novamente.';
   }
   const messages: Record<string, string> = {
+    ADMIN_AUTH_CANCELLED: 'A autorização foi cancelada.',
+    ADMIN_AUTH_UNAVAILABLE: 'Não foi possível abrir a autorização de administrador neste computador.',
     VERSION_INCOMPATIBLE: 'Atualize o InfraDesktop para abrir esta instalação.',
     TRY_LATER: 'Aguarde alguns instantes e tente novamente.',
     BUSY: 'Há uma operação em andamento. Aguarde e tente novamente.',
@@ -47,22 +51,4 @@ export function message(code: string, intent: Intent): string {
   };
   return messages[code] || 'Não foi possível concluir. Tente novamente.';
 }
-export function recoveryActionMessage(
-  code: string,
-  action: 'copy' | 'save',
-): string {
-  if (code === 'CANCELLED') return '';
-  if (code === 'OK')
-    return action === 'copy'
-      ? 'Código copiado.'
-      : 'Arquivo salvo. Confirme depois de guardá-lo.';
-  if (code === 'SAVE_EXISTS')
-    return 'Este arquivo já existe. Escolha outro nome.';
-  if (code === 'SAVE_INVALID_DESTINATION')
-    return 'Escolha um arquivo com extensão .txt.';
-  if (code === 'PROFILE_CHANGED' || code === 'UNAUTHENTICATED')
-    return 'Este código não está mais disponível. Recupere o acesso ou gere outro.';
-  return action === 'copy'
-    ? 'Não foi possível copiar. Selecione e copie o código manualmente.'
-    : 'Não foi possível salvar. Tente outro destino ou copie o código.';
-}
+export { recoveryActionMessage } from './recovery-action-message';

@@ -18,6 +18,7 @@ func ListenAccess(dir string, uid uint32, svc *access.Service, identity foundati
 		return nil, e
 	}
 	s.account = svc
+	svc.SetResetProof(resetFileProof{dir: dir, uid: uid})
 	s.closeState = closeState
 	return s, nil
 }
@@ -99,32 +100,7 @@ func (c *AccountClient) Call(ctx context.Context, q Request) Response {
 	ctx, cancel := context.WithTimeout(ctx, Budget)
 	defer cancel()
 	if q.Op == "access.bootstrap" {
-		if c.session != "" {
-			r := c.exchange(ctx, Request{Op: "access.snapshot", Session: c.session, Profile: c.profile, Activation: c.activation})
-			if r.Code == foundation.OK {
-				return r
-			}
-			if r.Code != foundation.Unauthenticated && r.Code != foundation.ProfileChanged {
-				return r
-			}
-			c.session = ""
-		}
-		// A token is read only from an owner-only regular file after directory validation.
-		if safeDir(c.dir, c.transport.uid) == nil {
-			if token, e := readPrivateToken(c.dir, c.transport.uid); e == nil {
-				r := c.exchange(ctx, Request{Op: "access.resume", Grant: token})
-				if r.Code == foundation.OK {
-					c.accept(r)
-					return r
-				}
-				if r.Code != foundation.Unauthenticated {
-					return r
-				}
-			} else if !os.IsNotExist(e) {
-				return Response{Code: foundation.Unavailable}
-			}
-		}
-		return c.exchange(ctx, q)
+		return c.bootstrap(ctx, q)
 	}
 	if q.Op == "company.create" && q.Operation == "" {
 		if c.pendingCreation == "" || c.pendingName != q.Name {
@@ -141,43 +117,14 @@ func (c *AccountClient) Call(ctx context.Context, q Request) Response {
 	q.Profile = c.profile
 	q.Activation = c.activation
 	// Pre-auth fields are operation specific: do not leak a prior session into them.
-	if q.Op == "access.login" || q.Op == "access.register" || q.Op == "access.recover" || q.Op == "access.check-issued" || q.Op == "access.ack-issued" {
-		q.Session = ""
-		q.Profile = ""
-		q.Activation = ""
+	if preAuthOperation(q.Op) {
+		q.Session, q.Profile, q.Activation = "", "", ""
 	}
 	r := c.exchange(ctx, q)
 	if r.Code != foundation.OK {
 		return r
 	}
-	if q.Op == "access.logout" || q.Op == "access.recover" {
-		c.session = ""
-		c.profile = ""
-		c.activation = ""
-		if e := c.removeGrant(); e != nil && q.Op != "access.recover" {
-			return Response{Code: foundation.Unavailable}
-		}
-	}
-	if r.Data != nil && r.Data.Grant != "" {
-		if e := c.saveGrant(r.Data.Grant); e != nil {
-			// Durable token storage failed. Revoke the newly created grant, report failure.
-			c.accept(r)
-			_ = c.exchange(ctx, Request{Op: "access.logout", Session: c.session, Profile: c.profile, Activation: c.activation})
-			c.session = ""
-			return Response{Code: foundation.Unavailable}
-		}
-	}
-	if q.Op == "access.login" && !q.Remember {
-		if e := c.removeGrant(); e != nil {
-			return Response{Code: foundation.Unavailable}
-		}
-	}
-	if q.Op == "company.create" {
-		c.pendingCreation = ""
-		c.pendingName = ""
-	}
-	c.accept(r)
-	return r
+	return c.finishCall(ctx, q, r)
 }
 func (c *AccountClient) accept(r Response) {
 	if r.Data == nil {

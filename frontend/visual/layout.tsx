@@ -198,7 +198,7 @@ function Scene() {
       ? 'register'
       : scene === 'recuperar'
         ? 'recover'
-        : 'login';
+        : scene === 'redefinir' ? 'reset' : 'login';
   const [page, setPage] = useState<Page>(
     scene === 'vitrine'
       ? 'vitrine'
@@ -231,7 +231,7 @@ function Scene() {
                 : '';
   return (
     <div data-layout-ready={ready || undefined}>
-      {['login', 'criar', 'recuperar', 'codigo'].includes(scene) ? (
+      {['login', 'criar', 'recuperar', 'redefinir', 'codigo'].includes(scene) ? (
         <AccessScreen
           theme={theme}
           setTheme={setTheme}
