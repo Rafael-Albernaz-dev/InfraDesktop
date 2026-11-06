@@ -915,12 +915,13 @@ body.com-painel .col {
   flex-shrink: 0;
 }
 .recovery-actions .dialog-actions {
-  display: block;
-  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 0 0 12px;
 }
 .recovery-actions button {
   width: 100%;
-  margin-bottom: 6px;
 }
 .recovery-code {
   width: 100%;
@@ -1012,9 +1013,9 @@ body.com-painel .col {
   color: var(--erro);
   border-color: var(--erro);
 }
+.security .inline-error-danger { border: 0; padding: 0; margin: 0 0 8px; font-weight: 600; }
 .credential-usage {
   display: block;
-  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

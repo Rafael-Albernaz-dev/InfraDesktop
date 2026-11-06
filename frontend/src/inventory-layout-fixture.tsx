@@ -1,5 +1,6 @@
 import type { Device } from './equipment-api';
 import { RadioTransports } from './radio-contract';
+import { prepareSecurityVisual } from './security-layout-fixture';
 
 export function prepareBase5Devices(
   devices: Device[],
@@ -22,6 +23,7 @@ export function prepareBase5Devices(
   };
   for (const d of devices) {
     d.block = groups[d.id] || '';
+    if (d.id === 'EQP-0001') d.credential_id = '';
     if (visualScene.startsWith('equipamentos') && d.result)
       d.result.board = models[d.id] || '';
     if (d.id === 'CCR-CENTRO')
@@ -73,10 +75,11 @@ export function createBase5List(
     block = '',
     empty = false,
     model = '',
+    inactiveOnly = false,
   ) => {
     const filtered = devices.filter(
       (d) =>
-        (inactive || d.active) &&
+        (inactiveOnly ? !d.active : inactive || d.active) &&
         `${d.name} ${d.address}`.toLowerCase().includes(search.toLowerCase()) &&
         (!role || d.role === role) &&
         (!block || d.block === block) &&
@@ -100,6 +103,7 @@ export function createBase5List(
 }
 
 export function prepareBase5Scene(visualScene: string) {
+  prepareSecurityVisual(visualScene);
   if (
     ![
       'equipamentos-colunas',

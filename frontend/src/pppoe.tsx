@@ -6,6 +6,7 @@ import { readingUpdateState } from './reading-update-state';
 import type { ReactNode } from 'react';
 import { ContextCounts } from './pppoe-context';
 import { readingAge } from './equipment-reading-format';
+import { CSVNotice } from './pppoe-csv-notice';
 import { PPPoEHeader, PPPoEStatusBanners } from './pppoe-header';
 import { useRef } from 'react';
 import type { Device } from './equipment-api';
@@ -53,6 +54,7 @@ function PPPoESessionsSection(p: {
     <>
       <PPPoESessionFilters {...s} searchControlRef={refs.searchControlRef} />
       {p.actions}
+      <CSVNotice />
       {s.pageState === 'loading' && (
         <p role="status">Carregando página armazenada…</p>
       )}
@@ -314,6 +316,7 @@ export function PPPoE({
           )}
         />
       )}
+      {s.tab === 'sessions' && !s.current && <CSVNotice />}
       {s.tab === 'sessions' && !s.loading && !s.initialFailed && (
         <PPPoEReadPanel
           key={

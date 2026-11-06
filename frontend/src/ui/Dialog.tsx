@@ -47,6 +47,7 @@ export function Dialog({
   portal = false,
   dismissOnBackdrop = true,
   inactive = false,
+  showClose = true,
 }: {
   title: string;
   children: ReactNode;
@@ -54,6 +55,7 @@ export function Dialog({
   portal?: boolean;
   dismissOnBackdrop?: boolean;
   inactive?: boolean;
+  showClose?: boolean;
 }) {
   const host = useContext(DialogHost);
   const ref = useRef<HTMLElement>(null);
@@ -63,7 +65,8 @@ export function Dialog({
     const f = Array.from(
       el?.querySelectorAll<HTMLElement>(FOCUSABLE) || [],
     ).filter((node) => !node.closest('[hidden],[aria-hidden="true"]'));
-    f[0]?.focus();
+    if (showClose) f[0]?.focus();
+    else el?.querySelector('h2')?.focus();
     return () => {
       if (before?.isConnected) before.focus();
     };
@@ -86,16 +89,20 @@ export function Dialog({
         aria-modal="true"
         aria-label={title}
       >
-        <div className="row between">
-          <h2>{title}</h2>
-          <Button
-            kind="flat dialog-close"
-            onClick={close}
-            label="Fechar painel"
-          >
-            <Icon name="XMark" />
-          </Button>
-        </div>
+        {showClose ? (
+          <div className="row between">
+            <h2>{title}</h2>
+            <Button
+              kind="flat dialog-close"
+              onClick={close}
+              label="Fechar painel"
+            >
+              <Icon name="XMark" />
+            </Button>
+          </div>
+        ) : (
+          <h2 tabIndex={-1}>{title}</h2>
+        )}
         {children}
       </section>
     </div>

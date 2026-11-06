@@ -172,7 +172,7 @@ it('account dropdown keyboard and dialog trap include readonly textarea', async 
   const ack = screen.getByRole('button', { name: 'Guardei meu código' });
   ack.focus();
   fireEvent.keyDown(ack, { key: 'Tab' });
-  expect(screen.getByRole('button', { name: 'Fechar painel' })).toHaveFocus();
+  expect(screen.getByLabelText('Novo código de recuperação')).toHaveFocus();
 });
 
 it('profile navigation has an explicit Escape dismissal that returns focus', async () => {

@@ -88,14 +88,14 @@ export function useAccessFields(p: AccessProps) {
 export function AccessScreen(p: AccessProps) {
   const s = useAccessFields(p);
   const title = p.recovery
-    ? 'Guarde seu novo código'
+    ? 'Guarde seu código'
     : s.mode === 'register'
       ? 'Criar conta'
       : s.mode === 'recover'
         ? 'Recuperar acesso'
         : 'Entrar';
   const subtitle = p.recovery
-    ? 'Ele aparece só agora e recupera sua conta.'
+    ? 'Ele aparece só agora.'
     : s.mode === 'register'
       ? 'A conta fica só neste computador.'
       : s.mode === 'recover'

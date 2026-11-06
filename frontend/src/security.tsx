@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from './desktop-controls';
 import { RecoveryActions } from './recovery-actions';
+import { RecoveryCode } from './ui/RecoveryCode';
 
 export function Security({
   recovery,
@@ -10,6 +11,7 @@ export function Security({
   lock,
   renew,
   acknowledge,
+  cancel,
 }: {
   recovery: string;
   busy: boolean;
@@ -18,6 +20,7 @@ export function Security({
   lock: (locked: boolean) => void;
   renew: (password: string) => void;
   acknowledge: () => void;
+  cancel?: () => void;
 }) {
   const [password, setPassword] = useState('');
   useEffect(() => {
@@ -25,25 +28,16 @@ export function Security({
   }, [uncertain, busy, recovery, lock]);
   return (
     <div className="security">
-      <p>
-        Se esquecer sua senha, este código permite criar uma nova. Gerar outro
-        código invalida o anterior.
-      </p>
+      {!recovery && (
+        <p>
+          Se esquecer sua senha, este código permite criar uma nova. Gerar outro
+          código invalida o anterior.
+        </p>
+      )}
       {recovery ? (
         <>
-          <h3>Guarde seu novo código</h3>
-          <p>
-            Copiar não confirma que você o guardou em um local seguro. Confirme
-            ao terminar.
-          </p>
-          <label htmlFor="new-recovery">Novo código de recuperação</label>
-          <textarea
-            id="new-recovery"
-            className="recovery-code"
-            readOnly
-            value={recovery}
-            onFocus={(event) => event.currentTarget.select()}
-          />
+          <p className="muted">Ele aparece só agora.</p>
+          <RecoveryCode value={recovery} label="Novo código de recuperação" />
           <RecoveryActions busy={busy} />
           <div className="dialog-actions">
             <Button kind="primary" disabled={busy} onClick={acknowledge}>
@@ -81,25 +75,35 @@ export function Security({
               invalidado. Confirme a senha para gerar outro.
             </p>
           )}
+          {error && <SecurityError error={error} />}
           <div className="dialog-actions">
+            {cancel && (
+              <Button disabled={busy} onClick={cancel}>
+                Cancelar
+              </Button>
+            )}
             <Button className="btn primary" type="submit" disabled={busy}>
               {uncertain ? 'Gerar outro código novo' : 'Gerar novo código'}
             </Button>
           </div>
         </form>
       )}
-      {error && (
-        <p
-          role="alert"
-          className={
-            error === 'SENHA INCORRETA'
-              ? 'inline-error inline-error-danger'
-              : 'inline-error'
-          }
-        >
-          {error}
-        </p>
-      )}
+      {recovery && error && <SecurityError error={error} />}
     </div>
+  );
+}
+
+function SecurityError({ error }: { error: string }) {
+  return (
+    <p
+      role="alert"
+      className={
+        error === 'SENHA INCORRETA'
+          ? 'inline-error inline-error-danger'
+          : 'inline-error'
+      }
+    >
+      {error}
+    </p>
   );
 }

@@ -72,9 +72,9 @@ it('works without company, retains pending issuance and one-time code until ack,
   vi.mocked(access.copyRecovery).mockResolvedValue('OK');
   await openSecurity();
   submit();
-  fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   fireEvent.click(screen.getByRole('link', { name: /Selecionar empresa/ }));
-  expect(screen.getByRole('dialog', { name: 'Segurança' })).toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'Gerar novo código' })).toBeInTheDocument();
   await act(async () => complete({ ...state, recovery: 'a'.repeat(64) }));
   expect(
     within(screen.getByRole('dialog')).queryByLabelText('Senha atual'),
@@ -168,7 +168,7 @@ for (const failure of ['DEADLINE_EXCEEDED', 'reject'] as const) {
       'isolated test password',
       false,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Fechar painel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Gerar novo código' }));
     expect(screen.getByText(/Não recebemos a confirmação/)).toBeInTheDocument();

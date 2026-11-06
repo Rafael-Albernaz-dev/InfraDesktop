@@ -168,6 +168,7 @@ function SecurityDialogBody(props: {
       busy={busy}
       error={error}
       uncertain={recoveryUncertain}
+      cancel={close}
       lock={(locked) => {
         securityLockedRef.current = locked;
       }}
@@ -214,7 +215,11 @@ export function AppOverlays(props: {
   const { dialog, close, busy, error, perform, setPage } = props;
   if (!dialog) return null;
   return (
-    <Dialog title={dialog} close={close}>
+    <Dialog
+      title={dialog === 'Segurança' ? (props.recovery ? 'Guarde seu código' : 'Gerar novo código') : dialog}
+      close={close}
+      showClose={dialog !== 'Segurança'}
+    >
       {dialog === 'Segurança' ? (
         <SecurityDialogBody {...props} />
       ) : dialog === 'Nova empresa' ? (

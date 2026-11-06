@@ -341,7 +341,7 @@ export function installFixture() {
             _cursor: number,
             inactive: boolean,
           ) =>
-            isBase5Scene ? listInventory(search, _cursor, inactive) : result({
+            isBase5Scene ? listInventory(search, _cursor, false, '', '', false, '', inactive) : result({
               devices: devices.filter(
                 (d) => (inactive || d.active) && d.name.includes(search),
               ),

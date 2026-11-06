@@ -5,27 +5,7 @@
     "reason": "Dado ainda sem percurso nesta ficha"
   },
   {
-    "id": "credenciais",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
-    "id": "codigo",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
     "id": "ficha-ccr-centro-sesso-es",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
-    "id": "seguranca-erro",
-    "owner": "L-BASE-5A",
-    "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
-  },
-  {
-    "id": "seguranca-codigo",
     "owner": "L-BASE-5A",
     "reason": "Rev. 6: lista, credenciais, aviso do CSV, código e papéis novos"
   },

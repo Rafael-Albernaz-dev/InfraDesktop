@@ -94,7 +94,7 @@ describe('BF01 real-use presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Criar conta' }));
     await enterCredentials();
     fireEvent.click(screen.getByRole('button', { name: 'Criar conta local' }));
-    await screen.findByText('Guarde seu novo código');
+    await screen.findByText('Guarde seu código');
     expect(access.register).toHaveBeenCalledWith(
       'technical',
       'isolated test password',
