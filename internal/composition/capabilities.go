@@ -13,5 +13,5 @@ func mountCapabilities(server *ipc.Server, service *access.Service, store *stora
 	if path := os.Getenv("INFRADESKTOP_DEV_VAULT_KEY"); path != "" && devVaultEnabled == "true" {
 		provider = func() ([]byte, error) { return vault.ReadKey(path) }
 	}
-	ipc.AttachEquipment(server, composeEquipment(service, store, provider, composePulse(server, service, store)))
+	ipc.AttachEquipment(server, composeLiveEquipment(server, service, store, provider))
 }

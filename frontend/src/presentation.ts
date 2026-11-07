@@ -116,15 +116,15 @@ export const access: {
     SaveBrand(profile, activation, brand.name, brand.logo, brand.accent),
 };
 export type Observation = Omit<equipment.Observation, 'convertValues'>;
-export type Device = Omit<
-  equipment.Device,
-  'convertValues' | 'result' | 'role' | 'monitoring'
-> & {
+type DeviceProjection = {
+  live?: { cpu?: number; clients?: number; uptime_seconds?: number; at?: string; fault: string };
   monitoring?: DeviceHealth;
   monitoring_at?: string;
   role?: string;
   result?: Observation;
 };
+export type Device = Omit<equipment.Device, 'convertValues' | keyof DeviceProjection> & DeviceProjection;
+
 export type Credential = Omit<equipment.Credential, 'convertValues'>;
 export type Job = Omit<equipment.Job, 'convertValues' | 'result'> & {
   result?: Observation;

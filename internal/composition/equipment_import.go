@@ -17,11 +17,12 @@ import (
 )
 
 func composeEquipment(
-	service *access.Service, store *storage.Store, provider vault.Provider, collector *pulse.Collector,
+	service *access.Service, store *storage.Store, provider vault.Provider, collector *pulse.Collector, reader *pulse.ReadCollector,
 ) *equipment.Service {
 	mon := monitoring.New(service, store)
 	inv := inventory.New(service, store, vault.New(provider), routerssh.Adapter{}, equipmentIDs{}, time.Now)
 	inv.Pulse = collector
+	inv.Live = reader
 	inv.Parser, inv.Digester = importfile.Parser{}, importfile.Parser{}
 	return &equipment.Service{Handler: radio.NewComposite(inv, pppoe.New(inv, mon), radio.New(inv), mon)}
 }

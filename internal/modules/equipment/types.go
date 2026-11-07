@@ -109,7 +109,16 @@ type PulseStatus struct {
 	CheckedAt string `json:"checked_at"`
 }
 
+type LiveReading struct {
+	CPU           *int   `json:"cpu,omitempty"`
+	Clients       *int   `json:"clients,omitempty"`
+	UptimeSeconds *int64 `json:"uptime_seconds,omitempty"`
+	At            string `json:"at,omitempty"`
+	Fault         string `json:"fault"`
+}
+
 type Device struct {
+	Live            *LiveReading     `json:"live,omitempty"`
 	Pulse           *PulseStatus     `json:"pulse,omitempty"`
 	RadioSummary    *RadioSummary    `json:"radio_summary,omitempty"`
 	Monitoring      *DeviceHealth    `json:"monitoring,omitempty"`

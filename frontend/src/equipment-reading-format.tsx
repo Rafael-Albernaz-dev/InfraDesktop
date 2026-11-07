@@ -11,13 +11,34 @@ export const readingAge = (at?: string, now = Date.now()) =>
   at ? `há ${formatDuration((now - Date.parse(at)) / 1000)}` : '';
 export const stamp = (d: Device) => readingAge(d.result?.observed_at);
 
-export function latestSavedReading(d: Device) {
+export function liveReading(d: Device, now = Date.now()) {
+  const at = Date.parse(d.live?.at || '');
+  return Number.isFinite(at) &&
+    now - at <= 180_000 &&
+    d.live?.cpu !== undefined &&
+    d.live?.uptime_seconds !== undefined
+    ? d.live
+    : undefined;
+}
+
+export function latestSavedReading(d: Device, now = Date.now()) {
+  const saved = savedReading(d);
+  const live = liveReading(d, now);
+  if (!live) return saved;
+  const uptime = formatDuration(live.uptime_seconds!);
+  return { ...saved, at: live.at!, cpu: live.cpu, uptime, exactUptime: uptime };
+}
+
+function savedReading(d: Device) {
   const radioAt = Date.parse(d.radio_summary?.observed_at || '');
   const monitorAt = Date.parse(d.monitoring_at || ''),
     summaryAt = Date.parse(d.result?.observed_at || '');
-  if (d.radio_summary && Number.isFinite(radioAt) &&
-      (!Number.isFinite(monitorAt) || radioAt >= monitorAt) &&
-      (!Number.isFinite(summaryAt) || radioAt >= summaryAt))
+  if (
+    d.radio_summary &&
+    Number.isFinite(radioAt) &&
+    (!Number.isFinite(monitorAt) || radioAt >= monitorAt) &&
+    (!Number.isFinite(summaryAt) || radioAt >= summaryAt)
+  )
     return {
       at: d.radio_summary.observed_at,
       version: d.radio_summary.version,

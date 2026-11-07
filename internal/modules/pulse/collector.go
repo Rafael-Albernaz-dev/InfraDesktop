@@ -8,13 +8,15 @@ import (
 
 const Slots = 10
 
-func Slot(id string) int {
+func Slot(id string) int { return slotHash(id, Slots) }
+
+func slotHash(id string, slots int) int {
 	// FNV-1a keeps scheduling stable across daemon restarts without runtime state.
 	var hash uint32 = 2166136261
 	for i := 0; i < len(id); i++ {
 		hash = (hash ^ uint32(id[i])) * 16777619
 	}
-	return int(hash % Slots)
+	return int(hash % uint32(slots))
 }
 
 type Collector struct {

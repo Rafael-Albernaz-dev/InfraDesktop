@@ -422,6 +422,7 @@
     "view_fields": {
       "pulse": {"state": "ONLINE, OFFLINE or empty", "since": "RFC3339 or empty", "last_reply": "RFC3339 or empty", "checked_at": "RFC3339 or empty"},
       "pulse_network": "ok, no_response or probe_blocked; memory only, authorized inventory.list",
+      "live": {"cpu": "optional integer 0..100", "clients": "optional nonnegative integer", "uptime_seconds": "optional nonnegative integer", "at": "optional RFC3339; readings expire after 180s", "fault": "empty, refused, key_changed or lost; memory only, authorized inventory.list"},
       "state_filter": "empty (all), ONLINE, OFFLINE, unknown; applied before pagination",
       "total_devices": "company total independent of filter, activity and page",
       "operation_state": "COMMITTED or NOT_FOUND for creation reconciliation; NOT_FOUND is not cancellation",

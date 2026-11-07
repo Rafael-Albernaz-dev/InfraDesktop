@@ -197,8 +197,8 @@ it.each([
 it('distinguishes an empty state filter from an empty inventory and recovers through clear filters', async () => {
   const empty = result('');
   empty.data!.devices = [];
-  vi.mocked(equipmentAPI.list).mockImplementation(
-    async (...args) => (args[5]?.state ? empty : result()),
+  vi.mocked(equipmentAPI.list).mockImplementation(async (...args) =>
+    args[5]?.state ? empty : result(),
   );
   open();
   await flush();
@@ -251,4 +251,57 @@ it('uses the current clock for ping age on the five-second renewal', async () =>
     await vi.advanceTimersByTimeAsync(5000);
   });
   expect(screen.getByTitle('Ping há 9 s')).toHaveTextContent('ONLINE');
+});
+
+it('updates live metrics and credential faults on the existing poll without a click', async () => {
+  const saved = result();
+  const d = saved.data!.devices![0];
+  d.result = {
+    cpu_percent: 1,
+    uptime: '1h',
+    version: '6.49.19',
+    observed_at: new Date().toISOString(),
+  } as NonNullable<Device['result']>;
+  d.pppoe = { online: 3, offline: 8 } as NonNullable<Device['pppoe']>;
+  vi.mocked(equipmentAPI.list).mockResolvedValue(saved);
+  open();
+  await flush();
+  const row = screen.getByText(device.name).closest('tr')!;
+  expect(within(row).getByText('1 %')).toBeInTheDocument();
+  const live = {
+    ...d,
+    live: {
+      cpu: 99,
+      clients: 42,
+      uptime_seconds: 7200,
+      at: new Date().toISOString(),
+      fault: '',
+    },
+  };
+  vi.mocked(equipmentAPI.list).mockResolvedValue({
+    ...saved,
+    data: { ...saved.data!, devices: [live] },
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(within(row).getByText('99 %')).toBeInTheDocument();
+  expect(
+    within(row).getByRole('cell', { name: '42' }),
+  ).toBeInTheDocument();
+  expect(
+    within(row).getByRole('cell', { name: '8' }),
+  ).toBeInTheDocument();
+  vi.mocked(equipmentAPI.list).mockResolvedValue({
+    ...saved,
+    data: {
+      ...saved.data!,
+      devices: [{ ...live, live: { fault: 'refused' } }],
+    },
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(within(row).getByText('SENHA INCORRETA')).toHaveClass('st-off');
+  expect(screen.getByText(device.name).closest('tr')).toBe(row);
 });

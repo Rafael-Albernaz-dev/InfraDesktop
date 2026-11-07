@@ -1,7 +1,7 @@
 import './inventory-pulse.css';
 import type { Device, Credential } from './equipment-api';
 import { equipmentType } from './equipment-layout';
-import { latestSavedReading } from './equipment-reading-format';
+import { latestSavedReading, liveReading } from './equipment-reading-format';
 import { formatDate, formatDuration, formatMetric } from './network-format';
 
 type Context = { device: Device; now: number; credentials: Credential[] };
@@ -13,7 +13,7 @@ type Column = {
 const metric = (v: number | undefined, unit: string) =>
   v === undefined ? '—' : formatMetric(v, unit);
 const latest = (d: Device) => {
-  const saved = latestSavedReading(d);
+  const saved = latestSavedReading({ ...d, live: undefined });
   return {
     saved,
     radio:
@@ -54,7 +54,10 @@ export const columns: Column[] = [
     id: 'online',
     label: 'Clientes online',
     cell: ({ device }) =>
-      device.pppoe?.online ?? device.radio_summary?.clients ?? '—',
+      liveReading(device)?.clients ??
+      device.pppoe?.online ??
+      device.radio_summary?.clients ??
+      '—',
   },
   {
     id: 'offline',
@@ -78,7 +81,14 @@ export const columns: Column[] = [
     id: 'last_reading',
     label: 'Última leitura',
     cell: ({ device, now }) => {
-      const at = latestSavedReading(device).at;
+      const fault = device.live?.fault;
+      if (fault === 'refused' || fault === 'key_changed')
+        return (
+          <span className="st-off">
+            {fault === 'refused' ? 'SENHA INCORRETA' : 'CHAVE SSH ALTERADA'}
+          </span>
+        );
+      const at = latestSavedReading(device, now).at;
       return at ? (
         <span title={formatDate(at)}>
           há {formatDuration((now - Date.parse(at)) / 1000)}

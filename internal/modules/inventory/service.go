@@ -26,6 +26,7 @@ type RunningJob struct {
 }
 
 type Service struct {
+	Live     LiveReader
 	Pulse    PulseReader
 	Parser   ImportParser
 	Digester ImportDigester
@@ -191,6 +192,7 @@ func (s *Service) listDevices(st *State, q Command, v *View) Code {
 	}
 	v.Blocks, v.Models = inventoryOptions(st.Devices)
 	devices := s.withPulse(st.Devices, q.Scope.Profile, v)
+	devices = s.withLive(devices, st.Credentials, q.Scope.Profile)
 	filtered := filterDevices(devices, q)
 	start := min(q.Cursor, len(filtered))
 	end := min(start+PageSize, len(filtered))
