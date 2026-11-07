@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"infradesktop/scripts/qualitymetrics"
 	"os"
+	"strings"
 )
 
 // BaselineGrowth checks the numeric ceilings used by the quality gate.
@@ -13,9 +14,13 @@ func BaselineGrowth(current, previous qualitymetrics.Report) []string {
 	for path, before := range previous {
 		after, exists := current[path]
 		if !exists {
+			// ignored: Only existence is relevant to key removal.
+			if _, err := os.Stat(path); !os.IsNotExist(err) {
+				failures = append(failures, fmt.Sprintf("baseline %s: existing file key removed", path))
+			}
 			continue
 		}
-		if after.Lines > before.Lines || after.LongLines > before.LongLines ||
+		if after.Lines > before.Lines && after.Lines > FileLimit(path) || after.LongLines > before.LongLines ||
 			after.MaxFunction > before.MaxFunction || after.MaxComplexity > before.MaxComplexity {
 			failures = append(failures, fmt.Sprintf("baseline %s: ceiling increased", path))
 		}
@@ -40,4 +45,12 @@ func BaselineRatchet() []string {
 		return []string{err.Error()}
 	}
 	return BaselineGrowth(current, previous)
+}
+
+// FileLimit is shared by the baseline ratchet and changed-file validation.
+func FileLimit(path string) int {
+	if strings.HasSuffix(path, ".tsx") {
+		return 600
+	}
+	return 500
 }

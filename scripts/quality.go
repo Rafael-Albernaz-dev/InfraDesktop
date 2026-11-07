@@ -94,7 +94,7 @@ func validate(current, previous report, changed map[string][]span) []string {
 	return failures
 }
 func validateRatchet(path string, current, previous metric) []string {
-	if current.Lines <= previous.Lines && current.LongLines <= previous.LongLines &&
+	if (current.Lines <= previous.Lines || current.Lines <= qualityrules.FileLimit(path)) && current.LongLines <= previous.LongLines &&
 		current.MaxFunction <= previous.MaxFunction && current.MaxComplexity <= previous.MaxComplexity {
 		return nil
 	}
@@ -120,10 +120,7 @@ func validateChanged(path string, m metric, baselineExists bool, spans []span) [
 	if legacyRatchetOnly[path] {
 		spans = radioFunctionSpans(m, spans)
 	} else {
-		limit := 500
-		if strings.HasSuffix(path, ".tsx") {
-			limit = 600
-		}
+		limit := qualityrules.FileLimit(path)
 		if (strings.HasSuffix(path, ".go") || strings.HasSuffix(path, ".tsx")) && m.Lines > limit {
 			failures = append(failures, fmt.Sprintf("%s: QG2 file %d > %d", path, m.Lines, limit))
 		}

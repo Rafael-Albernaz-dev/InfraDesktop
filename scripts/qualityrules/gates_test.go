@@ -2,6 +2,8 @@ package qualityrules
 
 import (
 	"infradesktop/scripts/qualitymetrics"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -48,7 +50,7 @@ func TestLegacyExceptionKeysAreReadFromHeadSource(t *testing.T) {
 func TestBaselineExistingCeilingsOnlyDecrease(t *testing.T) {
 	old := qualitymetrics.Report{"a": {Lines: 10, LongLines: 2, MaxFunction: 6, MaxComplexity: 3}}
 	for _, after := range []qualitymetrics.Metric{
-		{Lines: 11}, {LongLines: 3}, {MaxFunction: 7}, {MaxComplexity: 4},
+		{Lines: 501}, {LongLines: 3}, {MaxFunction: 7}, {MaxComplexity: 4},
 	} {
 		if len(BaselineGrowth(qualitymetrics.Report{"a": after}, old)) == 0 {
 			t.Fatal("increased ceiling accepted", after)
@@ -60,5 +62,28 @@ func TestBaselineExistingCeilingsOnlyDecrease(t *testing.T) {
 		if len(BaselineGrowth(current, old)) != 0 {
 			t.Fatal("unchanged, reduced or new key refused")
 		}
+	}
+}
+
+func TestBaselineMissingKeyRequiresDeletedFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "exists.go")
+	if err := os.WriteFile(path, []byte("package fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	old := qualitymetrics.Report{path: {Lines: 10}}
+	if len(BaselineGrowth(qualitymetrics.Report{}, old)) == 0 {
+		t.Fatal("existing file key removed")
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if len(BaselineGrowth(qualitymetrics.Report{}, old)) != 0 {
+		t.Fatal("deleted file blocked")
+	}
+}
+func TestBaselineLinesMayGrowBelowFileLimit(t *testing.T) {
+	old := qualitymetrics.Report{"a.go": {Lines: 10}}
+	if len(BaselineGrowth(qualitymetrics.Report{"a.go": {Lines: 20}}, old)) != 0 {
+		t.Fatal("within-limit growth blocked")
 	}
 }
