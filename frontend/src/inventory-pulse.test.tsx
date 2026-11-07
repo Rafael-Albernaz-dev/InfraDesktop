@@ -238,3 +238,17 @@ it('never lets a list response erase direct navigation to an inactive device out
   });
   expect(screen.getByRole('heading', { name: device.name })).toBeVisible();
 });
+
+it('uses the current clock for ping age on the five-second renewal', async () => {
+  const response = result();
+  const checkedAt = new Date(Date.now() - 4000).toISOString();
+  response.data!.devices![0].pulse!.checked_at = checkedAt;
+  vi.mocked(equipmentAPI.list).mockResolvedValue(response);
+  open();
+  await flush();
+  expect(screen.getByTitle('Ping há 4 s')).toHaveTextContent('ONLINE');
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
+  expect(screen.getByTitle('Ping há 9 s')).toHaveTextContent('ONLINE');
+});

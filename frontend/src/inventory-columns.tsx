@@ -134,10 +134,10 @@ export const defaultColumns = [
 ];
 export const columnById = (id: string) => columns.find((c) => c.id === id);
 
-function pulseCell({ device, now }: Context) {
+function pulseCell({ device }: Context) {
   const p = device.pulse;
   const age = p?.checked_at
-    ? Math.max(0, (now - Date.parse(p.checked_at)) / 1000)
+    ? Math.max(0, (Date.now() - Date.parse(p.checked_at)) / 1000)
     : undefined;
   const state = device.active && age !== undefined && age <= 90 ? p?.state : '';
   const title =

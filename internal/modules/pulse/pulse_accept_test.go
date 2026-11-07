@@ -128,8 +128,66 @@ func TestDeadDeviceFoundWhenNetworkReturns(t *testing.T) {
 		tr.Record(b, NoReply, at(i*10+1))
 	}
 	tr.Record(b, Reply, at(31))
-	if got := stateOf(t, tr, "a", at(31)); got != Offline {
-		t.Fatalf("state = %s", got)
+	if got := stateOf(t, tr, "a", at(31)); got != Unknown {
+		t.Fatalf("no new probe yet, state = %s", got)
+	}
+	tr.Record(a, NoReply, at(40))
+	d := tr.Snapshot(at(40)).Devices["a"]
+	if d.State != Offline || !d.Since.Equal(at(40)) {
+		t.Fatalf("dead device not confirmed by the next probe: %+v", d)
+	}
+}
+
+func TestNetworkReturnNeverShowsFalseOffline(t *testing.T) {
+	tr := NewTracker()
+	c := Target{ID: "c", Address: "192.0.2.3"}
+	all := []Target{a, b, c}
+	tr.Sync(all)
+	for i, x := range all {
+		tr.Record(x, Reply, at(i))
+	}
+	for round := 1; round <= 4; round++ {
+		for i, x := range all {
+			tr.Record(x, NoReply, at(round*10+i))
+		}
+	}
+	tr.Record(a, Reply, at(50))
+	snap := tr.Snapshot(at(51))
+	if snap.Network != NetworkOK {
+		t.Fatalf("network = %s", snap.Network)
+	}
+	for _, id := range []string{"b", "c"} {
+		if got := snap.Devices[id].State; got != Unknown {
+			t.Fatalf("%s before a new probe = %q", id, got)
+		}
+	}
+	tr.Record(b, Reply, at(52))
+	if got := stateOf(t, tr, "b", at(52)); got != Online {
+		t.Fatalf("b = %s", got)
+	}
+	if got := stateOf(t, tr, "c", at(52)); got != Unknown {
+		t.Fatalf("c = %s", got)
+	}
+}
+
+func TestDeviceAddedDuringOutageDoesNotHideIt(t *testing.T) {
+	tr := NewTracker()
+	tr.Sync([]Target{a, b})
+	tr.Record(a, Reply, at(0))
+	tr.Record(b, Reply, at(1))
+	for round := 1; round <= 3; round++ {
+		tr.Record(a, NoReply, at(round*10))
+		tr.Record(b, NoReply, at(round*10+1))
+	}
+	c := Target{ID: "c", Address: "192.0.2.3"}
+	tr.Sync([]Target{a, b, c})
+	snap := tr.Snapshot(at(32))
+	if snap.Network != NoResponse {
+		t.Fatalf("network = %s", snap.Network)
+	}
+	tr.Record(b, Reply, at(33))
+	if got := stateOf(t, tr, "a", at(33)); got != Unknown {
+		t.Fatalf("a = %s", got)
 	}
 }
 

@@ -38,7 +38,16 @@ func (t *Tracker) Record(target Target, outcome Outcome, now time.Time) {
 	if d == nil || d.target != target {
 		return
 	}
-	previous := t.deviceStatus(d, now, t.network(now)).State
+	network := t.network(now)
+	previous := t.deviceStatus(d, now, network).State
+	if outcome == Reply && network == NoResponse {
+		for _, other := range t.devices {
+			if other != d && other.failures > 0 {
+				other.status.State = Unknown
+				other.failures = min(other.failures, 2)
+			}
+		}
+	}
 	d.status.CheckedAt, d.outcome = now, outcome
 	switch outcome {
 	case Reply:
@@ -80,7 +89,7 @@ func (t *Tracker) otherReplied(d *observation) bool {
 	return false
 }
 func (t *Tracker) network(now time.Time) Network {
-	blocked, silent := 0, 0
+	blocked, checked, silent := 0, 0, 0
 	var latestReply, latestBlocked time.Time
 	for _, d := range t.devices {
 		if d.status.LastReply.After(latestReply) {
@@ -92,14 +101,17 @@ func (t *Tracker) network(now time.Time) Network {
 				latestBlocked = d.status.CheckedAt
 			}
 		}
-		if d.failures > 0 && !stale(d.status.CheckedAt, now) {
-			silent++
+		if !stale(d.status.CheckedAt, now) {
+			checked++
+			if d.failures > 0 {
+				silent++
+			}
 		}
 	}
 	if blocked > 0 && !latestReply.After(latestBlocked) {
 		return ProbeBlocked
 	}
-	if len(t.devices) > 1 && silent == len(t.devices) {
+	if checked > 1 && silent == checked {
 		return NoResponse
 	}
 	return NetworkOK
