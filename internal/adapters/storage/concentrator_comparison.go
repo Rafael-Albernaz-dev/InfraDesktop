@@ -3,47 +3,17 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"infradesktop/internal/modules/equipment"
 	"sort"
 	"time"
 )
 
 func crossConcentratorRows(ctx context.Context, db *sql.DB, selected string, now time.Time) ([]equipment.PPReadRow, error) {
-	type reading struct {
-		id, name, endpoint string
-		o                  equipment.PPObservation
-		current            bool
-	}
-	q, e := db.QueryContext(ctx, `SELECT d.id,d.name,d.address,d.revision,d.transport,d.port,d.fingerprint,COALESCE(d.credential_id,''),COALESCE(k.revision,0),o.meta_json FROM devices d LEFT JOIN credentials k ON k.id=d.credential_id JOIN pppoe_current c ON c.device_id=d.id JOIN pppoe_observations o ON o.id=c.observation_id WHERE d.active=1 AND d.role='concentrator' AND c.scope=? ORDER BY d.name,d.id`, equipment.PPScope)
+	all, e := loadConcentratorReadings(ctx, db, "")
 	if e != nil {
 		return nil, e
 	}
-	all := []reading{}
-	var base *reading
-	for q.Next() {
-		var r reading
-		var raw string
-		var d equipment.Device
-		var credential uint64
-		if e = q.Scan(&r.id, &r.name, &r.endpoint, &d.Revision, &d.Transport, &d.Port, &d.Fingerprint, &d.CredentialID, &credential, &raw); e != nil {
-			q.Close()
-			return nil, e
-		}
-		if e = json.Unmarshal([]byte(raw), &r.o); e != nil {
-			q.Close()
-			return nil, e
-		}
-		d.ID = r.id
-		d.Address = r.endpoint
-		r.current = r.o.Provenance.Revision == d.Revision && r.o.Provenance.Connection == equipment.PPConnection(d) && r.o.Provenance.CredentialRevision == credential
-		all = append(all, r)
-	}
-	e = q.Err()
-	q.Close()
-	if e != nil {
-		return nil, e
-	}
+	var base *concentratorReading
 	for i := range all {
 		if all[i].id == selected {
 			base = &all[i]
@@ -55,29 +25,7 @@ func crossConcentratorRows(ctx context.Context, db *sql.DB, selected string, now
 	if !base.current {
 		return []equipment.PPReadRow{{Kind: "availability", Name: "Comparação entre concentradores", Value: "não comparável (contexto alterado)"}}, nil
 	}
-	load := func(r *reading) (map[string][]equipment.PPRow, error) {
-		q, e := db.QueryContext(ctx, "SELECT row_json FROM pppoe_rows WHERE observation_id=? ORDER BY ordinal", r.o.ID)
-		if e != nil {
-			return nil, e
-		}
-		defer q.Close()
-		by := map[string][]equipment.PPRow{}
-		for q.Next() {
-			var raw string
-			var row equipment.PPRow
-			if e = q.Scan(&raw); e != nil {
-				return nil, e
-			}
-			if e = json.Unmarshal([]byte(raw), &row); e != nil {
-				return nil, e
-			}
-			if row.State != "OFFLINE" && row.Login != "" {
-				by[row.Login] = append(by[row.Login], row)
-			}
-		}
-		return by, q.Err()
-	}
-	before, e := load(base)
+	before, e := loadConcentratorRows(ctx, db, base.o.ID)
 	if e != nil {
 		return nil, e
 	}
@@ -100,23 +48,45 @@ func crossConcentratorRows(ctx context.Context, db *sql.DB, selected string, now
 			out = append(out, equipment.PPReadRow{Kind: "availability", Name: peer.name, Value: "não comparável (leituras distantes)"})
 			continue
 		}
-		after, e := load(peer)
+		after, e := loadConcentratorRows(ctx, db, peer.o.ID)
 		if e != nil {
 			return nil, e
 		}
-		for _, login := range keys {
-			for _, a := range before[login] {
-				for _, b := range after[login] {
-					view := func(d *reading, r equipment.PPRow) equipment.PPPeerSession {
-						return equipment.PPPeerSession{DeviceID: d.id, Name: d.name, Endpoint: d.endpoint, Address: r.Address, Caller: r.Caller, Uptime: r.Uptime, At: d.o.Provenance.Ended}
-					}
-					out = append(out, equipment.PPReadRow{Kind: "duplicate", Login: login, Duplicate: &equipment.PPCrossDuplicate{A: view(base, a), B: view(peer, b)}})
-					if len(out) > equipment.PPMaxRows {
-						return out, nil
-					}
+		out = appendConcentratorDuplicates(out, base, peer, before, after, keys)
+		if len(out) > equipment.PPMaxRows {
+			return out, nil
+		}
+	}
+	return out, nil
+}
+
+func appendConcentratorDuplicates(
+	out []equipment.PPReadRow, base, peer *concentratorReading,
+	before, after map[string][]equipment.PPRow, keys []string,
+) []equipment.PPReadRow {
+	for _, login := range keys {
+		for _, a := range before[login] {
+			if a.State == "OFFLINE" {
+				continue
+			}
+			for _, b := range after[login] {
+				if b.State == "OFFLINE" {
+					continue
+				}
+				duplicate := &equipment.PPCrossDuplicate{A: concentratorPeerSession(base, a), B: concentratorPeerSession(peer, b)}
+				out = append(out, equipment.PPReadRow{Kind: "duplicate", Login: login, Duplicate: duplicate})
+				if len(out) > equipment.PPMaxRows {
+					return out
 				}
 			}
 		}
 	}
-	return out, nil
+	return out
+}
+
+func concentratorPeerSession(d *concentratorReading, r equipment.PPRow) equipment.PPPeerSession {
+	return equipment.PPPeerSession{
+		DeviceID: d.id, Name: d.name, Endpoint: d.endpoint, Address: r.Address,
+		Caller: r.Caller, Uptime: r.Uptime, At: d.o.Provenance.Ended,
+	}
 }

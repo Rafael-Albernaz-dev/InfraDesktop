@@ -10030,10 +10030,10 @@
     ]
   },
   "internal/adapters/storage/concentrator_comparison.go": {
-    "Lines": 122,
-    "LongLines": 7,
-    "MaxFunction": 111,
-    "MaxComplexity": 29,
+    "Lines": 92,
+    "LongLines": 2,
+    "MaxFunction": 51,
+    "MaxComplexity": 14,
     "Functions": [
       {
         "Name": "crossConcentratorRows",

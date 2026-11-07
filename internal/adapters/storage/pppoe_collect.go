@@ -83,6 +83,11 @@ func (s *Store) persistPPCollection(
 	if code = equipment.ReconcilePP(previous, o); code != equipment.OK {
 		return code
 	}
+	seen, err := onlineSeenOnOtherConcentrators(ctx, tx, o.DeviceID)
+	if err != nil {
+		return equipment.Unavailable
+	}
+	equipment.DropOfflineSeenElsewhere(o, seen)
 	s.observe("pp-phase-serialize-start")
 	if code = enforcePPObservationQuota(ctx, tx, o, previousID); code != equipment.OK {
 		return code
