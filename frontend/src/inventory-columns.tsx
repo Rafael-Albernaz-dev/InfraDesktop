@@ -80,7 +80,8 @@ export const columns: Column[] = [
   {
     id: 'last_reading',
     label: 'Última leitura',
-    cell: ({ device, now }) => {
+    cell: ({ device }) => {
+      const now = Date.now();
       const fault = device.live?.fault;
       if (fault === 'refused' || fault === 'key_changed')
         return (
@@ -91,7 +92,7 @@ export const columns: Column[] = [
       const at = latestSavedReading(device, now).at;
       return at ? (
         <span title={formatDate(at)}>
-          há {formatDuration((now - Date.parse(at)) / 1000)}
+          há {formatDuration(Math.max(0, now - Date.parse(at)) / 1000)}
         </span>
       ) : (
         'Ainda sem leitura'

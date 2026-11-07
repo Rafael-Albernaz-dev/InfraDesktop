@@ -52,14 +52,17 @@ function EquipmentHeaderActions({
     </Button>
   );
 }
+function readingAge(at: string) {
+  return at
+    ? `há ${formatDuration(Math.max(0, Date.now() - Date.parse(at)) / 1000)}`
+    : 'Ainda sem leitura';
+}
 export function EquipmentSheetHeader(props: HeaderProps) {
   const { p, back } = props,
     device = p.selected,
     role = device.role || 'other';
   const saved = latestSavedReading(device);
-  const readingAge = saved.at
-    ? `há ${formatDuration((p.displayNow - Date.parse(saved.at)) / 1000)}`
-    : 'Ainda sem leitura';
+  const age = readingAge(saved.at);
   return (
     <PageHeader
       title={device.name}
@@ -68,7 +71,7 @@ export function EquipmentSheetHeader(props: HeaderProps) {
           {device.name} · {equipmentType(role)}
           {device.block && ` · ${device.block}`} ·{' '}
           {saved.version || 'Não informado nesta leitura'} ·{' '}
-          {saved.at ? `atualizado ${readingAge}` : readingAge}
+          {saved.at ? `atualizado ${age}` : age}
         </>
       }
     >

@@ -124,7 +124,7 @@ func (s *liveSession) Read(ctx context.Context, t pulse.ReadTarget) (pulse.Readi
 	return parseLiveReading(stdout.buf.String())
 }
 func parseLiveReading(output string) (pulse.Reading, pulse.ReadFault) {
-	fields := strings.Split(strings.TrimSuffix(strings.TrimSuffix(output, "\n"), "\r"), "\t")
+	fields := strings.Split(strings.TrimRight(output, "\r\n"), "\t")
 	if len(fields) != 5 || fields[0] != "L" || fields[1] != "1" {
 		return pulse.Reading{}, pulse.ReadLost
 	}

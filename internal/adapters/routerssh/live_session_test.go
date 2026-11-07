@@ -2,6 +2,7 @@ package routerssh_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -115,5 +116,25 @@ func TestLiveAndManualReadsUseIndependentConnections(t *testing.T) {
 	}
 	if fault := <-done; fault != pulse.ReadOK {
 		t.Fatal("collector interrupted by manual read", fault)
+	}
+}
+
+func TestLiveReadsRouterOSUptimeWithAnyLineEnding(t *testing.T) {
+	for _, ending := range []string{"", "\n", "\r", "\r\n", "\r\n\r\n"} {
+		t.Run(fmt.Sprintf("ending_%q", ending), func(t *testing.T) {
+			_, d := livePeer(t, sshfixture.Config{Command: func(string) (string, bool) {
+				return "L\t1\t24w3d09:30:59\t1\t6" + ending, true
+			}})
+			session, fault := routerssh.OpenLive(context.Background(), d, "reader", sshfixture.Password)
+			if fault != pulse.ReadOK {
+				t.Fatal(fault)
+			}
+			defer session.Close()
+			reading, fault := session.Read(context.Background(), pulse.ReadTarget{Role: equipment.RoleConcentrator})
+			wantUptime := (24*7+3)*24*time.Hour + 9*time.Hour + 30*time.Minute + 59*time.Second
+			if fault != pulse.ReadOK || reading.CPU != 1 || reading.Clients != 6 || reading.Uptime != wantUptime {
+				t.Fatalf("reading=%+v fault=%s want uptime=%s", reading, fault, wantUptime)
+			}
+		})
 	}
 }

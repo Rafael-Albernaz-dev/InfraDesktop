@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { EquipmentSheetHeader } from './equipment-sheet-header';
 import { EquipmentDetailPane, type Props } from './equipment-detail';
 import type { Device } from './equipment-api';
 
@@ -55,4 +56,37 @@ it('shows the block and a driverless sheet without any read action', async () =>
   view.rerender(<EquipmentDetailPane {...detail('')} />);
   expect(screen.queryByText(/Switch · Torre Norte/)).not.toBeInTheDocument();
   expect(screen.getByText(/Switch · Não informado/)).toBeVisible();
+});
+
+afterEach(() => vi.restoreAllMocks());
+it.each([
+  [5000, 25000, 'há 5 s'],
+  [40000, 29000, 'há 40 s'],
+  [-5000, 0, 'há 0 s'],
+])('shows the current live reading age in the sheet (%i ms)', (age, lag, expected) => {
+  const now = Date.now();
+  vi.spyOn(Date, 'now').mockReturnValue(now);
+  const p = detail('Torre Norte');
+  p.displayNow = now - lag;
+  p.selected = {
+    ...p.selected,
+    role: 'concentrator',
+    live: {
+      cpu: 1,
+      clients: 6,
+      uptime_seconds: 60,
+      at: new Date(now - age).toISOString(),
+      fault: '',
+    },
+  };
+  const { container } = render(
+    <EquipmentSheetHeader
+      p={p}
+      tab="Resumo"
+      isRadio={false}
+      back={vi.fn()}
+      setRadioActions={vi.fn()}
+    />,
+  );
+  expect(container.querySelector('.head')).toHaveTextContent(`atualizado ${expected}`);
 });
