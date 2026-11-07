@@ -8,6 +8,7 @@ import (
 // EquipmentInput is operation-specific on the wire; presence allowlists below
 // reject unrelated fields even when their values are zero.
 type EquipmentInput struct {
+	State           string                 `json:"state,omitempty"`
 	Import          *equipment.ImportInput `json:"import,omitempty"`
 	Bulk            *equipment.BulkUpdate  `json:"bulk,omitempty"`
 	ID              string                 `json:"id,omitempty"`
@@ -44,7 +45,7 @@ func equipmentCommand(uid uint32, owner string, q Request) equipment.Command {
 		ID: e.ID, Operation: e.Operation, Revision: e.Revision, Role: e.Role, Name: e.Name, Block: e.Block,
 		Address: e.Address, Port: e.Port, Transport: e.Transport, CredentialID: e.CredentialID,
 		Active: e.Active, Inactive: e.Inactive, IncludeInactive: e.IncludeInactive, Search: e.Search,
-		Model: e.Model, BlockEmpty: e.BlockEmpty, Cursor: e.Cursor, Alias: e.Alias,
+		State: e.State, Model: e.Model, BlockEmpty: e.BlockEmpty, Cursor: e.Cursor, Alias: e.Alias,
 		User: e.User, Secret: e.Secret, Affected: e.Affected, JobID: e.JobID, Fingerprint: e.Fingerprint,
 	}
 }

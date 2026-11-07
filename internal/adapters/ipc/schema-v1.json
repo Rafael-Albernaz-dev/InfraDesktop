@@ -247,7 +247,8 @@
       "role",
       "block",
       "block_empty",
-      "model"
+      "model",
+      "state"
     ],
     "inventory.import-preview": [
       "import"
@@ -419,6 +420,9 @@
       "PING_OFFLINE"
     ],
     "view_fields": {
+      "pulse": {"state": "ONLINE, OFFLINE or empty", "since": "RFC3339 or empty", "last_reply": "RFC3339 or empty", "checked_at": "RFC3339 or empty"},
+      "pulse_network": "ok, no_response or probe_blocked; memory only, authorized inventory.list",
+      "state_filter": "empty (all), ONLINE, OFFLINE, unknown; applied before pagination",
       "total_devices": "company total independent of filter, activity and page",
       "operation_state": "COMMITTED or NOT_FOUND for creation reconciliation; NOT_FOUND is not cancellation",
       "vault_available": "provider and existing company envelope ready"

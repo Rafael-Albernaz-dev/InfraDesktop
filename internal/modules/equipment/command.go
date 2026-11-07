@@ -16,6 +16,6 @@ type Command struct {
 	Port                                                            int
 	Active, Inactive, IncludeInactive, BlockEmpty                   bool
 	Cursor, Affected                                                int
-	Search, Block, Model                                            string
+	State, Search, Block, Model                                     string
 	JobID, Fingerprint                                              string
 }

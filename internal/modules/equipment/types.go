@@ -102,7 +102,15 @@ type Observation struct {
 	Quality       string             `json:"quality"`
 }
 
+type PulseStatus struct {
+	State     string `json:"state"`
+	Since     string `json:"since"`
+	LastReply string `json:"last_reply"`
+	CheckedAt string `json:"checked_at"`
+}
+
 type Device struct {
+	Pulse           *PulseStatus     `json:"pulse,omitempty"`
 	RadioSummary    *RadioSummary    `json:"radio_summary,omitempty"`
 	Monitoring      *DeviceHealth    `json:"monitoring,omitempty"`
 	MonitoringAt    string           `json:"monitoring_at,omitempty"`
@@ -175,6 +183,7 @@ type Job struct {
 }
 
 type View struct {
+	PulseNetwork       string            `json:"pulse_network,omitempty"`
 	ImportItems        []ImportItem      `json:"import_items,omitempty"`
 	ImportReceipt      *ImportReceipt    `json:"import_receipt,omitempty"`
 	BulkReceipt        *BulkReceipt      `json:"bulk_receipt,omitempty"`

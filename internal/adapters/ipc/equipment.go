@@ -13,7 +13,7 @@ var equipmentFields = map[string][]string{
 	"trust.reset":              {"operation_id", "id", "revision"},
 	"inventory.enroll":         {"operation_id", "id", "name", "role", "address", "port", "transport", "user", "secret", "block"},
 	"inventory.enroll-status":  {"operation_id", "id"},
-	"inventory.list":           {"search", "cursor", "inactive", "include_inactive", "role", "block", "block_empty", "model"},
+	"inventory.list":           {"search", "cursor", "inactive", "include_inactive", "role", "block", "block_empty", "model", "state"},
 	"inventory.get":            {"id"},
 	"inventory.import-preview": {"import"},
 	"inventory.import-confirm": {"operation_id", "import"},

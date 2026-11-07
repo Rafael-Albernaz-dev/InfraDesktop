@@ -8,6 +8,9 @@ import (
 )
 
 func validateInventoryFilters(q Command) Code {
+	if !validPulseFilter(q.State) {
+		return Invalid
+	}
 	if q.Role != "" && !equipment.ValidInventoryRole(q.Role) ||
 		!equipment.ValidBlock(q.Block) || q.BlockEmpty && q.Block != "" || len(q.Model) > 160 {
 		return Invalid
@@ -51,7 +54,7 @@ func filterDevices(devices []Device, q Command) []Device {
 	filtered := []Device{}
 	needle := strings.ToLower(q.Search)
 	for _, d := range devices {
-		if !inventoryMatches(d, q, needle) {
+		if !inventoryMatches(d, q, needle) || !pulseMatches(d, q.State) {
 			continue
 		}
 		if d.Result != nil {

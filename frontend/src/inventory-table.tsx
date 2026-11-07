@@ -91,13 +91,7 @@ export function InventoryTable({
           {p.ready && !p.listError && !p.devices.length && (
             <tr>
               <td colSpan={definitions.length + 2}>
-                {p.search ||
-                p.inactive ||
-                p.roleFilter ||
-                p.blockFilter ||
-                p.modelFilter
-                  ? 'Nenhum equipamento encontrado'
-                  : 'Nenhum equipamento cadastrado'}
+                {emptyInventoryMessage(p)}
               </td>
             </tr>
           )}
@@ -105,4 +99,9 @@ export function InventoryTable({
       </DataTable>
     </div>
   );
+}
+
+function emptyInventoryMessage(p: InventoryState) {
+ const filtered = p.search || p.inactive || p.roleFilter || p.blockFilter || p.modelFilter || p.stateFilter;
+ return filtered ? 'Nenhum equipamento encontrado' : 'Nenhum equipamento cadastrado';
 }

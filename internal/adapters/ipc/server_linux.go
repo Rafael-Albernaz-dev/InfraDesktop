@@ -16,6 +16,8 @@ import (
 )
 
 type Server struct {
+	backgroundStops       []context.CancelFunc
+	backgroundWG          sync.WaitGroup
 	ppOnce                sync.Once
 	ppKey                 [32]byte
 	ppKeyError            error
@@ -149,6 +151,7 @@ func (s *Server) Close() {
 	})
 	s.wg.Wait()
 	s.cleanup.Do(func() {
+		s.stopBackground()
 		removeOwned(filepath.Join(s.dir, "service.sock"), s.socketInfo)
 		removeOwned(filepath.Join(s.dir, "capability"), s.tokenInfo)
 		s.lock.Close()

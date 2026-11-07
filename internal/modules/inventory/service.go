@@ -26,6 +26,7 @@ type RunningJob struct {
 }
 
 type Service struct {
+	Pulse    PulseReader
 	Parser   ImportParser
 	Digester ImportDigester
 	Auth     Authorizer
@@ -189,12 +190,11 @@ func (s *Service) listDevices(st *State, q Command, v *View) Code {
 		return c
 	}
 	v.Blocks, v.Models = inventoryOptions(st.Devices)
-	filtered := filterDevices(st.Devices, q)
-	if q.Cursor > len(filtered) {
-		return Invalid
-	}
-	end := min(q.Cursor+PageSize, len(filtered))
-	v.Devices = filtered[q.Cursor:end]
+	devices := s.withPulse(st.Devices, q.Scope.Profile, v)
+	filtered := filterDevices(devices, q)
+	start := min(q.Cursor, len(filtered))
+	end := min(start+PageSize, len(filtered))
+	v.Devices = filtered[start:end]
 	if end < len(filtered) {
 		v.Next = end
 	}

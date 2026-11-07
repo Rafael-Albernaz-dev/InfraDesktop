@@ -1264,15 +1264,12 @@ it('inactive filtering and an empty search recover through the frozen list and e
     }),
   );
   render(
-    <Equipment
-      profile="inactive-only"
-      activation="a"
-      connected
-
-    />,
+    <Equipment profile="inactive-only" activation="a" connected />,
   );
   await screen.findByText('Nenhum equipamento cadastrado');
-  expect(screen.getByLabelText('Estado')).toBeDisabled();
+  expect(screen.getByLabelText('Estado')).toBeEnabled();
+  const options = within(screen.getByLabelText('Estado')).getAllByRole('option');
+  expect(options.map((o) => o.textContent)).toEqual(['Todos', 'ONLINE', 'OFFLINE', 'Sem estado']);
   expect(screen.getByRole('table')).toBeVisible();
   expect(screen.getAllByRole('button', { name: /Adicionar/ })).toHaveLength(1);
   fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));

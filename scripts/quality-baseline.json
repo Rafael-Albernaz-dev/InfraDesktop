@@ -148,7 +148,7 @@
     "Functions": null
   },
   "frontend/src/equipment-effects.tsx": {
-    "Lines": 321,
+    "Lines": 186,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -239,14 +239,14 @@
     "Functions": null
   },
   "frontend/src/equipment.test.tsx": {
-    "Lines": 1960,
+    "Lines": 1957,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
   "frontend/src/equipment.tsx": {
-    "Lines": 230,
+    "Lines": 205,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -1045,10 +1045,10 @@
     ]
   },
   "internal/adapters/ipc/equipment.go": {
-    "Lines": 110,
-    "LongLines": 4,
+    "Lines": 88,
+    "LongLines": 2,
     "MaxFunction": 30,
-    "MaxComplexity": 13,
+    "MaxComplexity": 9,
     "Functions": [
       {
         "Name": "isEquipment",
@@ -13129,9 +13129,9 @@
     "Functions": null
   },
   "internal/composition/capabilities.go": {
-    "Lines": 28,
+    "Lines": 17,
     "LongLines": 0,
-    "MaxFunction": 11,
+    "MaxFunction": 7,
     "MaxComplexity": 3,
     "Functions": [
       {
@@ -14413,7 +14413,7 @@
     ]
   },
   "internal/modules/inventory/service.go": {
-    "Lines": 240,
+    "Lines": 234,
     "LongLines": 0,
     "MaxFunction": 24,
     "MaxComplexity": 7,
@@ -19222,10 +19222,10 @@
     ]
   },
   "scripts/quality.go": {
-    "Lines": 214,
+    "Lines": 190,
     "LongLines": 0,
-    "MaxFunction": 37,
-    "MaxComplexity": 12,
+    "MaxFunction": 34,
+    "MaxComplexity": 10,
     "Functions": [
       {
         "Name": "main",

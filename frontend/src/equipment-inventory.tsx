@@ -6,6 +6,7 @@ import { useColumnPreferences } from './inventory-column-preferences';
 import { InventoryTable } from './inventory-table';
 import { InventoryToolbar } from './inventory-toolbar';
 import { Button } from './ui/Button';
+import { StateNotice } from './ui/StateNotice';
 import { Pager } from './ui/Pager';
 
 type Props = ReturnType<typeof useEquipmentState> & {
@@ -34,24 +35,12 @@ export function EquipmentInventoryPane(p: Props) {
         onAdd={p.onAdd}
       />
       {preferences.error && <p role="alert">{preferences.error}</p>}
-      {selected.length > 0 && (
-        <div className="inventory-selection" role="status">
-          <b>
-            {selected.length} selecionado{selected.length === 1 ? '' : 's'}
-          </b>
-          <Button disabled={p.locked} onClick={() => setBulk('block')}>
-            Definir bloco
-          </Button>
-          <Button disabled={p.locked} onClick={() => setBulk('credential')}>
-            Definir credencial
-          </Button>
-          <span className="grow" />
-          <Button onClick={() => setSelectedRows({})}>Limpar seleção</Button>
-        </div>
-      )}
+      {selected.length > 0 &&
+        selectedActions(selected, p.locked, setBulk, () => setSelectedRows({}))}
       {!p.ready && !p.listError && (
         <p role="status">Carregando equipamentos…</p>
       )}
+      {pulseNotice(p.pulseNetwork)}
       <InventoryTable p={state} visible={preferences.visible} />
       <Pager
         page={p.cursor ? 2 : 1}
@@ -78,4 +67,43 @@ export function EquipmentInventoryPane(p: Props) {
       )}
     </section>
   );
+}
+
+function selectedActions(
+  selected: Device[],
+  locked: boolean,
+  setBulk: (v: 'block' | 'credential') => void,
+  clear: () => void,
+) {
+  return (
+    <div className="inventory-selection" role="status">
+      <b>
+        {selected.length} selecionado{selected.length === 1 ? '' : 's'}
+      </b>
+      <Button disabled={locked} onClick={() => setBulk('block')}>
+        Definir bloco
+      </Button>
+      <Button disabled={locked} onClick={() => setBulk('credential')}>
+        Definir credencial
+      </Button>
+      <span className="grow" />
+      <Button onClick={clear}>Limpar seleção</Button>
+    </div>
+  );
+}
+
+function pulseNotice(network: string) {
+  if (network === 'no_response')
+    return (
+      <StateNotice>
+        Nenhum equipamento respondeu. Verifique a rede deste computador.
+      </StateNotice>
+    );
+  if (network === 'probe_blocked')
+    return (
+      <StateNotice>
+        Este computador não tem permissão para enviar ping. Estado indisponível.
+      </StateNotice>
+    );
+  return null;
 }

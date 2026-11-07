@@ -1,6 +1,7 @@
 import type { EquipmentResult } from './presentation';
 
 export type InventoryFilters = {
+  state?: string;
   role: string;
   block: string;
   block_empty: boolean;
@@ -17,14 +18,41 @@ type FilterInput = InventoryFilters & {
   inactive: boolean;
 };
 export function createInventoryBindings(
-  list: (profile: string, activation: string, search: string, cursor: number, inactive: boolean) => Promise<EquipmentResult>,
-  listFiltered: (profile: string, activation: string, input: FilterInput) => Promise<EquipmentResult>,
-  bulk: (profile: string, activation: string, operation: string, input: InventoryBulk) => Promise<EquipmentResult>,
+  list: (
+    profile: string,
+    activation: string,
+    search: string,
+    cursor: number,
+    inactive: boolean,
+  ) => Promise<EquipmentResult>,
+  listFiltered: (
+    profile: string,
+    activation: string,
+    input: FilterInput,
+  ) => Promise<EquipmentResult>,
+  bulk: (
+    profile: string,
+    activation: string,
+    operation: string,
+    input: InventoryBulk,
+  ) => Promise<EquipmentResult>,
 ) {
   return {
-    list: (profile: string, activation: string, search: string, cursor: number, inactive: boolean, filters?: InventoryFilters) => {
+    list: (
+      profile: string,
+      activation: string,
+      search: string,
+      cursor: number,
+      inactive: boolean,
+      filters?: InventoryFilters,
+    ) => {
       if (!filters) return list(profile, activation, search, cursor, inactive);
-      return listFiltered(profile, activation, { search, cursor, inactive, ...filters });
+      return listFiltered(profile, activation, {
+        search,
+        cursor,
+        inactive,
+        ...filters,
+      });
     },
     bulk,
   };

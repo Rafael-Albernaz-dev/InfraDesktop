@@ -1,3 +1,4 @@
+import './inventory-pulse.css';
 import type { Device, Credential } from './equipment-api';
 import { equipmentType } from './equipment-layout';
 import { latestSavedReading } from './equipment-reading-format';
@@ -35,7 +36,7 @@ function memory(d: Device) {
     : '—';
 }
 export const columns: Column[] = [
-  { id: 'status', label: 'Estado', cell: () => '—' },
+  { id: 'status', label: 'Estado', cell: pulseCell },
   {
     id: 'role',
     label: 'Papel',
@@ -132,3 +133,18 @@ export const defaultColumns = [
   'last_reading',
 ];
 export const columnById = (id: string) => columns.find((c) => c.id === id);
+
+function pulseCell({ device, now }: Context) {
+  const p = device.pulse;
+  const age = p?.checked_at
+    ? Math.max(0, (now - Date.parse(p.checked_at)) / 1000)
+    : undefined;
+  const state = device.active && age !== undefined && age <= 90 ? p?.state : '';
+  const title =
+    age === undefined ? 'Ainda sem ping' : `Ping há ${formatDuration(age)}`;
+  return (
+    <span className={state === 'OFFLINE' ? 'st-off' : undefined} title={title}>
+      {state || '—'}
+    </span>
+  );
+}

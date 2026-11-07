@@ -152,7 +152,7 @@ function EquipmentContext(props: EquipmentProps) {
       returnFocus.current = false;
     }
   }, [adding, props.credentialsPage, surface]);
-  const s = useEquipmentState({ ...props, addVisible: adding });
+  const s = useEquipmentState({ ...props, addVisible: adding, inventoryNode: surface });
   useEffect(() => {
     onBlockedChange?.(s.busy || s.job?.state === 'RUNNING');
     return () => onBlockedChange?.(false);

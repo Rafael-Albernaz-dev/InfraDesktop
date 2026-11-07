@@ -28,15 +28,42 @@ export function InventoryToolbar({
   const clear = () =>
     change(() => {
       p.setSearch('');
+      p.setStateFilter('');
       p.setInactive(false);
       p.setRoleFilter('');
       p.setBlockFilter('');
       p.setModelFilter('');
     });
   const filtered =
-    p.search || p.inactive || p.roleFilter || p.blockFilter || p.modelFilter;
+    p.stateFilter ||
+    p.search ||
+    p.inactive ||
+    p.roleFilter ||
+    p.blockFilter ||
+    p.modelFilter;
   return (
     <div className="toolbar inventory-toolbar">
+      {searchStateRole(p, change)}
+      {blockModelActivity(p, change)}
+      {filtered && <Button onClick={clear}>Limpar filtros</Button>}
+      <span className="grow" />
+      <InventoryColumnsMenu value={columns} save={saveColumns} busy={busy} />
+      <Button
+        kind="primary"
+        data-add-trigger
+        disabled={locked || !onAdd}
+        onClick={onAdd}
+      >
+        Adicionar equipamento
+      </Button>
+    </div>
+  );
+}
+
+type FilterChange = (action: () => void) => void;
+function searchStateRole(p: InventoryState, change: FilterChange) {
+  return (
+    <>
       <input
         aria-label="Buscar"
         placeholder="Buscar nome ou IP"
@@ -45,10 +72,13 @@ export function InventoryToolbar({
       />
       <Select
         aria-label="Estado"
-        disabled
-        title="Estado de conectividade: Ainda não existe (L-PULSO)"
+        value={p.stateFilter}
+        onChange={(e) => change(() => p.setStateFilter(e.target.value))}
       >
-        <option>Todos</option>
+        <option value="">Todos</option>
+        <option value="ONLINE">ONLINE</option>
+        <option value="OFFLINE">OFFLINE</option>
+        <option value="unknown">Sem estado</option>
       </Select>
       <Select
         aria-label="Papel"
@@ -58,6 +88,12 @@ export function InventoryToolbar({
         <option value="">Todos os papéis</option>
         <RoleOptions />
       </Select>
+    </>
+  );
+}
+function blockModelActivity(p: InventoryState, change: FilterChange) {
+  return (
+    <>
       <Select
         aria-label="Bloco"
         value={p.blockFilter}
@@ -90,12 +126,6 @@ export function InventoryToolbar({
         />{' '}
         Mostrar inativos
       </label>
-      {filtered && <Button onClick={clear}>Limpar filtros</Button>}
-      <span className="grow" />
-      <InventoryColumnsMenu value={columns} save={saveColumns} busy={busy} />
-      <Button kind="primary" data-add-trigger disabled={locked || !onAdd} onClick={onAdd}>
-        Adicionar equipamento
-      </Button>
-    </div>
+    </>
   );
 }

@@ -21,6 +21,7 @@ export type EquipmentResult = {
   profile_id: string;
   activation_id: string;
   data?: {
+    pulse_network?: string;
     devices: Device[];
     credentials: Credential[];
     device?: Device;

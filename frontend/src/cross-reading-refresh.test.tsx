@@ -191,7 +191,7 @@ it('Comparação não herda o filtro Estado da Lista', async () => {
   await screen.findByText('cliente-sintético');
   const filter = screen
     .getAllByLabelText('Estado')
-    .find((e) => !(e as HTMLSelectElement).disabled)!;
+    .find((e) => e.closest('.pppoe-filters'))!;
   fireEvent.change(filter, { target: { value: 'OFFLINE' } });
   await waitFor(() =>
     expect(bindings.ListPPPoESessions.mock.lastCall).toEqual(

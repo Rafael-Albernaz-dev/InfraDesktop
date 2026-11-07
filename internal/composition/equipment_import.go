@@ -12,12 +12,16 @@ import (
 	"infradesktop/internal/modules/inventory"
 	"infradesktop/internal/modules/monitoring"
 	"infradesktop/internal/modules/pppoe"
+	"infradesktop/internal/modules/pulse"
 	"infradesktop/internal/modules/radio"
 )
 
-func composeEquipment(service *access.Service, store *storage.Store, provider vault.Provider) *equipment.Service {
+func composeEquipment(
+	service *access.Service, store *storage.Store, provider vault.Provider, collector *pulse.Collector,
+) *equipment.Service {
 	mon := monitoring.New(service, store)
 	inv := inventory.New(service, store, vault.New(provider), routerssh.Adapter{}, equipmentIDs{}, time.Now)
+	inv.Pulse = collector
 	inv.Parser, inv.Digester = importfile.Parser{}, importfile.Parser{}
 	return &equipment.Service{Handler: radio.NewComposite(inv, pppoe.New(inv, mon), radio.New(inv), mon)}
 }
