@@ -21,7 +21,8 @@ PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-CapabilityBoundingSet=
+CapabilityBoundingSet=CAP_NET_RAW
+AmbientCapabilities=CAP_NET_RAW
 LockPersonality=true
 RestrictSUIDSGID=true
 
