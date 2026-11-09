@@ -14,7 +14,7 @@ import (
 )
 
 const ProductRevision = 24
-const ProductVersion = "0.6.0"
+const ProductVersion = "0.7.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104
 const Budget = 3 * time.Second
