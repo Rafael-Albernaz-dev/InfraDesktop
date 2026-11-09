@@ -33,5 +33,5 @@ jobs:
           go mod download
       - run: test -x /usr/bin/google-chrome # explicit existing runner browser, no hidden downloads
       - run: npm --prefix frontend ci
-      - run: make tools-check check test-integration package test-vault-helper test-part1-production test-vault-read-race test-visual test-equipment-smoke
+      - run: make ci
       # Native desktop journey and operational boot/logout remain separate acceptance gates.

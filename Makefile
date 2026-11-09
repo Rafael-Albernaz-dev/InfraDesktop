@@ -92,8 +92,15 @@ test-baseline-tooling:
 test-equipment-smoke:
 	node scripts/test-part1-visual.mjs --smoke
 
-.PHONY: quality
+.PHONY: quality ci
+ci: tools-check assets quality check test-integration package test-vault-helper test-part1-production test-vault-read-race test-visual test-equipment-smoke
+
 quality:
+	@test -d frontend/dist || (echo "rode make assets"; exit 1)
+	go vet -tags webkit2_41 ./...
+	staticcheck -tags webkit2_41 ./...
+	npm --prefix frontend run format:check
+	python3 scripts/test-version.py
 	go test ./scripts/qualityrules ./scripts/qualitydup -count=1
 	cd frontend && node --test eslint-quality.check.mjs eslint-config.check.mjs eslint-hook-alias.check.mjs eslint-quality-report.check.mjs
 	go run ./scripts/quality.go
