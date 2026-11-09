@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { chromium } from '../frontend/node_modules/@playwright/test/index.mjs';
 import { createServer } from '../frontend/node_modules/vite/dist/node/index.js';
+import { layoutVerdict } from './layout-verdict.mjs';
 import { checkLayoutGuard, validateSceneCoverage } from './layout-guard.mjs';
 
 checkLayoutGuard();
@@ -85,5 +86,12 @@ try {
   }
 } finally { await browser.close(); await server.close(); }
 fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + '\n');
-console.log(`layout: ${results.filter((r) => r.pass).length}/${results.length} PASS; ${pending.length} cenas pendentes`);
-if (results.some((r) => !r.pass)) process.exitCode = 1;
+const verdict = layoutVerdict({ results, pending, sceneIds: scenes.map((scene) => scene.id) });
+const parked = results.filter((r) => !r.pass && r.reason === 'Cena pendente' && pending.some((p) => r.id === `${p.id}-claro` || r.id === `${p.id}-escuro`));
+console.log(`layout: ${results.filter((r) => r.pass).length}/${results.length} PASS; ${parked.length} pendentes`);
+for (const result of parked) {
+  const entry = pending.find((p) => result.id === `${p.id}-claro` || result.id === `${p.id}-escuro`);
+  console.log(`${result.id}: pendente; dono ${entry.owner}; ${entry.reason}`);
+}
+for (const problem of verdict.problems) console.error(problem);
+process.exitCode = verdict.exitCode;

@@ -23,7 +23,8 @@ architecture-check: assets
 check: tools-check assets gofmt-check architecture-check test-visual-integrity test-baseline-tooling
 	go vet -tags webkit2_41 ./...
 	go test -tags webkit2_41 ./...
-	go test -race -tags webkit2_41 ./...
+	# orçamento de tempo é medido no go test normal; sob -race só se procura corrida
+	go test -race -tags webkit2_41 -skip '^(TestIPCListsAndBulkUpdatesFiveHundredDevices|TestImportIPCPreviewAndConfirmFiveHundred|TestImportPersistsFiveHundredWithinBudget|TestL06T2BasePublicationReclaimsMaterialSeriesWithinBudget)$$' ./...
 	staticcheck -tags webkit2_41 ./...
 	npm --prefix frontend run format:check
 	npm --prefix frontend run lint
@@ -105,6 +106,7 @@ quality:
 	cd frontend && node --test eslint-quality.check.mjs eslint-config.check.mjs eslint-hook-alias.check.mjs eslint-quality-report.check.mjs
 	go run ./scripts/quality.go
 	cd frontend && ./node_modules/.bin/eslint . --max-warnings 0 --no-inline-config
+	node --test scripts/layout-verdict.test.mjs
 	node --test scripts/layout-guard.test.mjs
 	node scripts/layout-guard.mjs
 
