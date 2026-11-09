@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Device } from './equipment-api';
-import type { PPObservation } from './presentation';
+import type { PPObservation } from './presentation-pppoe-types';
 import { pppoeAPI } from './presentation';
 import { useEquipmentSnapshot } from './equipment-snapshot';
 import { readingAge } from './equipment-reading-format';

@@ -14,7 +14,8 @@ import {
   trafficReadNotice,
 } from './pppoe-read-labels';
 import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
-import type { PPRate, PPReadResult, PPReadRow } from './presentation';
+import type { PPReadResult, PPReadRow } from './presentation';
+import type { PPRate } from './presentation-pppoe-types';
 import { RadioModes } from './radio-contract';
 import { Button } from './ui/Button';
 import { DataTable } from './ui/DataTable';

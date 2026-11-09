@@ -1,14 +1,12 @@
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import { pendingPPPoE as pending } from './equipment-receipts';
+import type { PPResult, PPDelta, PPRow } from './presentation';
 import type {
-  PPDelta,
   PPObservation,
   PPQuery,
   PPReference,
-  PPResult,
-  PPRow,
-} from './presentation';
+} from './presentation-pppoe-types';
 import { pppoeAPI as api } from './presentation';
 import { RadioCodes } from './radio-contract';
 

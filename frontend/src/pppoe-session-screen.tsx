@@ -1,10 +1,11 @@
+import type { PPRow } from './presentation';
 import type { Device } from './equipment-api';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
 import { formatPPUptime } from './pppoe-format';
 import { SessionHeader } from './pppoe-session-header';
 import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
 import type { PPPoESessionDetailProps } from './pppoe-session-props';
-import type { PPObservation, PPRow } from './presentation';
+import type { PPObservation } from './presentation-pppoe-types';
 import { RadioLinkPanel } from './radio';
 import { SessionChain } from './session-chain';
 import { DataBlock } from './ui/DataBlock';

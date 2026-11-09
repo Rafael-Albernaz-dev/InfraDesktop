@@ -1,5 +1,6 @@
+import type { PPRow } from './presentation';
 import type { Device } from './equipment-api';
-import type { PPRow, PPObservation } from './presentation';
+import type { PPObservation } from './presentation-pppoe-types';
 export type PPPoESessionDetailProps = {
   selected: PPRow;
   current: PPObservation;

@@ -1,4 +1,4 @@
-import type { PPInterval } from './presentation';
+import type { PPInterval } from './presentation-pppoe-types';
 import { formatDuration } from './network-format';
 
 export function formatPPUptime(value: PPInterval, compact = false): string {

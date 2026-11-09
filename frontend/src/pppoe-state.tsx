@@ -14,7 +14,8 @@ import {
 import { usePPPoEInitialLoad } from './pppoe-initial-load';
 import type { PPPoETab } from './pppoe-view-state';
 import { usePPPoEViewState } from './pppoe-view-state';
-import type { PPQuery, PPReference, PPResult } from './presentation';
+import type { PPResult } from './presentation';
+import type { PPQuery, PPReference } from './presentation-pppoe-types';
 import { pppoeAPI as api } from './presentation';
 export type { PPPoETab } from './pppoe-view-state';
 

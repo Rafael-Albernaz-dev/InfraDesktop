@@ -1,4 +1,4 @@
-import type { PPGroup } from './presentation';
+import type { PPGroup } from './presentation-pppoe-types';
 import { formatMetric } from './network-format';
 import { DataTable } from './ui/DataTable';
 export function ContextCountsPolicyInputs(p: {

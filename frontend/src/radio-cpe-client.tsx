@@ -1,9 +1,10 @@
+import type { PPRow } from './presentation';
 import { useEffect, useState } from 'react';
 import { equipmentMessage } from './equipment-api';
 import { readingAge } from './equipment-reading-format';
 import type { LinkedSessionTarget } from './linked-session-navigation';
 import { FRESH_QUERY } from './pppoe-context-actions';
-import type { PPRow } from './presentation';
+
 import { equipmentAPI, pppoeAPI } from './presentation';
 import type { RadioEquipmentState } from './radio-equipment-state';
 import { createEquipmentPage } from './radio-equipment-state';

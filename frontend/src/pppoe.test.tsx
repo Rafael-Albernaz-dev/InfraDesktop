@@ -14,6 +14,7 @@ import {
   pppoeDiagnosticAPI as diagnosticAPI,
 } from './presentation';
 import type { PPResult, PPRow } from './presentation';
+
 import type { Device } from './equipment-api';
 vi.mock('./presentation', () => ({
   deviceMonitoringAPI: { current: vi.fn() },

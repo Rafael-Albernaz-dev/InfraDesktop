@@ -8,7 +8,7 @@ import {
 import { afterEach, expect, it, vi } from 'vitest';
 import { PPPoE } from './pppoe';
 import type { Device } from './equipment-api';
-import type { PPQuery } from './presentation';
+import type { PPQuery } from './presentation-pppoe-types';
 const device = {
   id: 'synthetic-router',
   name: 'Concentrador sintético',

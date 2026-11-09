@@ -1,3 +1,4 @@
+import type { PPRow } from './presentation';
 import { createRef } from 'react';
 import {
   fireEvent,
@@ -12,7 +13,7 @@ import { equipmentAPI, radioAPI } from './presentation';
 import { link } from './radio-test-fixtures';
 import { RadioModes, RadioRoles } from './radio-contract';
 import type { Device } from './equipment-api';
-import type { PPObservation, PPRow } from './presentation';
+import type { PPObservation } from './presentation-pppoe-types';
 
 vi.mock('./presentation', async (original) => ({
   ...(await original<typeof import('./presentation')>()),

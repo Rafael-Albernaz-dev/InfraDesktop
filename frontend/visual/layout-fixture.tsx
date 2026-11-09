@@ -1,18 +1,32 @@
-import { prepareCredentialScene, credentialSceneReady, visualCredentials } from './layout-credential';
+import { base5Scenes, sessions, curve } from './layout-fixture-data';
+import {
+  prepareCredentialScene,
+  credentialSceneReady,
+  visualCredentials,
+} from './layout-credential';
 export { credentialSceneReady };
 import { sessionLinkFixture } from '../src/session-link-fixture';
 import { importFixtureOperations } from '../src/inventory-import-layout-fixture';
-import { prepareBase5Devices, createBase5List, prepareBase5Scene } from '../src/inventory-layout-fixture';
+import {
+  prepareBase5Devices,
+  createBase5List,
+  prepareBase5Scene,
+} from '../src/inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
-import { RadioRoles, RadioTransports, RadioFamilies } from '../src/radio-contract';
+import {
+  RadioRoles,
+  RadioTransports,
+  RadioFamilies,
+} from '../src/radio-contract';
 import type { Device } from '../src/equipment-api'; // Fixtures use documentation addresses, not production data.
 const visualScene = new URLSearchParams(location.search).get('scene') || '';
-const base5Scenes = new Set(['equipamentos', 'equipamentos-colunas', 'equipamentos-selecao', 'credenciais',
-  'codigo', 'credencial-editar', 'credencial-excluir', 'ficha-ccr-centro-sesso-es',
-  'ficha-sw-norte-resumo', 'seguranca-erro', 'seguranca-codigo']);
 const isBase5Scene = base5Scenes.has(visualScene);
-const time = Date.parse(visualScene === 'sessao-trafego-ao-vivo' ? '2026-11-04T16:47:40Z' : '2026-11-04T12:00:00Z');
+const time = Date.parse(
+  visualScene === 'sessao-trafego-ao-vivo'
+    ? '2026-11-04T16:47:40Z'
+    : '2026-11-04T12:00:00Z',
+);
 const entries = [
   ['CCR-CENTRO', 'concentrator', '192.0.2.1', '6.49', '12d4h', 8, 12],
   ['AP-NORTE', RadioRoles.ap, '192.0.2.20', '6.48', '30d1h', 14, 240],
@@ -72,31 +86,6 @@ const devices = entries.map(
 ) as Device[];
 if (isBase5Scene) prepareBase5Devices(devices, visualScene, time);
 const credentials = visualCredentials(visualScene);
-const sessions = Array.from({ length: 25 }, (_, i) => ({
-  row_id: `row-${i}`,
-  remote_id: `*${i}`,
-  session_id: String(i),
-  login: `cliente-${String(i + 1).padStart(4, '0')}`,
-  address: `192.0.2.${201 + i}`,
-  caller_id: `02:00:5E:00:00:${String(i + 1).padStart(2, '0')}`,
-  state: (i + 1) % 7 === 0 ? 'OFFLINE' : 'ONLINE',
-  uptime: {
-    min: [2 * 86400 + 3 * 3600, 5 * 3600 + 12 * 60, 11 * 86400][i % 3] * 1e9,
-    max: [2 * 86400 + 3 * 3600, 5 * 3600 + 12 * 60, 11 * 86400][i % 3] * 1e9,
-    known: true,
-  },
-  duplicates: 1,
-  context: {
-    association: 'associated',
-    profile: ['Plano 100M', 'Plano 50M', 'Plano 200M'][i % 3],
-    secret_state: 'active',
-    vlan: 100,
-    service: 'pppoe-0001',
-    interface: 'ether1',
-    download_limit: '100000000',
-    upload_limit: '20000000',
-  },
-}));
 const current = {
   observation_id: 'observation',
   count: sessions.length,
@@ -186,32 +175,6 @@ function radioReading(deviceId: string) {
     })),
   };
 }
-const curve = [
-  72,
-  74,
-  73,
-  76,
-  79,
-  81,
-  84,
-  83,
-  86,
-  88,
-  null,
-  null,
-  89,
-  91,
-  90,
-  70,
-  78,
-  85,
-  90,
-  92,
-  94,
-  95,
-  97,
-  99,
-];
 function read(scope: string) {
   const at = new Date(time - 360000).toISOString();
   const extra = savedReadings as Record<string, object[]>;
@@ -304,19 +267,57 @@ export function installFixture() {
     },
   });
   const listInventory = createBase5List(devices, result);
-  let savedColumns: string[] = visualScene === 'equipamentos-colunas'
-    ? ['equipment','role','status','block','model','address','online','offline','uptime','cpu','last_reading','memory','voltage'] : [];
+  let savedColumns: string[] =
+    visualScene === 'equipamentos-colunas'
+      ? [
+          'equipment',
+          'role',
+          'status',
+          'block',
+          'model',
+          'address',
+          'online',
+          'offline',
+          'uptime',
+          'cpu',
+          'last_reading',
+          'memory',
+          'voltage',
+        ]
+      : [];
   Object.assign(window, {
     go: {
       presentation: {
         App: {
           ...radioFixtureOperations(result, radioReading),
           ...importFixtureOperations(visualScene, result),
-          Status: async () => ({ code:'OK', columns:savedColumns }),
-          SetInventoryColumns: async (columns: string[]) => { savedColumns = columns; return { code:'OK', columns }; },
-          ListEquipmentFiltered: async (_p: string, _a: string, f: { search:string; cursor:number; inactive:boolean;
-            role:string; block:string; block_empty:boolean; model:string }) =>
-            listInventory(f.search, f.cursor, f.inactive, f.role, f.block, f.block_empty, f.model),
+          Status: async () => ({ code: 'OK', columns: savedColumns }),
+          SetInventoryColumns: async (columns: string[]) => {
+            savedColumns = columns;
+            return { code: 'OK', columns };
+          },
+          ListEquipmentFiltered: async (
+            _p: string,
+            _a: string,
+            f: {
+              search: string;
+              cursor: number;
+              inactive: boolean;
+              role: string;
+              block: string;
+              block_empty: boolean;
+              model: string;
+            },
+          ) =>
+            listInventory(
+              f.search,
+              f.cursor,
+              f.inactive,
+              f.role,
+              f.block,
+              f.block_empty,
+              f.model,
+            ),
           ListEquipment: async (
             _p: string,
             _a: string,
@@ -324,12 +325,23 @@ export function installFixture() {
             _cursor: number,
             inactive: boolean,
           ) =>
-            isBase5Scene ? listInventory(search, _cursor, false, '', '', false, '', inactive) : result({
-              devices: devices.filter(
-                (d) => (inactive || d.active) && d.name.includes(search),
-              ),
-              total_devices: devices.length,
-            }),
+            isBase5Scene
+              ? listInventory(
+                  search,
+                  _cursor,
+                  false,
+                  '',
+                  '',
+                  false,
+                  '',
+                  inactive,
+                )
+              : result({
+                  devices: devices.filter(
+                    (d) => (inactive || d.active) && d.name.includes(search),
+                  ),
+                  total_devices: devices.length,
+                }),
           GetEquipment: async (_p: string, _a: string, id: string) =>
             result({ device: devices.find((d) => d.id === id) }),
           ListCredentials: async () =>

@@ -234,7 +234,7 @@
   },
   "src/presentation.ts": {
     "max-params": 7,
-    "max-lines": 659
+    "max-lines": 611
   },
   "src/protected-dialog.tsx": {
     "max-lines-per-function": 72
@@ -308,7 +308,7 @@
     "no-nested-ternary": 2,
     "max-lines-per-function": 340,
     "max-params": 6,
-    "max-lines": 657
+    "max-lines": 594
   },
   "visual/layout.tsx": {
     "max-lines-per-function": 172,

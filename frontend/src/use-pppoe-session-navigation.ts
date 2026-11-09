@@ -1,8 +1,9 @@
+import type { PPRow } from './presentation';
 import { useContext, useEffect, useRef } from 'react';
 import { useOpenLinkedSession } from './linked-session-navigation';
 import type { PPPoEProps } from './pppoe';
 import type { PPPoERefs, usePPPoEState } from './pppoe-state';
-import type { PPRow } from './presentation';
+
 import type {
   SessionNavigation,
   SessionRouteTarget,

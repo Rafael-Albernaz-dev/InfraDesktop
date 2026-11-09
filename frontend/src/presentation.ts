@@ -1,8 +1,25 @@
+import type {
+  PPContext,
+  PPGroup,
+  PPInterval,
+  PPObservation,
+  PPQuery,
+  PPRate,
+  PPReference,
+  PPTraffic,
+} from './presentation-pppoe-types';
 import type { EquipmentResult, ImportRow } from './inventory-import-types';
-export type { EquipmentResult, ImportRow, ImportItem } from './inventory-import-types';
+export type {
+  EquipmentResult,
+  ImportRow,
+  ImportItem,
+} from './inventory-import-types';
 import { createInventoryBindings } from './inventory-bindings';
 import {
-  ChooseInventoryImport, ReviewInventoryImport, ConfirmInventoryImport, SaveInventoryTemplate,
+  ChooseInventoryImport,
+  ReviewInventoryImport,
+  ConfirmInventoryImport,
+  SaveInventoryTemplate,
   SetCredentialDefault,
   GetRadioIndexPage,
   GetRadio,
@@ -21,13 +38,16 @@ import {
   CancelPPPoERead,
   CancelPPPoEReadOperation,
   PPPoEReadPage,
-  StartPPPoECatalog, StartPPPoERadius, StartPPPoEPing,
+  StartPPPoECatalog,
+  StartPPPoERadius,
+  StartPPPoEPing,
   PPPoEDiagnosticStatus,
   CancelPPPoEDiagnostic,
   GetPPPoEDiagnostic,
   ListPPPoEDiagnostic,
   PPPoECollectionStatus,
-  CancelPPPoECollection, GetPPPoECurrent,
+  CancelPPPoECollection,
+  GetPPPoECurrent,
   GetPPPoEObservation,
   ListPPPoESessions,
   PPPoEContextCounts,
@@ -49,7 +69,8 @@ import {
   SelectCompany,
   SetTheme,
   RenewRecovery,
-  CopyRecovery, AckRecovery,
+  CopyRecovery,
+  AckRecovery,
   SaveRecovery,
   GetBrand,
   SaveBrand,
@@ -59,7 +80,11 @@ import {
   GetEquipment,
   EnrollmentStatus,
   InspectTrust,
-  ListCredentials, ListEquipment, ListEquipmentFiltered, BulkUpdateEquipment, SetInventoryColumns,
+  ListCredentials,
+  ListEquipment,
+  ListEquipmentFiltered,
+  BulkUpdateEquipment,
+  SetInventoryColumns,
   PutCredential,
   DeleteCredential,
   QueryStatus,
@@ -117,13 +142,23 @@ export const access: {
 };
 export type Observation = Omit<equipment.Observation, 'convertValues'>;
 type DeviceProjection = {
-  live?: { cpu?: number; clients?: number; uptime_seconds?: number; at?: string; fault: string };
+  live?: {
+    cpu?: number;
+    clients?: number;
+    uptime_seconds?: number;
+    at?: string;
+    fault: string;
+  };
   monitoring?: DeviceHealth;
   monitoring_at?: string;
   role?: string;
   result?: Observation;
 };
-export type Device = Omit<equipment.Device, 'convertValues' | keyof DeviceProjection> & DeviceProjection;
+export type Device = Omit<
+  equipment.Device,
+  'convertValues' | keyof DeviceProjection
+> &
+  DeviceProjection;
 
 export type Credential = Omit<equipment.Credential, 'convertValues'>;
 export type Job = Omit<equipment.Job, 'convertValues' | 'result'> & {
@@ -131,7 +166,9 @@ export type Job = Omit<equipment.Job, 'convertValues' | 'result'> & {
 };
 export const inventoryImportAPI = {
   choose: (p: string, a: string, b: string, c: string) =>
-    ChooseInventoryImport(p, a, b, c) as Promise<EquipmentResult & { filename?: string }>,
+    ChooseInventoryImport(p, a, b, c) as Promise<
+      EquipmentResult & { filename?: string }
+    >,
   review: (p: string, a: string, rows: ImportRow[]) =>
     ReviewInventoryImport(p, a, rows) as Promise<EquipmentResult>,
   confirm: (p: string, a: string, op: string, rows: ImportRow[]) =>
@@ -147,9 +184,13 @@ export type CredentialInput = Omit<
   'convertValues'
 >;
 const equipmentBindings = {
-  ...createInventoryBindings(ListEquipment,
-    (p, a, input) => ListEquipmentFiltered(p, a, input as presentation.InventoryFilters),
-    (p, a, o, input) => BulkUpdateEquipment(p, a, o, input as equipment.BulkUpdate)),
+  ...createInventoryBindings(
+    ListEquipment,
+    (p, a, input) =>
+      ListEquipmentFiltered(p, a, input as presentation.InventoryFilters),
+    (p, a, o, input) =>
+      BulkUpdateEquipment(p, a, o, input as equipment.BulkUpdate),
+  ),
   enrollmentStatus: EnrollmentStatus,
   get: GetEquipment,
   save: (profile: string, activation: string, input: DeviceInput) =>
@@ -176,35 +217,6 @@ export const equipmentAPI: {
     ...args: Parameters<(typeof equipmentBindings)[K]>
   ) => Promise<EquipmentResult>;
 } = equipmentBindings;
-export type PPQuery = {
-  state?: '' | 'ONLINE' | 'OFFLINE';
-  search: string;
-  duplicates_only: boolean;
-  sort: string;
-  desc: boolean;
-  category: string;
-};
-export type PPInterval = { min: number; max: number; known: boolean };
-export type PPContext = {
-  association: string;
-  service?: string;
-  interface?: string;
-  vlan?: number;
-  ipv6?: boolean;
-  delegated_prefix?: string;
-  pd_status?: string;
-  profile?: string;
-  secret_state?: string;
-  upload_limit?: string;
-  download_limit?: string;
-};
-export type PPGroup = {
-  service: string;
-  vlan?: number;
-  count: number;
-  peak_7d?: number;
-  history_limited?: boolean;
-};
 export type PPRow = {
   context?: PPContext;
   state?: string;
@@ -219,21 +231,6 @@ export type PPRow = {
   uptime: PPInterval;
   duplicates: number;
 };
-export type PPObservation = {
-  context_omitted?: boolean;
-  online?: number;
-  offline?: number;
-  observation_id: string;
-  count: number;
-  provenance: { ended_at: string };
-  quality: { status: string };
-};
-export type PPReference = {
-  reference_id: string;
-  observation_id: string;
-  created_at: string;
-  count: number;
-};
 export type PPDelta = {
   base?: Pick<PPRow, 'login' | 'address' | 'caller_id' | 'uptime' | 'state'>;
   target?: Pick<PPRow, 'login' | 'address' | 'caller_id' | 'uptime' | 'state'>;
@@ -243,20 +240,6 @@ export type PPDelta = {
   reason: string;
   address_changed: boolean;
   caller_changed: boolean;
-};
-export type PPRate = { min: number; max: number };
-export type PPTraffic = {
-  points: { t: number; d?: number; u?: number; gap?: boolean }[];
-  download_bytes: string;
-  upload_bytes: string;
-  covered_ns: number;
-  covered_min_ns?: number;
-  gaps: number;
-  overflow?: boolean;
-  average_download?: PPRate;
-  average_upload?: PPRate;
-  peak_download?: PPRate;
-  peak_upload?: PPRate;
 };
 export type DeviceHealth = {
   fasttrack_rules?: number;

@@ -1,13 +1,8 @@
 import { useLayoutEffect, useState } from 'react';
 import { acceptEquipmentAuthority } from './equipment-receipts';
 import { FRESH_QUERY } from './pppoe-context-actions';
-import type {
-  PPDelta,
-  PPObservation,
-  PPReference,
-  PPResult,
-  PPRow,
-} from './presentation';
+import type { PPResult, PPDelta, PPRow } from './presentation';
+import type { PPObservation, PPReference } from './presentation-pppoe-types';
 export type PPPoETab =
   'sessions' | 'compare' | 'references' | 'catalog' | 'radius' | 'monitoring';
 function usePPPoEPageStatus() {

@@ -1,3 +1,4 @@
+import type { PPRow } from './presentation';
 import {
   exactRate,
   formatDate,
@@ -7,7 +8,7 @@ import {
 import { FRESH_QUERY } from './pppoe-context-actions';
 import { runPPExport } from './pppoe-export';
 import { formatPPUptime } from './pppoe-format';
-import type { PPObservation, PPQuery, PPRow } from './presentation';
+import type { PPObservation, PPQuery } from './presentation-pppoe-types';
 import { SessionCPE } from './session-cpe';
 import { Button } from './ui/Button';
 import { DataTable } from './ui/DataTable';

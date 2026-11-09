@@ -1,8 +1,9 @@
+import type { PPRow } from './presentation';
 import type { Device } from './equipment-api';
 import { exactRate, formatRate, uptimeTitle } from './network-format';
 import { OfflineEvidence, SessionContext } from './pppoe-context';
 import { formatPPUptime } from './pppoe-format';
-import type { PPObservation, PPRow } from './presentation';
+import type { PPObservation } from './presentation-pppoe-types';
 import { SessionCPE } from './session-cpe';
 import { KeyValues } from './ui/KeyValues';
 

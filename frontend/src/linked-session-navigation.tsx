@@ -1,7 +1,8 @@
+import type { PPRow } from './presentation';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { usePPPoEState } from './pppoe-state';
 import { pppoeAPI } from './presentation';
-import type { PPRow } from './presentation';
+
 export type LinkedSessionTarget = {
   deviceID: string;
   observation: string;

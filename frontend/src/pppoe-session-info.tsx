@@ -3,7 +3,7 @@ import { readingAge } from './equipment-reading-format';
 import { PPPoEPing } from './pppoe-diagnostics';
 import type { SessionAuthInfoProps } from './pppoe-session-auth-content';
 import { SessionAuthContent } from './pppoe-session-auth-content';
-import type { PPInterval } from './presentation';
+import type { PPInterval } from './presentation-pppoe-types';
 import { DataBlock } from './ui/DataBlock';
 
 export function SessionAuthInfo(p: SessionAuthInfoProps) {

@@ -1,3 +1,4 @@
+import type { PPRow } from './presentation';
 import { useEffect, useState } from 'react';
 import { readingAge } from './equipment-reading-format';
 import {
@@ -10,7 +11,7 @@ import {
   ContextCountsPolicyInputs,
   ContextGroupsList,
 } from './pppoe-context-table';
-import type { PPGroup, PPRow } from './presentation';
+import type { PPGroup } from './presentation-pppoe-types';
 import { pppoeAPI as api } from './presentation';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';

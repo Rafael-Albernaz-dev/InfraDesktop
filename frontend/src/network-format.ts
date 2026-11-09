@@ -1,6 +1,7 @@
-import { RadioFamilies,RadioModes,RadioRoles } from './radio-contract';
+import { formatter, digits } from './network-format-number';
+import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
 import { tickFieldReason } from './radio-tick-reason';
-export { message,recoveryActionMessage } from './microcopy';
+export { message, recoveryActionMessage } from './microcopy';
 export type { Intent } from './microcopy';
 export { formatPPUptime } from './pppoe-format';
 
@@ -10,18 +11,12 @@ export type NumberRange = { min: number; max: number };
 const unavailable = 'Não informado nesta leitura';
 const volumeUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
 const rateUnits = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
-const formatter = (digits = 0, minimum = 0) =>
-  new Intl.NumberFormat('pt-BR', {
-    maximumFractionDigits: digits,
-    minimumFractionDigits: minimum,
-  });
 function numeric(value: NetworkNumber): number | undefined {
   if (value === null || value === undefined || value === '') return;
   if (typeof value === 'string' && !/^\d+(?:\.\d+)?$/.test(value)) return;
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
-const digits = (n: number) => { if (n < 10) return 2; if (n < 100) return 1; return 0; };
 export function networkScale(
   maximum: NetworkNumber,
   kind: 'volume' | 'rate',
@@ -280,9 +275,7 @@ export function portLabel(port?: {
   const duplex = port.full_duplex ? '-full' : '-half';
   return (
     formatRate(port.speed_bps).replace(' ', '') +
-    (port.full_duplex === undefined
-      ? ' · duplex indisponível'
-      : duplex)
+    (port.full_duplex === undefined ? ' · duplex indisponível' : duplex)
   );
 }
 
@@ -498,6 +491,10 @@ export function formatTickReason(reason?: string | null): {
 }
 
 import { TechnicalDetail } from './network-sanitize';
-import { sanitizeToken,sanitizeVisibleText,scrubSecrets } from './network-text';
+import {
+  sanitizeToken,
+  sanitizeVisibleText,
+  scrubSecrets,
+} from './network-text';
 
-export { sanitizeToken,sanitizeVisibleText,scrubSecrets,TechnicalDetail };
+export { sanitizeToken, sanitizeVisibleText, scrubSecrets, TechnicalDetail };

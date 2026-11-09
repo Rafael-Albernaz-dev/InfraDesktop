@@ -1,4 +1,4 @@
-import type { PPRate } from './presentation';
+import type { PPRate } from './presentation-pppoe-types';
 import { exactRate, formatAtScale, networkScale } from './network-format';
 import { RateValue } from './pppoe-read-views';
 

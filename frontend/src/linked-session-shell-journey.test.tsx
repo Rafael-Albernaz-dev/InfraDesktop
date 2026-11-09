@@ -10,7 +10,8 @@ import {
   radioAPI,
 } from './presentation';
 import type { Device } from './equipment-api';
-import type { PPResult, PPRow, Result } from './presentation';
+import type { PPResult, Result, PPRow } from './presentation';
+
 import { RadioRoles, RadioTransports } from './radio-contract';
 import {
   link as syntheticLink,

@@ -1,3 +1,4 @@
+import type { PPRow } from './presentation';
 import { createRef } from 'react';
 import {
   fireEvent,
@@ -10,7 +11,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoESessionDetail } from './pppoe-session-screen';
 import { pppoeDiagnosticAPI, pppoeReadAPI, radioAPI } from './presentation';
 import type { Device } from './equipment-api';
-import type { PPObservation, PPRow } from './presentation';
+import type { PPObservation } from './presentation-pppoe-types';
 
 vi.mock('./presentation', async (original) => ({
   ...(await original<typeof import('./presentation')>()),

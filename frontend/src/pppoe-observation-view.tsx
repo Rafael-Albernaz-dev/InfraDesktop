@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
 import type { PPRow } from './presentation';
+import type { ReactNode } from 'react';
+
 import { pppoeAPI as api } from './presentation';
 import { CSVNotice } from './pppoe-csv-notice';
 import { DeviceMonitoring, PPPoEDiagnostics } from './pppoe-diagnostics';
