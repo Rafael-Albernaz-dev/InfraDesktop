@@ -2,6 +2,7 @@
 """Exercise only owned daemon processes, Unix runtime and signal cleanup."""
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import socket
@@ -12,6 +13,11 @@ import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
+PRODUCT_REVISION = int(re.search(
+    r'^const ProductRevision = (\d+)$',
+    (ROOT / 'internal/adapters/ipc/protocol.go').read_text(),
+    re.M,
+)[1])
 
 
 def request(runtime, payload):
@@ -34,7 +40,7 @@ def request(runtime, payload):
 
 
 def account(runtime, op, **fields):
-    payload={'version':1,'contract_revision':9,'request_id':'process-test','op':op,'capability':(runtime/'capability').read_text()}
+    payload={'version':1,'contract_revision':PRODUCT_REVISION,'request_id':'process-test','op':op,'capability':(runtime/'capability').read_text()}
     if op=='company.create' and 'operation_id' not in fields:
         fields['operation_id']=str(uuid.uuid4())
     payload.update(fields)
