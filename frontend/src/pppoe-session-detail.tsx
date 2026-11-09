@@ -1,12 +1,12 @@
-import { formatDate,uptimeTitle } from './network-format';
+import { formatDate, uptimeTitle } from './network-format';
 import { COMPARE_CATEGORIES } from './pppoe-context-actions';
 import { formatPPUptime } from './pppoe-format';
 import type {
-PPDelta,
-PPObservation,
-PPQuery,
-PPReference,
-PPRow,
+  PPDelta,
+  PPObservation,
+  PPQuery,
+  PPReference,
+  PPRow,
 } from './presentation';
 import { Button } from './ui/Button';
 import { DataTable } from './ui/DataTable';

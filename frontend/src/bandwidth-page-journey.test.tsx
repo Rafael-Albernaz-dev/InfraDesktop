@@ -119,7 +119,9 @@ it('mede as linhas da página, mostra progresso e resultado e libera busy', asyn
     ['row-1', 'row-2'],
     1,
   );
-  await waitFor(() => expect(bindings.PPPoEReadStatus).toHaveBeenCalledOnce(), { timeout: 5000 });
+  await waitFor(() => expect(bindings.PPPoEReadStatus).toHaveBeenCalledOnce(), {
+    timeout: 5000,
+  });
   await act(async () => finish(status()));
   const result = within(
     screen.getByRole('region', { name: 'Banda por sessão' }),

@@ -65,7 +65,11 @@ function StateContent(p: DataState) {
     case 'not-supported':
       return <p>Este modelo não informa {p.resource}</p>;
     case 'unbuilt':
-      return <p>{p.label && `${p.label} · `}Ainda não existe ({p.slice})</p>;
+      return (
+        <p>
+          {p.label && `${p.label} · `}Ainda não existe ({p.slice})
+        </p>
+      );
   }
 }
 

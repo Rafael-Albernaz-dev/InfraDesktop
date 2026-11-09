@@ -1,16 +1,20 @@
 import {
-act,
-cleanup,
-render,
-renderHook,
-screen,
-waitFor,
+  act,
+  cleanup,
+  render,
+  renderHook,
+  screen,
+  waitFor,
 } from '@testing-library/react';
-import { afterEach,beforeEach,expect,it,vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { createPerformAction } from './app-perform';
-import { createBrandSaver,useAccessSession,useBrandState } from './access-session';
-import { access,type Result } from './presentation';
+import {
+  createBrandSaver,
+  useAccessSession,
+  useBrandState,
+} from './access-session';
+import { access, type Result } from './presentation';
 import { BrandDraftHarness as Appearance } from './test-brand-draft';
 vi.mock('./presentation', () => ({
   access: {

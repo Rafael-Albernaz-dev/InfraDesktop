@@ -1,4 +1,4 @@
-import { columns,defaultColumns } from './inventory-columns';
+import { columns, defaultColumns } from './inventory-columns';
 import { Button } from './ui/Button';
 import { Checkbox } from './ui/Checkbox';
 import { Popover } from './ui/Popover';

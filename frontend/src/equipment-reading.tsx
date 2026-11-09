@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
-import { useRef,useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
-import { readingAge,stamp } from './equipment-reading-format';
+import { readingAge, stamp } from './equipment-reading-format';
 import { Summary } from './equipment-summary-blocks';
 import { formatDate } from './network-format';
 import type { ReadingUpdateStatus } from './reading-update-state';

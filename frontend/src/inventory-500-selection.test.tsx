@@ -52,14 +52,7 @@ it('selects each page of 500 synthetic devices and submits their exact revisions
   );
   vi.mocked(equipmentAPI.credentials).mockResolvedValue(result([]) as never);
   vi.mocked(equipmentAPI.bulk).mockResolvedValue(result([]) as never);
-  render(
-    <Equipment
-      profile="company"
-      activation="active"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="company" activation="active" connected />);
   for (let cursor = 0; cursor < 500; cursor += 16) {
     await screen.findByText(`Sintetico ${String(cursor).padStart(3, '0')}`);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Selecionar todos' }));

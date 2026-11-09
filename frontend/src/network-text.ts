@@ -1,4 +1,4 @@
-import { RadioCodes,RadioFamilies,RadioTransports } from './radio-contract';
+import { RadioCodes, RadioFamilies, RadioTransports } from './radio-contract';
 
 export const INTERNAL_TOKEN_REPLACEMENTS: Array<[RegExp, string]> = [
   [/tick-(parse|frame|cpu|metric:[\w-]+)/gi, 'campo inválido no ciclo'],
@@ -28,7 +28,6 @@ export const INTERNAL_TOKEN_REPLACEMENTS: Array<[RegExp, string]> = [
     'família sem driver compatível',
   ],
 ];
-
 
 export function sanitizeToken(input: string): string {
   let out = input.replace(/\blive\b/gi, 'ao vivo');
@@ -72,15 +71,16 @@ export const RAW_TECHNICAL_PATTERN = new RegExp(
   'i',
 );
 
-export const RAW_ERROR_FALLBACK_PATTERN = new RegExp(RAW_ERROR_TOKENS.join('|'), 'i');
-
+export const RAW_ERROR_FALLBACK_PATTERN = new RegExp(
+  RAW_ERROR_TOKENS.join('|'),
+  'i',
+);
 
 export function scrubSecrets(raw: string): string {
   return raw
     .replace(/(password|passwd|secret|token|key)\s*[:=]\s*\S+/gi, '$1=[oculto]')
     .replace(/\/home\/[^\s"')]+/g, '[caminho-local]');
 }
-
 
 export function sanitizeVisibleText(
   raw?: string | null,

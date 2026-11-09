@@ -172,10 +172,16 @@ it.each(['mouse', 'alt-left', 'backspace'])(
 
 it('guards each back trigger when the add screen has changes', async () => {
   await inventory();
-  fireEvent.keyDown(screen.getByRole('textbox', { name: 'Buscar' }), { key: 'Backspace' });
+  fireEvent.keyDown(screen.getByRole('textbox', { name: 'Buscar' }), {
+    key: 'Backspace',
+  });
   expect(screen.getByRole('heading', { name: 'Equipamentos' })).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Adicionar equipamento' }));
-  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'AP novo' } });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Adicionar equipamento' }),
+  );
+  fireEvent.change(screen.getByLabelText('Nome'), {
+    target: { value: 'AP novo' },
+  });
   const doc = screen.getByRole('main').ownerDocument;
   for (const trigger of [
     () => fireEvent.keyDown(doc, { key: 'ArrowLeft', altKey: true }),
@@ -183,15 +189,23 @@ it('guards each back trigger when the add screen has changes', async () => {
     () => fireEvent.mouseDown(doc, { button: 3 }),
   ]) {
     trigger();
-    const dialog = screen.getByRole('dialog', { name: 'Descartar alterações?' });
+    const dialog = screen.getByRole('dialog', {
+      name: 'Descartar alterações?',
+    });
     expect(dialog).toBeVisible();
     fireEvent.keyDown(doc, { key: 'ArrowLeft', altKey: true });
     fireEvent.keyDown(doc, { key: 'Backspace' });
     fireEvent.mouseDown(doc, { button: 3 });
-    expect(screen.getByRole('dialog', { name: 'Descartar alterações?' })).toBeVisible();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Continuar editando' }));
+    expect(
+      screen.getByRole('dialog', { name: 'Descartar alterações?' }),
+    ).toBeVisible();
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Continuar editando' }),
+    );
   }
-  expect(screen.getByRole('heading', { name: 'Adicionar equipamento' })).toBeVisible();
+  expect(
+    screen.getByRole('heading', { name: 'Adicionar equipamento' }),
+  ).toBeVisible();
 });
 
 it('blocks back navigation while an equipment operation is pending', async () => {
@@ -384,14 +398,20 @@ it('returns to Lista after a CPE opens its linked session on the concentrator', 
     fireEvent.click(await screen.findByRole('cell', { name: 'CPE exemplo' }));
     fireEvent.click(await screen.findByRole('tab', { name: 'Cliente' }));
     fireEvent.click(await screen.findByRole('link', { name: 'X' }));
-    expect(await screen.findByRole('region', { name: 'Detalhes da sessão' }))
-      .toHaveTextContent('X');
+    expect(
+      await screen.findByRole('region', { name: 'Detalhes da sessão' }),
+    ).toHaveTextContent('X');
     expect(location.hash).toBe('#sessao/X');
     await waitFor(() => expect(bindings.StartPPPoERead).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
-    expect(await screen.findByRole('heading', { name: 'CPE exemplo' })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { name: 'CPE exemplo' }),
+    ).toBeVisible();
     expect(bindings.CancelPPPoEReadOperation).toHaveBeenCalledWith(
-      'company', 'activation', 'concentrator', expect.any(String),
+      'company',
+      'activation',
+      'concentrator',
+      expect.any(String),
     );
     expect(screen.getByRole('tab', { name: 'Cliente' })).toHaveAttribute(
       'aria-selected',

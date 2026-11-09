@@ -18,7 +18,9 @@ const device = (atraso: number) =>
 
 const idade = (d: Device, now: number) => {
   const { container, unmount } = render(
-    <>{columnById('last_reading')!.cell({ device: d, now, credentials: [] })}</>,
+    <>
+      {columnById('last_reading')!.cell({ device: d, now, credentials: [] })}
+    </>,
   );
   const text = container.textContent;
   unmount();

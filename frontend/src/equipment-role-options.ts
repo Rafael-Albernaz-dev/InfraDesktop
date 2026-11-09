@@ -1,6 +1,5 @@
 import { RadioRoles } from './radio-contract';
 
-
 export const roleGroups: ReadonlyArray<
   readonly [string, ReadonlyArray<readonly [string, string]>]
 > = [
@@ -33,7 +32,6 @@ export const roleGroups: ReadonlyArray<
   ],
   ['Outros', [['other', 'Outro']]],
 ];
-
 
 export const driverOwners: Record<string, string> = {
   station: 'L07-DRV',

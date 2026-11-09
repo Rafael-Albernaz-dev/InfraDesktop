@@ -23,7 +23,6 @@ export type AccessProps = {
   ) => void;
 };
 
-
 export function useAccessFields(p: AccessProps) {
   const [mode, setMode] = useState(p.initialMode || 'login');
   const [name, setName] = useState(p.initialName || '');

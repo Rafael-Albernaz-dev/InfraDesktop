@@ -92,9 +92,7 @@ for (const revision of [2, 3]) {
         vault_available: true,
       },
     });
-    render(
-      <Equipment profile="c" activation="a" connected  />,
-    );
+    render(<Equipment profile="c" activation="a" connected />);
     await openDeviceSheet('Receipt router');
     pendingStarts.clear();
     for (const kind of ['query', 'inspect'])

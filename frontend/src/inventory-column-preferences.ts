@@ -1,7 +1,6 @@
-import { useEffect,useRef,useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { defaultColumns } from './inventory-columns';
 import { access } from './presentation';
-
 
 export function useColumnPreferences() {
   const [visible, setVisible] = useState<string[]>(defaultColumns);

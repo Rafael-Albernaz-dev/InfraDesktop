@@ -76,11 +76,17 @@ export function SessionTraffic({
         rows={[
           [
             'Média',
-            <SessionRatePair download={t.average_download} upload={t.average_upload} />,
+            <SessionRatePair
+              download={t.average_download}
+              upload={t.average_upload}
+            />,
           ],
           [
             'Pico amostrado',
-            <SessionRatePair download={t.peak_download} upload={t.peak_upload} />,
+            <SessionRatePair
+              download={t.peak_download}
+              upload={t.peak_upload}
+            />,
           ],
           [
             'Total da observação',

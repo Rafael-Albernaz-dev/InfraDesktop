@@ -1,1 +1,4 @@
-.st-off { color: var(--erro); font-weight: 600; }
+.st-off {
+  color: var(--erro);
+  font-weight: 600;
+}

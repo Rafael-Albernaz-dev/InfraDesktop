@@ -1,4 +1,4 @@
-import type { Device,Job } from './equipment-api';
+import type { Device, Job } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 
 export type ReadingOperation = {

@@ -1,4 +1,10 @@
-export function RecoveryCode({ value, label = 'Código de recuperação' }: { value: string; label?: string }) {
+export function RecoveryCode({
+  value,
+  label = 'Código de recuperação',
+}: {
+  value: string;
+  label?: string;
+}) {
   return (
     <textarea
       className="codigo codigo-control"

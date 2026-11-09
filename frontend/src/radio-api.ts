@@ -1,6 +1,6 @@
-import type { RadioClient,RadioMetric } from './radio-client-types';
+import type { RadioClient, RadioMetric } from './radio-client-types';
 export { radioAPI } from './presentation';
-export type { RadioClient,RadioMetric } from './radio-client-types';
+export type { RadioClient, RadioMetric } from './radio-client-types';
 export type RadioInterface = {
   had_clients?: boolean;
   power_metrics?: RadioMetric[];

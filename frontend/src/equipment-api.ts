@@ -1,12 +1,20 @@
 export { equipmentAPI } from './presentation';
-export type { Credential,CredentialInput,Device,DeviceInput,EquipmentResult,Job } from './presentation';
+export type {
+  Credential,
+  CredentialInput,
+  Device,
+  DeviceInput,
+  EquipmentResult,
+  Job,
+} from './presentation';
 export const equipmentMessage = (code: string) =>
   ({
     VAULT_UNAVAILABLE:
       'Cofre indisponível. Preserve os dados e confira a chave desta instalação.',
     REVISION_CONFLICT:
       'O cadastro mudou. Feche o formulário e confira a versão atual antes de gravar.',
-    CREDENTIAL_IN_USE: 'Esta credencial está vinculada a um equipamento ou definida como padrão.',
+    CREDENTIAL_IN_USE:
+      'Esta credencial está vinculada a um equipamento ou definida como padrão.',
     CREDENTIAL_NOT_FOUND: 'Selecione uma credencial de consulta desta empresa.',
     DEVICE_INACTIVE: 'Reative o equipamento antes de consultar.',
     TRUST_REQUIRED:

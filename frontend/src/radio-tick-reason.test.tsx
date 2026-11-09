@@ -1,4 +1,4 @@
-import { describe,expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { formatTickReason } from './network-format';
 import { sanitizeVisibleText } from './network-text';
 describe('diagnóstico do tick por campo', () => {

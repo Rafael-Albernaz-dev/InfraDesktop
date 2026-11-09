@@ -1,4 +1,7 @@
-import { ReadingOperation,queryFailureOwnsDetail } from './equipment-query-failure';
+import {
+  ReadingOperation,
+  queryFailureOwnsDetail,
+} from './equipment-query-failure';
 export function EquipmentQueryFailure({
   state,
   tab,

@@ -1,10 +1,4 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { Equipment } from './equipment';
 import { equipmentAPI as api } from './equipment-api';
@@ -49,7 +43,6 @@ it('protects credential drafts against backdrop and dirty close', async () => {
       profile="credential-dirty"
       activation="a"
       connected
-
     />,
   );
   fireEvent.click(
@@ -90,7 +83,6 @@ it('blocks all credential closing routes during a send and clears the request ob
       profile="credential-send"
       activation="a"
       connected
-
     />,
   );
   fireEvent.click(

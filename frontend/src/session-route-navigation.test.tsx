@@ -267,7 +267,9 @@ it('cancels live on a tab change and starts it on returning to traffic', async (
   );
   fireEvent.click(screen.getByRole('tab', { name: 'Tráfego' }));
   await waitFor(() => expect(pppoeReadAPI.start).toHaveBeenCalledTimes(2));
-  expect(screen.queryByRole('button', { name: 'Ver ao vivo' })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Ver ao vivo' }),
+  ).not.toBeInTheDocument();
 });
 
 it('shows an offline session without initiating traffic', async () => {

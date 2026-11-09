@@ -2,12 +2,12 @@ import type { Device } from './equipment-api';
 import { equipmentMessage } from './equipment-api';
 import { pendingPPPoE as pending } from './equipment-receipts';
 import type {
-PPDelta,
-PPObservation,
-PPQuery,
-PPReference,
-PPResult,
-PPRow
+  PPDelta,
+  PPObservation,
+  PPQuery,
+  PPReference,
+  PPResult,
+  PPRow,
 } from './presentation';
 import { pppoeAPI as api } from './presentation';
 import { RadioCodes } from './radio-contract';
@@ -31,17 +31,22 @@ export const freshQuery = (): PPQuery => ({
 export const FRESH_QUERY = freshQuery;
 
 export const pppoeMessage = (r: PPResult) => {
-  if (r.error?.reason === 'operation_receipts') return (
-    'Limite de 2048 alterações permanentes atingido. Salvar e excluir referências estão bloqueados. ' +
-      'Atualizar leituras, consultar, comparar e exportar continuam disponíveis.');
-  if (r.error?.reason?.startsWith('references')) return 'Limite de referências atingido. Exclua uma referência que não precisa mais.'
-  return {
-          OBSERVATION_UNAVAILABLE:
-            'A leitura exibida não está mais disponível. Abra a leitura atual.',
-          OBSERVATION_INCOMPATIBLE:
-            'As leituras pertencem a contextos incompatíveis.',
-          CURSOR_INVALID: 'A página expirou. Volte ao início da lista.',
-        }[r.code] || equipmentMessage(r.code);
+  if (r.error?.reason === 'operation_receipts')
+    return (
+      'Limite de 2048 alterações permanentes atingido. Salvar e excluir referências estão bloqueados. ' +
+      'Atualizar leituras, consultar, comparar e exportar continuam disponíveis.'
+    );
+  if (r.error?.reason?.startsWith('references'))
+    return 'Limite de referências atingido. Exclua uma referência que não precisa mais.';
+  return (
+    {
+      OBSERVATION_UNAVAILABLE:
+        'A leitura exibida não está mais disponível. Abra a leitura atual.',
+      OBSERVATION_INCOMPATIBLE:
+        'As leituras pertencem a contextos incompatíveis.',
+      CURSOR_INVALID: 'A página expirou. Volte ao início da lista.',
+    }[r.code] || equipmentMessage(r.code)
+  );
 };
 
 export const pppoeErrorMessage = pppoeMessage;

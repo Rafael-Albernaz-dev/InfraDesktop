@@ -199,7 +199,7 @@ function createEquipmentActions(
   };
 }
 export type UseEquipmentStateProps = {
- inventoryNode?: HTMLElement | null;
+  inventoryNode?: HTMLElement | null;
   profile: string;
   activation: string;
   connected: boolean;
@@ -227,7 +227,8 @@ export function useEquipmentState(props: UseEquipmentStateProps) {
     s.setForm(undefined);
   };
   useDeviceListEffect({
-    ...s, inventoryNode: props.inventoryNode ?? null,
+    ...s,
+    inventoryNode: props.inventoryNode ?? null,
     generationRef,
     profile,
     activation,

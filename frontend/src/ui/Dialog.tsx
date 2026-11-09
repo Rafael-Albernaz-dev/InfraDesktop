@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useContext,useEffect,useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../icons';
 import { Button } from './Button';

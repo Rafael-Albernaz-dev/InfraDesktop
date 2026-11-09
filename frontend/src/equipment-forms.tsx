@@ -1,20 +1,20 @@
-import { useEffect,useRef,useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from './desktop';
 import type {
-Credential,
-Device,
-DeviceInput,
-EquipmentResult,
+  Credential,
+  Device,
+  DeviceInput,
+  EquipmentResult,
 } from './equipment-api';
-import { useDraftProtection,useFieldErrors } from './equipment-draft';
+import { useDraftProtection, useFieldErrors } from './equipment-draft';
 import { ExistingCredentialSelect } from './equipment-form-credentials';
 import { id } from './equipment-reading-format';
 import { DeviceRoleSelect } from './equipment-role-select';
 import {
-fieldForEquipmentCode,
-fieldMessages,
-validEquipmentAddress,
-validEquipmentText,
+  fieldForEquipmentCode,
+  fieldMessages,
+  validEquipmentAddress,
+  validEquipmentText,
 } from './equipment-validation';
 import { RadioTransports } from './radio-contract';
 export { ProtectedDialog } from './protected-dialog';

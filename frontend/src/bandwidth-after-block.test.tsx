@@ -163,9 +163,7 @@ it('edits only the concentrator block, reopens saved sessions and measures bandw
   ).toHaveTextContent('Torre Sul');
   fireEvent.click(screen.getByRole('tab', { name: 'Sessões' }));
   expect(await screen.findByText('cliente-sintetico')).toBeVisible();
-  fireEvent.click(
-    await screen.findByRole('button', { name: 'Medir banda' }),
-  );
+  fireEvent.click(await screen.findByRole('button', { name: 'Medir banda' }));
   const result = within(
     screen.getByRole('region', { name: 'Banda por sessão' }),
   );

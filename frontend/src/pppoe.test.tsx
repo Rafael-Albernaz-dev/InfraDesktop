@@ -249,8 +249,12 @@ it('A-H01: returning and changing the filter invalidates a pending detail, while
   );
   await screen.findByRole('region', { name: 'Detalhes da sessão' });
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Detalhar duplicado row-2' }));
-  fireEvent.change(screen.getByLabelText('Buscar sessões'), { target: { value: 'nova intenção' } });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
+  );
+  fireEvent.change(screen.getByLabelText('Buscar sessões'), {
+    target: { value: 'nova intenção' },
+  });
   await act(async () => old.resolve(result({ rows: [rows[1]], total: 1 })));
   expect(
     screen.queryByRole('region', { name: 'Detalhes da sessão' }),

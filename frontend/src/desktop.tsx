@@ -1,8 +1,8 @@
-import { useCallback,useContext,useState } from 'react';
-import type { DesktopProps,Page } from './desktop-model';
+import { useCallback, useContext, useState } from 'react';
+import type { DesktopProps, Page } from './desktop-model';
 import { normalizeRoute } from './desktop-model';
-import { CompanyList,Settings } from './desktop-pages';
-import { Sidebar,Topbar } from './desktop-shell';
+import { CompanyList, Settings } from './desktop-pages';
+import { Sidebar, Topbar } from './desktop-shell';
 import type { SessionRouteTarget } from './session-navigation';
 import { SessionRoute } from './session-navigation';
 import { Button } from './ui/Button';
@@ -10,10 +10,13 @@ import { DetailTitle } from './ui/DetailTitle';
 import { DialogHost } from './ui/dialog-host';
 export { Logo } from './desktop-controls';
 export type {
-Branding,
-Company,DesktopProps,Device,
-Operations,Page,
-RouteName
+  Branding,
+  Company,
+  DesktopProps,
+  Device,
+  Operations,
+  Page,
+  RouteName,
 } from './desktop-model';
 export { Button } from './ui/Button';
 export { Dialog } from './ui/Dialog';
@@ -73,67 +76,67 @@ export function Desktop(
   };
   return (
     <SessionRoute.Provider value={session}>
-    <DialogHost value={host}>
-      <DetailTitle value={setDetailTitle}>
-        <div
-          ref={attachRoot}
-          className="app"
-          data-route={route}
-          data-theme={p.theme}
-        >
-          {route === 'companies' ? (
-            <div className="col">
-              <main>
-                <CompanyList p={p} />
-              </main>
-              <div className="tema" role="group" aria-label="Tema">
-                <Button
-                  aria-pressed={p.theme !== 'dark'}
-                  onClick={() => p.setTheme('light')}
-                >
-                  Claro
-                </Button>
-                <Button
-                  aria-pressed={p.theme === 'dark'}
-                  onClick={() => p.setTheme('dark')}
-                >
-                  Escuro
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Sidebar
-                key={route}
-                p={navigationProps}
-                route={route}
-                expandRequest={expandRequest}
-                detailTitle={detailTitle}
-              />
+      <DialogHost value={host}>
+        <DetailTitle value={setDetailTitle}>
+          <div
+            ref={attachRoot}
+            className="app"
+            data-route={route}
+            data-theme={p.theme}
+          >
+            {route === 'companies' ? (
               <div className="col">
-                <Topbar
+                <main>
+                  <CompanyList p={p} />
+                </main>
+                <div className="tema" role="group" aria-label="Tema">
+                  <Button
+                    aria-pressed={p.theme !== 'dark'}
+                    onClick={() => p.setTheme('light')}
+                  >
+                    Claro
+                  </Button>
+                  <Button
+                    aria-pressed={p.theme === 'dark'}
+                    onClick={() => p.setTheme('dark')}
+                  >
+                    Escuro
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Sidebar
+                  key={route}
                   p={navigationProps}
                   route={route}
+                  expandRequest={expandRequest}
                   detailTitle={detailTitle}
                 />
-                <main>
-                  {route === 'overview' ? (
-                    <h1>Visão geral</h1>
-                  ) : route === 'settings' ? (
-                    <Settings p={p} />
-                  ) : (
-                    p.inventory
-                  )}
-                  {p.error && <p role="alert">{p.error}</p>}
-                  <Statusbar connected={p.connected} />
-                </main>
-              </div>
-            </>
-          )}
-          {p.children}
-        </div>
-      </DetailTitle>
-    </DialogHost>
+                <div className="col">
+                  <Topbar
+                    p={navigationProps}
+                    route={route}
+                    detailTitle={detailTitle}
+                  />
+                  <main>
+                    {route === 'overview' ? (
+                      <h1>Visão geral</h1>
+                    ) : route === 'settings' ? (
+                      <Settings p={p} />
+                    ) : (
+                      p.inventory
+                    )}
+                    {p.error && <p role="alert">{p.error}</p>}
+                    <Statusbar connected={p.connected} />
+                  </main>
+                </div>
+              </>
+            )}
+            {p.children}
+          </div>
+        </DetailTitle>
+      </DialogHost>
     </SessionRoute.Provider>
   );
 }

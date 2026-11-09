@@ -1,6 +1,4 @@
-import {
-portLabel
-} from './network-format';
+import { portLabel } from './network-format';
 import type { PPReadRow } from './presentation';
 
 export const displayPort = (port?: PPReadRow['port']) =>

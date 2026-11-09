@@ -1,8 +1,8 @@
-import { Button,Dialog } from './desktop';
-import type { Credential,Device,EquipmentResult,Job } from './equipment-api';
+import { Button, Dialog } from './desktop';
+import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
 import { equipmentAPI as api } from './equipment-api';
 import { VAULT_NOTICE } from './vault-notice';
-import { DeviceForm,ProtectedDialog } from './equipment-forms';
+import { DeviceForm, ProtectedDialog } from './equipment-forms';
 import { id } from './equipment-reading-format';
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,
@@ -215,6 +215,5 @@ export function DeviceFormDialog(p: {
     </ProtectedDialog>
   );
 }
-
 
 export { CredentialFormDialog } from './credential-form-dialog';

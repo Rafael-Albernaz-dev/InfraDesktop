@@ -12,7 +12,9 @@ test('G8 measures actual TypeScript functions and reports strict debt', async ()
     '}',
     '',
   ].join('\n');
-  const filePath = fileURLToPath(new URL('./src/new-report-fixture.ts', import.meta.url));
+  const filePath = fileURLToPath(
+    new URL('./src/new-report-fixture.ts', import.meta.url),
+  );
   const { metrics, debt } = await frontendMeasurements([{ filePath, source }]);
   assert.equal(metrics['src/new-report-fixture.ts'].lines, 61);
   assert.equal(metrics['src/new-report-fixture.ts'].function, 61);

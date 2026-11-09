@@ -11,7 +11,6 @@ export default [
     plugins: { 'radio-domain': radioDomain },
     rules: {
       'radio-domain/no-inline-values': 'error',
-
     },
   },
 

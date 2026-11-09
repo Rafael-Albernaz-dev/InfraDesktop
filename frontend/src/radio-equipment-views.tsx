@@ -2,17 +2,17 @@ import type { ReactNode } from 'react';
 import { Fragment } from 'react';
 import { useDisplayNow } from './equipment-snapshot';
 import {
-formatDuration,
-formatMetric,
-formatRouterDuration,
+  formatDuration,
+  formatMetric,
+  formatRouterDuration,
 } from './network-format';
 import type { RadioReading } from './radio-api';
-import { RadioFamilies,RadioModes,RadioRoles } from './radio-contract';
+import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
 import { RadioUnsupportedNotice } from './radio-equipment-parts';
 import type { RadioEquipmentState } from './radio-equipment-state';
 import { createEquipmentPage } from './radio-equipment-state';
 import { equipmentRadioError } from './radio-equipment-status';
-import { RadioClients,RadioInterfaces } from './radio-equipment-tables';
+import { RadioClients, RadioInterfaces } from './radio-equipment-tables';
 import { RadioReadingDetails } from './radio-reading-details';
 import { radioRatePair } from './radio-table-format';
 import { Button } from './ui/Button';

@@ -1,5 +1,5 @@
 // Isolated synthetic fixture: imports the product views, never the frozen renderer.
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AccessScreen } from '../src/access-screen';
 import type { Page } from '../src/desktop';
@@ -10,7 +10,7 @@ import type { DataState } from '../src/ui/DataBlock';
 import { DataBlock } from '../src/ui/DataBlock';
 import '../src/ui/kit.css';
 import '../src/ui/tokens.css';
-import { credentialSceneReady,installFixture } from './layout-fixture';
+import { credentialSceneReady, installFixture } from './layout-fixture';
 const query = new URLSearchParams(location.search),
   scene = query.get('scene') || 'login';
 installFixture();
@@ -190,7 +190,9 @@ export function Vitrine() {
 export function Scene() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    void credentialSceneReady().then(() => requestAnimationFrame(() => requestAnimationFrame(() => setReady(true))));
+    void credentialSceneReady().then(() =>
+      requestAnimationFrame(() => requestAnimationFrame(() => setReady(true))),
+    );
   }, []);
   const [theme, setTheme] = useState(query.get('theme') || 'light');
   const mode =
@@ -198,7 +200,9 @@ export function Scene() {
       ? 'register'
       : scene === 'recuperar'
         ? 'recover'
-        : scene === 'redefinir' ? 'reset' : 'login';
+        : scene === 'redefinir'
+          ? 'reset'
+          : 'login';
   const [page, setPage] = useState<Page>(
     scene === 'vitrine'
       ? 'vitrine'
@@ -231,7 +235,9 @@ export function Scene() {
                 : '';
   return (
     <div data-layout-ready={ready || undefined}>
-      {['login', 'criar', 'recuperar', 'redefinir', 'codigo'].includes(scene) ? (
+      {['login', 'criar', 'recuperar', 'redefinir', 'codigo'].includes(
+        scene,
+      ) ? (
         <AccessScreen
           theme={theme}
           setTheme={setTheme}

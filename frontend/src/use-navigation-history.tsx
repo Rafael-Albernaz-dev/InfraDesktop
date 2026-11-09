@@ -62,7 +62,8 @@ export function useNavigationHistory(state: NavigationState) {
       !s.authenticated ||
       s.blocked ||
       s.root?.querySelector('[role="dialog"]')
-    ) return;
+    )
+      return;
     const run = () => {
       const previous = history.current.back();
       if (!previous) return;

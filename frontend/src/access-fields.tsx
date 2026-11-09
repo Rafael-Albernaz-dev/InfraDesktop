@@ -1,4 +1,4 @@
-import type { AccessProps,useAccessFields } from './use-access-fields';
+import type { AccessProps, useAccessFields } from './use-access-fields';
 import { Button } from './ui/Button';
 import { Field } from './ui/Field';
 type Fields = ReturnType<typeof useAccessFields>;
@@ -97,7 +97,11 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
             />
           )}
           <Field
-            label={s.mode === 'recover' || s.mode === 'reset' ? 'Nova senha' : 'Senha'}
+            label={
+              s.mode === 'recover' || s.mode === 'reset'
+                ? 'Nova senha'
+                : 'Senha'
+            }
             type="password"
             required
             maxLength={128}
@@ -107,7 +111,9 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
           />
           {(s.mode === 'register' || s.mode === 'reset') && (
             <Field
-              label={s.mode === 'reset' ? 'Confirmar nova senha' : 'Confirmar senha'}
+              label={
+                s.mode === 'reset' ? 'Confirmar nova senha' : 'Confirmar senha'
+              }
               type="password"
               required
               maxLength={128}
@@ -116,7 +122,11 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
               onChange={(e) => s.setConfirm(e.target.value)}
             />
           )}
-          {s.mode === 'reset' && <p className="muted">O sistema vai pedir a senha de administrador deste computador.</p>}
+          {s.mode === 'reset' && (
+            <p className="muted">
+              O sistema vai pedir a senha de administrador deste computador.
+            </p>
+          )}
           <Button
             className="lg-btn"
             type="submit"
@@ -126,12 +136,25 @@ export function AccessForm({ s, p }: { s: Fields; p: AccessProps }) {
               ? 'Aguarde…'
               : s.mode === 'register'
                 ? 'Criar conta local'
-                : s.mode === 'reset' ? 'Redefinir conta' : 'Recuperar'}
+                : s.mode === 'reset'
+                  ? 'Redefinir conta'
+                  : 'Recuperar'}
           </Button>
           {s.mode === 'recover' && (
-            <p className="lg-alt"><Button className="link-control" disabled={p.busy || p.resetVerification}
-              title={p.resetVerification ? 'Tente entrar antes de solicitar outra redefinição.' : undefined}
-              onClick={() => s.change('reset')}>Perdi a senha e o código</Button></p>
+            <p className="lg-alt">
+              <Button
+                className="link-control"
+                disabled={p.busy || p.resetVerification}
+                title={
+                  p.resetVerification
+                    ? 'Tente entrar antes de solicitar outra redefinição.'
+                    : undefined
+                }
+                onClick={() => s.change('reset')}
+              >
+                Perdi a senha e o código
+              </Button>
+            </p>
           )}
           <p className="lg-alt">
             <Button

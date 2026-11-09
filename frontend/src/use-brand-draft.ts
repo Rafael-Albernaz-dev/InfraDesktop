@@ -1,6 +1,5 @@
-import { useEffect,useRef,useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Branding } from './desktop-model';
-
 
 // Retained draft behavior, without a routed personalization screen.
 export function useBrandDraft(
@@ -12,7 +11,12 @@ export function useBrandDraft(
   const [draft, setDraft] = useState(brand),
     [dirty, setDirty] = useState(false),
     [error, setError] = useState('');
-  const { loadingImage, input, readFile, invalidateRead } = useBrandImage({ brand, setDraft, setDirty, setError });
+  const { loadingImage, input, readFile, invalidateRead } = useBrandImage({
+    brand,
+    setDraft,
+    setDirty,
+    setError,
+  });
   const change = (next: Branding) => {
     setDraft(next);
     setDirty(true);
@@ -54,10 +58,12 @@ export function useBrandDraft(
   };
 }
 function useBrandImage(p: {
- brand: Branding; setDraft: React.Dispatch<React.SetStateAction<Branding>>;
- setDirty: (v: boolean) => void; setError: (v: string) => void;
+  brand: Branding;
+  setDraft: React.Dispatch<React.SetStateAction<Branding>>;
+  setDirty: (v: boolean) => void;
+  setError: (v: string) => void;
 }) {
- const { brand, setDraft, setDirty, setError } = p;
+  const { brand, setDraft, setDirty, setError } = p;
   const [loadingImage, setLoadingImage] = useState(false);
   const input = useRef<HTMLInputElement>(null),
     reading = useRef<FileReader | null>(null),
@@ -108,5 +114,5 @@ function useBrandImage(p: {
     };
     reader.readAsDataURL(file);
   };
- return { loadingImage, input, readFile, invalidateRead };
+  return { loadingImage, input, readFile, invalidateRead };
 }

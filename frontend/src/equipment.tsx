@@ -13,7 +13,10 @@ import { useState } from 'react';
 import { SessionRoute } from './session-navigation';
 import type { SessionRouteTarget } from './session-navigation';
 
-function EquipmentCapabilityBody({ setSurface, ...p }: {
+function EquipmentCapabilityBody({
+  setSurface,
+  ...p
+}: {
   s: ReturnType<typeof useEquipmentState>;
   profile: string;
   activation: string;
@@ -35,8 +38,14 @@ function EquipmentCapabilityBody({ setSurface, ...p }: {
       <EquipmentBanners s={s} locked={locked} trustOpen={p.trustOpen} />
       <div>
         {adding ? (
-          <AddEquipment key={[profile, activation].join("|")} s={s} profile={profile} activation={activation}
-            locked={locked} back={() => p.onAddBack?.()} />
+          <AddEquipment
+            key={[profile, activation].join('|')}
+            s={s}
+            profile={profile}
+            activation={activation}
+            locked={locked}
+            back={() => p.onAddBack?.()}
+          />
         ) : p.credentialsPage ? (
           <EquipmentCredentials
             s={s}
@@ -118,17 +127,21 @@ export function Equipment(props: EquipmentProps) {
   const external = useContext(SessionRoute);
   const [localSession, setLocalSession] = useState<SessionRouteTarget>();
   return (
-    <SessionRoute.Provider value={external || {
-      active: !!localSession,
-      target: localSession,
-      open: setLocalSession,
-      back: () => setLocalSession(undefined),
-      leave: () => setLocalSession(undefined),
-    }}>
-    <EquipmentContext
-      key={props.credentialsPage ? 'credentials' : 'equipment'}
-      {...props}
-    />
+    <SessionRoute.Provider
+      value={
+        external || {
+          active: !!localSession,
+          target: localSession,
+          open: setLocalSession,
+          back: () => setLocalSession(undefined),
+          leave: () => setLocalSession(undefined),
+        }
+      }
+    >
+      <EquipmentContext
+        key={props.credentialsPage ? 'credentials' : 'equipment'}
+        {...props}
+      />
     </SessionRoute.Provider>
   );
 }
@@ -146,13 +159,18 @@ function EquipmentContext(props: EquipmentProps) {
   const returnFocus = useRef(false);
   useLayoutEffect(() => {
     if (adding || props.credentialsPage || !returnFocus.current) return;
-    const trigger = surface?.querySelector<HTMLButtonElement>('[data-add-trigger]');
+    const trigger =
+      surface?.querySelector<HTMLButtonElement>('[data-add-trigger]');
     if (trigger && !trigger.closest('[hidden]') && !trigger.disabled) {
       trigger.focus({ preventScroll: true });
       returnFocus.current = false;
     }
   }, [adding, props.credentialsPage, surface]);
-  const s = useEquipmentState({ ...props, addVisible: adding, inventoryNode: surface });
+  const s = useEquipmentState({
+    ...props,
+    addVisible: adding,
+    inventoryNode: surface,
+  });
   useEffect(() => {
     onBlockedChange?.(s.busy || s.job?.state === 'RUNNING');
     return () => onBlockedChange?.(false);

@@ -488,16 +488,18 @@ it('L06C: fields, offline reason and previous page use stored data', async () =>
   );
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   await screen.findByText('Sem leitura: sessão OFFLINE');
-  expect(screen.getByText('Caller ID').nextElementSibling).toHaveTextContent('02:00:00:00:00:01');
+  expect(screen.getByText('Caller ID').nextElementSibling).toHaveTextContent(
+    '02:00:00:00:00:01',
+  );
   fireEvent.click(screen.getByText(/Mais informações/));
   expect(screen.getByText('Offline desde (intervalo)')).toBeInTheDocument();
-  expect(screen.getByText('Duração da última sessão').nextElementSibling).toHaveTextContent('1 s');
+  expect(
+    screen.getByText('Duração da última sessão').nextElementSibling,
+  ).toHaveTextContent('1 s');
   expect(screen.getByText('Há quanto tempo (pelo menos)')).toBeInTheDocument();
   expect(screen.getByText(/1 min 30 s/)).toBeInTheDocument();
   clock.mockRestore();
-  expect(
-    screen.getByRole('button', { name: 'Ping' }),
-  ).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Ping' })).toBeDisabled();
   expect(
     screen.queryByText(/Identidade local da linha/),
   ).not.toBeInTheDocument();

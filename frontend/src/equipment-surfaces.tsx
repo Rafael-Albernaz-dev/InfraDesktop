@@ -1,4 +1,9 @@
-import { CredentialFormDialog,DeviceFormDialog,ResetTrustDialog,TrustConfirmDialog } from './equipment-dialogs';
+import {
+  CredentialFormDialog,
+  DeviceFormDialog,
+  ResetTrustDialog,
+  TrustConfirmDialog,
+} from './equipment-dialogs';
 import { VAULT_NOTICE } from './vault-notice';
 import { queryFailureOwnsDetail } from './equipment-query-failure';
 import type { useEquipmentState } from './equipment-state';

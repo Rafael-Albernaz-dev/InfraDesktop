@@ -1,9 +1,5 @@
 import { displayPort } from './equipment-port-format';
-import {
-exactNumber,
-exactRate,
-formatDate
-} from './network-format';
+import { exactNumber, exactRate, formatDate } from './network-format';
 import type { PPReadRow } from './presentation';
 import { DataTable } from './ui/DataTable';
 export function EquipmentPorts({

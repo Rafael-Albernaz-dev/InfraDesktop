@@ -1,6 +1,6 @@
 import { displayPort } from './equipment-port-format';
 import { readingAge } from './equipment-reading-format';
-import { exactNumber,formatDate } from './network-format';
+import { exactNumber, formatDate } from './network-format';
 import type { PPReadRow } from './presentation';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';

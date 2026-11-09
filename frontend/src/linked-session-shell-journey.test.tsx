@@ -214,7 +214,9 @@ it('opens a linked session through the shell and returns to its origin', async (
     name: 'Detalhes da sessão',
   });
   expect(within(session).getByRole('heading', { name: 'X' })).toBeVisible();
-  expect(screen.getByRole('main').ownerDocument.defaultView?.location.hash).toBe('#sessao/X');
+  expect(
+    screen.getByRole('main').ownerDocument.defaultView?.location.hash,
+  ).toBe('#sessao/X');
   expect(pppoeAPI.detail).toHaveBeenCalledWith(
     'company',
     'activation',

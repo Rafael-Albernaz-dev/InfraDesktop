@@ -107,9 +107,7 @@ for (const active of [true, false]) {
           device: { ...current, name: 'Edited name', revision: 2 },
         },
       });
-      render(
-        <Equipment profile="X" activation="a" connected  />,
-      );
+      render(<Equipment profile="X" activation="a" connected />);
       await openDeviceSheet('Router X');
       fireEvent.click(
         screen.getByRole('button', { name: 'Editar equipamento' }),
@@ -148,9 +146,7 @@ for (const failure of ['SERVICE_UNAVAILABLE', 'reject']) {
       vi.mocked(api.list).mockRejectedValueOnce(new Error('transport'));
     else
       vi.mocked(api.list).mockResolvedValueOnce({ ...data(), code: failure });
-    render(
-      <Equipment profile="X" activation="a" connected  />,
-    );
+    render(<Equipment profile="X" activation="a" connected />);
     await screen.findByRole('alert');
     expect(
       screen.queryByRole('heading', { name: 'Nenhum equipamento cadastrado' }),
@@ -187,9 +183,7 @@ for (const changeSurface of [true, false]) {
         },
       },
     });
-    render(
-      <Equipment profile="late" activation="a" connected  />,
-    );
+    render(<Equipment profile="late" activation="a" connected />);
     await openDeviceSheet('Router X');
     fireEvent.click(
       screen.getByRole('button', { name: /^(Conectar|Atualizar)$/ }),
@@ -324,15 +318,7 @@ it('shared credential replacement sends affected links and clears typed secret',
     ...data(),
     code: 'SERVICE_UNAVAILABLE',
   });
-  render(
-    <Equipment
-      credentialsPage
-      profile="X"
-      activation="a"
-      connected
-
-    />,
-  );
+  render(<Equipment credentialsPage profile="X" activation="a" connected />);
   await screen.findByRole('heading', { name: 'Credenciais' });
   fireEvent.click(screen.getByRole('button', { name: 'Adicionar credencial' }));
   fireEvent.change(screen.getByLabelText('Credencial para editar'), {
@@ -341,11 +327,14 @@ it('shared credential replacement sends affected links and clears typed secret',
   fireEvent.change(screen.getByLabelText('Senha remota'), {
     target: { value: 'isolated test secret' },
   });
-  expect(screen.getByRole('button', { name: 'Salvar credencial' })).toBeEnabled();
+  expect(
+    screen.getByRole('button', { name: 'Salvar credencial' }),
+  ).toBeEnabled();
   fireEvent.click(screen.getByRole('button', { name: 'Salvar credencial' }));
   fireEvent.click(
-    within(await screen.findByRole('dialog', { name: 'Substituir acesso?' }))
-      .getByRole('button', { name: 'Substituir acesso' }),
+    within(
+      await screen.findByRole('dialog', { name: 'Substituir acesso?' }),
+    ).getByRole('button', { name: 'Substituir acesso' }),
   );
   await waitFor(() => expect(api.putCredential).toHaveBeenCalledTimes(1));
   expect(vi.mocked(api.putCredential).mock.calls[0][2].affected_links).toBe(2);
@@ -355,14 +344,19 @@ it('shared credential replacement sends affected links and clears typed secret',
   ).not.toBeInTheDocument();
 });
 it('inactive filtering stays explicit; no remote work happens while listing or editing', async () => {
-  render(<Equipment profile="X" activation="a" connected  />);
+  render(<Equipment profile="X" activation="a" connected />);
   await openDeviceSheet('Router X');
   expect(api.start).not.toHaveBeenCalled();
   expect(api.inspect).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));
   await waitFor(() =>
-    expect(api.list).toHaveBeenLastCalledWith('X', 'a', '', 0, true, { role: '', block: '', block_empty: false, model: '' }),
+    expect(api.list).toHaveBeenLastCalledWith('X', 'a', '', 0, true, {
+      role: '',
+      block: '',
+      block_empty: false,
+      model: '',
+    }),
   );
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
@@ -397,23 +391,9 @@ it('Q03 late X inventory and credential responses cannot populate the remounted 
     .mockImplementationOnce(() => new Promise((r) => (resolve = r)))
     .mockResolvedValue(data([]));
   const view = render(
-    <Equipment
-      key="X"
-      profile="X"
-      activation="a"
-      connected
-
-    />,
+    <Equipment key="X" profile="X" activation="a" connected />,
   );
-  view.rerender(
-    <Equipment
-      key="Y"
-      profile="Y"
-      activation="b"
-      connected
-
-    />,
-  );
+  view.rerender(<Equipment key="Y" profile="Y" activation="b" connected />);
   await screen.findByText('Nenhum equipamento cadastrado');
   await act(async () => {
     resolve(data());
@@ -438,9 +418,7 @@ it('Q03 late X inventory and credential responses cannot populate the remounted 
   expect(api.credentials).toHaveBeenCalledWith('X', 'a', 0);
   expect(api.credentials).toHaveBeenCalledWith('Y', 'b', 0);
   await beginAdd();
-  expect(
-    screen.getByRole('option', { name: 'Fresh Y' }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Fresh Y' })).toBeInTheDocument();
   expect(screen.queryByText(/Late X/)).not.toBeInTheDocument();
 });
 it('first acceptance is deliberate without an invented origin and failed acceptance cannot authenticate', async () => {
@@ -462,7 +440,7 @@ it('first acceptance is deliberate without an invented origin and failed accepta
     ...data(),
     code: 'TRUST_CHANGED',
   });
-  render(<Equipment profile="X" activation="a" connected  />);
+  render(<Equipment profile="X" activation="a" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByRole('dialog', { name: 'Primeira conexão' });
@@ -543,7 +521,7 @@ it('an uncertain query start reuses its ID and never retries authentication by i
         },
       },
     });
-  render(<Equipment profile="X" activation="a" connected  />);
+  render(<Equipment profile="X" activation="a" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
@@ -587,13 +565,7 @@ it('full detail interfaces survive a subsequent list projection and a new contex
     data: { ...data().data!, device: { ...device, result: observation } },
   });
   const view = render(
-    <Equipment
-      key="X"
-      profile="X"
-      activation="a"
-      connected
-
-    />,
+    <Equipment key="X" profile="X" activation="a" connected />,
   );
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('tab', { name: 'Resumo' }));
@@ -618,15 +590,7 @@ it('full detail interfaces survive a subsequent list projection and a new contex
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(screen.getByRole('cell', { name: 'Router X' }));
   vi.mocked(api.list).mockResolvedValue(data([]));
-  view.rerender(
-    <Equipment
-      key="Y"
-      profile="Y"
-      activation="b"
-      connected
-
-    />,
-  );
+  view.rerender(<Equipment key="Y" profile="Y" activation="b" connected />);
   await screen.findByText('Nenhum equipamento cadastrado');
   await act(async () =>
     resolve({
@@ -657,12 +621,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
       () => new Promise((r) => (resolve = r)),
     );
     const view = render(
-      <Equipment
-        profile="late"
-        activation="surface"
-        connected
-
-      />,
+      <Equipment profile="late" activation="surface" connected />,
     );
     await openDeviceSheet('Router X');
     fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
@@ -675,14 +634,7 @@ it.each(['OK', 'REVISION_CONFLICT'])(
       screen.getByRole('dialog', { name: 'Editar equipamento' }),
     ).toBeInTheDocument();
     view.unmount();
-    render(
-      <Equipment
-        profile="late"
-        activation="surface"
-        connected
-
-      />,
-    );
+    render(<Equipment profile="late" activation="surface" connected />);
     await openDeviceSheet('Router X');
     fireEvent.click(screen.getByRole('button', { name: 'Editar equipamento' }));
     await act(async () => resolve({ ...data(), code }));
@@ -707,14 +659,7 @@ it('late detail cannot restore an old selected device', async () => {
   vi.mocked(api.get).mockImplementationOnce(
     () => new Promise((r) => (resolve = r)),
   );
-  render(
-    <Equipment
-      profile="detail"
-      activation="surface"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="detail" activation="surface" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('tab', { name: 'Resumo' }));
   if (screen.queryByRole('button', { name: 'Voltar' }))
@@ -738,7 +683,6 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         profile="credential-late"
         activation="surface"
         connected
-
       />,
     );
     await screen.findByRole('heading', { name: 'Credenciais' });
@@ -772,7 +716,6 @@ it.each(['OK', 'REVISION_CONFLICT'])(
         profile="credential-late"
         activation="surface"
         connected
-
       />,
     );
     await screen.findByRole('heading', { name: 'Credenciais' });
@@ -821,12 +764,7 @@ it.each(['reject', 'reply'])(
       data: { ...data().data!, job: { ...runningJob, state: 'SUCCEEDED' } },
     } as EquipmentResult);
     render(
-      <Equipment
-        profile={'poll-' + kind}
-        activation="surface"
-        connected
-
-      />,
+      <Equipment profile={'poll-' + kind} activation="surface" connected />,
     );
     await openDeviceSheet('Router X');
     fireEvent.click(
@@ -852,14 +790,7 @@ it('exhausted status recovery unlocks UI and deliberate retry reconciles the sam
     data: { ...data().data!, job: runningJob },
   } as EquipmentResult);
   vi.mocked(api.status).mockRejectedValue(new Error('transport'));
-  render(
-    <Equipment
-      profile="poll-exhaust"
-      activation="surface"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="poll-exhaust" activation="surface" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
@@ -898,14 +829,7 @@ it('uncertain IDs survive remount and query/inspect/device alternation; interrup
     code: 'DEADLINE_EXCEEDED',
   });
   const mount = () =>
-    render(
-      <Equipment
-        profile="retain"
-        activation="surface"
-        connected
-
-      />,
-    );
+    render(<Equipment profile="retain" activation="surface" connected />);
   const view = mount();
   await openDeviceSheet('Router X');
   fireEvent.click(
@@ -984,13 +908,7 @@ it('service status and last valid data remain truthful after a reading, failed r
   const view = render(
     <>
       <Statusbar connected />
-      <Equipment
-        key="X"
-        profile="X-footer"
-        activation="footer"
-        connected
-
-      />
+      <Equipment key="X" profile="X-footer" activation="footer" connected />
     </>,
   );
   await openDeviceSheet('Router X');
@@ -1015,13 +933,7 @@ it('service status and last valid data remain truthful after a reading, failed r
   view.rerender(
     <>
       <Statusbar connected />
-      <Equipment
-        key="Y"
-        profile="Y-footer"
-        activation="other"
-        connected
-
-      />
+      <Equipment key="Y" profile="Y-footer" activation="other" connected />
     </>,
   );
   await screen.findByText('Nenhum equipamento cadastrado');
@@ -1040,12 +952,7 @@ it('an uncertain inspection retains its own ID across unmount and another operat
     code: 'DEADLINE_EXCEEDED',
   });
   const view = render(
-    <Equipment
-      profile="retain-inspect"
-      activation="surface"
-      connected
-
-    />,
+    <Equipment profile="retain-inspect" activation="surface" connected />,
   );
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
@@ -1057,14 +964,7 @@ it('an uncertain inspection retains its own ID across unmount and another operat
   );
   await screen.findByText(/O prazo da operação/);
   view.unmount();
-  render(
-    <Equipment
-      profile="retain-inspect"
-      activation="surface"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="retain-inspect" activation="surface" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   await screen.findByText(/interrompida ou expirou/);
@@ -1093,14 +993,7 @@ it('cancel reconciles the running job without another authentication', async () 
       job: { ...runningJob, state: 'CANCELLED', code: 'CANCELLED' },
     },
   } as EquipmentResult);
-  render(
-    <Equipment
-      profile="cancel-status"
-      activation="surface"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="cancel-status" activation="surface" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(
     screen.getByRole('button', {
@@ -1121,7 +1014,7 @@ it('cancel reconciles the running job without another authentication', async () 
 it('first enrollment retains one CTA and the frozen empty inventory layout', async () => {
   vi.mocked(api.list).mockResolvedValue(data([]));
   vi.mocked(api.credentials).mockResolvedValue(data([]));
-  render(<Equipment profile="X" activation="a" connected  />);
+  render(<Equipment profile="X" activation="a" connected />);
   await screen.findByText('Nenhum equipamento cadastrado');
   expect(
     screen.getByRole('table', { name: 'Lista de equipamentos' }),
@@ -1139,12 +1032,21 @@ it('first enrollment retains one CTA and the frozen empty inventory layout', asy
   const add = screen.getAllByRole('button', { name: /Adicionar/ });
   expect(add).toHaveLength(1);
   fireEvent.click(add[0]);
-  expect(screen.getByRole('heading', { name: 'Adicionar equipamento' })).toBeVisible();
-  fireEvent.change(screen.getByLabelText('Credencial de consulta'), { target: { value: '__add__' } });
-  const dialog = screen.getByRole('dialog', { name: 'Credenciais de consulta' });
+  expect(
+    screen.getByRole('heading', { name: 'Adicionar equipamento' }),
+  ).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__add__' },
+  });
+  const dialog = screen.getByRole('dialog', {
+    name: 'Credenciais de consulta',
+  });
   expect(within(dialog).getByLabelText('Usuário remoto')).toBeInTheDocument();
   expect(within(dialog).getByLabelText('Alias')).toBeInTheDocument();
-  expect(within(dialog).getByLabelText('Senha remota')).toHaveAttribute('type', 'password');
+  expect(within(dialog).getByLabelText('Senha remota')).toHaveAttribute(
+    'type',
+    'password',
+  );
 });
 it('lost direct response clears the password, blocks blind resend and reconciles after closing/reopening', async () => {
   let submitted: Record<string, unknown> | undefined;
@@ -1263,13 +1165,18 @@ it('inactive filtering and an empty search recover through the frozen list and e
       },
     }),
   );
-  render(
-    <Equipment profile="inactive-only" activation="a" connected />,
-  );
+  render(<Equipment profile="inactive-only" activation="a" connected />);
   await screen.findByText('Nenhum equipamento cadastrado');
   expect(screen.getByLabelText('Estado')).toBeEnabled();
-  const options = within(screen.getByLabelText('Estado')).getAllByRole('option');
-  expect(options.map((o) => o.textContent)).toEqual(['Todos', 'ONLINE', 'OFFLINE', 'Sem estado']);
+  const options = within(screen.getByLabelText('Estado')).getAllByRole(
+    'option',
+  );
+  expect(options.map((o) => o.textContent)).toEqual([
+    'Todos',
+    'ONLINE',
+    'OFFLINE',
+    'Sem estado',
+  ]);
   expect(screen.getByRole('table')).toBeVisible();
   expect(screen.getAllByRole('button', { name: /Adicionar/ })).toHaveLength(1);
   fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar inativos' }));
@@ -1309,9 +1216,7 @@ it('the full desktop owns only one Add action in empty and populated inventory s
       enter={() => {}}
       logout={() => {}}
       unavailable={() => {}}
-      inventory={
-        <Equipment profile="cta" activation="a" connected  />
-      }
+      inventory={<Equipment profile="cta" activation="a" connected />}
     />,
   );
   await screen.findByRole('cell', { name: 'Router X' });
@@ -1334,13 +1239,7 @@ it('the full desktop owns only one Add action in empty and populated inventory s
       logout={() => {}}
       unavailable={() => {}}
       inventory={
-        <Equipment
-          key="empty"
-          profile="cta-empty"
-          activation="b"
-          connected
-
-        />
+        <Equipment key="empty" profile="cta-empty" activation="b" connected />
       }
     />,
   );
@@ -1457,24 +1356,31 @@ it('a blocked vault explains the disabled direct form inside its dialog exactly 
     ...data(),
     data: { ...data().data!, vault_available: false },
   });
-  render(
-    <Equipment
-      profile="vault-failed"
-      activation="a"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="vault-failed" activation="a" connected />);
   await screen.findByText(
     'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
   );
   await beginAdd();
-  expect(screen.getByText('Cofre indisponível. Confira a credencial do serviço nesta instalação.')).toBeVisible();
-  fireEvent.change(screen.getByLabelText('Credencial de consulta'), { target: { value: '__add__' } });
-  const dialog = screen.getByRole('dialog', { name: 'Credenciais de consulta' });
+  expect(
+    screen.getByText(
+      'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
+    ),
+  ).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Credencial de consulta'), {
+    target: { value: '__add__' },
+  });
+  const dialog = screen.getByRole('dialog', {
+    name: 'Credenciais de consulta',
+  });
   expect(within(dialog).getByLabelText('Senha remota')).toBeDisabled();
-  expect(within(dialog).getByRole('button', { name: 'Salvar credencial' })).toBeDisabled();
-  expect(screen.getAllByText('Cofre indisponível. Confira a credencial do serviço nesta instalação.')).toHaveLength(1);
+  expect(
+    within(dialog).getByRole('button', { name: 'Salvar credencial' }),
+  ).toBeDisabled();
+  expect(
+    screen.getAllByText(
+      'Cofre indisponível. Confira a credencial do serviço nesta instalação.',
+    ),
+  ).toHaveLength(1);
   fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
   expect(screen.getByLabelText('Credencial de consulta')).toBeEnabled();
 });
@@ -1502,12 +1408,7 @@ it.each(['OK', 'TRUST_CHANGED'])(
         }),
     );
     render(
-      <Equipment
-        profile={'inspect-form-' + code}
-        activation="a"
-        connected
-
-      />,
+      <Equipment profile={'inspect-form-' + code} activation="a" connected />,
     );
     await openDeviceSheet('Router X');
     fireEvent.click(
@@ -1532,8 +1433,12 @@ it.each(['OK', 'TRUST_CHANGED'])(
         },
       }),
     );
-    expect(screen.queryByRole('dialog', { name: 'Primeira conexão' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Adicionar equipamento' })).toBeVisible();
+    expect(
+      screen.queryByRole('dialog', { name: 'Primeira conexão' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Adicionar equipamento' }),
+    ).toBeVisible();
     expect(
       screen.queryByText(/A chave do destino mudou/),
     ).not.toBeInTheDocument();
@@ -1560,14 +1465,7 @@ it('completed inspection polling on its original surface still offers deliberate
       job: { ...job, state: 'SUCCEEDED', fingerprint: 'SHA256:fixture' },
     },
   });
-  render(
-    <Equipment
-      profile="inspect-original"
-      activation="a"
-      connected
-
-    />,
-  );
+  render(<Equipment profile="inspect-original" activation="a" connected />);
   await openDeviceSheet('Router X');
   fireEvent.click(screen.getByRole('button', { name: 'Verificar identidade' }));
   const panel = await screen.findByRole('dialog', {
@@ -1619,9 +1517,7 @@ it('Q01 retires abandoned activations, preserves same-activation uncertain IDs a
   expect(api.inspect).not.toHaveBeenCalled();
 });
 it('Q03 inventory filters and refresh do not reload an independent credential catalog', async () => {
-  render(
-    <Equipment profile="Q03" activation="q03" connected  />,
-  );
+  render(<Equipment profile="Q03" activation="q03" connected />);
   await openDeviceSheet('Router X');
   await waitFor(() => expect(api.credentials).toHaveBeenCalledTimes(1));
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
@@ -1638,7 +1534,6 @@ it('Q03 updates the credential catalog after successful replacement and recovers
       profile="Q03-edit"
       activation="catalog"
       connected
-
     />,
   );
   await screen.findByRole('heading', { name: 'Credenciais' });
@@ -1671,8 +1566,9 @@ it('Q03 updates the credential catalog after successful replacement and recovers
     });
   fireEvent.click(screen.getByRole('button', { name: 'Salvar credencial' }));
   fireEvent.click(
-    within(await screen.findByRole('dialog', { name: 'Substituir acesso?' }))
-      .getByRole('button', { name: 'Substituir acesso' }),
+    within(
+      await screen.findByRole('dialog', { name: 'Substituir acesso?' }),
+    ).getByRole('button', { name: 'Substituir acesso' }),
   );
   await screen.findByRole('button', { name: 'Recarregar credenciais' });
   const inventoryCalls = vi.mocked(api.list).mock.calls.length;
@@ -1690,13 +1586,7 @@ it('Q03 updates the credential catalog after successful replacement and recovers
 it('L06C: credentials remain accessible for an empty company', async () => {
   vi.mocked(api.list).mockResolvedValue(data([]));
   render(
-    <Equipment
-      credentialsPage
-      profile="X"
-      activation="a"
-      connected={true}
-
-    />,
+    <Equipment credentialsPage profile="X" activation="a" connected={true} />,
   );
   await screen.findByRole('heading', { name: 'Credenciais' });
   expect(
@@ -1809,7 +1699,7 @@ it('L06T3: equipment list projects saved health with role and explicit reading a
       },
     ]),
   );
-  render(<Equipment profile="X" activation="a" connected  />);
+  render(<Equipment profile="X" activation="a" connected />);
   const row = await screen.findByRole('row', { name: /Router X/ });
   expect(within(row).getByText('Concentrador')).toBeInTheDocument();
   expect(within(row).getByText('37 %')).toBeInTheDocument();
@@ -1849,9 +1739,7 @@ it.each(['cpe', 'ap', 'concentrator'])(
         device: { ...target, fingerprint: 'SHA256:fixture', revision: 2 },
       },
     });
-    render(
-      <Equipment profile="X" activation="a" connected  />,
-    );
+    render(<Equipment profile="X" activation="a" connected />);
     await openDeviceSheet('Router X');
     fireEvent.click(
       screen.getByRole('button', { name: 'Verificar identidade' }),

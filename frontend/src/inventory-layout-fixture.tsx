@@ -127,9 +127,7 @@ export function prepareBase5Scene(visualScene: string, doc: Document) {
           )
         : step === 'SW-NORTE'
           ? doc.querySelector<HTMLElement>('[data-device-id="SW-NORTE"]')
-          : doc.querySelector<HTMLInputElement>(
-              `input[aria-label="${step}"]`,
-            );
+          : doc.querySelector<HTMLInputElement>(`input[aria-label="${step}"]`);
     if (!target) return;
     steps.shift();
     target.click();

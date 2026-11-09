@@ -23,10 +23,11 @@ export function EquipmentCredentials({
   const [use, setUse] = useState('');
   const usage = useCredentialUsage(profile, activation);
   const needle = search.toLocaleLowerCase();
-  const rows = s.credentials.filter((c) =>
-    `${c.alias} ${c.user}`.toLocaleLowerCase().includes(needle) &&
-    (!role || s.credentialDefaults[role] === c.id) &&
-    (!use || (use === 'used' ? c.links > 0 : c.links === 0)),
+  const rows = s.credentials.filter(
+    (c) =>
+      `${c.alias} ${c.user}`.toLocaleLowerCase().includes(needle) &&
+      (!role || s.credentialDefaults[role] === c.id) &&
+      (!use || (use === 'used' ? c.links > 0 : c.links === 0)),
   );
   return (
     <>
@@ -38,15 +39,36 @@ export function EquipmentCredentials({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Select aria-label="Padrão em" value={role} onChange={(e) => setRole(e.target.value)}>
+        <Select
+          aria-label="Padrão em"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+        >
           <option value="">Padrão em: todos</option>
-          <option value={RadioRoles.ap}>AP</option><option value={RadioRoles.cpe}>CPE</option>
+          <option value={RadioRoles.ap}>AP</option>
+          <option value={RadioRoles.cpe}>CPE</option>
           <option value={RadioRoles.ptp}>PTP</option>
         </Select>
-        <Select aria-label="Uso" value={use} onChange={(e) => setUse(e.target.value)}>
-          <option value="">Uso: todas</option><option value="used">Em uso</option><option value="unused">Sem uso</option>
+        <Select
+          aria-label="Uso"
+          value={use}
+          onChange={(e) => setUse(e.target.value)}
+        >
+          <option value="">Uso: todas</option>
+          <option value="used">Em uso</option>
+          <option value="unused">Sem uso</option>
         </Select>
-        {(search || role || use) && <Button onClick={() => { setSearch(''); setRole(''); setUse(''); }}>Limpar filtros</Button>}
+        {(search || role || use) && (
+          <Button
+            onClick={() => {
+              setSearch('');
+              setRole('');
+              setUse('');
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
         <span className="grow" />
         <Button
           kind="primary"

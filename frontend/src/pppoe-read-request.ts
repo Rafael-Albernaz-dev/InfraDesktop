@@ -20,7 +20,8 @@ export function prepareRead(c: ReadContext, mode: string, preserve: boolean) {
   l.lastSample = '';
   if (!preserve) {
     l.history = undefined;
-    l.retries = 0; l.terminalStopped = false;
+    l.retries = 0;
+    l.terminalStopped = false;
   }
   if (mode === 'traffic') l.window = undefined;
   l.operatorStopped = false;

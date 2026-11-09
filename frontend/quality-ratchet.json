@@ -3,15 +3,15 @@
     "max-lines-per-function": 198
   },
   "src/App.tsx": {
-    "max-lines-per-function": 107
+    "max-lines-per-function": 127
   },
   "src/access-fields.tsx": {
-    "max-lines-per-function": 78,
+    "max-lines-per-function": 101,
     "complexity": 17,
     "no-nested-ternary": 2
   },
   "src/access-screen.tsx": {
-    "max-lines-per-function": 70,
+    "max-lines-per-function": 74,
     "complexity": 16,
     "no-nested-ternary": 6
   },
@@ -26,7 +26,7 @@
     "max-lines-per-function": 98
   },
   "src/credential-form-dialog.tsx": {
-    "max-lines-per-function": 73,
+    "max-lines-per-function": 103,
     "no-nested-ternary": 2
   },
   "src/credential-usage-reader.tsx": {
@@ -69,7 +69,7 @@
     "max-lines-per-function": 77
   },
   "src/equipment-credentials.tsx": {
-    "max-lines-per-function": 112
+    "max-lines-per-function": 134
   },
   "src/equipment-detail.tsx": {
     "max-lines-per-function": 88,
@@ -112,7 +112,7 @@
     "max-lines-per-function": 94
   },
   "src/equipment-state.tsx": {
-    "max-lines-per-function": 89
+    "max-lines-per-function": 90
   },
   "src/equipment-summary-blocks.tsx": {
     "max-lines-per-function": 64
@@ -129,7 +129,7 @@
     "max-lines": 1933
   },
   "src/equipment.tsx": {
-    "max-lines-per-function": 83,
+    "max-lines-per-function": 92,
     "no-nested-ternary": 1,
     "complexity": 18
   },
@@ -198,7 +198,7 @@
     "complexity": 20
   },
   "src/pppoe-log-evidence.test.tsx": {
-    "max-lines": 508
+    "max-lines": 551
   },
   "src/pppoe-mount-generation.test.tsx": {
     "no-nested-ternary": 1
@@ -214,7 +214,7 @@
   },
   "src/pppoe-reference-lifecycle.test.tsx": {
     "max-params": 6,
-    "max-lines": 566
+    "max-lines": 568
   },
   "src/pppoe-session-detail.tsx": {
     "max-lines-per-function": 75
@@ -227,14 +227,14 @@
     "complexity": 20
   },
   "src/pppoe.test.tsx": {
-    "max-lines": 544
+    "max-lines": 548
   },
   "src/pppoe.tsx": {
     "max-lines-per-function": 62
   },
   "src/presentation.ts": {
     "max-params": 7,
-    "max-lines": 629
+    "max-lines": 659
   },
   "src/protected-dialog.tsx": {
     "max-lines-per-function": 72
@@ -271,10 +271,10 @@
   },
   "src/session-route-navigation.test.tsx": {
     "max-params": 6,
-    "max-lines": 548
+    "max-lines": 550
   },
   "src/session-traffic.tsx": {
-    "max-lines-per-function": 90
+    "max-lines-per-function": 96
   },
   "src/settings-password.tsx": {
     "max-lines-per-function": 76
@@ -299,16 +299,16 @@
     "complexity": 27
   },
   "src/use-navigation-history.tsx": {
-    "max-lines-per-function": 82
+    "max-lines-per-function": 83
   },
   "src/use-refresh-on-open.tsx": {
     "complexity": 17
   },
   "visual/layout-fixture.tsx": {
     "no-nested-ternary": 2,
-    "max-lines-per-function": 291,
+    "max-lines-per-function": 340,
     "max-params": 6,
-    "max-lines": 582
+    "max-lines": 657
   },
   "visual/layout.tsx": {
     "max-lines-per-function": 172,

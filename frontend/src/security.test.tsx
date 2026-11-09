@@ -74,7 +74,9 @@ it('works without company, retains pending issuance and one-time code until ack,
   submit();
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   fireEvent.click(screen.getByRole('link', { name: /Selecionar empresa/ }));
-  expect(screen.getByRole('dialog', { name: 'Gerar novo código' })).toBeInTheDocument();
+  expect(
+    screen.getByRole('dialog', { name: 'Gerar novo código' }),
+  ).toBeInTheDocument();
   await act(async () => complete({ ...state, recovery: 'a'.repeat(64) }));
   expect(
     within(screen.getByRole('dialog')).queryByLabelText('Senha atual'),

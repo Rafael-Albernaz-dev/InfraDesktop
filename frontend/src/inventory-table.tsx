@@ -34,7 +34,9 @@ export function InventoryTable({
       return next;
     });
   return (
-    <div className={`inventory-scroll ${visible.length === 11 ? 'inventory-standard' : ''}`}>
+    <div
+      className={`inventory-scroll ${visible.length === 11 ? 'inventory-standard' : ''}`}
+    >
       <DataTable aria-label="Lista de equipamentos">
         <thead>
           <tr>
@@ -47,7 +49,9 @@ export function InventoryTable({
             </th>
             <th>Equipamento</th>
             {definitions.map((column) => (
-            <th key={column.id} data-column={column.id}>{column.label}</th>
+              <th key={column.id} data-column={column.id}>
+                {column.label}
+              </th>
             ))}
           </tr>
         </thead>
@@ -102,6 +106,14 @@ export function InventoryTable({
 }
 
 function emptyInventoryMessage(p: InventoryState) {
- const filtered = p.search || p.inactive || p.roleFilter || p.blockFilter || p.modelFilter || p.stateFilter;
- return filtered ? 'Nenhum equipamento encontrado' : 'Nenhum equipamento cadastrado';
+  const filtered =
+    p.search ||
+    p.inactive ||
+    p.roleFilter ||
+    p.blockFilter ||
+    p.modelFilter ||
+    p.stateFilter;
+  return filtered
+    ? 'Nenhum equipamento encontrado'
+    : 'Nenhum equipamento cadastrado';
 }

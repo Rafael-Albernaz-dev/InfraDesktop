@@ -286,12 +286,8 @@ it('updates live metrics and credential faults on the existing poll without a cl
     await vi.advanceTimersByTimeAsync(5000);
   });
   expect(within(row).getByText('99 %')).toBeInTheDocument();
-  expect(
-    within(row).getByRole('cell', { name: '42' }),
-  ).toBeInTheDocument();
-  expect(
-    within(row).getByRole('cell', { name: '8' }),
-  ).toBeInTheDocument();
+  expect(within(row).getByRole('cell', { name: '42' })).toBeInTheDocument();
+  expect(within(row).getByRole('cell', { name: '8' })).toBeInTheDocument();
   vi.mocked(equipmentAPI.list).mockResolvedValue({
     ...saved,
     data: {

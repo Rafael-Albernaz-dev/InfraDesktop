@@ -1,7 +1,7 @@
-import { useCallback,useEffect,useRef,useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPerformAction } from './app-perform';
 import { UnauthenticatedShell } from './app-session';
-import { useAccessSession,useBrandState } from './access-session';
+import { useAccessSession, useBrandState } from './access-session';
 import { AuthenticatedShell } from './authenticated-shell';
 import type { Page } from './desktop';
 import { normalizeRoute } from './desktop-model';
@@ -19,23 +19,29 @@ export default function App() {
   const [page, setPage] = useState<Page>('companies');
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const [sessionTarget, setSessionTarget] = useState<{
-    scope: string; target: SessionRouteTarget;
+    scope: string;
+    target: SessionRouteTarget;
   }>();
   const [returnOrigin, setReturnOrigin] = useState('');
   const navigationGuardRef = useRef<NavigationAttempt | undefined>(undefined);
-  const registerNavigationGuard = useCallback((attempt?: NavigationAttempt) => { navigationGuardRef.current = attempt; }, []);
-  const attemptNavigation = useCallback((action: () => void) => {
-    if (navigationGuardRef.current) navigationGuardRef.current(action);
-    else if (!root?.querySelector('[role="dialog"]')) action();
-  }, [root]);
+  const registerNavigationGuard = useCallback((attempt?: NavigationAttempt) => {
+    navigationGuardRef.current = attempt;
+  }, []);
+  const attemptNavigation = useCallback(
+    (action: () => void) => {
+      if (navigationGuardRef.current) navigationGuardRef.current(action);
+      else if (!root?.querySelector('[role="dialog"]')) action();
+    },
+    [root],
+  );
   const route = normalizeRoute(page);
   const session = useAccessSession(setPage, setTheme);
   const inv = useInventoryNavigation(
     session.view.profile_id,
     session.view.activation_id,
   );
-  const selectedSession = sessionTarget?.scope === inv.contextPair
-    ? sessionTarget.target : undefined;
+  const selectedSession =
+    sessionTarget?.scope === inv.contextPair ? sessionTarget.target : undefined;
   const sessionActive = route === 'sessao' && !!selectedSession;
   const navigationBack = useNavigationHistory({
     root,
@@ -55,11 +61,19 @@ export default function App() {
     blocked:
       session.busy || session.securityLockedRef.current || inv.inventoryBlocked,
     restore: (step) => {
-      setReturnOrigin(sessionActive && selectedSession?.originDevice === step.device ? step.device : '');
+      setReturnOrigin(
+        sessionActive && selectedSession?.originDevice === step.device
+          ? step.device
+          : '',
+      );
       if (inv.inventoryDetail && step.device !== inv.inventoryTarget.id)
         inv.detailBack.current?.();
       inv.selectInventory(step.device);
-      setSessionTarget(step.session ? { scope: inv.contextPair, target: step.session } : undefined);
+      setSessionTarget(
+        step.session
+          ? { scope: inv.contextPair, target: step.session }
+          : undefined,
+      );
       setPage(step.route);
     },
   });
@@ -67,7 +81,11 @@ export default function App() {
     const win = root?.ownerDocument.defaultView;
     if (!win) return;
     if (sessionActive) {
-      win.history.replaceState(null, '', '#sessao/' + encodeURIComponent(selectedSession.login));
+      win.history.replaceState(
+        null,
+        '',
+        '#sessao/' + encodeURIComponent(selectedSession.login),
+      );
     } else if (win.location.hash.startsWith('#sessao/')) {
       win.history.replaceState(null, '', '#equipamentos');
     }
@@ -91,33 +109,35 @@ export default function App() {
     );
   }
   return (
-    <SessionRoute.Provider value={{
-      active: sessionActive,
-      target: sessionActive ? selectedSession : undefined,
-      returnOrigin,
-      consumeReturnOrigin: () => setReturnOrigin(''),
-      open: (target) => {
-        setReturnOrigin('');
-        setSessionTarget({ scope: inv.contextPair, target });
-        setPage('sessao');
-      },
-      back: navigationBack,
-      leave: () => setPage('equipment'),
-    }}>
-    <AuthenticatedShell
-      registerNavigationGuard={registerNavigationGuard}
-      attemptNavigation={attemptNavigation}
-      root={root}
-      setRoot={setRoot}
-      theme={theme}
-      route={route}
-      setPage={setPage}
-      session={session}
-      inv={inv}
-      brand={brand}
-      operations={operations}
-      perform={perform}
-    />
+    <SessionRoute.Provider
+      value={{
+        active: sessionActive,
+        target: sessionActive ? selectedSession : undefined,
+        returnOrigin,
+        consumeReturnOrigin: () => setReturnOrigin(''),
+        open: (target) => {
+          setReturnOrigin('');
+          setSessionTarget({ scope: inv.contextPair, target });
+          setPage('sessao');
+        },
+        back: navigationBack,
+        leave: () => setPage('equipment'),
+      }}
+    >
+      <AuthenticatedShell
+        registerNavigationGuard={registerNavigationGuard}
+        attemptNavigation={attemptNavigation}
+        root={root}
+        setRoot={setRoot}
+        theme={theme}
+        route={route}
+        setPage={setPage}
+        session={session}
+        inv={inv}
+        brand={brand}
+        operations={operations}
+        perform={perform}
+      />
     </SessionRoute.Provider>
   );
 }

@@ -1,4 +1,6 @@
 import { roleGroups } from './equipment-role-options';
 
-const labels: Record<string, string> = Object.fromEntries(roleGroups.flatMap(([, roles]) => roles));
+const labels: Record<string, string> = Object.fromEntries(
+  roleGroups.flatMap(([, roles]) => roles),
+);
 export const equipmentType = (role = 'other') => labels[role] || labels.other;

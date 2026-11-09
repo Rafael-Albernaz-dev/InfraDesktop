@@ -45,14 +45,7 @@ export function CredentialFormFields(props: {
   attrs: ReturnType<typeof useFieldErrors>['attrs'];
   message: ReturnType<typeof useFieldErrors>['message'];
 }) {
-  const {
-    draft,
-    setDraft,
-    credential,
-    disabled,
-    attrs,
-    message,
-  } = props;
+  const { draft, setDraft, credential, disabled, attrs, message } = props;
   return (
     <>
       <label className="field">
@@ -97,7 +90,9 @@ export function CredentialFormFields(props: {
         />
         {message('secret')}
       </label>
-      {credential && <p className="muted">Deixe vazio para manter a senha atual.</p>}
+      {credential && (
+        <p className="muted">Deixe vazio para manter a senha atual.</p>
+      )}
     </>
   );
 }

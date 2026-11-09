@@ -55,7 +55,6 @@ it('requires discard before switching a dirty credential and cancel preserves th
       profile="credential-switch"
       activation="a"
       connected
-
     />,
   );
   fireEvent.click(

@@ -256,7 +256,9 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
     target: { value: 'credential' },
   });
   fireEvent.click(form.getByRole('button', { name: /^Salvar$/ }));
-  fireEvent.click(await screen.findByRole('cell', { name: 'Concentrador sintético' }));
+  fireEvent.click(
+    await screen.findByRole('cell', { name: 'Concentrador sintético' }),
+  );
   expect(bindings.InspectTrust).not.toHaveBeenCalled();
   fireEvent.click(await screen.findByRole('button', { name: 'Conectar' }));
   const trust = within(

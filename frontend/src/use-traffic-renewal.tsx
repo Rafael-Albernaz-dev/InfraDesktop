@@ -16,8 +16,11 @@ export function scheduleTraffic(c: ReadContext, delay: number) {
 export async function trafficFailed(c: ReadContext, code: string) {
   const l = c.life.current,
     g = l.generation;
-  if (!['BUSY', 'DEADLINE_EXCEEDED', 'SERVICE_UNAVAILABLE'].includes(code) ||
-      l.retries >= retryDelays.length) l.terminalStopped = true;
+  if (
+    !['BUSY', 'DEADLINE_EXCEEDED', 'SERVICE_UNAVAILABLE'].includes(code) ||
+    l.retries >= retryDelays.length
+  )
+    l.terminalStopped = true;
   try {
     if (!(await releaseRead(c))) return;
   } catch {
@@ -37,8 +40,7 @@ async function pauseTraffic(c: ReadContext) {
   try {
     if (await releaseRead(c)) {
       c.send({ type: 'pausado' });
-      if (canResumeTraffic(c))
-        void c.start('traffic', true);
+      if (canResumeTraffic(c)) void c.start('traffic', true);
     }
   } catch {
     c.send({

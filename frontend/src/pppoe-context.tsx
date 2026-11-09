@@ -1,19 +1,16 @@
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import { readingAge } from './equipment-reading-format';
 import {
-exactRate,
-formatDate,
-formatDuration,
-formatRate,
+  exactRate,
+  formatDate,
+  formatDuration,
+  formatRate,
 } from './network-format';
 import {
-ContextCountsPolicyInputs,
-ContextGroupsList,
+  ContextCountsPolicyInputs,
+  ContextGroupsList,
 } from './pppoe-context-table';
-import type {
-PPGroup,
-PPRow
-} from './presentation';
+import type { PPGroup, PPRow } from './presentation';
 import { pppoeAPI as api } from './presentation';
 import { Button } from './ui/Button';
 import { DataBlock } from './ui/DataBlock';
