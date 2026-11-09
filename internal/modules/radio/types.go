@@ -5,7 +5,6 @@ import (
 	"context"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/inventory"
-	"strings"
 	"time"
 )
 
@@ -174,9 +173,7 @@ func (s *Service) prune() {
 	s.PruneLocked()
 }
 
-func validID(s string) bool          { return inventory.ValidID(s) }
-func validFingerprint(s string) bool { return strings.HasPrefix(s, "SHA256:") && ValidText(s, 128) }
-func ValidateDevice(d Device) Code   { return inventory.ValidateDevice(d) }
+func ValidateDevice(d Device) Code { return inventory.ValidateDevice(d) }
 func ValidText(s string, max int) bool {
 	return inventory.ValidText(s, max)
 }

@@ -137,5 +137,4 @@ func assertCommandTimingAbort(t *testing.T, s *Service, side string, view RadioV
 		t.Fatal("expected two complete violating ticks", side, view.Job, remote.calls.Load())
 	}
 	s.WG.Wait()
-	return
 }

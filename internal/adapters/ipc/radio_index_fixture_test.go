@@ -232,10 +232,7 @@ func (s *radioIndexIPCFixture) verifyDefaultRace() {
 }
 func (s *radioIndexIPCFixture) resetDefaultCredential() {
 	t, j, ctx, credential, obs, row, call := s.t, s.j, context.Background(), s.credential, s.observation, s.row, s.call
-	var rr Response
-	current := s.current
-
-	rr = j.client.Call(ctx,
+	rr := j.client.Call(ctx,
 		Request{Op: "credential.default-set",
 			ExpectedProfile:    j.client.profile,
 			ExpectedActivation: j.client.activation,
@@ -246,7 +243,7 @@ func (s *radioIndexIPCFixture) resetDefaultCredential() {
 	if rr.Code != foundation.OK {
 		t.Fatal(rr.Code)
 	}
-	current = call("radio.link-current", equipment.RadioInput{DeviceID: j.device, ObservationID: obs.ID, RowID: row.ID})
+	current := call("radio.link-current", equipment.RadioInput{DeviceID: j.device, ObservationID: obs.ID, RowID: row.ID})
 
 	s.current = current
 }

@@ -83,7 +83,7 @@ func TestDeviceBlockIsValidatedPersistedAndIsolated(t *testing.T) {
 	if got = equipmentCall(t, s, get, equipment.OK).Device; got == nil || readSyntheticBlock(t, got) != "Área Sul" {
 		t.Fatal("updated block missing")
 	}
-	got = verifyBlockBoundaries(t, s, update, got)
+	verifyBlockBoundaries(t, s, update, got)
 	old := get
 	j.selectCompany(companyY, access.OK)
 	equipmentCall(t, s, old, equipment.Changed)
@@ -99,7 +99,7 @@ func TestDeviceBlockIsValidatedPersistedAndIsolated(t *testing.T) {
 		t.Fatal("company change lost block")
 	}
 }
-func verifyBlockBoundaries(t *testing.T, s *equipment.Service, update equipment.Command, got *equipment.Device) *equipment.Device {
+func verifyBlockBoundaries(t *testing.T, s *equipment.Service, update equipment.Command, got *equipment.Device) {
 	t.Helper()
 	for _, valid := range []string{"", strings.Repeat("á", 80)} {
 		candidate := update
@@ -120,5 +120,4 @@ func verifyBlockBoundaries(t *testing.T, s *equipment.Service, update equipment.
 			t.Fatal("invalid block accepted")
 		}
 	}
-	return got
 }
