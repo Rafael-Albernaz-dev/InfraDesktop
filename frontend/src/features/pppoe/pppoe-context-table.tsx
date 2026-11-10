@@ -1,4 +1,4 @@
-import type { PPGroup } from '../../platform/wails/presentation-pppoe-types';
+import type { PPGroup } from '../../platform/wails/pppoe-types';
 import { formatMetric } from '../equipment/network-format';
 import { DataTable } from '../../shared/ui/DataTable';
 export function ContextCountsPolicyInputs(p: {

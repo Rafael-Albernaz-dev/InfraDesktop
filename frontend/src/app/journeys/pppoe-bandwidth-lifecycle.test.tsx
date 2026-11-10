@@ -26,6 +26,7 @@ import type {
   PDRow,
   PPResult,
 } from '../../platform/wails/presentation';
+import { deferred } from '../../shared/testing/deferred';
 vi.mock('../../platform/wails/presentation', () => ({
   deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
@@ -86,15 +87,6 @@ const rows: PDRow[] = [
     accept_untagged: true,
   },
 ];
-function deferred() {
-  let resolve!: (value: PPResult) => void;
-  let reject!: (error: Error) => void;
-  const promise = new Promise<PPResult>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return { promise, resolve, reject };
-}
 function panel(scope: 'catalog' | 'radius' = 'catalog') {
   return render(
     <PPPoEDiagnostics
@@ -216,7 +208,7 @@ it('L06D-S2: one bandwidth action, explicit direction, unknown rate and legitima
   expect(readAPI.start).toHaveBeenCalledTimes(1);
 });
 it('L06D-S2: leaving before start response cancels the late job', async () => {
-  const start = deferred();
+  const start = deferred<PPResult>();
   vi.mocked(readAPI.start).mockReturnValue(start.promise);
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
   const view = render(
@@ -248,7 +240,7 @@ it('L06D-S2: leaving before start response cancels the late job', async () => {
   expect(readAPI.status).not.toHaveBeenCalled();
 });
 it('L06D-H-D05: revision change discards pending start and restores the action', async () => {
-  const start = deferred();
+  const start = deferred<PPResult>();
   vi.mocked(readAPI.start).mockReturnValue(start.promise);
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
   const view = render(
@@ -352,7 +344,7 @@ it('L06D-S3: live is explicit, calculated uptime is labelled and exit cancels it
   );
 });
 it('L06D-S3: exit during uncertain start sends the exact operation cancellation', async () => {
-  const start = deferred();
+  const start = deferred<PPResult>();
   vi.mocked(readAPI.start).mockReturnValue(start.promise);
   vi.mocked(readAPI.cancelOperation).mockResolvedValue(response());
   vi.mocked(readAPI.cancel).mockResolvedValue(response());

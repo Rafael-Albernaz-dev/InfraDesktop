@@ -16,6 +16,7 @@ import {
 import type { PPResult, PPRow } from '../../platform/wails/presentation';
 
 import type { Device } from '../../features/equipment/equipment-api';
+import { deferred } from '../../shared/testing/deferred';
 vi.mock('../../platform/wails/presentation', () => ({
   deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
@@ -96,15 +97,6 @@ beforeEach(() => {
   );
   vi.mocked(api.list).mockResolvedValue(result({ rows, total: 2 }));
 });
-function deferredPP() {
-  let resolve!: (r: PPResult) => void;
-  let reject!: (reason: Error) => void;
-  const promise = new Promise<PPResult>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return { promise, resolve, reject };
-}
 function showPP() {
   return render(
     <PPPoE
@@ -206,7 +198,7 @@ it('UX-R01: references can recover an initial reading failure without remote col
 it.each(['success', 'error', 'reject'] as const)(
   'A-H01: late detail %s cannot restore a filtered intent or steal focus',
   async (kind) => {
-    const old = deferredPP();
+    const old = deferred<PPResult>();
     vi.mocked(api.detail).mockReturnValueOnce(old.promise);
     showPP();
     const trigger = await screen.findByRole('button', {
@@ -239,7 +231,7 @@ it.each(['success', 'error', 'reject'] as const)(
   },
 );
 it('A-H01: returning and changing the filter invalidates a pending detail, while a fresh detail still works', async () => {
-  const old = deferredPP();
+  const old = deferred<PPResult>();
   vi.mocked(api.detail)
     .mockResolvedValueOnce(result({ rows: [rows[0]], total: 1 }))
     .mockReturnValueOnce(old.promise)
@@ -269,7 +261,7 @@ it('A-H01: returning and changing the filter invalidates a pending detail, while
   ).toHaveTextContent('row-2');
 });
 it('A-H01: changing comparison reference rejects a late pair before requesting its second leg', async () => {
-  const old = deferredPP();
+  const old = deferred<PPResult>();
   vi.mocked(api.references).mockResolvedValue(
     result({
       references: [
@@ -334,7 +326,7 @@ it.each(['none', 'loading', 'reject'] as const)(
     if (phase === 'none') {
       fireEvent.click(screen.getByRole('tab', { name: 'Comparação' }));
     } else {
-      const page = deferredPP();
+      const page = deferred<PPResult>();
       vi.mocked(api.list).mockReturnValueOnce(page.promise);
       fireEvent.change(screen.getByLabelText('Buscar sessões'), {
         target: { value: 'next' },
@@ -373,8 +365,8 @@ it('A-H01: returning to the list and clearing filters keeps focus on search', as
   expect(screen.getByLabelText('Buscar sessões')).toHaveFocus();
 });
 it('A-H01: newer detail wins when two queries resolve in reverse order', async () => {
-  const first = deferredPP(),
-    second = deferredPP();
+  const first = deferred<PPResult>(),
+    second = deferred<PPResult>();
   vi.mocked(api.detail)
     .mockReturnValueOnce(first.promise)
     .mockReturnValueOnce(second.promise);
@@ -396,7 +388,7 @@ it('A-H01: newer detail wins when two queries resolve in reverse order', async (
   ).toHaveTextContent('row-2');
 });
 it('A-H01: filter change keeps a durable pending save and its successful reconciliation', async () => {
-  const saved = deferredPP();
+  const saved = deferred<PPResult>();
   vi.mocked(api.save).mockReturnValueOnce(saved.promise);
   showPP();
   fireEvent.click(
@@ -416,7 +408,7 @@ it('A-H01: filter change keeps a durable pending save and its successful reconci
   expect(api.save).toHaveBeenCalledTimes(1);
 });
 it('A-H01/H02: open pair/reference and pending deletion respect the latest selection and its focus', async () => {
-  const deleted = deferredPP();
+  const deleted = deferred<PPResult>();
   vi.mocked(api.references).mockResolvedValue(
     result({
       references: [

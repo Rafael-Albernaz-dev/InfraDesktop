@@ -4,7 +4,7 @@ import { render, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { PPPoESessionDetail } from '../../features/pppoe/pppoe-session-screen';
 import { pppoeReadAPI, radioAPI } from '../../platform/wails/presentation';
-import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+import type { PPObservation } from '../../platform/wails/pppoe-types';
 import type { Device } from '../../features/equipment/equipment-api';
 vi.mock('../../platform/wails/presentation', async (original) => ({
   ...(await original<typeof import('../../platform/wails/presentation')>()),

@@ -1,4 +1,4 @@
-import type { PPInterval } from '../../platform/wails/presentation-pppoe-types';
+import type { PPInterval } from '../../platform/wails/pppoe-types';
 import { formatDuration } from './network-format';
 
 export function formatPPUptime(value: PPInterval, compact = false): string {

@@ -15,10 +15,7 @@ import { usePPPoEInitialLoad } from './pppoe-initial-load';
 import type { PPPoETab } from './pppoe-view-state';
 import { usePPPoEViewState } from './pppoe-view-state';
 import type { PPResult } from '../../platform/wails/presentation';
-import type {
-  PPQuery,
-  PPReference,
-} from '../../platform/wails/presentation-pppoe-types';
+import type { PPQuery, PPReference } from '../../platform/wails/pppoe-types';
 import { pppoeAPI as api } from '../../platform/wails/presentation';
 export type { PPPoETab } from './pppoe-view-state';
 

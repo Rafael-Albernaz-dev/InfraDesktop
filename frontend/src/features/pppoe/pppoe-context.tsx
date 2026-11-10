@@ -11,7 +11,7 @@ import {
   ContextCountsPolicyInputs,
   ContextGroupsList,
 } from './pppoe-context-table';
-import type { PPGroup } from '../../platform/wails/presentation-pppoe-types';
+import type { PPGroup } from '../../platform/wails/pppoe-types';
 import { pppoeAPI as api } from '../../platform/wails/presentation';
 import { Button } from '../../shared/ui/Button';
 import { DataBlock } from '../../shared/ui/DataBlock';

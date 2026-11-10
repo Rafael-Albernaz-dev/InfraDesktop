@@ -15,7 +15,7 @@ import {
   radioAPI,
 } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
-import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+import type { PPObservation } from '../../platform/wails/pppoe-types';
 
 vi.mock('../../platform/wails/presentation', async (original) => ({
   ...(await original<typeof import('../../platform/wails/presentation')>()),

@@ -1,12 +1,11 @@
 import { hygieneDataState } from '../inventory/hygiene-data-state';
-import { SessionPointsTable } from '../monitoring/monitoring-points';
+import { SessionMonitoringCurve } from '../monitoring/session-curve';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import type { DataState } from '../../shared/ui/DataBlock';
 import { KeyValues } from '../../shared/ui/KeyValues';
 import { readingAge } from '../equipment/equipment-reading-format';
 import { Button } from '../../shared/ui/Button';
 import { DataTable } from '../../shared/ui/DataTable';
-import { Chart } from '../../shared/ui/Chart';
 import { useCallback, useEffect, useState } from 'react';
 import type { Device } from '../equipment/equipment-api';
 import { equipmentMessage } from '../equipment/equipment-api';
@@ -17,65 +16,13 @@ import {
   uptimeTitle,
 } from '../equipment/network-format';
 import { formatPPUptime } from '../equipment/pppoe-format';
-import type {
-  DeviceMonitoringPoint,
-  PPReadResult,
+import {
+  deviceMonitoringAPI as monitoringAPI,
+  type PPReadResult,
 } from '../../platform/wails/presentation';
-import { deviceMonitoringAPI as monitoringAPI } from '../../platform/wails/presentation';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
 export { DeviceOperationalTables } from '../monitoring/device-operational';
 
-function SessionCurve({ points }: { points: DeviceMonitoringPoint[] }) {
-  const ordered = [...points].reverse();
-  const values = ordered.map((p, i) => {
-    const prev = ordered[i - 1];
-    const missingInterval =
-      prev &&
-      Date.parse(p.at) - Date.parse(prev.at) >
-        Math.max(p.resolution, prev.resolution) * 1000;
-    return p.gap || missingInterval ? null : (p.online ?? null);
-  });
-  return (
-    <Chart
-      x={ordered.map((p) => Date.parse(p.at) / 1000)}
-      series={[{ label: 'Sessões online', token: '--chart-down', values }]}
-      format={(value) => (value == null ? '—' : String(Math.round(value)))}
-      formatX={(value) =>
-        new Date(value * 1000).toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      }
-      xSteps={[60, 300, 900, 3600, 10800, 21600, 43200, 86400]}
-      markers={ordered.flatMap((p, i) => (p.drop ? [i] : []))}
-      label="Curva de sessões online observadas"
-    />
-  );
-}
-
-function SessionMonitoringCurve({
-  points,
-}: {
-  points: DeviceMonitoringPoint[];
-}) {
-  const valid = points.filter((p) => !p.gap && p.online !== undefined);
-  const values = valid.map((p) => p.online!);
-  return (
-    <>
-      <SessionCurve points={points} />
-      <p className="muted">
-        Online mínimo / máximo / último:{' '}
-        {values.length ? Math.min(...values) : '—'} /{' '}
-        {values.length ? Math.max(...values) : '—'} / {values[0] ?? '—'} ·
-        lacunas não são zero. Ponto vermelho: queda brusca.
-      </p>
-      <details className="det">
-        <summary>Pontos da curva</summary>
-        <SessionPointsTable points={points} />
-      </details>
-    </>
-  );
-}
 function MonitoringDuplicatesTable({
   rows,
   displayNow,

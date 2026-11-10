@@ -1,6 +1,6 @@
 import type { PPRow } from '../../platform/wails/presentation';
 import type { Device } from '../equipment/equipment-api';
-import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+import type { PPObservation } from '../../platform/wails/pppoe-types';
 export type PPPoESessionDetailProps = {
   selected: PPRow;
   current: PPObservation;

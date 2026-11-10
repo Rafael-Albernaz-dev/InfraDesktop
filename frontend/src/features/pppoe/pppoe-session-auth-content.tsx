@@ -7,7 +7,7 @@ import {
 } from '../equipment/network-format';
 import { OfflineEvidence, SessionContext } from './pppoe-context';
 import { formatPPUptime } from '../equipment/pppoe-format';
-import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+import type { PPObservation } from '../../platform/wails/pppoe-types';
 import { SessionCPE } from './session-cpe';
 import { KeyValues } from '../../shared/ui/KeyValues';
 

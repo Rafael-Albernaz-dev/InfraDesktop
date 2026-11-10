@@ -10,7 +10,7 @@ import type {
   PPObservation,
   PPQuery,
   PPReference,
-} from '../../platform/wails/presentation-pppoe-types';
+} from '../../platform/wails/pppoe-types';
 import { pppoeAPI as api } from '../../platform/wails/presentation';
 import { RadioCodes } from '../equipment/radio-contract';
 

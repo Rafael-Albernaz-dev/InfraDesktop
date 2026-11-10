@@ -51,8 +51,7 @@
   "src/features/pppoe/device-monitoring.tsx": {
     "max-lines-per-function": 105,
     "no-nested-ternary": 1,
-    "quality/state-count": 9,
-    "max-lines": 526
+    "quality/state-count": 9
   },
   "src/features/monitoring/device-operational.tsx": {
     "max-lines-per-function": 70,
@@ -134,7 +133,7 @@
     "complexity": 18
   },
   "src/app/focal.test.tsx": {
-    "max-lines": 547
+    "max-lines": 539
   },
   "src/features/inventory/inventory-bindings.tsx": {
     "max-params": 6
@@ -189,7 +188,7 @@
     "no-nested-ternary": 4
   },
   "src/app/journeys/pppoe-diagnostics.test.tsx": {
-    "max-lines": 560
+    "max-lines": 552
   },
   "src/features/pppoe/pppoe-export.ts": {
     "no-nested-ternary": 1
@@ -198,7 +197,7 @@
     "complexity": 20
   },
   "src/app/journeys/pppoe-log-evidence.test.tsx": {
-    "max-lines": 558
+    "max-lines": 548
   },
   "src/features/pppoe/pppoe-mount-generation.test.tsx": {
     "no-nested-ternary": 1
@@ -227,14 +226,10 @@
     "complexity": 20
   },
   "src/app/journeys/pppoe.test.tsx": {
-    "max-lines": 548
+    "max-lines": 540
   },
   "src/features/pppoe/pppoe.tsx": {
     "max-lines-per-function": 62
-  },
-  "src/platform/wails/presentation.ts": {
-    "max-params": 7,
-    "max-lines": 618
   },
   "src/features/access/protected-dialog.tsx": {
     "max-lines-per-function": 72
@@ -293,10 +288,6 @@
   },
   "src/shared/ui/Tabs.tsx": {
     "no-nested-ternary": 3
-  },
-  "src/shared/ui/icons.tsx": {
-    "max-lines-per-function": 361,
-    "complexity": 27
   },
   "src/app/use-navigation-history.tsx": {
     "max-lines-per-function": 83

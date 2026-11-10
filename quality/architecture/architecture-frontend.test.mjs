@@ -100,6 +100,20 @@ for (const [name, files] of [
         "import {Status} from '../../../wailsjs/go/presentation/App'",
     },
   ],
+  [
+    "binding below platform/wails",
+    {
+      "platform/wails/nested/radio.ts":
+        "import {Status} from '../../../wailsjs/go/presentation/App'",
+    },
+  ],
+  [
+    "binding inside a feature",
+    {
+      "features/radio/radio-api.ts":
+        "import {Status} from '../../../wailsjs/go/presentation/App'",
+    },
+  ],
   ["nonliteral dynamic import", { "view.ts": "import(target)" }],
   [
     "CSS query loader",
@@ -160,6 +174,14 @@ for (const name of [
     assert.match(r.output, /unapproved Wails binding/);
   });
 }
+test("accepts bindings in any capability file directly inside platform/wails", () => {
+  const r = runGuard({
+    "platform/wails/radio.ts":
+      "import {GetRadio} from '../../../wailsjs/go/presentation/App'; import type {equipment} from '../../../wailsjs/go/models'; export const radio = GetRadio;",
+    "platform/wails/presentation.ts": "export * from './radio';",
+  });
+  assert.equal(r.status, 0, r.output);
+});
 test("accepts explicit BF01 bindings", () => {
   const r = runGuard({
     "platform/wails/presentation.ts":
@@ -255,7 +277,7 @@ for (const target of ["features/radio", "app", "platform/wails"]) {
   });
 }
 
-test("rejects generated bindings outside the canonical platform adapter", () => {
+test("rejects generated bindings outside the files directly inside platform/wails", () => {
   const spec = "../../../wailsjs/go/presentation/App";
   const code = `import {Status} from "${spec}";`;
   const good = runGuard({ "platform/wails/presentation.ts": code });
@@ -263,7 +285,8 @@ test("rejects generated bindings outside the canonical platform adapter", () => 
   for (const name of [
     "features/access/view.ts",
     "shared/ui/view.ts",
-    "platform/wails/other.ts",
+    "platform/wails/nested/other.ts",
+    "app/view.ts",
   ]) {
     const bad = runGuard({ [name]: code });
     assert.equal(bad.status, 1, bad.output);

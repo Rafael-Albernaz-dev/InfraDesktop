@@ -1,4 +1,4 @@
-import type { PPRate } from '../../platform/wails/presentation-pppoe-types';
+import type { PPRate } from '../../platform/wails/pppoe-types';
 import {
   exactRate,
   formatAtScale,

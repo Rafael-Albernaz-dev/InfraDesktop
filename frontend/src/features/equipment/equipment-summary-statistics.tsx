@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Device } from './equipment-api';
-import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+import type { PPObservation } from '../../platform/wails/pppoe-types';
 import { pppoeAPI } from '../../platform/wails/presentation';
 import { useEquipmentSnapshot } from './equipment-snapshot';
 import { readingAge } from './equipment-reading-format';

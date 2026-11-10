@@ -23,6 +23,7 @@ import type {
   PDRow,
   PPResult,
 } from '../../platform/wails/presentation';
+import { deferred } from '../../shared/testing/deferred';
 vi.mock('../../platform/wails/presentation', () => ({
   deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
@@ -83,15 +84,6 @@ const rows: PDRow[] = [
     accept_untagged: true,
   },
 ];
-function deferred() {
-  let resolve!: (value: PPResult) => void;
-  let reject!: (error: Error) => void;
-  const promise = new Promise<PPResult>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return { promise, resolve, reject };
-}
 function panel(scope: 'catalog' | 'radius' = 'catalog') {
   return render(
     <PPPoEDiagnostics
@@ -129,7 +121,7 @@ it('opens and pages persisted catalog without remote refresh; rejected page has 
   expect(api.catalog).not.toHaveBeenCalled();
   expect(api.radius).not.toHaveBeenCalled();
   expect(api.ping).not.toHaveBeenCalled();
-  const page = deferred();
+  const page = deferred<PPResult>();
   vi.mocked(api.list).mockReturnValueOnce(page.promise);
   fireEvent.click(
     screen.getByRole('button', { name: 'Próxima página do diagnóstico' }),
@@ -233,7 +225,7 @@ it('recovers status explicitly without replaying the network action', async () =
   expect(api.radius).toHaveBeenCalledTimes(1);
 });
 it('a late catalog response cannot populate a newer RADIUS surface', async () => {
-  const old = deferred();
+  const old = deferred<PPResult>();
   vi.mocked(api.current).mockReturnValueOnce(old.promise);
   const view = panel();
   vi.mocked(api.list).mockResolvedValue(
@@ -265,7 +257,7 @@ it('a late catalog response cannot populate a newer RADIUS surface', async () =>
 it('L07 R2: a completed collection waits for new metadata before paging; the retired reading cannot report replacement', async () => {
   panel();
   await screen.findByRole('cell', { name: 'Serviço de teste' });
-  const nextCurrent = deferred();
+  const nextCurrent = deferred<PPResult>();
   const fresh = { ...meta(), diagnostic_id: 'fresh-catalog' };
   vi.mocked(api.current).mockReturnValueOnce(nextCurrent.promise);
   vi.mocked(api.catalog).mockResolvedValue(

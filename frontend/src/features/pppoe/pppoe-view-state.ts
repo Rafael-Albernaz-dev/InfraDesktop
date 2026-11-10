@@ -9,7 +9,7 @@ import type {
 import type {
   PPObservation,
   PPReference,
-} from '../../platform/wails/presentation-pppoe-types';
+} from '../../platform/wails/pppoe-types';
 export type PPPoETab =
   'sessions' | 'compare' | 'references' | 'catalog' | 'radius' | 'monitoring';
 function usePPPoEPageStatus() {

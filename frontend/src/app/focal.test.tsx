@@ -13,6 +13,7 @@ import {
   equipmentAPI,
   type Result,
 } from '../platform/wails/presentation';
+import { deferred } from '../shared/testing/deferred';
 vi.mock('../platform/wails/presentation', () => ({
   equipmentAPI: { list: vi.fn() },
   access: {
@@ -180,15 +181,6 @@ it('does not resurrect canceled branding from an old FileReader', async () => {
     'old reader must not restore canceled draft',
   ).toHaveValue('Original');
 });
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  let reject!: (reason: Error) => void;
-  const promise = new Promise<T>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return { promise, resolve, reject };
-}
 async function accessForm(mode: 'register' | 'recover') {
   fireEvent.click(
     screen.getByRole('button', {

@@ -22,6 +22,7 @@ import type {
   PDRow,
   PPResult,
 } from '../../platform/wails/presentation';
+import { deferred } from '../../shared/testing/deferred';
 vi.mock('../../platform/wails/presentation', () => ({
   deviceMonitoringAPI: { current: vi.fn() },
   pppoeReadAPI: {
@@ -82,15 +83,6 @@ const rows: PDRow[] = [
     accept_untagged: true,
   },
 ];
-function deferred() {
-  let resolve!: (value: PPResult) => void;
-  let reject!: (error: Error) => void;
-  const promise = new Promise<PPResult>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return { promise, resolve, reject };
-}
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -384,7 +376,7 @@ it('L06T: automatic traffic starts once with visible IDs; stop preserves graph a
 });
 it('L06T: uncertain start is cancelled on context change and BUSY permits explicit retry after its automatic limit', async () => {
   vi.useFakeTimers();
-  const late = deferred();
+  const late = deferred<PPResult>();
   vi.mocked(readAPI.start)
     .mockReturnValueOnce(late.promise)
     .mockResolvedValue({ ...response(), code: 'BUSY' });

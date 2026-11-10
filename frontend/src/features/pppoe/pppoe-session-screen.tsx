@@ -5,7 +5,7 @@ import { formatPPUptime } from '../equipment/pppoe-format';
 import { SessionHeader } from './pppoe-session-header';
 import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
 import type { PPPoESessionDetailProps } from './pppoe-session-props';
-import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+import type { PPObservation } from '../../platform/wails/pppoe-types';
 import { SessionLinkPanel } from './session-link-slot';
 import { SessionChain } from './session-chain';
 import { DataBlock } from '../../shared/ui/DataBlock';

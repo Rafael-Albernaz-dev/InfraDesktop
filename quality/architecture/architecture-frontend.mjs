@@ -2,7 +2,8 @@ import ts from "../../frontend/node_modules/typescript/lib/typescript.js";
 import fs from "node:fs";
 import path from "node:path";
 const sourceRoot = path.resolve("frontend/src");
-const presentation = path.join(sourceRoot, "platform/wails/presentation.ts");
+// Only files directly inside platform/wails/ may import the generated Wails bindings.
+const wailsAdapter = path.join(sourceRoot, "platform/wails");
 const entrypoint = path.join(sourceRoot, "main.tsx");
 const bridgeRoots = new Set([
   "window",
@@ -97,7 +98,7 @@ function inspect(name, code) {
   function check(spec, sideEffect = false) {
     if (spec.includes("wailsjs")) {
       if (
-        filename !== presentation ||
+        path.dirname(filename) !== wailsAdapter ||
         ![
           "../../../wailsjs/go/presentation/App",
           "../../../wailsjs/go/models",

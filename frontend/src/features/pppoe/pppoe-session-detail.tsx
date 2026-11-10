@@ -6,7 +6,7 @@ import type {
   PPObservation,
   PPQuery,
   PPReference,
-} from '../../platform/wails/presentation-pppoe-types';
+} from '../../platform/wails/pppoe-types';
 import { Button } from '../../shared/ui/Button';
 import { DataTable } from '../../shared/ui/DataTable';
 import { Select } from '../../shared/ui/Select';

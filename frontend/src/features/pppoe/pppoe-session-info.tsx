@@ -3,7 +3,7 @@ import { readingAge } from '../equipment/equipment-reading-format';
 import { PPPoEPing } from './pppoe-diagnostics';
 import type { SessionAuthInfoProps } from './pppoe-session-auth-content';
 import { SessionAuthContent } from './pppoe-session-auth-content';
-import type { PPInterval } from '../../platform/wails/presentation-pppoe-types';
+import type { PPInterval } from '../../platform/wails/pppoe-types';
 import { DataBlock } from '../../shared/ui/DataBlock';
 
 export function SessionAuthInfo(p: SessionAuthInfoProps) {
