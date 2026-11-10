@@ -1,4 +1,4 @@
-import { RadioRoles } from '../../features/radio/radio-contract';
+import { RadioRoles } from '../../features/equipment/radio-contract';
 import {
   act,
   fireEvent,
@@ -10,7 +10,7 @@ import {
 import { describe, expect, it, vi } from 'vitest';
 import { AddEquipment } from '../../features/equipment/add-equipment';
 import { inventoryImportAPI } from '../../platform/wails/presentation';
-import { NavigationGuard } from '../navigation-guard';
+import { NavigationGuard } from '../../shared/navigation-guard';
 import type { useEquipmentState } from '../../features/equipment/equipment-state';
 import type { ImportRow } from '../../platform/wails/presentation';
 

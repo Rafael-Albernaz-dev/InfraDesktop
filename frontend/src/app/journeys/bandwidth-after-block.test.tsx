@@ -13,7 +13,7 @@ import type {
   Device,
   DeviceInput,
 } from '../../features/equipment/equipment-api';
-import { RadioTransports } from '../../features/radio/radio-contract';
+import { RadioTransports } from '../../features/equipment/radio-contract';
 function fixture() {
   const stamp = new Date().toISOString();
   let device = {

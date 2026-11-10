@@ -5,9 +5,13 @@ import {
   formatDuration,
   formatMetric,
   formatRouterDuration,
-} from './network-format';
+} from '../equipment/network-format';
 import type { RadioReading } from './radio-api';
-import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
+import {
+  RadioFamilies,
+  RadioModes,
+  RadioRoles,
+} from '../equipment/radio-contract';
 import { RadioUnsupportedNotice } from './radio-equipment-parts';
 import type { RadioEquipmentState } from './radio-equipment-state';
 import { createEquipmentPage } from './radio-equipment-state';

@@ -1,4 +1,4 @@
-import { formatMetric } from './network-format';
+import { formatMetric } from '../equipment/network-format';
 import type { RadioReading } from './radio-api';
 import { RadioClientRow } from './radio-client-row';
 import type { RadioEquipmentState } from './radio-equipment-state';

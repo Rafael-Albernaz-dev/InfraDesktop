@@ -1,5 +1,5 @@
 import type { PPDelta, PPRow } from '../../platform/wails/presentation';
-import { formatDate, uptimeTitle } from '../radio/network-format';
+import { formatDate, uptimeTitle } from '../equipment/network-format';
 import { COMPARE_CATEGORIES } from './pppoe-context-actions';
 import { formatPPUptime } from './pppoe-format';
 import type {

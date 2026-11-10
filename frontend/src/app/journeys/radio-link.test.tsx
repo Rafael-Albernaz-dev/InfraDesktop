@@ -1,5 +1,5 @@
-import { RadioFamilies } from '../../features/radio/radio-contract';
-import { RadioCodes } from '../../features/radio/radio-contract';
+import { RadioFamilies } from '../../features/equipment/radio-contract';
+import { RadioCodes } from '../../features/equipment/radio-contract';
 import {
   fireEvent,
   render,

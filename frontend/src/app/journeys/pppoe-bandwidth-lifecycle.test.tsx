@@ -1,4 +1,4 @@
-import { RadioModes } from '../../features/radio/radio-contract';
+import { RadioModes } from '../../features/equipment/radio-contract';
 import {
   act,
   fireEvent,

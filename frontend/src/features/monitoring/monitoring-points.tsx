@@ -1,6 +1,6 @@
 import { DataTable } from '../../shared/ui/DataTable';
 import type { DeviceMonitoringPoint } from '../../platform/wails/presentation';
-import { formatDate } from '../radio/network-format';
+import { formatDate } from '../equipment/network-format';
 export function SessionPointsTable({
   points,
 }: {

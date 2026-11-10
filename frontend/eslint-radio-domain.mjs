@@ -39,7 +39,7 @@ export default {
         if (
           context.filename
             .replaceAll('\\', '/')
-            .endsWith('/src/features/radio/radio-contract.ts')
+            .endsWith('/src/features/equipment/radio-contract.ts')
         )
           return {};
         const check = (node, value) => {

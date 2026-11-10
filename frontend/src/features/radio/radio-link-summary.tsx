@@ -5,7 +5,7 @@ import {
   formatDate,
   formatLinkOrigin,
   formatMacAddress,
-} from './network-format';
+} from '../equipment/network-format';
 
 export function RadioStoredLink({ state }: { state: RadioLinkState }) {
   const { radio, link, proposal, onOpenEquipment } = state;

@@ -1,4 +1,4 @@
-import { RadioRoles } from '../src/features/radio/radio-contract';
+import { RadioRoles } from '../src/features/equipment/radio-contract';
 
 let credentialReady = Promise.resolve();
 export function credentialSceneReady() {

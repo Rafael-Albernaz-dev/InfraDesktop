@@ -13,7 +13,7 @@ import type {
   CredentialInput,
   Result,
 } from '../platform/wails/presentation';
-import { RadioTransports } from '../features/radio/radio-contract';
+import { RadioTransports } from '../features/equipment/radio-contract';
 
 function fixtureDaemon() {
   let snapshot: Result = {

@@ -1,8 +1,8 @@
-import { formatDate } from '../radio/network-format';
+import { formatDate } from './network-format';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import type { Device } from './equipment-api';
-import type { Operations } from '../../app/desktop-model';
+import type { Operations } from '../access/desktop-model';
 export function useEquipmentOperations(
   profile: string,
   activation: string,

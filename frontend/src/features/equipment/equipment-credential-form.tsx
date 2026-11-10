@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Button } from '../../app/desktop';
+import { Button } from '../../shared/ui/Button';
 import type {
   Credential,
   CredentialInput,
@@ -8,7 +8,7 @@ import type {
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { CredentialFormFields } from './equipment-credential-fields';
 import { id } from './equipment-reading-format';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { SharedCredentialConfirm } from '../inventory/shared-credential-confirm';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { Select } from '../../shared/ui/Select';

@@ -3,7 +3,7 @@ import {
   formatDate,
   formatLatency,
   formatMetric,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import type { PDRow } from '../../platform/wails/presentation';
 
 export function PingResultDetails(p: {

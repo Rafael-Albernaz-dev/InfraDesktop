@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { RadioFamilies, RadioRoles } from '../../features/radio/radio-contract';
+import {
+  RadioFamilies,
+  RadioRoles,
+} from '../../features/equipment/radio-contract';
 import { RadioEquipment } from '../../features/radio/radio';
 import { radioAPI as api } from '../../features/radio/radio-api';
 import {

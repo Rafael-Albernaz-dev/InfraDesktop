@@ -1,5 +1,5 @@
 import type { ReadState, PPReadPanelProps } from './pppoe-read-state';
-import { RadioModes } from '../radio/radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 export function readingFlag(v?: boolean) {
   if (v === undefined) return 'Não informado nesta leitura';
   return v ? 'Sim' : 'Não';

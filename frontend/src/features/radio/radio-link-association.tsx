@@ -5,8 +5,11 @@ import {
 
 import { Button } from '../../shared/ui/Button';
 import type { RadioLinkState } from './radio-link-state';
-import { RadioFamilies, RadioRoles } from './radio-contract';
-import { formatMacAddress, formatRadioFamily } from './network-format';
+import { RadioFamilies, RadioRoles } from '../equipment/radio-contract';
+import {
+  formatMacAddress,
+  formatRadioFamily,
+} from '../equipment/network-format';
 export function RadioLinkProposal({ state }: { state: RadioLinkState }) {
   const { blocked, radio, editing, saving, confirm, link, proposal } = state;
   return (

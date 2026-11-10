@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { EquipmentCredentials } from '../../features/equipment/equipment-credentials';
 import type { useEquipmentState } from '../../features/equipment/equipment-state';
-import { RadioRoles } from '../../features/radio/radio-contract';
+import { RadioRoles } from '../../features/equipment/radio-contract';
 
 vi.mock('../../features/inventory/credential-usage', () => ({
   useCredentialUsage: () => ({ a: ['Synthetic A'], b: ['Synthetic B'] }),

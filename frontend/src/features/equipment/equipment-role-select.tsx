@@ -1,5 +1,5 @@
 import type { Device, DeviceInput } from './equipment-api';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { RoleOptions } from './equipment-roles';
 import { Select } from '../../shared/ui/Select';
 

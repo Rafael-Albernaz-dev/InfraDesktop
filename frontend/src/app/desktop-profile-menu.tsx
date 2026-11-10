@@ -1,4 +1,4 @@
-import type { DesktopProps } from './desktop-model';
+import type { DesktopProps } from '../features/access/desktop-model';
 import { Button } from '../shared/ui/Button';
 import { ShellIcon } from '../shared/ui/ShellIcon';
 type ProfileProps = {

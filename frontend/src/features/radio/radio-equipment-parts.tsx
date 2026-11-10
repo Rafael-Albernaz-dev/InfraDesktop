@@ -3,9 +3,9 @@ import { KeyValues } from '../../shared/ui/KeyValues';
 import { Pager } from '../../shared/ui/Pager';
 import { readingAge } from '../equipment/equipment-reading-format';
 import { Button } from '../../shared/ui/Button';
-import { RadioFamilies, RadioRoles } from './radio-contract';
+import { RadioFamilies, RadioRoles } from '../equipment/radio-contract';
 import type { RadioInterface, RadioReading } from './radio-api';
-import { exactNumber, formatRadioFamily } from './network-format';
+import { exactNumber, formatRadioFamily } from '../equipment/network-format';
 import { Metrics } from './radio-reading';
 import {
   createEquipmentPage,

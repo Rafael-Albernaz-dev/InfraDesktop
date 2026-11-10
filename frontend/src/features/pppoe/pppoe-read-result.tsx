@@ -4,7 +4,7 @@ import {
   formatDate,
   formatDuration,
   formatLatency,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import { PPHealthTables } from './pppoe-read-health-tables';
 import { SessionTraffic } from './session-traffic';
 import { Button } from '../../shared/ui/Button';

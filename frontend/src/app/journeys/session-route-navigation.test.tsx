@@ -25,7 +25,7 @@ import type {
 import {
   RadioRoles,
   RadioTransports,
-} from '../../features/radio/radio-contract';
+} from '../../features/equipment/radio-contract';
 import { link as syntheticLink } from '../../features/radio/radio-test-fixtures';
 import { PPPoE } from '../../features/pppoe/pppoe';
 import { SessionRoute } from '../../features/pppoe/session-navigation';

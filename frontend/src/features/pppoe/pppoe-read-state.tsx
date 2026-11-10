@@ -1,6 +1,6 @@
 import { usePPPoEReadJob } from './use-pppoe-read-job';
 import { useTrafficRenewal } from './use-traffic-renewal';
-import { RadioModes } from '../radio/radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 import type { PPReadPanelProps } from './pppoe-read-props';
 export type { PPReadPanelProps } from './pppoe-read-props';
 export type ReadState = Omit<ReturnType<typeof usePPReadState>, 'setRoot'>;

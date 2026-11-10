@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AccessError } from './access-error';
 import type { AccessErrorKind } from './access-error-state';
-import { Button } from '../../app/desktop-controls';
+import { Button } from '../../shared/ui/Button';
 import { RecoveryActions } from './recovery-actions';
 import { RecoveryCode } from '../../shared/ui/RecoveryCode';
 

@@ -3,7 +3,6 @@ import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
 import { tickFieldReason } from './radio-tick-reason';
 export { message, recoveryActionMessage } from '../access/microcopy';
 export type { Intent } from '../access/microcopy';
-export { formatPPUptime } from '../pppoe/pppoe-format';
 
 /** Shared pt-BR network presentation. Inputs remain raw for sorting and CSV. */
 export type NetworkNumber = number | string | bigint | null | undefined;

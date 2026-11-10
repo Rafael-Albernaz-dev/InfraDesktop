@@ -7,7 +7,7 @@ import refresh from 'eslint-plugin-react-refresh';
 export default [
   ...qualityConfigs(),
   {
-    files: ['src/features/radio/**'],
+    files: ['src/features/radio/**', 'src/features/equipment/radio-*.{ts,tsx}'],
     plugins: { 'radio-domain': radioDomain },
     rules: {
       'radio-domain/no-inline-values': 'error',

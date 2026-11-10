@@ -1,5 +1,5 @@
 import { Reading } from './radio-reading';
-import { RadioRoles } from './radio-contract';
+import { RadioRoles } from '../equipment/radio-contract';
 import type { RadioEquipmentState } from './radio-equipment-state';
 import type { RadioReading } from './radio-api';
 type Ready = RadioEquipmentState & { reading: RadioReading };

@@ -148,7 +148,7 @@
   "src/features/inventory/inventory-import-layout-fixture.tsx": {
     "max-lines-per-function": 126
   },
-  "src/features/inventory/inventory-layout-fixture.tsx": {
+  "src/app/inventory-layout-fixture.tsx": {
     "max-params": 8,
     "no-nested-ternary": 2
   },
@@ -301,7 +301,7 @@
   "src/app/use-navigation-history.tsx": {
     "max-lines-per-function": 83
   },
-  "src/features/radio/use-refresh-on-open.tsx": {
+  "src/features/equipment/use-refresh-on-open.tsx": {
     "complexity": 17
   },
   "visual/layout-fixture.tsx": {

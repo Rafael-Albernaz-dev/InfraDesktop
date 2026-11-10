@@ -5,7 +5,7 @@ import {
   exactNumber,
   formatDate,
   formatLatencyRange,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 const flag = (value?: boolean) =>
   value === undefined ? 'Não informado nesta leitura' : value ? 'Sim' : 'Não';
 function catalogRowDetails(row: PDRow) {

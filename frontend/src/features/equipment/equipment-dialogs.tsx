@@ -1,4 +1,5 @@
-import { Button, Dialog } from '../../app/desktop';
+import { Button } from '../../shared/ui/Button';
+import { Dialog } from '../../shared/ui/Dialog';
 import type { Credential, Device, EquipmentResult, Job } from './equipment-api';
 import { equipmentAPI as api } from './equipment-api';
 import { VAULT_NOTICE } from '../access/vault-notice';

@@ -12,7 +12,7 @@ import type {
   Device,
   EquipmentResult,
 } from '../../features/equipment/equipment-api';
-import { RadioRoles } from '../../features/radio/radio-contract';
+import { RadioRoles } from '../../features/equipment/radio-contract';
 
 const prefs = vi.hoisted(() => ({ saved: [] as string[] }));
 vi.mock('../../platform/wails/presentation', () => ({

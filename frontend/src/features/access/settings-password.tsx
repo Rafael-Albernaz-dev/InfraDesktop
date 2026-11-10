@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { AccessError } from './access-error';
-import type { DesktopProps } from '../../app/desktop-model';
+import type { DesktopProps } from './desktop-model';
 import { Button } from '../../shared/ui/Button';
 import { Field } from '../../shared/ui/Field';
 

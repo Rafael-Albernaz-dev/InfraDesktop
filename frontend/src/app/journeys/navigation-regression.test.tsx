@@ -26,7 +26,7 @@ import {
 import {
   RadioRoles,
   RadioTransports,
-} from '../../features/radio/radio-contract';
+} from '../../features/equipment/radio-contract';
 
 vi.mock('../../platform/wails/presentation', async (importOriginal) => ({
   ...(await importOriginal<

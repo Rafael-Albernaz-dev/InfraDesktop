@@ -4,7 +4,7 @@ import { id } from './equipment-reading-format';
 import { pendingEnrollments } from './equipment-receipts';
 import { fieldForEquipmentCode, fieldMessages } from './equipment-validation';
 import type { ImportRow } from '../../platform/wails/presentation';
-import { RadioTransports } from '../radio/radio-contract';
+import { RadioTransports } from './radio-contract';
 
 import type { EnrollmentProps, EnrollmentState } from './add-enrollment';
 

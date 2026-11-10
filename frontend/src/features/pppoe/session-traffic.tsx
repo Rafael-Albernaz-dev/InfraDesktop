@@ -9,7 +9,7 @@ import {
   formatDuration,
   formatRate,
   formatVolumePair,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 const elapsed = (seconds: number) =>
   `${Math.floor(seconds / 60)
     .toString()

@@ -1,4 +1,4 @@
-import { exactNumber } from '../radio/network-format';
+import { exactNumber } from '../equipment/network-format';
 import type {
   PPReadResult,
   PPReadRow,

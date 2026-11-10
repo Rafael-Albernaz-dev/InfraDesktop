@@ -1,6 +1,6 @@
-import type { Device } from '../equipment/equipment-api';
-import { RadioTransports } from '../radio/radio-contract';
-import { prepareSecurityVisual } from '../access/security-layout-fixture';
+import type { Device } from '../features/equipment/equipment-api';
+import { RadioTransports } from '../features/equipment/radio-contract';
+import { prepareSecurityVisual } from './security-layout-fixture';
 
 export function prepareBase5Devices(
   devices: Device[],

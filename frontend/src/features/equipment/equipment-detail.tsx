@@ -26,12 +26,12 @@ import { SummaryTab } from './equipment-summary-tab';
 import { PPPoE } from '../pppoe/pppoe';
 import { DeviceMonitoring, PPPoEReadPanel } from '../pppoe/pppoe-diagnostics';
 import { RadioEquipment } from '../radio/radio';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { SessionRoute } from '../pppoe/session-navigation';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { HeaderActionHost } from '../../shared/ui/HeaderAction';
 import { Tabs } from '../../shared/ui/Tabs';
-import type { RefreshOpening } from '../radio/use-refresh-on-open';
+import type { RefreshOpening } from './use-refresh-on-open';
 
 export type Props = ReturnType<typeof useEquipmentState> & {
   selected: Device;

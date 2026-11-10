@@ -4,7 +4,7 @@ import {
   formatDuration,
   formatRouterDuration,
   uptimeTitle,
-} from '../radio/network-format';
+} from './network-format';
 export const id = () => crypto.randomUUID();
 
 export const readingAge = (at?: string, now = Date.now()) =>

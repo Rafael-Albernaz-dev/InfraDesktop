@@ -1,5 +1,5 @@
 import type { RadioLinkState } from './radio-link-state';
-import { RadioCodes } from './radio-contract';
+import { RadioCodes } from '../equipment/radio-contract';
 
 import { RadioCredentialRecovery } from './radio-credential-recovery';
 

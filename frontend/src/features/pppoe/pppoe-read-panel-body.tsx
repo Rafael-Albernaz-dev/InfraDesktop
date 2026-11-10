@@ -1,5 +1,5 @@
 import { PPReadResultMetadata, PPReadResultView } from './pppoe-read-result';
-import { RadioModes } from '../radio/radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 import { Button } from '../../shared/ui/Button';
 
 import type { PPReadPanelProps, ReadState } from './pppoe-read-state';

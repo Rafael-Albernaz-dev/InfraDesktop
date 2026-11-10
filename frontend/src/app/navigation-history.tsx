@@ -1,4 +1,4 @@
-import type { RouteName } from './desktop-model';
+import type { RouteName } from '../features/access/desktop-model';
 import type { SessionRouteTarget } from '../features/pppoe/session-navigation';
 
 export type NavigationStep = {

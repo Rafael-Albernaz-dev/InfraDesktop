@@ -1,6 +1,6 @@
 import { useCallback, useContext, useState } from 'react';
-import type { DesktopProps, Page } from './desktop-model';
-import { normalizeRoute } from './desktop-model';
+import type { DesktopProps, Page } from '../features/access/desktop-model';
+import { normalizeRoute } from '../features/access/desktop-model';
 import { CompanyList, Settings } from './desktop-pages';
 import { Sidebar, Topbar } from './desktop-shell';
 import type { SessionRouteTarget } from '../features/pppoe/session-navigation';
@@ -17,7 +17,7 @@ export type {
   Operations,
   Page,
   RouteName,
-} from './desktop-model';
+} from '../features/access/desktop-model';
 export { Button } from '../shared/ui/Button';
 export { Dialog } from '../shared/ui/Dialog';
 

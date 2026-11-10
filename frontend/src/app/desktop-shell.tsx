@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { DesktopBreadcrumbs } from './desktop-breadcrumbs';
-import type { DesktopProps, RouteName } from './desktop-model';
+import type { DesktopProps, RouteName } from '../features/access/desktop-model';
 import { DesktopProfileMenu } from './desktop-profile-menu';
 import { Button } from '../shared/ui/Button';
 import { ProductBrand } from '../shared/ui/ProductBrand';

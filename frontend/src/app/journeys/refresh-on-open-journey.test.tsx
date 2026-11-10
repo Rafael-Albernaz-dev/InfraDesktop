@@ -10,7 +10,10 @@ import {
 import { afterEach, expect, it, vi } from 'vitest';
 import { Equipment } from '../../features/equipment/equipment';
 import { RadioEquipment } from '../../features/radio/radio';
-import { RadioCodes, RadioRoles } from '../../features/radio/radio-contract';
+import {
+  RadioCodes,
+  RadioRoles,
+} from '../../features/equipment/radio-contract';
 import {
   device as radioDevice,
   reading,

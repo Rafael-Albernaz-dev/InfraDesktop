@@ -70,7 +70,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/app/desktop-model.tsx": {
+  "frontend/src/features/access/desktop-model.tsx": {
     "Lines": 147,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -280,7 +280,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/radio/network-format.test.tsx": {
+  "frontend/src/features/equipment/network-format.test.tsx": {
     "Lines": 228,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -294,7 +294,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/radio/network-sanitize.tsx": {
+  "frontend/src/features/equipment/network-sanitize.tsx": {
     "Lines": 15,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -427,7 +427,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/radio/radio-contract.ts": {
+  "frontend/src/features/equipment/radio-contract.ts": {
     "Lines": 22,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -19505,14 +19505,14 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/radio/network-format.ts": {
+  "frontend/src/features/equipment/network-format.ts": {
     "Lines": 503,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/radio/network-text.ts": {
+  "frontend/src/features/equipment/network-text.ts": {
     "Lines": 101,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -20101,7 +20101,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/access/security-layout-fixture.tsx": {
+  "frontend/src/app/security-layout-fixture.tsx": {
     "Lines": 50,
     "LongLines": 0,
     "MaxFunction": 0,

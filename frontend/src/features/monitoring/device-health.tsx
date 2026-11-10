@@ -7,7 +7,7 @@ import {
   formatMetric,
   formatVolumePair,
   uptimeTitle,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import { formatPPUptime } from '../pppoe/pppoe-format';
 export function DeviceHealthSection({
   health,

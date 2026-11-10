@@ -2,10 +2,10 @@ import {
   latestRefreshAttempt,
   refreshAttemptInProgress,
 } from '../../shared/hooks/refresh-attempt-order';
-import type { RefreshOpeningRef } from '../radio/use-refresh-on-open';
+import type { RefreshOpeningRef } from '../equipment/use-refresh-on-open';
 import type { RadioEquipmentState } from '../radio/radio-equipment-state';
 import type { usePPPoEState } from '../pppoe/pppoe-state';
-import { useRefreshOnOpen } from '../radio/use-refresh-on-open';
+import { useRefreshOnOpen } from '../equipment/use-refresh-on-open';
 import { useRefreshAttempt } from '../equipment/use-refresh-attempt';
 
 export function useRadioTabRefresh(

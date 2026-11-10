@@ -8,7 +8,7 @@ import {
   formatDate,
   formatDuration,
   formatTrustOrigin,
-} from '../radio/network-format';
+} from './network-format';
 import { Button } from '../../shared/ui/Button';
 function SSHKeyDetails(p: {
   selected: Device;

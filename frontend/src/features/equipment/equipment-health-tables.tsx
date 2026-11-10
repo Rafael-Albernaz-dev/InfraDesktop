@@ -1,5 +1,5 @@
 import { displayPort } from './equipment-port-format';
-import { exactNumber, exactRate, formatDate } from '../radio/network-format';
+import { exactNumber, exactRate, formatDate } from './network-format';
 import type { PPReadRow } from '../../platform/wails/presentation';
 import { DataTable } from '../../shared/ui/DataTable';
 export function EquipmentPorts({

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Select } from '../../shared/ui/Select';
 import { DataTable } from '../../shared/ui/DataTable';
-import { exactNumber, formatDate } from '../radio/network-format';
+import { exactNumber, formatDate } from '../equipment/network-format';
 import { DeviceHealthSection } from './device-health';
 export { DeviceHealthSection } from './device-health';
 import type { PPReadResult } from '../../platform/wails/presentation';

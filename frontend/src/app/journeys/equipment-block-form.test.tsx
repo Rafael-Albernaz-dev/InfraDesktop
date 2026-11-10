@@ -12,7 +12,7 @@ import type {
 import {
   RadioRoles,
   RadioTransports,
-} from '../../features/radio/radio-contract';
+} from '../../features/equipment/radio-contract';
 
 it('keeps block edits protected and applies the default credential when changing radio role', async () => {
   const device = {

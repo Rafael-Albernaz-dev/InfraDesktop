@@ -6,7 +6,7 @@ import {
   formatDate,
   formatMetric,
   sanitizeVisibleText,
-} from './network-format';
+} from '../equipment/network-format';
 import { Reading } from './radio-reading';
 
 export function RadioLastMeasurement({ state }: { state: RadioLinkState }) {

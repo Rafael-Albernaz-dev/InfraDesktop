@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { SettingsPassword } from './settings-password';
-import type { DesktopProps } from '../../app/desktop-model';
+import type { DesktopProps } from './desktop-model';
 
 function fields() {
   for (const [label, value] of [

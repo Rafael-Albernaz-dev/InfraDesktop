@@ -3,7 +3,7 @@ import { equipmentType } from './equipment-layout';
 import { latestSavedReading } from './equipment-reading-format';
 import { driverOwners } from './equipment-role-options';
 import { equipmentReadBlocked } from './equipment-query-policy';
-import { formatDuration } from '../radio/network-format';
+import { formatDuration } from './network-format';
 import { Button } from '../../shared/ui/Button';
 import { PageHeader } from '../../shared/ui/PageHeader';
 

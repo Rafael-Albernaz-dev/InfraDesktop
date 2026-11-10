@@ -95,7 +95,7 @@ import {
   SetEquipmentActive,
   StartQuery,
 } from '../../../wailsjs/go/presentation/App';
-import type { Branding } from '../../app/desktop-model';
+import type { Branding } from '../../features/access/desktop-model';
 import type { equipment, presentation } from '../../../wailsjs/go/models';
 export type Result = Omit<
   presentation.Result,

@@ -6,7 +6,7 @@ import {
   equipmentAPI,
   type Result,
 } from '../../platform/wails/presentation';
-import { RadioTransports } from '../../features/radio/radio-contract';
+import { RadioTransports } from '../../features/equipment/radio-contract';
 import type { Device } from '../../features/equipment/equipment-api';
 
 vi.mock('../../platform/wails/presentation', async (importOriginal) => ({

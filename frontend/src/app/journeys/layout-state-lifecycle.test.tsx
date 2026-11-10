@@ -14,7 +14,7 @@ import {
   reading,
   response,
 } from '../../features/radio/radio-test-fixtures';
-import { RadioCodes } from '../../features/radio/radio-contract';
+import { RadioCodes } from '../../features/equipment/radio-contract';
 import type { Device } from '../../features/equipment/equipment-api';
 
 function localBindings(change: Partial<Device> = {}, vault = true) {

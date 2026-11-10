@@ -1,13 +1,13 @@
 import { latestRefreshAttempt } from '../../shared/hooks/refresh-attempt-order';
-import { RadioCodes } from '../../features/radio/radio-contract';
+import { RadioCodes } from '../../features/equipment/radio-contract';
 import { StrictMode } from 'react';
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   shouldRefreshOnOpen,
   useRefreshOnOpen,
-} from '../../features/radio/use-refresh-on-open';
-import type { RefreshOnOpenInput } from '../../features/radio/use-refresh-on-open';
+} from '../../features/equipment/use-refresh-on-open';
+import type { RefreshOnOpenInput } from '../../features/equipment/use-refresh-on-open';
 const now = Date.parse('2026-11-04T12:00:00Z');
 const ago = (seconds: number) => new Date(now - seconds * 1000).toISOString();
 const input = (): RefreshOnOpenInput => ({
@@ -123,7 +123,7 @@ it('preserva a decisão quando a leitura remonta pela revisão do equipamento', 
   const refresh = vi.fn();
   const decision = {
     current: undefined,
-  } as import('../../features/radio/use-refresh-on-open').RefreshOpeningRef;
+  } as import('../../features/equipment/use-refresh-on-open').RefreshOpeningRef;
   const props = {
     opening: 'router|Resumo',
     scope: 'company|active',

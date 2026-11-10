@@ -7,9 +7,9 @@ import {
   formatMetric,
   formatRadioFamily,
   formatRouterDuration as duration,
-} from './network-format';
+} from '../equipment/network-format';
 import { useDisplayNow } from '../equipment/equipment-snapshot';
-import { RadioFamilies } from './radio-contract';
+import { RadioFamilies } from '../equipment/radio-contract';
 import { radioMessage } from './radio-messages';
 const metricNames: Record<string, string> = {
   voltage: 'Tensão',

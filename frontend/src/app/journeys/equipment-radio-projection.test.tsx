@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import type { Device } from '../../features/equipment/equipment-api';
 import { latestSavedReading } from '../../features/equipment/equipment-reading-format';
-import { RadioRoles } from '../../features/radio/radio-contract';
+import { RadioRoles } from '../../features/equipment/radio-contract';
 
 it.each([RadioRoles.ap, RadioRoles.cpe])(
   'shows the saved radio reading for %s',

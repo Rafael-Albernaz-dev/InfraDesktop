@@ -5,7 +5,7 @@ import { DefaultCredentialDetails } from './equipment-credential-form';
 import { Button } from '../../shared/ui/Button';
 import { DataTable } from '../../shared/ui/DataTable';
 import { Select } from '../../shared/ui/Select';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 
 export function EquipmentCredentials({
   s,

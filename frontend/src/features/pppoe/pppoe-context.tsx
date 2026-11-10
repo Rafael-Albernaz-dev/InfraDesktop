@@ -6,7 +6,7 @@ import {
   formatDate,
   formatDuration,
   formatRate,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import {
   ContextCountsPolicyInputs,
   ContextGroupsList,

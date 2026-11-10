@@ -1,4 +1,4 @@
-import { formatTickReason, TechnicalDetail } from './network-format';
+import { formatTickReason, TechnicalDetail } from '../equipment/network-format';
 export function RadioTickDiagnostic({
   failure,
 }: {

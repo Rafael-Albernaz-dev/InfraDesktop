@@ -1,4 +1,4 @@
-import { formatDate } from '../radio/network-format';
+import { formatDate } from '../equipment/network-format';
 import type { DiagnosticListContentProps } from './pppoe-diag-views';
 import {
   CatalogTable,

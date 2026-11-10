@@ -1,4 +1,4 @@
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 
 export const roleGroups: ReadonlyArray<
   readonly [string, ReadonlyArray<readonly [string, string]>]

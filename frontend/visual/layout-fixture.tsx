@@ -11,14 +11,14 @@ import {
   prepareBase5Devices,
   createBase5List,
   prepareBase5Scene,
-} from '../src/features/inventory/inventory-layout-fixture';
+} from '../src/app/inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
 import {
   RadioRoles,
   RadioTransports,
   RadioFamilies,
-} from '../src/features/radio/radio-contract';
+} from '../src/features/equipment/radio-contract';
 import type { Device } from '../src/features/equipment/equipment-api'; // Fixtures use documentation addresses, not production data.
 const visualScene = new URLSearchParams(location.search).get('scene') || '';
 const isBase5Scene = base5Scenes.has(visualScene);

@@ -7,12 +7,15 @@ import {
 import { AuthenticatedOverlays } from './app-session';
 import type { Page } from './desktop';
 import { Desktop } from './desktop';
-import { normalizeRoute, type RouteName } from './desktop-model';
+import {
+  normalizeRoute,
+  type RouteName,
+} from '../features/access/desktop-model';
 import { Equipment } from '../features/equipment/equipment';
 import { useEquipmentOperations } from '../features/equipment/equipment-operations';
 import type { useInventoryNavigation } from '../features/inventory/inventory-navigation';
-import type { NavigationAttempt } from './navigation-guard';
-import { NavigationGuard } from './navigation-guard';
+import type { NavigationAttempt } from '../shared/navigation-guard';
+import { NavigationGuard } from '../shared/navigation-guard';
 import { access } from '../platform/wails/presentation';
 
 function renderInventory(

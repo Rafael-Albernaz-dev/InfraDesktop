@@ -1,5 +1,5 @@
 import type { Device } from '../equipment/equipment-api';
-import { RadioTransports } from './radio-contract';
+import { RadioTransports } from '../equipment/radio-contract';
 export function credentialChangeInput(target: Device, credential: string) {
   return {
     id: target.id,

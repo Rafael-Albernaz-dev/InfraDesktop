@@ -1,4 +1,4 @@
-import { formatVolume } from '../radio/network-format';
+import { formatVolume } from './network-format';
 // Presentation checks give immediate feedback; the daemon remains authoritative.
 export const fieldForEquipmentCode: Record<string, string> = {
   DEVICE_NAME_INVALID: 'name',

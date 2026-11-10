@@ -1,13 +1,13 @@
 import { EquipmentBanners, EquipmentDialogs } from './equipment-surfaces';
 import { useContext, useEffect, useLayoutEffect, useRef } from 'react';
 import { DetailTitle } from '../../shared/ui/DetailTitle';
-import { Button } from '../../app/desktop';
+import { Button } from '../../shared/ui/Button';
 import { equipmentAPI as api } from './equipment-api';
 import { EquipmentDetailPane } from './equipment-detail';
 import { EquipmentInventoryPane } from './equipment-inventory';
 import { useEquipmentState } from './equipment-state';
 import { EquipmentCredentials } from './equipment-credentials';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { AddEquipment } from './add-equipment';
 import { useState } from 'react';
 import { SessionRoute } from '../pppoe/session-navigation';

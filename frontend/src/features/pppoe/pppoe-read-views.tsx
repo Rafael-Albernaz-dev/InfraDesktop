@@ -6,7 +6,7 @@ import {
   formatRate,
   formatVolume,
   uptimeTitle,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import { formatPPUptime } from './pppoe-format';
 import {
   cancelReadLabel,
@@ -19,7 +19,7 @@ import type {
   PPReadRow,
 } from '../../platform/wails/presentation';
 import type { PPRate } from '../../platform/wails/presentation-pppoe-types';
-import { RadioModes } from '../radio/radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 import { Button } from '../../shared/ui/Button';
 import { DataTable } from '../../shared/ui/DataTable';
 

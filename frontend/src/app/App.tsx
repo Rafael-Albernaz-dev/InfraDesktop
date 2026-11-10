@@ -7,10 +7,10 @@ import {
 } from '../features/access/access-session';
 import { AuthenticatedShell } from './authenticated-shell';
 import type { Page } from './desktop';
-import { normalizeRoute } from './desktop-model';
+import { normalizeRoute } from '../features/access/desktop-model';
 import { useEquipmentOperations } from '../features/equipment/equipment-operations';
 import { useInventoryNavigation } from '../features/inventory/inventory-navigation';
-import type { NavigationAttempt } from './navigation-guard';
+import type { NavigationAttempt } from '../shared/navigation-guard';
 import type { SessionRouteTarget } from '../features/pppoe/session-navigation';
 import { SessionRoute } from '../features/pppoe/session-navigation';
 import '../shared/ui/kit.css';

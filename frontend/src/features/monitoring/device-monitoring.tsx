@@ -15,7 +15,7 @@ import {
   formatDate,
   formatDuration,
   uptimeTitle,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import { formatPPUptime } from '../pppoe/pppoe-format';
 import type {
   DeviceMonitoringPoint,

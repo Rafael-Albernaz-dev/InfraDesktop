@@ -12,7 +12,7 @@ import {
 } from '../pppoe/pppoe-read-views';
 import { PPReadResultPagination } from '../pppoe/pppoe-read-result';
 import { readingAge, formatRestarts } from './equipment-reading-format';
-import { formatClockOffset, formatDuration } from '../radio/network-format';
+import { formatClockOffset, formatDuration } from './network-format';
 import { EquipmentPorts } from './equipment-health-tables';
 import { Button } from '../../shared/ui/Button';
 import { useEffect, useState, useCallback } from 'react';
@@ -20,7 +20,7 @@ import { deviceMonitoringAPI } from '../../platform/wails/presentation';
 import type { Device, PPReadRow } from '../../platform/wails/presentation';
 import { useDisplayNow, useEquipmentSnapshot } from './equipment-snapshot';
 import { PPPoEReadPanel } from '../pppoe/pppoe-diagnostics';
-import { formatDate } from '../radio/network-format';
+import { formatDate } from './network-format';
 export function EquipmentInsights(p: {
   profile: string;
   activation: string;

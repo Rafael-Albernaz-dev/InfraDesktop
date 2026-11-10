@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { RadioEquipment } from '../../features/radio/radio';
-import { RadioRoles } from '../../features/radio/radio-contract';
+import { RadioRoles } from '../../features/equipment/radio-contract';
 import { radioAPI as api } from '../../features/radio/radio-api';
 import {
   device,

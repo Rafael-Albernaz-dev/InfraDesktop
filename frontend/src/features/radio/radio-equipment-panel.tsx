@@ -1,5 +1,5 @@
 import { RadioCPEClient } from './radio-cpe-client';
-import type { RefreshOpeningRef } from './use-refresh-on-open';
+import type { RefreshOpeningRef } from '../equipment/use-refresh-on-open';
 import { useRadioTabRefresh } from '../monitoring/automatic-tab-refresh';
 import { equipmentRadioError } from './radio-equipment-status';
 import { StateNotice } from '../../shared/ui/StateNotice';
@@ -14,7 +14,11 @@ import { createPortal } from 'react-dom';
 import { Button } from '../../shared/ui/Button';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { RadioEquipmentView } from './radio-equipment-views';
-import { RadioFamilies, RadioModes, RadioRoles } from './radio-contract';
+import {
+  RadioFamilies,
+  RadioModes,
+  RadioRoles,
+} from '../equipment/radio-contract';
 import type { RadioReading } from './radio-api';
 import { RadioCredentialRecovery } from './radio-credential-recovery';
 import {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Branding } from '../../app/desktop-model';
+import type { Branding } from './desktop-model';
 
 // Retained draft behavior, without a routed personalization screen.
 export function useBrandDraft(

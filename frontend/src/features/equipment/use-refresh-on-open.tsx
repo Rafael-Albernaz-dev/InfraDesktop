@@ -2,7 +2,7 @@ import { refreshAttemptInProgress } from '../../shared/hooks/refresh-attempt-ord
 import { RadioCodes } from './radio-contract';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { MutableRefObject } from 'react';
-import type { Device } from '../equipment/equipment-api';
+import type { Device } from './equipment-api';
 
 export type RefreshOnOpenInput = {
   now: number;

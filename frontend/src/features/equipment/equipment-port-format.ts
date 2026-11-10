@@ -1,4 +1,4 @@
-import { portLabel } from '../radio/network-format';
+import { portLabel } from './network-format';
 import type { PPReadRow } from '../../platform/wails/presentation';
 
 export const displayPort = (port?: PPReadRow['port']) =>

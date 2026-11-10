@@ -7,7 +7,7 @@ import {
 import { VAULT_NOTICE } from '../access/vault-notice';
 import { queryFailureOwnsDetail } from './equipment-query-failure';
 import type { useEquipmentState } from './equipment-state';
-import { RadioCodes } from '../radio/radio-contract';
+import { RadioCodes } from './radio-contract';
 import { Button } from '../../shared/ui/Button';
 export function EquipmentBanners(p: {
   s: ReturnType<typeof useEquipmentState>;

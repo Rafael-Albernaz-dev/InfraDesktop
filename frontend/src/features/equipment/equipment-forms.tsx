@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../../app/desktop';
+import { Button } from '../../shared/ui/Button';
 import type {
   Credential,
   Device,
@@ -16,7 +16,7 @@ import {
   validEquipmentAddress,
   validEquipmentText,
 } from './equipment-validation';
-import { RadioTransports } from '../radio/radio-contract';
+import { RadioTransports } from './radio-contract';
 export { ProtectedDialog } from '../access/protected-dialog';
 
 type EditProps = {

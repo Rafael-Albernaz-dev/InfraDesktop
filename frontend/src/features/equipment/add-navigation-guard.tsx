@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { NavigationGuard } from '../../app/navigation-guard';
+import { NavigationGuard } from '../../shared/navigation-guard';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
 

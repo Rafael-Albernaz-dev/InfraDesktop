@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Device } from '../equipment/equipment-api';
 import type { RadioInput, RadioResult, RadioView } from './radio-api';
 import { radioAPI as api } from './radio-api';
-import { RadioModes } from './radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 import { radioMessage } from './radio-messages';
 import type { RadioObservationContext } from './radio-observation-context';
 import { useLatestRef } from '../../shared/hooks/use-latest-ref';

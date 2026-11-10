@@ -4,7 +4,7 @@ import { Linter } from '../frontend/node_modules/eslint/lib/api.js';
 import ts from '../frontend/node_modules/typescript-eslint/dist/index.js';
 import radioDomain from '../frontend/eslint-radio-domain.mjs';
 const filename = process.argv[2];
-const owner = path.resolve('frontend/src/features/radio/radio-contract.ts');
+const owner = path.resolve('frontend/src/features/equipment/radio-contract.ts');
 let findings = [];
 if (path.resolve(filename) !== owner) {
   const linter = new Linter();

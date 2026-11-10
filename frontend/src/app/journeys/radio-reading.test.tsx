@@ -2,7 +2,7 @@ import {
   RadioCodes,
   RadioFamilies,
   RadioRoles,
-} from '../../features/radio/radio-contract';
+} from '../../features/equipment/radio-contract';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioEquipment, RadioLinkPanel } from '../../features/radio/radio';

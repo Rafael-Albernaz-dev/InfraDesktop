@@ -1,7 +1,7 @@
 export { RadioIndexCredentialErrors } from './radio-link-credential-errors';
 import { Button } from '../../shared/ui/Button';
 import type { RadioLinkState } from './radio-link-state';
-import { RadioModes } from './radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 
 export function RadioIndexRefresh({ state }: { state: RadioLinkState }) {
   const { blocked, radio, editing, saving, now, link, index } = state;

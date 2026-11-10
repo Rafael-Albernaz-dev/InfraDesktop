@@ -1,5 +1,5 @@
 import type { RadioClient } from './radio-api';
-import { formatMetric } from './network-format';
+import { formatMetric } from '../equipment/network-format';
 import { radioMetric, radioRatePair } from './radio-table-format';
 export function RadioClientRow({
   client,

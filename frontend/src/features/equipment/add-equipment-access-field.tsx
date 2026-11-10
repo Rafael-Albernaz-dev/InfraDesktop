@@ -1,5 +1,5 @@
 import type { AddEquipmentFieldsProps } from './add-equipment-fields';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { Select } from '../../shared/ui/Select';
 export function AddCredentialField(p: AddEquipmentFieldsProps) {
   const { row, change, credentials } = p;

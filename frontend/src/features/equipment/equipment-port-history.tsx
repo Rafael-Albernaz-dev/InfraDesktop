@@ -1,6 +1,6 @@
 import { displayPort } from './equipment-port-format';
 import { readingAge } from './equipment-reading-format';
-import { exactNumber, formatDate } from '../radio/network-format';
+import { exactNumber, formatDate } from './network-format';
 import type { PPReadRow } from '../../platform/wails/presentation';
 import { Button } from '../../shared/ui/Button';
 import { DataBlock } from '../../shared/ui/DataBlock';

@@ -1,4 +1,4 @@
-import type { DesktopProps } from './desktop-model';
+import type { DesktopProps } from '../features/access/desktop-model';
 import { SettingsPassword } from '../features/access/settings-password';
 import { Button } from '../shared/ui/Button';
 import { DataTable } from '../shared/ui/DataTable';

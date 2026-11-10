@@ -2,7 +2,7 @@ import {
   RadioCodes,
   RadioRoles,
   RadioTransports,
-} from '../../features/radio/radio-contract';
+} from '../../features/equipment/radio-contract';
 import {
   act,
   fireEvent,

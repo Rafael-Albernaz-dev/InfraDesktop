@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import type { Device } from './equipment-api';
 import type { RadioLink } from '../radio/radio-api';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { equipmentType } from './equipment-layout';
 export function EquipmentChain({
   device,

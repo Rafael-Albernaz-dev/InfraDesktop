@@ -3,7 +3,7 @@ import type { ReadContext } from './pppoe-read-lifecycle';
 import { currentRead, validRead } from './pppoe-read-lifecycle';
 import { ppReadMessage } from './pppoe-context-actions';
 import type { PPResult } from '../../platform/wails/presentation';
-import { RadioCodes } from '../radio/radio-contract';
+import { RadioCodes } from '../equipment/radio-contract';
 import { pppoeReadAPI as api } from '../../platform/wails/presentation';
 const rejected = [
   'BUSY',

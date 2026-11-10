@@ -1,7 +1,7 @@
 import { Button } from '../../shared/ui/Button';
 
 import type { RadioLinkState } from './radio-link-state';
-import { RadioModes } from './radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 import { radioCostLabel } from './radio-cost-label';
 
 export function RadioLinkRunActions({

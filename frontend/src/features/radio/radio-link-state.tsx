@@ -5,7 +5,7 @@ import { equipmentAPI } from '../equipment/equipment-api';
 import { useDisplayNow } from '../equipment/equipment-snapshot';
 import type { RadioLinkChoice, RadioResult } from './radio-api';
 import { radioAPI as api } from './radio-api';
-import { RadioModes, RadioRoles } from './radio-contract';
+import { RadioModes, RadioRoles } from '../equipment/radio-contract';
 import type { RadioLinkPanelProps } from './radio-link-props';
 import { radioMessage } from './radio-messages';
 import { useRadio } from './radio-observation';

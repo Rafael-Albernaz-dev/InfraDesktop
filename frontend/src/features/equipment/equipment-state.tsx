@@ -19,7 +19,7 @@ import { driverOwners } from './equipment-role-options';
 import { useEquipmentStore } from './equipment-store';
 import { fieldForEquipmentCode } from './equipment-validation';
 import type { LinkedSessionTarget } from '../pppoe/linked-session-navigation';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 
 export type EquipmentPerformFn = (
   call: () => Promise<EquipmentResult>,

@@ -1,6 +1,10 @@
 import type { PPRow } from '../../platform/wails/presentation';
 import type { Device } from '../equipment/equipment-api';
-import { exactRate, formatRate, uptimeTitle } from '../radio/network-format';
+import {
+  exactRate,
+  formatRate,
+  uptimeTitle,
+} from '../equipment/network-format';
 import { OfflineEvidence, SessionContext } from './pppoe-context';
 import { formatPPUptime } from './pppoe-format';
 import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';

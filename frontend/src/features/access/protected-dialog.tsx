@@ -1,7 +1,8 @@
 import { useContext, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Dialog } from '../../app/desktop';
-import { NavigationGuard } from '../../app/navigation-guard';
+import { Button } from '../../shared/ui/Button';
+import { Dialog } from '../../shared/ui/Dialog';
+import { NavigationGuard } from '../../shared/navigation-guard';
 import { DraftProtection } from '../equipment/equipment-draft';
 import type { DraftState } from '../equipment/equipment-draft';
 

@@ -18,7 +18,7 @@ import type { PPReadPanelProps } from './pppoe-read-props';
 import { startRead } from './pppoe-read-start';
 import { pollRead } from './pppoe-read-poll';
 import { scheduleTraffic, trafficFailed } from './use-traffic-renewal';
-import { RadioModes } from '../radio/radio-contract';
+import { RadioModes } from '../equipment/radio-contract';
 function useReadClock(c: ReadContext, job: string, scope: string) {
   useEffect(() => {
     if (scope !== RadioModes.live && scope !== 'traffic') return;

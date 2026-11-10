@@ -1,4 +1,4 @@
-import type { AccessErrorKind } from '../features/access/access-error-state';
+import type { AccessErrorKind } from './access-error-state';
 import type { ReactNode } from 'react';
 export type RouteName =
   | 'companies'

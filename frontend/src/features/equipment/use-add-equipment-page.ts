@@ -10,7 +10,7 @@ import {
   validEquipmentText,
 } from './equipment-validation';
 import type { ImportRow } from '../../platform/wails/presentation';
-import { RadioRoles } from '../radio/radio-contract';
+import { RadioRoles } from './radio-contract';
 import { DetailTitle } from '../../shared/ui/DetailTitle';
 
 import type { AddEquipmentProps } from './add-equipment';

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import type { DesktopProps, RouteName } from './desktop-model';
+import type { DesktopProps, RouteName } from '../features/access/desktop-model';
 import { SessionRoute } from '../features/pppoe/session-navigation';
 type BreadcrumbProps = {
   p: DesktopProps;

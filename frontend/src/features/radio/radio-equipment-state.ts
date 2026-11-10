@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { equipmentAPI } from '../equipment/equipment-api';
 import { radioAPI as api } from './radio-api';
-import { RadioCodes, RadioFamilies } from './radio-contract';
+import { RadioCodes, RadioFamilies } from '../equipment/radio-contract';
 import type { RadioEquipmentProps } from './radio-equipment-props';
 import { radioMessage } from './radio-messages';
 import { useRadio } from './radio-observation';

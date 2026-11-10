@@ -19,7 +19,7 @@ import type {
 import {
   RadioRoles,
   RadioTransports,
-} from '../../features/radio/radio-contract';
+} from '../../features/equipment/radio-contract';
 import {
   link as syntheticLink,
   reading as syntheticReading,

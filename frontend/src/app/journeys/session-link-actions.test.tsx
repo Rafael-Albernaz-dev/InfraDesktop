@@ -11,7 +11,10 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoESessionDetail } from '../../features/pppoe/pppoe-session-screen';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import { link } from '../../features/radio/radio-test-fixtures';
-import { RadioModes, RadioRoles } from '../../features/radio/radio-contract';
+import {
+  RadioModes,
+  RadioRoles,
+} from '../../features/equipment/radio-contract';
 import type { Device } from '../../features/equipment/equipment-api';
 import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
 

@@ -9,7 +9,7 @@ import {
   formatDate,
   formatDuration,
   formatMetric,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 
 type Context = { device: Device; now: number; credentials: Credential[] };
 type Column = {

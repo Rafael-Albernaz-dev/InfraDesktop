@@ -9,7 +9,7 @@ import {
 import { beforeEach, expect, it, vi } from 'vitest';
 import { Equipment } from '../../features/equipment/equipment';
 import { Equipment as TestEquipment } from '../test-equipment-shell';
-import { RadioTransports } from '../../features/radio/radio-contract';
+import { RadioTransports } from '../../features/equipment/radio-contract';
 import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import type { EquipmentResult } from '../../features/equipment/equipment-api';
 vi.mock('../../platform/wails/presentation', () => ({

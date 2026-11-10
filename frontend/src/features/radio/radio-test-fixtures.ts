@@ -1,4 +1,4 @@
-import { RadioFamilies, RadioRoles } from './radio-contract';
+import { RadioFamilies, RadioRoles } from '../equipment/radio-contract';
 import type { RadioReading, RadioResult, RadioView } from './radio-api';
 import type { Device } from '../equipment/equipment-api';
 

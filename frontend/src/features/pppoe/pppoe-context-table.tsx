@@ -1,5 +1,5 @@
 import type { PPGroup } from '../../platform/wails/presentation-pppoe-types';
-import { formatMetric } from '../radio/network-format';
+import { formatMetric } from '../equipment/network-format';
 import { DataTable } from '../../shared/ui/DataTable';
 export function ContextCountsPolicyInputs(p: {
   dropThreshold: string;

@@ -3,12 +3,15 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { Equipment } from '../../features/equipment/equipment';
 import { RadioEquipment } from '../../features/radio/radio';
 import { RadioClientRow } from '../../features/radio/radio-client-row';
-import { RadioCodes, RadioRoles } from '../../features/radio/radio-contract';
+import {
+  RadioCodes,
+  RadioRoles,
+} from '../../features/equipment/radio-contract';
 import {
   device as radioDevice,
   reading,
 } from '../../features/radio/radio-test-fixtures';
-import { shouldRefreshOnOpen } from '../../features/radio/use-refresh-on-open';
+import { shouldRefreshOnOpen } from '../../features/equipment/use-refresh-on-open';
 import type { Device } from '../../features/equipment/equipment-api';
 import type { RadioClient } from '../../features/radio/radio-api';
 

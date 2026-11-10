@@ -3,7 +3,7 @@ import {
   exactRate,
   formatAtScale,
   networkScale,
-} from '../radio/network-format';
+} from '../equipment/network-format';
 import { RateValue } from './pppoe-read-views';
 
 export function SessionRatePair({

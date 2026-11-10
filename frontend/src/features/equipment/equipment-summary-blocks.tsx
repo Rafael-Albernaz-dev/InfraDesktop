@@ -6,7 +6,7 @@ import {
   formatRouterDuration,
   exactVolume,
   formatVolumePair,
-} from '../radio/network-format';
+} from './network-format';
 import { stamp } from './equipment-reading-format';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { readingUpdateState } from '../monitoring/reading-update-state';

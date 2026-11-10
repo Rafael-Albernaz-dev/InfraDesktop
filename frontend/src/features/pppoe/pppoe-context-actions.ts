@@ -12,7 +12,7 @@ import type {
   PPReference,
 } from '../../platform/wails/presentation-pppoe-types';
 import { pppoeAPI as api } from '../../platform/wails/presentation';
-import { RadioCodes } from '../radio/radio-contract';
+import { RadioCodes } from '../equipment/radio-contract';
 
 export function ppReadMessage(code: string) {
   if (code === 'PARTIAL')
