@@ -142,6 +142,9 @@ it('cancelar medição encerra o job da página e ignora resultado tardio', asyn
   );
   const button = await pageAction();
   fireEvent.click(button);
+  await waitFor(() => expect(bindings.PPPoEReadStatus).toHaveBeenCalledOnce(), {
+    timeout: 5000,
+  });
   fireEvent.click(
     await screen.findByRole('button', { name: 'Cancelar medição' }),
   );
