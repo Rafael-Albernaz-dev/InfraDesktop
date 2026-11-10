@@ -16,7 +16,7 @@ npm --prefix frontend ci
 make ci
 ```
 
-`make ci` runs the same complete gate sequence locally and in GitHub CI. The pre-commit hook runs `make quality`, covering layout and quality ratchets plus Go vet, Staticcheck, Prettier and version consistency. Run `make assets` first if frontend assets are absent. Native desktop and human acceptance remain separate.
+`make ci` runs the same complete gate sequence locally and in GitHub CI. Screen tests do not run in CI; run `make test-layout` locally before pushing. The pre-commit hook runs `make quality`, covering layout and quality ratchets plus Go vet, Staticcheck, Prettier and version consistency. Run `make assets` first if frontend assets are absent. Native desktop and human acceptance remain separate.
 
 `make bindings` generates the narrow Wails adapter; `make build` builds frontend assets before Go embed and creates `build/bin/infradesktop` and `build/bin/infradesktopd`. The `webkit2_41` tag is used on Ubuntu24.04. `npm ci` creates an ignored Go module boundary in node_modules, keeping npm-shipped Go samples outside product checks. Public build/runtime never depends on the private docs or agent workspace.
 

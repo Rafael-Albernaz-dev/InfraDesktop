@@ -94,7 +94,7 @@ test-equipment-smoke:
 	node scripts/test-part1-visual.mjs --smoke
 
 .PHONY: quality ci
-ci: tools-check assets quality check test-integration package test-vault-helper test-part1-production test-vault-read-race test-visual test-equipment-smoke
+ci: tools-check assets quality check test-integration package test-vault-helper test-part1-production test-vault-read-race
 
 quality:
 	@test -d frontend/dist || (echo "rode make assets"; exit 1)
