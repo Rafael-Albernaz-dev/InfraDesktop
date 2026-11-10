@@ -8,6 +8,7 @@ import (
 	"go/token"
 	"infradesktop/scripts/qualitydup"
 	"infradesktop/scripts/qualitymetrics"
+	"maps"
 	"os"
 	"strconv"
 	"strings"
@@ -62,7 +63,10 @@ func LegacyGate(current map[string]bool) []string {
 	if err != nil {
 		return []string{err.Error()}
 	}
-	old := legacyKeys(raw)
+	old, err := remapHeadKeys(legacyKeys(raw), "")
+	if err != nil {
+		return []string{err.Error()}
+	}
 	var failures []string
 	for path := range current {
 		if !old[path] {
@@ -103,4 +107,54 @@ func legacyKeys(source []byte) map[string]bool {
 		return false
 	})
 	return keys
+}
+
+// Only staged Git renames may transfer the authority of an existing HEAD key.
+func remapHeadKeys[T any](previous map[string]T, prefix string) (map[string]T, error) {
+	renames, err := stagedHeadRenames()
+	if err != nil {
+		return nil, err
+	}
+	result := maps.Clone(previous)
+	for _, rename := range renames {
+		from, to := rename[0], rename[1]
+		if !strings.HasPrefix(from, prefix) || !strings.HasPrefix(to, prefix) {
+			continue
+		}
+		from, to = strings.TrimPrefix(from, prefix), strings.TrimPrefix(to, prefix)
+		value, exists := previous[from]
+		if !exists {
+			continue
+		}
+		// ignored: Membership alone determines a conflicting HEAD key.
+		if _, collision := previous[to]; collision {
+			return nil, fmt.Errorf("staged rename collides with HEAD key: %s", to)
+		}
+		delete(result, from)
+		result[to] = value
+	}
+	return result, nil
+}
+func stagedHeadRenames() ([][2]string, error) {
+	raw, err := gitOutput("diff", "--cached", "-M", "--name-status", "-z", "--diff-filter=R", "HEAD")
+	if err != nil || len(raw) == 0 {
+		return nil, err
+	}
+	fields := strings.Split(string(raw), "\x00")
+	if fields[len(fields)-1] != "" || (len(fields)-1)%3 != 0 {
+		return nil, fmt.Errorf("malformed staged Git renames")
+	}
+	var renames [][2]string
+	for i := 0; i < len(fields)-1; i += 3 {
+		status, from, to := fields[i], fields[i+1], fields[i+2]
+		if !strings.HasPrefix(status, "R") || from == "" || to == "" {
+			return nil, fmt.Errorf("invalid staged Git rename")
+		}
+		// ignored: Parsing validates the score; the value does not authorize a key.
+		if _, err := strconv.Atoi(status[1:]); err != nil {
+			return nil, err
+		}
+		renames = append(renames, [2]string{from, to})
+	}
+	return renames, nil
 }

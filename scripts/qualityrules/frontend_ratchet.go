@@ -21,5 +21,9 @@ func FrontendRatchet() []string {
 	if err := json.Unmarshal(old, &previous); err != nil {
 		return []string{err.Error()}
 	}
+	previous, err = remapHeadKeys(previous, "frontend/")
+	if err != nil {
+		return []string{err.Error()}
+	}
 	return RatchetGrowth(current, previous)
 }

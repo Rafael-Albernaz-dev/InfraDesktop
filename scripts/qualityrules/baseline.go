@@ -44,6 +44,10 @@ func BaselineRatchet() []string {
 	if err := json.Unmarshal(old, &previous); err != nil {
 		return []string{err.Error()}
 	}
+	previous, err = remapHeadKeys(previous, "")
+	if err != nil {
+		return []string{err.Error()}
+	}
 	return BaselineGrowth(current, previous)
 }
 

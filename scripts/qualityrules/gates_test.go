@@ -3,6 +3,7 @@ package qualityrules
 import (
 	"infradesktop/scripts/qualitymetrics"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -85,5 +86,83 @@ func TestBaselineLinesMayGrowBelowFileLimit(t *testing.T) {
 	old := qualitymetrics.Report{"a.go": {Lines: 10}}
 	if len(BaselineGrowth(qualitymetrics.Report{"a.go": {Lines: 20}}, old)) != 0 {
 		t.Fatal("within-limit growth blocked")
+	}
+}
+
+func stagedRenameFixture(t *testing.T) {
+	t.Helper()
+	t.Chdir(t.TempDir())
+	for _, dir := range []string{"frontend/src/app", "scripts"} {
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files := map[string]string{
+		"frontend/src/old file.ts":      "export const label = 'synthetic';\n",
+		"frontend/quality-ratchet.json": `{"src/old file.ts":{"complexity":18}}`,
+		"scripts/quality-baseline.json": `{"frontend/src/old file.ts":{"lines":10,"LongLines":2}}`,
+		"scripts/quality.go":            `package fixture; var legacyRatchetOnly = map[string]bool{"frontend/src/old file.ts":true}`,
+	}
+	for name, content := range files {
+		writeGateFixture(t, name, content)
+	}
+	runGateGit(t, "init", "-q")
+	runGateGit(t, "add", ".")
+	runGateGit(t, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+		"-c", "commit.gpgsign=false", "commit", "-qm", "baseline")
+	runGateGit(t, "mv", "frontend/src/old file.ts", "frontend/src/app/new file.ts")
+}
+func runGateGit(t *testing.T, args ...string) {
+	t.Helper()
+	if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
+		t.Fatalf("git %v: %v: %s", args, err, out)
+	}
+}
+func writeGateFixture(t *testing.T, name, content string) {
+	t.Helper()
+	if err := os.WriteFile(name, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+}
+func TestRenamedRatchetKeyKeepsHeadCeiling(t *testing.T) {
+	stagedRenameFixture(t)
+	writeGateFixture(t, "frontend/quality-ratchet.json", `{"src/app/new file.ts":{"complexity":18}}`)
+	if got := FrontendRatchet(); len(got) != 0 {
+		t.Fatal(got)
+	}
+	writeGateFixture(t, "scripts/quality-baseline.json", `{"frontend/src/app/new file.ts":{"lines":10,"LongLines":2}}`)
+	if got := BaselineRatchet(); len(got) != 0 {
+		t.Fatal(got)
+	}
+}
+func TestRenamedRatchetKeyStillRejectsGrowth(t *testing.T) {
+	stagedRenameFixture(t)
+	writeGateFixture(t, "frontend/quality-ratchet.json", `{"src/app/new file.ts":{"complexity":19}}`)
+	if got := FrontendRatchet(); len(got) == 0 {
+		t.Fatal("renamed ceiling grew")
+	}
+	writeGateFixture(t, "scripts/quality-baseline.json", `{"frontend/src/app/new file.ts":{"lines":10,"LongLines":3}}`)
+	if got := BaselineRatchet(); len(got) == 0 {
+		t.Fatal("renamed baseline ceiling grew")
+	}
+}
+func TestNewRatchetKeyWithoutStagedRenameIsRejected(t *testing.T) {
+	stagedRenameFixture(t)
+	runGateGit(t, "restore", "--staged", ".")
+	writeGateFixture(t, "frontend/quality-ratchet.json", `{"src/app/new file.ts":{"complexity":18}}`)
+	if got := FrontendRatchet(); len(got) == 0 {
+		t.Fatal("unstaged rename accepted as approved ceiling")
+	}
+}
+func TestRenamedLegacyExceptionKeepsHeadAuthority(t *testing.T) {
+	stagedRenameFixture(t)
+	if got := LegacyGate(map[string]bool{"frontend/src/app/new file.ts": true}); len(got) != 0 {
+		t.Fatal(got)
+	}
+}
+func TestNewLegacyExceptionWithoutRenameIsRejected(t *testing.T) {
+	stagedRenameFixture(t)
+	if got := LegacyGate(map[string]bool{"frontend/src/app/unrelated.ts": true}); len(got) == 0 {
+		t.Fatal("new legacy exception accepted")
 	}
 }
