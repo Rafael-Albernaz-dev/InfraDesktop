@@ -1,0 +1,22 @@
+import type { Device } from '../equipment/equipment-api';
+export type PPReadPanelProps = {
+  profile: string;
+  activation: string;
+  device: Device;
+  observation: string;
+  rows: string[];
+  blocked?: boolean;
+  allowTop?: boolean;
+  logRow?: string;
+  health?: boolean;
+  monitoring?: boolean;
+  onRead?: () => void;
+  summaryOnly?: boolean;
+  traffic?: boolean;
+  bandwidthOnly?: boolean;
+  pageBandwidth?: boolean;
+  panel?: boolean;
+  evidence?: 'log' | 'secret';
+  actionsOnly?: boolean;
+  healthView?: 'pools' | 'uplinks';
+};

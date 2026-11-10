@@ -135,8 +135,8 @@ func validateChanged(path string, m metric, baselineExists bool, spans []span) [
 // Explicit user exception: only these reported non-radio legacy files use the
 // original growth ratchet. Every radio file and named radio helper stays strict.
 var legacyRatchetOnly = map[string]bool{
-	"frontend/src/equipment.tsx":                        true,
-	"frontend/src/equipment.test.tsx":                   true,
+	"frontend/src/features/equipment/equipment.tsx":                        true,
+	"frontend/src/features/equipment/equipment.test.tsx":                   true,
 	"internal/modules/equipment/service.go":             true,
 	"internal/adapters/storage/equipment.go":            true,
 	"internal/adapters/storage/units.go":                true,

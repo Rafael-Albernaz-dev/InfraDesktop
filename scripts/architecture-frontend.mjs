@@ -2,7 +2,7 @@ import ts from "../frontend/node_modules/typescript/lib/typescript.js";
 import fs from "node:fs";
 import path from "node:path";
 const sourceRoot = path.resolve("frontend/src");
-const presentation = path.join(sourceRoot, "presentation.ts");
+const presentation = path.join(sourceRoot, "platform/wails/presentation.ts");
 const entrypoint = path.join(sourceRoot, "main.tsx");
 const bridgeRoots = new Set([
   "window",
@@ -55,7 +55,7 @@ function inspect(name, code) {
     if (spec.includes("wailsjs")) {
       if (
         filename !== presentation ||
-        !["../wailsjs/go/presentation/App", "../wailsjs/go/models"].includes(
+        !["../../../wailsjs/go/presentation/App", "../../../wailsjs/go/models"].includes(
           spec,
         )
       ) {
@@ -64,7 +64,7 @@ function inspect(name, code) {
       return;
     }
     if (!spec.startsWith(".")) {
-      const chartImport = filename === path.join(sourceRoot, "ui/Chart.tsx") &&
+      const chartImport = filename === path.join(sourceRoot, "shared/ui/Chart.tsx") &&
         (spec === "uplot" || (sideEffect && spec === "uplot/dist/uPlot.min.css"));
       if (!chartImport && !externalModules.has(spec))
         problems.push("external capability: " + spec);
@@ -102,7 +102,7 @@ function inspect(name, code) {
     if (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) {
       if (
         n.moduleSpecifier &&
-        n.moduleSpecifier.text === "../wailsjs/go/presentation/App"
+        n.moduleSpecifier.text === "../../../wailsjs/go/presentation/App"
       ) {
         const approved = new Set([
           "ChooseInventoryImport", "ReviewInventoryImport", "ConfirmInventoryImport", "SaveInventoryTemplate",
@@ -234,7 +234,7 @@ function inspect(name, code) {
 for (const [name, code, bad] of [
   ["x.ts", "import fs from 'node:fs'", true],
   ["helper.ts", "import {exec} from 'node:child_process'", true],
-  ["view.ts", "import {Status} from '../wailsjs/go/presentation/App'", true],
+  ["view.ts", "import {Status} from '../../../wailsjs/go/presentation/App'", true],
   ["view.ts", "window.go.presentation.App.Status()", true],
   ["view.ts", "import(target)", true],
   ["x.ts", "import React from 'react'", false],

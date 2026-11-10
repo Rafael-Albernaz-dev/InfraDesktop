@@ -1,0 +1,20 @@
+import type { PPRow } from '../../platform/wails/presentation';
+import type { Device } from '../equipment/equipment-api';
+import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
+export type PPPoESessionDetailProps = {
+  selected: PPRow;
+  current: PPObservation;
+  detailHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  detailTab: 'traffic' | 'information' | 'link' | 'history';
+  setDetailTab: (t: 'traffic' | 'information' | 'link' | 'history') => void;
+  profile: string;
+  activation: string;
+  device: Device;
+  disabled: boolean;
+  fastTrack?: number;
+  detailIntentRef: React.MutableRefObject<number>;
+  select: (r: PPRow | undefined) => void;
+  detailTriggerRef: React.MutableRefObject<HTMLElement | null>;
+  openEquipment?: (id: string) => void;
+  back: () => void;
+};

@@ -7,7 +7,7 @@ import refresh from 'eslint-plugin-react-refresh';
 export default [
   ...qualityConfigs(),
   {
-    files: ['src/radio*.{ts,tsx}'],
+    files: ['src/features/radio/**'],
     plugins: { 'radio-domain': radioDomain },
     rules: {
       'radio-domain/no-inline-values': 'error',
@@ -17,7 +17,7 @@ export default [
   { ignores: ['dist/**', 'wailsjs/**'] },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/ui/**', 'src/**/*.test.tsx'],
+    ignores: ['src/shared/ui/**', 'src/**/*.test.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -45,7 +45,7 @@ export default [
     },
   },
   {
-    files: ['src/ui/**/*.{ts,tsx}'],
+    files: ['src/shared/ui/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -58,7 +58,7 @@ export default [
   },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/ui/Chart.tsx'],
+    ignores: ['src/shared/ui/Chart.tsx'],
     rules: {
       'no-restricted-imports': ['error', { patterns: ['uplot', 'uplot/*'] }],
     },

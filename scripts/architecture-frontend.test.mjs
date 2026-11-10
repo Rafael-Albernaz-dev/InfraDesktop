@@ -92,7 +92,7 @@ for (const [name, files] of [
     "nested presentation impersonation",
     {
       "nested/presentation.ts":
-        "import {Status} from '../wailsjs/go/presentation/App'",
+        "import {Status} from '../../../wailsjs/go/presentation/App'",
     },
   ],
   ["nonliteral dynamic import", { "view.ts": "import(target)" }],
@@ -126,10 +126,10 @@ test("accepts real TS/TSX helpers, side-effect CSS, type declarations and canoni
     "main.tsx":
       'import React from "react"; import ReactDOM from "react-dom/client"; import App from "./App"; import "./style.css"; ReactDOM.createRoot(document.getElementById("root")!).render(<App />);',
     "App.tsx":
-      'import {status} from "./presentation"; import {label} from "./helpers"; export default function App(){return <p>{label}</p>}',
+      'import {status} from "./platform/wails/presentation"; import {label} from "./helpers"; export default function App(){return <p>{label}</p>}',
     "helpers/index.ts": 'export const label = "synthetic";',
-    "presentation.ts":
-      'import {Status} from "../wailsjs/go/presentation/App"; import type {presentation} from "../wailsjs/go/models"; export const status = Status;',
+    "platform/wails/presentation.ts":
+      'import {Status} from "../../../wailsjs/go/presentation/App"; import type {presentation} from "../../../wailsjs/go/models"; export const status = Status;',
     "style.css": "body { color: white; }",
     "vite-env.d.ts": '/// <reference types="vite/client" />',
   });
@@ -139,7 +139,7 @@ test("accepts real TS/TSX helpers, side-effect CSS, type declarations and canoni
 for (const name of ["Observe", "ReadFile", "ExecuteSQL", "ClipboardGetText", "ClipboardSetText", "CopyText", "SaveFile", "SaveText", "SetBrandPath"]) {
   test(`rejects unapproved binding ${name}`, () => {
     const r = runGuard({
-      "presentation.ts": `import {${name}} from '../wailsjs/go/presentation/App'`,
+      "platform/wails/presentation.ts": `import {${name}} from '../../../wailsjs/go/presentation/App'`,
     });
     assert.equal(r.status, 1, r.output);
     assert.match(r.output, /unapproved Wails binding/);
@@ -147,27 +147,27 @@ for (const name of ["Observe", "ReadFile", "ExecuteSQL", "ClipboardGetText", "Cl
 }
 test("accepts explicit BF01 bindings", () => {
   const r = runGuard({
-    "presentation.ts":
-      "import {Status,Register,Login,Recover,Logout,CreateCompany,SelectCompany,SetTheme,RenewRecovery,CopyRecovery,AckRecovery,SaveRecovery,GetBrand,SaveBrand} from '../wailsjs/go/presentation/App'",
+    "platform/wails/presentation.ts":
+      "import {Status,Register,Login,Recover,Logout,CreateCompany,SelectCompany,SetTheme,RenewRecovery,CopyRecovery,AckRecovery,SaveRecovery,GetBrand,SaveBrand} from '../../../wailsjs/go/presentation/App'",
   });
   assert.equal(r.status, 0, r.output);
 });
 
 for (const code of [
-  "const bindings = await import('../wailsjs/go/presentation/App'); bindings.ExecuteSQL('query')",
-  "const {CopyText: copy} = await import('../wailsjs/go/presentation/App'); copy('text')",
-  "import('../wailsjs/go/presentation/App').then(binding => binding.Status())",
-  "import('../wailsjs/go/models')",
+  "const bindings = await import('../../../wailsjs/go/presentation/App'); bindings.ExecuteSQL('query')",
+  "const {CopyText: copy} = await import('../../../wailsjs/go/presentation/App'); copy('text')",
+  "import('../../../wailsjs/go/presentation/App').then(binding => binding.Status())",
+  "import('../../../wailsjs/go/models')",
 ]) {
   test(`rejects dynamic canonical bindings causally: ${code}`, () => {
     // The same canonical adapter/static import is accepted; the dynamic
     // loader must fail by its nominal diagnostic, not missing paths/globals.
     const control = runGuard({
-      "presentation.ts":
-        "import {Status} from '../wailsjs/go/presentation/App'; export const status = Status;",
+      "platform/wails/presentation.ts":
+        "import {Status} from '../../../wailsjs/go/presentation/App'; export const status = Status;",
     });
     assert.equal(control.status, 0, control.output);
-    const negative = runGuard({ "presentation.ts": code });
+    const negative = runGuard({ "platform/wails/presentation.ts": code });
     assert.equal(negative.status, 1, negative.output);
     assert.match(
       negative.output,
@@ -181,9 +181,9 @@ for (const code of [
 }
 
 test('accepts nominal equipment bindings and rejects a secret getter', () => {
-  const good=runGuard({'presentation.ts':"import {ListEquipment, GetEquipment, SaveEquipment, SetEquipmentActive, ListCredentials, PutCredential, InspectTrust, ConfirmTrust, ResetTrust, StartQuery, QueryStatus, CancelQuery, StartPPPoERead, PPPoEReadStatus, CancelPPPoERead, CancelPPPoEReadOperation, PPPoEReadPage, PPPoEContextCounts, ExportPPPoEOperational} from '../wailsjs/go/presentation/App';"});
+  const good=runGuard({'platform/wails/presentation.ts':"import {ListEquipment, GetEquipment, SaveEquipment, SetEquipmentActive, ListCredentials, PutCredential, InspectTrust, ConfirmTrust, ResetTrust, StartQuery, QueryStatus, CancelQuery, StartPPPoERead, PPPoEReadStatus, CancelPPPoERead, CancelPPPoEReadOperation, PPPoEReadPage, PPPoEContextCounts, ExportPPPoEOperational} from '../../../wailsjs/go/presentation/App';"});
   assert.equal(good.status,0,good.output);
-  const bad=runGuard({'presentation.ts':"import {GetSecret} from '../wailsjs/go/presentation/App';"});assert.notEqual(bad.status,0);
+  const bad=runGuard({'platform/wails/presentation.ts':"import {GetSecret} from '../../../wailsjs/go/presentation/App';"});assert.notEqual(bad.status,0);
 });
 
 test('accepts data properties named parent while rejecting global-root access and aliases', () => {

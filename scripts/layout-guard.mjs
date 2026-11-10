@@ -27,13 +27,13 @@ export function checkLayoutGuard() {
     for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
       const file = path.join(dir, item.name);
       if (item.isDirectory()) check(file);
-      else if (file.endsWith('.css') && file !== 'frontend/src/ui/tokens.css' &&
+      else if (file.endsWith('.css') && file !== 'frontend/src/shared/ui/tokens.css' &&
         /#[\da-f]{3,8}\b/i.test(fs.readFileSync(file, 'utf8')))
         throw Error(`Cor fora dos tokens: ${file}`);
     }
   }
   check('frontend/src');
-  const kit = fs.readFileSync('frontend/src/ui/kit.css', 'utf8');
+  const kit = fs.readFileSync('frontend/src/shared/ui/kit.css', 'utf8');
   for (const state of ['field-error', 'inline-error', 'operation-error', 'empty-state'])
     if (!new RegExp(`\\.${state}\\s*\\{`).test(kit)) throw Error(`Estado sem regra no kit: ${state}`);
   console.log('layout guard: PASS (zero exceções)');

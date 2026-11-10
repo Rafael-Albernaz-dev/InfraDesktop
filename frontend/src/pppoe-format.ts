@@ -1,8 +1,0 @@
-import type { PPInterval } from './presentation-pppoe-types';
-import { formatDuration } from './network-format';
-
-export function formatPPUptime(value: PPInterval, compact = false): string {
-  return value.known && value.max >= value.min
-    ? formatDuration(value.min / 1e9, compact)
-    : 'Não informado nesta leitura';
-}

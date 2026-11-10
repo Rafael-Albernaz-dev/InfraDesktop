@@ -5,21 +5,21 @@ import {
   visualCredentials,
 } from './layout-credential';
 export { credentialSceneReady };
-import { sessionLinkFixture } from '../src/session-link-fixture';
-import { importFixtureOperations } from '../src/inventory-import-layout-fixture';
+import { sessionLinkFixture } from '../src/features/pppoe/session-link-fixture';
+import { importFixtureOperations } from '../src/features/inventory/inventory-import-layout-fixture';
 import {
   prepareBase5Devices,
   createBase5List,
   prepareBase5Scene,
-} from '../src/inventory-layout-fixture';
+} from '../src/features/inventory/inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
 import {
   RadioRoles,
   RadioTransports,
   RadioFamilies,
-} from '../src/radio-contract';
-import type { Device } from '../src/equipment-api'; // Fixtures use documentation addresses, not production data.
+} from '../src/features/radio/radio-contract';
+import type { Device } from '../src/features/equipment/equipment-api'; // Fixtures use documentation addresses, not production data.
 const visualScene = new URLSearchParams(location.search).get('scene') || '';
 const isBase5Scene = base5Scenes.has(visualScene);
 const time = Date.parse(

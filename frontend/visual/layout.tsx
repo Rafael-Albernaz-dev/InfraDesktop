@@ -1,15 +1,15 @@
 // Isolated synthetic fixture: imports the product views, never the frozen renderer.
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AccessScreen } from '../src/access-screen';
-import type { Page } from '../src/desktop';
-import { Desktop } from '../src/desktop';
-import { Equipment } from '../src/equipment';
-import { Chart } from '../src/ui/Chart';
-import type { DataState } from '../src/ui/DataBlock';
-import { DataBlock } from '../src/ui/DataBlock';
-import '../src/ui/kit.css';
-import '../src/ui/tokens.css';
+import { AccessScreen } from '../src/features/access/access-screen';
+import type { Page } from '../src/app/desktop';
+import { Desktop } from '../src/app/desktop';
+import { Equipment } from '../src/features/equipment/equipment';
+import { Chart } from '../src/shared/ui/Chart';
+import type { DataState } from '../src/shared/ui/DataBlock';
+import { DataBlock } from '../src/shared/ui/DataBlock';
+import '../src/shared/ui/kit.css';
+import '../src/shared/ui/tokens.css';
 import { credentialSceneReady, installFixture } from './layout-fixture';
 const query = new URLSearchParams(location.search),
   scene = query.get('scene') || 'login';

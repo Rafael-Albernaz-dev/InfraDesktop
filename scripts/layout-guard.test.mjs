@@ -20,7 +20,7 @@ test('não permite esconder captura obrigatória substituindo-a por cena duplica
 });
 test('hexadecimal é recusado também dentro do kit e controles comuns só nascem no kit', async () => {
   const eslint = new ESLint({ cwd: path.resolve('frontend') });
-  for (const filePath of ['src/probe.tsx', 'src/ui/Probe.tsx']) {
+  for (const filePath of ['src/probe.tsx', 'src/shared/ui/Probe.tsx']) {
     const [result] = await eslint.lintText("export const color = '#abcdef';", { filePath });
     assert.ok(result.messages.some((m) => m.ruleId === 'no-restricted-syntax'), filePath);
   }
