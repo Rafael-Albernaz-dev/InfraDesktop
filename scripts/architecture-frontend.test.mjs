@@ -201,3 +201,37 @@ test('accepts data properties named parent while rejecting global-root access an
     assert.match(result.output,/direct or aliased runtime root/);
   }
 });
+
+for (const target of ['features/radio', 'app', 'platform/wails']) {
+  test(`shared rejects dependency on ${target} while local shared imports remain valid`, () => {
+    const files = {
+      'shared/helper.ts': 'export const value = 1;',
+      [`${target}/helper.ts`]: 'export const value = 1;',
+    };
+    const good = runGuard({...files, 'shared/view.ts': 'export {value} from "./helper";'});
+    assert.equal(good.status, 0, good.output);
+    for (const code of [
+      `export {value} from "../${target}/helper";`,
+      `import {value} from "../${target}/helper";`,
+      `import("../${target}/helper");`,
+      `export type Probe = typeof import("../${target}/helper");`,
+    ]) {
+      const bad = runGuard({...files, 'shared/view.ts': code});
+      assert.equal(bad.status, 1, bad.output);
+      assert.match(bad.output, /shared dependency outside shared/);
+      assert.doesNotMatch(bad.output, /local module missing|unparseable source/);
+    }
+  });
+}
+
+test('rejects generated bindings outside the canonical platform adapter', () => {
+  const spec = '../../../wailsjs/go/presentation/App';
+  const code = `import {Status} from "${spec}";`;
+  const good = runGuard({'platform/wails/presentation.ts': code});
+  assert.equal(good.status, 0, good.output);
+  for (const name of ['features/access/view.ts', 'shared/ui/view.ts', 'platform/wails/other.ts']) {
+    const bad = runGuard({[name]: code});
+    assert.equal(bad.status, 1, bad.output);
+    assert.match(bad.output, /binding outside canonical presentation adapter/);
+  }
+});

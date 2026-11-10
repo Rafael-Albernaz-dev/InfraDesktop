@@ -77,6 +77,9 @@ function inspect(name, code) {
       );
       return;
     }
+    const sharedRoot = path.join(sourceRoot, "shared") + path.sep;
+    if (filename.startsWith(sharedRoot) && !resolved.startsWith(sharedRoot))
+      problems.push("shared dependency outside shared");
     const ext = path.extname(resolved);
     if (ext === ".css") {
       if (!sideEffect || !regularFile(resolved))
@@ -99,6 +102,12 @@ function inspect(name, code) {
       problems.push("local module missing or unsafe: " + spec);
   }
   function visit(n) {
+    if (ts.isImportTypeNode(n) && ts.isLiteralTypeNode(n.argument) && ts.isStringLiteral(n.argument.literal)) {
+      const spec = n.argument.literal.text;
+      if (spec.includes("wailsjs"))
+        problems.push("dynamic Wails binding import bypasses nominal allowlist");
+      else check(spec);
+    }
     if (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) {
       if (
         n.moduleSpecifier &&
