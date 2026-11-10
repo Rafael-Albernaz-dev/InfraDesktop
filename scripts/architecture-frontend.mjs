@@ -31,6 +31,49 @@ const externalModules = new Set([
   "@testing-library/jest-dom/vitest",
 ]);
 
+const layers = new Map([
+  ["access", 0],
+  ["equipment", 1],
+  ["inventory", 2],
+  ["monitoring", 2],
+  ["pppoe", 3],
+  ["radio", 4],
+]);
+const exceptionFile = "scripts/frontend-layer-exceptions.json";
+const listedExceptions = JSON.parse(fs.readFileSync(exceptionFile, "utf8"));
+if (
+  !Array.isArray(listedExceptions) ||
+  listedExceptions.some((entry) => typeof entry !== "string") ||
+  JSON.stringify(listedExceptions) !==
+    JSON.stringify([...new Set(listedExceptions)].sort())
+)
+  throw Error(
+    "frontend layer exceptions must be a sorted array of unique strings",
+  );
+const exceptions = new Set(listedExceptions);
+const seenExceptions = new Set();
+
+function checkLayers(filename, target, problems) {
+  // Test journeys may compose all capabilities; shared remains a leaf for all files.
+  if (/\.test\.[^/]+$/.test(filename)) return;
+  const from = path.relative(sourceRoot, filename).split(path.sep);
+  const to = path.relative(sourceRoot, target).split(path.sep);
+  if (to[0] === "app" && from[0] !== "app" && filename !== entrypoint)
+    problems.push("app dependency outside app or main");
+  if (from[0] !== "features" || to[0] !== "features" || from[1] === to[1])
+    return;
+  const sourceLayer = layers.get(from[1]);
+  const targetLayer = layers.get(to[1]);
+  if (sourceLayer === undefined || targetLayer === undefined) {
+    problems.push("unknown feature layer");
+    return;
+  }
+  if (targetLayer < sourceLayer) return;
+  const edge = `frontend/src/${from.join("/")} -> frontend/src/${to.join("/")}`;
+  if (!exceptions.has(edge)) problems.push("feature layer dependency: " + edge);
+  else seenExceptions.add(edge);
+}
+
 function insideSource(file) {
   return file.startsWith(sourceRoot + path.sep);
 }
@@ -55,17 +98,20 @@ function inspect(name, code) {
     if (spec.includes("wailsjs")) {
       if (
         filename !== presentation ||
-        !["../../../wailsjs/go/presentation/App", "../../../wailsjs/go/models"].includes(
-          spec,
-        )
+        ![
+          "../../../wailsjs/go/presentation/App",
+          "../../../wailsjs/go/models",
+        ].includes(spec)
       ) {
         problems.push("binding outside canonical presentation adapter");
       }
       return;
     }
     if (!spec.startsWith(".")) {
-      const chartImport = filename === path.join(sourceRoot, "shared/ui/Chart.tsx") &&
-        (spec === "uplot" || (sideEffect && spec === "uplot/dist/uPlot.min.css"));
+      const chartImport =
+        filename === path.join(sourceRoot, "shared/ui/Chart.tsx") &&
+        (spec === "uplot" ||
+          (sideEffect && spec === "uplot/dist/uPlot.min.css"));
       if (!chartImport && !externalModules.has(spec))
         problems.push("external capability: " + spec);
       return;
@@ -84,6 +130,7 @@ function inspect(name, code) {
     if (ext === ".css") {
       if (!sideEffect || !regularFile(resolved))
         problems.push("CSS must be a regular local side-effect asset");
+      else checkLayers(filename, resolved, problems);
       return;
     }
     if (ext && ext !== ".ts" && ext !== ".tsx") {
@@ -98,14 +145,21 @@ function inspect(name, code) {
           path.join(resolved, "index.ts"),
           path.join(resolved, "index.tsx"),
         ];
-    if (!candidates.some(regularFile))
-      problems.push("local module missing or unsafe: " + spec);
+    const target = candidates.find(regularFile);
+    if (!target) problems.push("local module missing or unsafe: " + spec);
+    else checkLayers(filename, target, problems);
   }
   function visit(n) {
-    if (ts.isImportTypeNode(n) && ts.isLiteralTypeNode(n.argument) && ts.isStringLiteral(n.argument.literal)) {
+    if (
+      ts.isImportTypeNode(n) &&
+      ts.isLiteralTypeNode(n.argument) &&
+      ts.isStringLiteral(n.argument.literal)
+    ) {
       const spec = n.argument.literal.text;
       if (spec.includes("wailsjs"))
-        problems.push("dynamic Wails binding import bypasses nominal allowlist");
+        problems.push(
+          "dynamic Wails binding import bypasses nominal allowlist",
+        );
       else check(spec);
     }
     if (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) {
@@ -114,8 +168,20 @@ function inspect(name, code) {
         n.moduleSpecifier.text === "../../../wailsjs/go/presentation/App"
       ) {
         const approved = new Set([
-          "ChooseInventoryImport", "ReviewInventoryImport", "ConfirmInventoryImport", "SaveInventoryTemplate",
-          "GetRadioIndexPage", "SetCredentialDefault", "GetRadio", "StartRadio", "RadioStatus", "CancelRadio", "CancelRadioOperation", "ConfirmRadioFamily", "GetRadioLink", "ConfirmRadioLink",
+          "ChooseInventoryImport",
+          "ReviewInventoryImport",
+          "ConfirmInventoryImport",
+          "SaveInventoryTemplate",
+          "GetRadioIndexPage",
+          "SetCredentialDefault",
+          "GetRadio",
+          "StartRadio",
+          "RadioStatus",
+          "CancelRadio",
+          "CancelRadioOperation",
+          "ConfirmRadioFamily",
+          "GetRadioLink",
+          "ConfirmRadioLink",
           "StartPPPoECollection",
           "StartPPPoECatalog",
           "StartPPPoERadius",
@@ -167,14 +233,16 @@ function inspect(name, code) {
           "EnrollmentStatus",
           "InspectTrust",
           "ListCredentials",
-          "ListEquipment", "ListEquipmentFiltered", "BulkUpdateEquipment", "SetInventoryColumns",
+          "ListEquipment",
+          "ListEquipmentFiltered",
+          "BulkUpdateEquipment",
+          "SetInventoryColumns",
           "PutCredential",
           "DeleteCredential",
           "QueryStatus",
           "SaveEquipment",
           "SetEquipmentActive",
           "StartQuery",
-
         ]);
         const clause = n.importClause;
         if (
@@ -204,7 +272,9 @@ function inspect(name, code) {
       if (n.arguments.length !== 1 || !ts.isStringLiteral(n.arguments[0]))
         problems.push("dynamic unbounded import");
       else if (n.arguments[0].text.includes("wailsjs"))
-        problems.push("dynamic Wails binding import bypasses nominal allowlist");
+        problems.push(
+          "dynamic Wails binding import bypasses nominal allowlist",
+        );
       else check(n.arguments[0].text);
     }
     if (ts.isMetaProperty(n) || n.kind === ts.SyntaxKind.ThisKeyword)
@@ -243,7 +313,11 @@ function inspect(name, code) {
 for (const [name, code, bad] of [
   ["x.ts", "import fs from 'node:fs'", true],
   ["helper.ts", "import {exec} from 'node:child_process'", true],
-  ["view.ts", "import {Status} from '../../../wailsjs/go/presentation/App'", true],
+  [
+    "view.ts",
+    "import {Status} from '../../../wailsjs/go/presentation/App'",
+    true,
+  ],
   ["view.ts", "window.go.presentation.App.Status()", true],
   ["view.ts", "import(target)", true],
   ["x.ts", "import React from 'react'", false],
@@ -281,6 +355,12 @@ for (const f of files) {
   const issues = inspect(f, fs.readFileSync(f, "utf8"));
   if (issues.length) {
     console.error(f, issues);
+    bad = true;
+  }
+}
+for (const edge of exceptions) {
+  if (!seenExceptions.has(edge)) {
+    console.error("stale frontend layer exception: " + edge);
     bad = true;
   }
 }
