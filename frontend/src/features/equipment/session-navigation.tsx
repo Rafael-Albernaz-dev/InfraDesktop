@@ -19,3 +19,10 @@ export type SessionNavigation = {
 export const SessionRoute = createContext<SessionNavigation | undefined>(
   undefined,
 );
+
+export type LinkedSessionTarget = {
+  deviceID: string;
+  observation: string;
+  row: string;
+  originDevice?: string;
+};

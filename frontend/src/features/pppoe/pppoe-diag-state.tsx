@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react';
 import type { Device } from '../equipment/equipment-api';
-import { pendingPPPoE as pending } from '../equipment/equipment-receipts';
+import { pendingPPPoE as pending } from '../access/equipment-receipts';
 import type {
   UseDiagLoadEffectProps,
   UseDiagPageEffectProps,

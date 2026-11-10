@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { AddCredentialField } from './add-equipment-access-field';
 import type { Credential } from './equipment-api';
-import type { useFieldErrors } from './equipment-draft';
+import type { useFieldErrors } from '../access/equipment-draft';
 import { RoleOptions } from './equipment-roles';
 import type { ImportRow } from '../../platform/wails/presentation';
 import { Field } from '../../shared/ui/Field';

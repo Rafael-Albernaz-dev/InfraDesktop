@@ -1,5 +1,5 @@
 import type { Device, Job } from './equipment-api';
-import { pendingStarts } from './equipment-receipts';
+import { pendingStarts } from '../access/equipment-receipts';
 export function retireOlderPendingRevisions(
   profile: string,
   activation: string,

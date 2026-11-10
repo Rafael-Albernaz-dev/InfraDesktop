@@ -6,10 +6,8 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import {
-  DeviceMonitoring,
-  PPPoEReadPanel,
-} from '../../features/pppoe/pppoe-diagnostics';
+import { DeviceMonitoring } from '../../features/pppoe/device-monitoring';
+import { PPPoEReadPanel } from '../../features/pppoe/pppoe-diagnostics';
 
 import {
   pppoeDiagnosticAPI as api,
@@ -17,7 +15,7 @@ import {
   pppoeReadAPI as readAPI,
   pppoeAPI as sessions,
 } from '../../platform/wails/presentation';
-import { pendingPPPoE } from '../../features/equipment/equipment-receipts';
+import { pendingPPPoE } from '../../features/access/equipment-receipts';
 import type { Device } from '../../features/equipment/equipment-api';
 import type {
   PDDiagnostic,

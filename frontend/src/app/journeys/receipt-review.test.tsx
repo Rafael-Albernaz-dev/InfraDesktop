@@ -1,13 +1,13 @@
 import { openDeviceSheet } from '../test-navigation';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../../features/equipment/equipment';
-import { PPPoE } from '../../features/pppoe/pppoe';
+import { Equipment } from '../pages/equipment';
+import { PPPoE } from '../pages/pppoe-with-link';
 import { equipmentAPI, pppoeAPI } from '../../platform/wails/presentation';
 import {
   pendingStarts,
   pendingPPPoE,
-} from '../../features/equipment/equipment-receipts';
+} from '../../features/access/equipment-receipts';
 import type { Device } from '../../features/equipment/equipment-api';
 vi.mock('../../platform/wails/presentation', () => ({
   equipmentAPI: {

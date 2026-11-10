@@ -5,7 +5,7 @@ import { equipmentMessage } from './equipment-api';
 import { readingAge, stamp } from './equipment-reading-format';
 import { Summary } from './equipment-summary-blocks';
 import { formatDate } from './network-format';
-import type { ReadingUpdateStatus } from '../monitoring/reading-update-state';
+import type { ReadingUpdateStatus } from './reading-update-state';
 import { Button } from '../../shared/ui/Button';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { DataTable } from '../../shared/ui/DataTable';

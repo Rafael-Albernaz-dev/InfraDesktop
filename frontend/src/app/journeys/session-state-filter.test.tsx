@@ -6,7 +6,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { PPPoE } from '../../features/pppoe/pppoe';
+import { PPPoE } from '../pages/pppoe-with-link';
 import type { Device } from '../../features/equipment/equipment-api';
 import type { PPQuery } from '../../platform/wails/presentation-pppoe-types';
 const device = {

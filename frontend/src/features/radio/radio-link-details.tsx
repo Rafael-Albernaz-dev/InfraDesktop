@@ -1,4 +1,4 @@
-import type { RadioCost } from './radio-api';
+import type { RadioCost } from '../equipment/radio-api';
 import type { RadioLinkState } from './radio-link-state';
 
 import {

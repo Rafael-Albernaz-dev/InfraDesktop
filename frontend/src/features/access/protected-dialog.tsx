@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 import { Button } from '../../shared/ui/Button';
 import { Dialog } from '../../shared/ui/Dialog';
 import { NavigationGuard } from '../../shared/navigation-guard';
-import { DraftProtection } from '../equipment/equipment-draft';
-import type { DraftState } from '../equipment/equipment-draft';
+import { DraftProtection } from './equipment-draft';
+import type { DraftState } from './equipment-draft';
 
 function DiscardConfirmDialog({
   close,

@@ -1,7 +1,7 @@
 import { act, render } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { useSummaryRefresh } from '../../features/equipment/equipment-summary-refresh';
-import type { Props } from '../../features/equipment/equipment-detail';
+import { useSummaryRefresh } from '../pages/equipment-summary-refresh';
+import type { Props } from '../pages/equipment-detail';
 import { pppoeAPI } from '../../platform/wails/presentation';
 import type { PPResult } from '../../platform/wails/presentation';
 vi.mock('../../platform/wails/presentation', () => ({

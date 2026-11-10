@@ -1,6 +1,6 @@
-import { device, data } from './equipment-test-fixture';
-import { findDevicePrimary } from '../../app/test-navigation';
-import { beginAdd, openDeviceSheet } from '../../app/test-navigation';
+import { device, data } from '../../features/equipment/equipment-test-fixture';
+import { findDevicePrimary } from '../test-navigation';
+import { beginAdd, openDeviceSheet } from '../test-navigation';
 import {
   act,
   fireEvent,
@@ -10,14 +10,17 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../../app/test-equipment-shell';
-import { Desktop, Statusbar } from '../../app/desktop';
-import { equipmentAPI as api } from './equipment-api';
+import { Equipment } from '../test-equipment-shell';
+import { Desktop, Statusbar } from '../desktop';
+import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import {
   deviceMonitoringAPI as monitoringAPI,
   pppoeReadAPI as readAPI,
 } from '../../platform/wails/presentation';
-import type { EquipmentResult, Device } from './equipment-api';
+import type {
+  EquipmentResult,
+  Device,
+} from '../../features/equipment/equipment-api';
 vi.mock('../../platform/wails/presentation', () => ({
   deviceMonitoringAPI: {
     current: vi.fn().mockResolvedValue({

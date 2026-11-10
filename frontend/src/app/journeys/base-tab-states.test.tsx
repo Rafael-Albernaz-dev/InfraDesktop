@@ -9,14 +9,14 @@ import {
 import { afterEach, expect, it, vi } from 'vitest';
 import { RadioEquipment } from '../../features/radio/radio';
 import { RadioRoles } from '../../features/equipment/radio-contract';
-import { radioAPI as api } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
 import {
   device,
   reading,
   response,
 } from '../../features/radio/radio-test-fixtures';
-import { DeviceMonitoring } from '../../features/monitoring/device-monitoring';
-vi.mock('../../features/radio/radio-api', () => ({
+import { DeviceMonitoring } from '../../features/pppoe/device-monitoring';
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: { current: vi.fn(), cancelOperation: vi.fn() },
 }));
 it('PTP apresenta só o próprio lado A e declara lado B como L07-DRV', async () => {

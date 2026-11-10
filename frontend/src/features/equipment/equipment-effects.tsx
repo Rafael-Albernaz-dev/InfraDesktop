@@ -4,7 +4,7 @@ import type { Device, Job } from './equipment-api';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { clearPendingStartsForJob } from './equipment-pending-revisions';
 import { useLatestRef } from '../../shared/hooks/use-latest-ref';
-export { useDeviceListEffect } from '../inventory/inventory-list-effect';
+export { useDeviceListEffect } from './inventory-list-effect';
 type UseJobPollEffectProps = {
   job?: Job;
   profile: string;

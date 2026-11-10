@@ -1,12 +1,12 @@
 import type { PPRow } from '../../platform/wails/presentation';
 import type { Device } from '../equipment/equipment-api';
 import { PPPoEReadPanel } from './pppoe-diagnostics';
-import { formatPPUptime } from './pppoe-format';
+import { formatPPUptime } from '../equipment/pppoe-format';
 import { SessionHeader } from './pppoe-session-header';
 import { SessionAuthInfo, SessionConnectivityTab } from './pppoe-session-info';
 import type { PPPoESessionDetailProps } from './pppoe-session-props';
 import type { PPObservation } from '../../platform/wails/presentation-pppoe-types';
-import { RadioLinkPanel } from '../radio/radio';
+import { SessionLinkPanel } from './session-link-slot';
 import { SessionChain } from './session-chain';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { Tabs } from '../../shared/ui/Tabs';
@@ -160,8 +160,7 @@ function SessionDetailContent(p: PPPoESessionDetailProps) {
   if (p.detailTab === 'traffic') return <SessionTrafficTab {...p} />;
   if (p.detailTab === 'link')
     return (
-      <RadioLinkPanel
-        session
+      <SessionLinkPanel
         profile={profile}
         activation={activation}
         device={device}

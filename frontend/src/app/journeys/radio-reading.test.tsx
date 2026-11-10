@@ -6,8 +6,11 @@ import {
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioEquipment, RadioLinkPanel } from '../../features/radio/radio';
-import { radioAPI as api } from '../../features/radio/radio-api';
-import type { RadioReading, RadioView } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
+import type {
+  RadioReading,
+  RadioView,
+} from '../../features/equipment/radio-api';
 import {
   fixtureAPID,
   device,
@@ -15,7 +18,7 @@ import {
   reading,
   link,
 } from '../../features/radio/radio-test-fixtures';
-vi.mock('../../features/radio/radio-api', () => ({
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
     start: vi.fn(),

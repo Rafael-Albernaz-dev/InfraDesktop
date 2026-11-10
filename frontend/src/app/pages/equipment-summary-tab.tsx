@@ -1,7 +1,7 @@
 import type { Props } from './equipment-detail';
-import { EquipmentReading } from './equipment-reading';
-import { queryFailureOwnsDetail } from './equipment-query-failure';
-import { EquipmentSummaryStatistics } from './equipment-summary-statistics';
+import { EquipmentReading } from '../../features/equipment/equipment-reading';
+import { queryFailureOwnsDetail } from '../../features/equipment/equipment-query-failure';
+import { EquipmentSummaryStatistics } from '../../features/equipment/equipment-summary-statistics';
 import { equipmentReadBlocked } from './equipment-query-policy';
 import { DataBlock } from '../../shared/ui/DataBlock';
 

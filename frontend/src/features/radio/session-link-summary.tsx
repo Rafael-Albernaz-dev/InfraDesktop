@@ -1,5 +1,9 @@
 import { KeyValues } from '../../shared/ui/KeyValues';
-import type { RadioLink, RadioMetric, RadioReading } from '../radio/radio-api';
+import type {
+  RadioLink,
+  RadioMetric,
+  RadioReading,
+} from '../equipment/radio-api';
 
 const missing = 'Não informado nesta leitura';
 function metric(reading: RadioReading | undefined, name: string) {

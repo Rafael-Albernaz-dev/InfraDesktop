@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { PPPoE } from '../../features/pppoe/pppoe';
+import { PPPoE } from '../pages/pppoe-with-link';
 import {
   pppoeAPI as api,
   pppoeReadAPI as read,

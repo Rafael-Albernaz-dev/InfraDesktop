@@ -217,4 +217,4 @@ export function DeviceFormDialog(p: {
   );
 }
 
-export { CredentialFormDialog } from '../inventory/credential-form-dialog';
+export { CredentialFormDialog } from './credential-form-dialog';

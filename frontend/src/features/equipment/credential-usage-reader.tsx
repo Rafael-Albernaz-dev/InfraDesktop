@@ -1,4 +1,4 @@
-import { equipmentAPI } from '../equipment/equipment-api';
+import { equipmentAPI } from './equipment-api';
 
 export type CredentialUsage = Record<string, string[]>;
 

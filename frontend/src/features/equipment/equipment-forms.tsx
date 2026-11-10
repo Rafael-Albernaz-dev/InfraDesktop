@@ -6,7 +6,7 @@ import type {
   DeviceInput,
   EquipmentResult,
 } from './equipment-api';
-import { useDraftProtection, useFieldErrors } from './equipment-draft';
+import { useDraftProtection, useFieldErrors } from '../access/equipment-draft';
 import { ExistingCredentialSelect } from './equipment-form-credentials';
 import { id } from './equipment-reading-format';
 import { DeviceRoleSelect } from './equipment-role-select';

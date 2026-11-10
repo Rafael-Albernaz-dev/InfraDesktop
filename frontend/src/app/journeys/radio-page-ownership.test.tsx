@@ -1,15 +1,18 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioEquipment } from '../../features/radio/radio';
-import { radioAPI as api } from '../../features/radio/radio-api';
-import type { RadioReading, RadioResult } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
+import type {
+  RadioReading,
+  RadioResult,
+} from '../../features/equipment/radio-api';
 import { equipmentAPI } from '../../features/equipment/equipment-api';
 import {
   device,
   reading,
   response,
 } from '../../features/radio/radio-test-fixtures';
-vi.mock('../../features/radio/radio-api', () => ({
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
     start: vi.fn(),

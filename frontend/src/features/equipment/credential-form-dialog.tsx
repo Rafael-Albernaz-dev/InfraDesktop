@@ -1,15 +1,15 @@
 import { useRef, useState } from 'react';
 import { CredentialDeleteConfirm } from './credential-delete-confirm';
-import type { Credential } from '../equipment/equipment-api';
-import { equipmentAPI as api } from '../equipment/equipment-api';
+import type { Credential } from './equipment-api';
+import { equipmentAPI as api } from './equipment-api';
 import {
   CredentialForm,
   CredentialPicker,
   DefaultCredentialDetails,
-} from '../equipment/equipment-credential-form';
-import type { EquipmentPerformFn } from '../equipment/equipment-dialogs';
-import { ProtectedDialog } from '../equipment/equipment-forms';
-import { id } from '../equipment/equipment-reading-format';
+} from './equipment-credential-form';
+import type { EquipmentPerformFn } from './equipment-dialogs';
+import { ProtectedDialog } from './equipment-forms';
+import { id } from './equipment-reading-format';
 
 function DialogNotices(p: { error: string; vault: boolean; ready: boolean }) {
   return (

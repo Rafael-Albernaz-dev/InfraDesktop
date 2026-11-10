@@ -3,7 +3,7 @@ import { Select } from '../../shared/ui/Select';
 import { useContext } from 'react';
 
 import type { Credential, CredentialInput } from './equipment-api';
-import { DraftProtection, useFieldErrors } from './equipment-draft';
+import { DraftProtection, useFieldErrors } from '../access/equipment-draft';
 
 export function CredentialPicker({
   disabled,

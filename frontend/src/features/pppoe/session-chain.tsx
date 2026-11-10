@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import type { Device } from '../equipment/equipment-api';
-import type { RadioLink } from '../radio/radio-api';
+import type { RadioLink } from '../equipment/radio-api';
 import { EquipmentChain } from '../equipment/equipment-chain';
 
 export function SessionChain(p: {

@@ -1,5 +1,5 @@
 import { hygieneDataState } from '../inventory/hygiene-data-state';
-import { SessionPointsTable } from './monitoring-points';
+import { SessionPointsTable } from '../monitoring/monitoring-points';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import type { DataState } from '../../shared/ui/DataBlock';
 import { KeyValues } from '../../shared/ui/KeyValues';
@@ -16,14 +16,14 @@ import {
   formatDuration,
   uptimeTitle,
 } from '../equipment/network-format';
-import { formatPPUptime } from '../pppoe/pppoe-format';
+import { formatPPUptime } from '../equipment/pppoe-format';
 import type {
   DeviceMonitoringPoint,
   PPReadResult,
 } from '../../platform/wails/presentation';
 import { deviceMonitoringAPI as monitoringAPI } from '../../platform/wails/presentation';
-import { PPPoEReadPanel } from '../pppoe/pppoe-diagnostics';
-export { DeviceOperationalTables } from './device-operational';
+import { PPPoEReadPanel } from './pppoe-diagnostics';
+export { DeviceOperationalTables } from '../monitoring/device-operational';
 
 function SessionCurve({ points }: { points: DeviceMonitoringPoint[] }) {
   const ordered = [...points].reverse();

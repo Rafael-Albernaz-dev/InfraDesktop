@@ -1,11 +1,11 @@
 import { act, render, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { RadioLinkPanel } from '../../features/radio/radio';
-import { radioAPI as api } from '../../features/radio/radio-api';
-import type { RadioResult } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
+import type { RadioResult } from '../../features/equipment/radio-api';
 import { device, response } from '../../features/radio/radio-test-fixtures';
 import { equipmentAPI } from '../../features/equipment/equipment-api';
-vi.mock('../../features/radio/radio-api', () => ({
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: {
     link: vi.fn(),
     current: vi.fn(),

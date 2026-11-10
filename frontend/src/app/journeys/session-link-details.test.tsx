@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { useSessionLinkDetails } from '../../features/pppoe/session-link-details';
+import { useSessionLinkDetails } from '../../features/radio/session-link-details';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import type { RadioLinkState } from '../../features/radio/radio-link-state';
 vi.mock('../../platform/wails/presentation', () => ({

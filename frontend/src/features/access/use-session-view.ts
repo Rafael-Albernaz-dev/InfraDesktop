@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
-import { accessErrorKind } from '../access/access-error-state';
-import type { AccessErrorKind } from '../access/access-error-state';
+import { accessErrorKind } from './access-error-state';
+import type { AccessErrorKind } from './access-error-state';
 import type { Result } from '../../platform/wails/presentation';
-import type { Intent } from '../access/microcopy';
-import { message } from '../access/microcopy';
+import type { Intent } from './microcopy';
+import { message } from './microcopy';
 export function useSessionView(initial: Result) {
   const [view, setView] = useState(initial);
   const [connected, setConnected] = useState(false);

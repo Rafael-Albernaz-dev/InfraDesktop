@@ -25,11 +25,11 @@
     "max-params": 7,
     "max-lines-per-function": 98
   },
-  "src/features/inventory/credential-form-dialog.tsx": {
+  "src/features/equipment/credential-form-dialog.tsx": {
     "max-lines-per-function": 103,
     "no-nested-ternary": 2
   },
-  "src/features/inventory/credential-usage-reader.tsx": {
+  "src/features/equipment/credential-usage-reader.tsx": {
     "complexity": 17
   },
   "src/app/desktop-pages.tsx": {
@@ -48,7 +48,7 @@
     "max-lines-per-function": 68,
     "no-nested-ternary": 1
   },
-  "src/features/monitoring/device-monitoring.tsx": {
+  "src/features/pppoe/device-monitoring.tsx": {
     "max-lines-per-function": 105,
     "no-nested-ternary": 1,
     "quality/state-count": 9,
@@ -71,7 +71,7 @@
   "src/features/equipment/equipment-credentials.tsx": {
     "max-lines-per-function": 134
   },
-  "src/features/equipment/equipment-detail.tsx": {
+  "src/app/pages/equipment-detail.tsx": {
     "max-lines-per-function": 88,
     "no-nested-ternary": 2,
     "complexity": 18
@@ -84,15 +84,15 @@
   "src/features/equipment/equipment-forms.tsx": {
     "max-lines-per-function": 138
   },
-  "src/features/equipment/equipment-insights.test.tsx": {
+  "src/app/pages/equipment-insights.test.tsx": {
     "max-lines-per-function": 128
   },
-  "src/features/equipment/equipment-insights.tsx": {
+  "src/app/pages/equipment-insights.tsx": {
     "max-lines-per-function": 248,
     "complexity": 41,
     "no-nested-ternary": 2
   },
-  "src/features/equipment/equipment-inventory.tsx": {
+  "src/features/inventory/equipment-inventory.tsx": {
     "max-lines-per-function": 63,
     "no-nested-ternary": 1
   },
@@ -125,10 +125,10 @@
   "src/features/equipment/equipment-surfaces.tsx": {
     "complexity": 19
   },
-  "src/features/equipment/equipment.test.tsx": {
+  "src/app/pages/equipment.test.tsx": {
     "max-lines": 1933
   },
-  "src/features/equipment/equipment.tsx": {
+  "src/app/pages/equipment.tsx": {
     "max-lines-per-function": 92,
     "no-nested-ternary": 1,
     "complexity": 18
@@ -266,7 +266,7 @@
   "src/features/pppoe/session-cpe.tsx": {
     "max-lines-per-function": 68
   },
-  "src/features/pppoe/session-link-details.tsx": {
+  "src/features/radio/session-link-details.tsx": {
     "max-lines-per-function": 64
   },
   "src/app/journeys/session-route-navigation.test.tsx": {

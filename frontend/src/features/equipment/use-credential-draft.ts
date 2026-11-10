@@ -3,18 +3,15 @@ import type {
   Credential,
   CredentialInput,
   EquipmentResult,
-} from '../equipment/equipment-api';
-import {
-  useDraftProtection,
-  useFieldErrors,
-} from '../equipment/equipment-draft';
-import { id } from '../equipment/equipment-reading-format';
+} from './equipment-api';
+import { useDraftProtection, useFieldErrors } from '../access/equipment-draft';
+import { id } from './equipment-reading-format';
 import {
   fieldForEquipmentCode,
   fieldMessages,
   validEquipmentSecret,
   validEquipmentText,
-} from '../equipment/equipment-validation';
+} from './equipment-validation';
 type FormOptions = {
   credential?: Credential;
   disabled: boolean;

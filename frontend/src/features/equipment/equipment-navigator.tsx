@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentAPI, equipmentMessage } from './equipment-api';
-import type { LinkedSessionTarget } from '../pppoe/linked-session-navigation';
+import type { LinkedSessionTarget } from './session-navigation';
 export function useEquipmentNavigator(p: {
   profile: string;
   activation: string;

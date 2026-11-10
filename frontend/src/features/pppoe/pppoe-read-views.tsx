@@ -7,7 +7,7 @@ import {
   formatVolume,
   uptimeTitle,
 } from '../equipment/network-format';
-import { formatPPUptime } from './pppoe-format';
+import { formatPPUptime } from '../equipment/pppoe-format';
 import {
   cancelReadLabel,
   readingFlag,

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { DeviceMonitoring } from '../../features/pppoe/device-monitoring';
 import {
   PPPoEDiagnostics,
-  DeviceMonitoring,
   PPPoEPing,
   PPPoEReadPanel,
 } from '../../features/pppoe/pppoe-diagnostics';
@@ -13,7 +13,7 @@ import {
   pppoeReadAPI as readAPI,
   pppoeAPI as sessions,
 } from '../../platform/wails/presentation';
-import { pendingPPPoE } from '../../features/equipment/equipment-receipts';
+import { pendingPPPoE } from '../../features/access/equipment-receipts';
 import type { Device } from '../../features/equipment/equipment-api';
 import type {
   PDDiagnostic,

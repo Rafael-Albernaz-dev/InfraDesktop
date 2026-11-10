@@ -2,7 +2,7 @@ import type { Props } from './equipment-detail';
 import { pppoeAPI } from '../../platform/wails/presentation';
 import { refreshAttemptInProgress } from '../../shared/hooks/refresh-attempt-order';
 import { useOpeningAuthority } from '../../shared/hooks/use-opening-authority';
-import { useRefreshOnOpen } from './use-refresh-on-open';
+import { useRefreshOnOpen } from '../../features/equipment/use-refresh-on-open';
 
 export async function refreshUnlessCollecting(
   p: Props,

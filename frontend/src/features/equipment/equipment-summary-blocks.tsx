@@ -9,8 +9,8 @@ import {
 } from './network-format';
 import { stamp } from './equipment-reading-format';
 import { DataBlock } from '../../shared/ui/DataBlock';
-import { readingUpdateState } from '../monitoring/reading-update-state';
-import type { ReadingUpdateStatus } from '../monitoring/reading-update-state';
+import { readingUpdateState } from './reading-update-state';
+import type { ReadingUpdateStatus } from './reading-update-state';
 export function Summary({
   device,
   statistics,

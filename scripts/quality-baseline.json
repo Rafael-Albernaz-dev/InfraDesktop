@@ -98,7 +98,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/monitoring/device-monitoring.tsx": {
+  "frontend/src/features/pppoe/device-monitoring.tsx": {
     "Lines": 573,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -126,7 +126,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-detail.tsx": {
+  "frontend/src/app/pages/equipment-detail.tsx": {
     "Lines": 292,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -140,7 +140,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-draft.tsx": {
+  "frontend/src/features/access/equipment-draft.tsx": {
     "Lines": 136,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -168,21 +168,21 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-insights.test.tsx": {
+  "frontend/src/app/pages/equipment-insights.test.tsx": {
     "Lines": 197,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-insights.tsx": {
+  "frontend/src/app/pages/equipment-insights.tsx": {
     "Lines": 273,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-inventory.tsx": {
+  "frontend/src/features/inventory/equipment-inventory.tsx": {
     "Lines": 81,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -210,7 +210,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-receipts.ts": {
+  "frontend/src/features/access/equipment-receipts.ts": {
     "Lines": 21,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -238,14 +238,14 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment.test.tsx": {
+  "frontend/src/app/pages/equipment.test.tsx": {
     "Lines": 1957,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment.tsx": {
+  "frontend/src/app/pages/equipment.tsx": {
     "Lines": 205,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -357,7 +357,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/pppoe/pppoe-format.ts": {
+  "frontend/src/features/equipment/pppoe-format.ts": {
     "Lines": 8,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -420,7 +420,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/radio/radio-api.ts": {
+  "frontend/src/features/equipment/radio-api.ts": {
     "Lines": 145,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -19491,7 +19491,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-summary-refresh.ts": {
+  "frontend/src/app/pages/equipment-summary-refresh.ts": {
     "Lines": 35,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -19694,7 +19694,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-summary-tab.tsx": {
+  "frontend/src/app/pages/equipment-summary-tab.tsx": {
     "Lines": 53,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -19898,14 +19898,14 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-query-policy.ts": {
+  "frontend/src/app/pages/equipment-query-policy.ts": {
     "Lines": 16,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-sheet-header.tsx": {
+  "frontend/src/app/pages/equipment-sheet-header.tsx": {
     "Lines": 79,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -20250,7 +20250,7 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/inventory/shared-credential-confirm.tsx": {
+  "frontend/src/features/equipment/shared-credential-confirm.tsx": {
     "Lines": 25,
     "LongLines": 0,
     "MaxFunction": 0,
@@ -20264,14 +20264,14 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/inventory/use-credential-draft.ts": {
+  "frontend/src/features/equipment/use-credential-draft.ts": {
     "Lines": 119,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/pppoe/use-session-view.ts": {
+  "frontend/src/features/access/use-session-view.ts": {
     "Lines": 50,
     "LongLines": 0,
     "MaxFunction": 0,

@@ -6,7 +6,7 @@ import { PPPoEHeader, PPPoEStatusBanners } from './pppoe-header';
 import { observationReadingStatus } from './pppoe-observation-state';
 import { PPPoETabContent } from './pppoe-observation-view';
 import type { PPPoETab } from './pppoe-state';
-import { readingUpdateState } from '../monitoring/reading-update-state';
+import { readingUpdateState } from '../equipment/reading-update-state';
 import { DataBlock } from '../../shared/ui/DataBlock';
 const PPPOE_TABS: readonly [PPPoETab, string][] = [
   ['sessions', 'Sessões'],

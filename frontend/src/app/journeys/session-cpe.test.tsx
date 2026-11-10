@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest';
 import { SessionCPE } from '../../features/pppoe/session-cpe';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
-import type { RadioResult } from '../../features/radio/radio-api';
+import type { RadioResult } from '../../features/equipment/radio-api';
 vi.mock('../../platform/wails/presentation', () => ({
   radioAPI: { link: vi.fn() },
   equipmentAPI: { get: vi.fn() },

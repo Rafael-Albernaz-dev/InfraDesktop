@@ -10,13 +10,13 @@ import {
   PPPoEDiagnostics,
   PPPoEPing,
 } from '../../features/pppoe/pppoe-diagnostics';
-import { PPPoE } from '../../features/pppoe/pppoe';
+import { PPPoE } from '../pages/pppoe-with-link';
 import {
   pppoeDiagnosticAPI as api,
   pppoeReadAPI as readAPI,
   pppoeAPI as sessions,
 } from '../../platform/wails/presentation';
-import { pendingPPPoE } from '../../features/equipment/equipment-receipts';
+import { pendingPPPoE } from '../../features/access/equipment-receipts';
 import type { Device } from '../../features/equipment/equipment-api';
 import type {
   PDDiagnostic,

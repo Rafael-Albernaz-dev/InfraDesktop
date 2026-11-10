@@ -11,7 +11,7 @@ import {
   normalizeRoute,
   type RouteName,
 } from '../features/access/desktop-model';
-import { Equipment } from '../features/equipment/equipment';
+import { Equipment } from './pages/equipment';
 import { useEquipmentOperations } from '../features/equipment/equipment-operations';
 import type { useInventoryNavigation } from '../features/inventory/inventory-navigation';
 import type { NavigationAttempt } from '../shared/navigation-guard';

@@ -9,7 +9,7 @@ import {
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioLinkPanel } from '../../features/radio/radio';
-import { radioAPI as api } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
 import {
   device,
   response,
@@ -18,7 +18,7 @@ import {
 } from '../../features/radio/radio-test-fixtures';
 import { equipmentAPI } from '../../features/equipment/equipment-api';
 
-vi.mock('../../features/radio/radio-api', () => ({
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
     start: vi.fn(),

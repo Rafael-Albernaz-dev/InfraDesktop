@@ -1,4 +1,4 @@
-import { DeviceOperationalTables } from '../monitoring/device-monitoring';
+import { DeviceOperationalTables } from './device-monitoring';
 import {
   exactNumber,
   formatDate,

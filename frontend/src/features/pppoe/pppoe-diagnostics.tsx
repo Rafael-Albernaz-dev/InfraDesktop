@@ -10,7 +10,6 @@ import { DataBlock } from '../../shared/ui/DataBlock';
 import type { PPReadPanelProps, ReadState } from './pppoe-read-state';
 import { usePPReadState } from './pppoe-read-state';
 import { PPReadActionButtons } from './pppoe-read-views';
-export { DeviceMonitoring } from '../monitoring/device-monitoring';
 export { PPPoEDiagnostics } from './pppoe-diag-views';
 export { PPPoEPing } from './pppoe-ping';
 

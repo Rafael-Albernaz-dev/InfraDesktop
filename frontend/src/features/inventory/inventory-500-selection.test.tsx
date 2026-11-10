@@ -6,7 +6,7 @@ import {
   within,
 } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { Equipment } from '../equipment/equipment';
+import { Equipment } from '../../app/pages/equipment';
 import { equipmentAPI } from '../equipment/equipment-api';
 import type { Device } from '../equipment/equipment-api';
 

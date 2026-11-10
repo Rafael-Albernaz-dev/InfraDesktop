@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
-import type { Device } from '../equipment/equipment-api';
-import {
-  equipmentAPI as api,
-  equipmentMessage,
-} from '../equipment/equipment-api';
+import type { Device } from './equipment-api';
+import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { useLatestRef } from '../../shared/hooks/use-latest-ref';
 type UseDeviceListEffectProps = {
   inventoryNode: HTMLElement | null;

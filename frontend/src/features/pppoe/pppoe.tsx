@@ -1,4 +1,4 @@
-import { useSessionsTabRefresh } from '../monitoring/automatic-tab-refresh';
+import { useSessionsTabRefresh } from './sessions-tab-refresh';
 import type { Device } from '../equipment/equipment-api';
 import type { LinkedSessionTarget } from './linked-session-navigation';
 import { PPPoESessionDetail } from './pppoe-session-screen';

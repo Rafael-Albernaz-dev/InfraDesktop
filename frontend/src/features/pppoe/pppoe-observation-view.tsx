@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 
 import { pppoeAPI as api } from '../../platform/wails/presentation';
 import { CSVNotice } from './pppoe-csv-notice';
-import { DeviceMonitoring, PPPoEDiagnostics } from './pppoe-diagnostics';
+import { DeviceMonitoring } from './device-monitoring';
+import { PPPoEDiagnostics } from './pppoe-diagnostics';
 import {
   PPPoECompareView,
   PPPoEPairDetail,

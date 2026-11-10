@@ -1,5 +1,5 @@
 import { RadioTickDiagnostic } from './radio-tick-diagnostic';
-import type { RadioMetric, RadioReading } from './radio-api';
+import type { RadioMetric, RadioReading } from '../equipment/radio-api';
 import {
   formatDate,
   formatDuration,

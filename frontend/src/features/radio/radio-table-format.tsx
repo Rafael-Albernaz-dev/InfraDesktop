@@ -1,4 +1,4 @@
-import type { RadioMetric } from './radio-api';
+import type { RadioMetric } from '../equipment/radio-api';
 import { formatMetric } from '../equipment/network-format';
 export function radioMetric(metrics: RadioMetric[], name: string) {
   return metrics.find((m) => m.name === name && m.quality !== 'unavailable');

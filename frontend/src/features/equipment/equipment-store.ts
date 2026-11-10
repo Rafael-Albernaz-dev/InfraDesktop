@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { Credential, Device, Job } from './equipment-api';
 import { useDisplayNow } from './equipment-snapshot';
-import { useInventoryFilterState } from '../inventory/inventory-filter-state';
-import type { LinkedSessionTarget } from '../pppoe/linked-session-navigation';
+import { useInventoryFilterState } from './inventory-filter-state';
+import type { LinkedSessionTarget } from './session-navigation';
 function useCredentialStore(profile: string, activation: string) {
   const [credentialRefresh, reloadCredentials] = useState(0);
   const [credentialDefaults, setCredentialDefaults] = useState<

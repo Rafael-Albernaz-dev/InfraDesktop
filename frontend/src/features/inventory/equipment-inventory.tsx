@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { Device } from './equipment-api';
-import type { useEquipmentState } from './equipment-state';
-import { InventoryBulkDialog } from '../inventory/inventory-bulk-dialog';
-import { useColumnPreferences } from '../inventory/inventory-column-preferences';
-import { InventoryTable } from '../inventory/inventory-table';
-import { InventoryToolbar } from '../inventory/inventory-toolbar';
+import type { Device } from '../equipment/equipment-api';
+import type { useEquipmentState } from '../equipment/equipment-state';
+import { InventoryBulkDialog } from './inventory-bulk-dialog';
+import { useColumnPreferences } from './inventory-column-preferences';
+import { InventoryTable } from './inventory-table';
+import { InventoryToolbar } from './inventory-toolbar';
 import { Button } from '../../shared/ui/Button';
 import { StateNotice } from '../../shared/ui/StateNotice';
 import { Pager } from '../../shared/ui/Pager';

@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { AccessScreen } from '../src/features/access/access-screen';
 import type { Page } from '../src/app/desktop';
 import { Desktop } from '../src/app/desktop';
-import { Equipment } from '../src/features/equipment/equipment';
+import { Equipment } from '../src/app/pages/equipment';
 import { Chart } from '../src/shared/ui/Chart';
 import type { DataState } from '../src/shared/ui/DataBlock';
 import { DataBlock } from '../src/shared/ui/DataBlock';

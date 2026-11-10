@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { acceptEquipmentAuthority } from '../equipment/equipment-receipts';
+import { acceptEquipmentAuthority } from '../access/equipment-receipts';
 import { FRESH_QUERY } from './pppoe-context-actions';
 import type {
   PPResult,

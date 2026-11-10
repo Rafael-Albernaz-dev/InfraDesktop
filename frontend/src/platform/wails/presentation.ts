@@ -548,7 +548,7 @@ import type {
   RadioResult,
   RadioInput,
   RadioLinkChoice,
-} from '../../features/radio/radio-api';
+} from '../../features/equipment/radio-api';
 export const radioAPI = {
   indexPage: (
     p: string,

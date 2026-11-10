@@ -2,8 +2,8 @@ import { useRadioLinkState } from './radio-link-state';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import type { RadioLinkPanelProps } from './radio-link-state';
 import { RadioLinkContent } from './radio-link-content';
-import { useSessionLinkDetails } from '../pppoe/session-link-details';
-import { SessionLinkSummary } from '../pppoe/session-link-summary';
+import { useSessionLinkDetails } from './session-link-details';
+import { SessionLinkSummary } from './session-link-summary';
 import { readingAge } from '../equipment/equipment-reading-format';
 export function RadioLinkPanel(
   props: RadioLinkPanelProps & { session?: boolean },

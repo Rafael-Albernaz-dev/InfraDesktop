@@ -1,4 +1,4 @@
-import { useCredentialUsage } from '../inventory/credential-usage';
+import { useCredentialUsage } from './credential-usage';
 import { useState } from 'react';
 import type { useEquipmentState } from './equipment-state';
 import { DefaultCredentialDetails } from './equipment-credential-form';

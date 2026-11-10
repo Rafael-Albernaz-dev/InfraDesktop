@@ -8,7 +8,7 @@ import {
   formatVolumePair,
   uptimeTitle,
 } from '../equipment/network-format';
-import { formatPPUptime } from '../pppoe/pppoe-format';
+import { formatPPUptime } from '../equipment/pppoe-format';
 export function DeviceHealthSection({
   health,
   showFastTrackNotice = true,

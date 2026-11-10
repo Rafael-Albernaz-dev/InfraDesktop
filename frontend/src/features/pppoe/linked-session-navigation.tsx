@@ -3,12 +3,8 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 import type { usePPPoEState } from './pppoe-state';
 import { pppoeAPI } from '../../platform/wails/presentation';
 
-export type LinkedSessionTarget = {
-  deviceID: string;
-  observation: string;
-  row: string;
-  originDevice?: string;
-};
+import type { LinkedSessionTarget } from '../equipment/session-navigation';
+export type { LinkedSessionTarget };
 export function useOpenLinkedSession(
   s: ReturnType<typeof usePPPoEState>,
   target?: LinkedSessionTarget,

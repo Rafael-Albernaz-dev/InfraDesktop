@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../equipment/equipment';
+import { Equipment } from '../../app/pages/equipment';
 import { equipmentAPI } from '../equipment/equipment-api';
 import type { Device, EquipmentResult } from '../equipment/equipment-api';
 

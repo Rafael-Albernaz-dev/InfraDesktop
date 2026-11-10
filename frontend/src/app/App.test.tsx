@@ -278,7 +278,7 @@ describe('BF01 real-use presentation', () => {
 });
 it('C01b confirmed unauthentication clears expired receipts; transport failure retains them before same-context login', async () => {
   const { pendingStarts } =
-    await import('../features/equipment/equipment-receipts');
+    await import('../features/access/equipment-receipts');
   vi.useFakeTimers();
   vi.mocked(access.status).mockResolvedValue(snapshot(true));
   render(<App />);

@@ -1,7 +1,7 @@
 import { render, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { PPPoE } from '../../features/pppoe/pppoe';
-import { SessionRoute } from '../../features/pppoe/session-navigation';
+import { PPPoE } from '../pages/pppoe-with-link';
+import { SessionRoute } from '../../features/equipment/session-navigation';
 import { pppoeAPI } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
 

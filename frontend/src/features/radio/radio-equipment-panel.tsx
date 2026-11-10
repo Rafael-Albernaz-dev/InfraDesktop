@@ -1,6 +1,6 @@
 import { RadioCPEClient } from './radio-cpe-client';
 import type { RefreshOpeningRef } from '../equipment/use-refresh-on-open';
-import { useRadioTabRefresh } from '../monitoring/automatic-tab-refresh';
+import { useRadioTabRefresh } from './automatic-tab-refresh';
 import { equipmentRadioError } from './radio-equipment-status';
 import { StateNotice } from '../../shared/ui/StateNotice';
 import { EquipmentChain } from '../equipment/equipment-chain';
@@ -19,7 +19,7 @@ import {
   RadioModes,
   RadioRoles,
 } from '../equipment/radio-contract';
-import type { RadioReading } from './radio-api';
+import type { RadioReading } from '../equipment/radio-api';
 import { RadioCredentialRecovery } from './radio-credential-recovery';
 import {
   createEquipmentPage,

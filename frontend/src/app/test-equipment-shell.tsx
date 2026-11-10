@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Equipment as EquipmentView } from '../features/equipment/equipment';
-import type { EquipmentProps } from '../features/equipment/equipment';
+import { Equipment as EquipmentView } from './pages/equipment';
+import type { EquipmentProps } from './pages/equipment';
 
 export function Equipment(props: EquipmentProps) {
   const [state, setState] = useState({

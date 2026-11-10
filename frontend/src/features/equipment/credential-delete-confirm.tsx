@@ -1,5 +1,5 @@
 import { Button } from '../../shared/ui/Button';
-import type { Credential } from '../equipment/equipment-api';
+import type { Credential } from './equipment-api';
 
 export function CredentialDeleteConfirm(p: {
   credential: Credential;

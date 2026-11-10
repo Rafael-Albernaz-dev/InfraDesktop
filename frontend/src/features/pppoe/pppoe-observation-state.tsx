@@ -1,5 +1,5 @@
 import type { usePPPoEState } from './pppoe-state';
-import type { ReadingUpdateStatus } from '../monitoring/reading-update-state';
+import type { ReadingUpdateStatus } from '../equipment/reading-update-state';
 type State = ReturnType<typeof usePPPoEState>;
 export function observationReadingStatus(
   s: State,

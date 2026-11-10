@@ -1,9 +1,9 @@
-import { equipmentAPI as api } from './equipment-api';
-import { equipmentType } from './equipment-layout';
-import { latestSavedReading } from './equipment-reading-format';
-import { driverOwners } from './equipment-role-options';
+import { equipmentAPI as api } from '../../features/equipment/equipment-api';
+import { equipmentType } from '../../features/equipment/equipment-layout';
+import { latestSavedReading } from '../../features/equipment/equipment-reading-format';
+import { driverOwners } from '../../features/equipment/equipment-role-options';
 import { equipmentReadBlocked } from './equipment-query-policy';
-import { formatDuration } from './network-format';
+import { formatDuration } from '../../features/equipment/network-format';
 import { Button } from '../../shared/ui/Button';
 import { PageHeader } from '../../shared/ui/PageHeader';
 

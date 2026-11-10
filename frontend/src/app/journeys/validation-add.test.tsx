@@ -7,7 +7,7 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../../features/equipment/equipment';
+import { Equipment } from '../pages/equipment';
 import { Equipment as TestEquipment } from '../test-equipment-shell';
 import { RadioTransports } from '../../features/equipment/radio-contract';
 import { equipmentAPI as api } from '../../features/equipment/equipment-api';

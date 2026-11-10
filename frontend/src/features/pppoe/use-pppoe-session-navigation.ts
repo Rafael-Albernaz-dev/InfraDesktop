@@ -7,8 +7,8 @@ import type { PPPoERefs, usePPPoEState } from './pppoe-state';
 import type {
   SessionNavigation,
   SessionRouteTarget,
-} from './session-navigation';
-import { SessionRoute } from './session-navigation';
+} from '../equipment/session-navigation';
+import { SessionRoute } from '../equipment/session-navigation';
 type State = ReturnType<typeof usePPPoEState>;
 function useSessionReturnFocus(
   select: State['select'],

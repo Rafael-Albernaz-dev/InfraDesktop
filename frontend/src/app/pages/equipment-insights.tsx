@@ -1,26 +1,35 @@
-import { EquipmentPortHistory } from './equipment-port-history';
+import { EquipmentPortHistory } from '../../features/equipment/equipment-port-history';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { KeyValues } from '../../shared/ui/KeyValues';
 import {
   DeviceHealthSection,
   DeviceOperationalTables,
-} from '../monitoring/device-operational';
-import { usePPReadState } from '../pppoe/pppoe-read-state';
+} from '../../features/monitoring/device-operational';
+import { usePPReadState } from '../../features/pppoe/pppoe-read-state';
 import {
   PPReadActionButtons,
   PPReadStatusBanners,
-} from '../pppoe/pppoe-read-views';
-import { PPReadResultPagination } from '../pppoe/pppoe-read-result';
-import { readingAge, formatRestarts } from './equipment-reading-format';
-import { formatClockOffset, formatDuration } from './network-format';
-import { EquipmentPorts } from './equipment-health-tables';
+} from '../../features/pppoe/pppoe-read-views';
+import { PPReadResultPagination } from '../../features/pppoe/pppoe-read-result';
+import {
+  readingAge,
+  formatRestarts,
+} from '../../features/equipment/equipment-reading-format';
+import {
+  formatClockOffset,
+  formatDuration,
+} from '../../features/equipment/network-format';
+import { EquipmentPorts } from '../../features/equipment/equipment-health-tables';
 import { Button } from '../../shared/ui/Button';
 import { useEffect, useState, useCallback } from 'react';
 import { deviceMonitoringAPI } from '../../platform/wails/presentation';
 import type { Device, PPReadRow } from '../../platform/wails/presentation';
-import { useDisplayNow, useEquipmentSnapshot } from './equipment-snapshot';
-import { PPPoEReadPanel } from '../pppoe/pppoe-diagnostics';
-import { formatDate } from './network-format';
+import {
+  useDisplayNow,
+  useEquipmentSnapshot,
+} from '../../features/equipment/equipment-snapshot';
+import { PPPoEReadPanel } from '../../features/pppoe/pppoe-diagnostics';
+import { formatDate } from '../../features/equipment/network-format';
 export function EquipmentInsights(p: {
   profile: string;
   activation: string;

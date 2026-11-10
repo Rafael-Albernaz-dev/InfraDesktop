@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import { AddEquipment } from './add-equipment';
 import { equipmentAPI } from './equipment-api';
-import { pendingEnrollments } from './equipment-receipts';
+import { pendingEnrollments } from '../access/equipment-receipts';
 import type { useEquipmentState } from './equipment-state';
 
 it('keeps an uncertain create receipt across reopening and reconciles without resending', async () => {

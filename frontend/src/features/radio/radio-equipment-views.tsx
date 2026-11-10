@@ -6,7 +6,7 @@ import {
   formatMetric,
   formatRouterDuration,
 } from '../equipment/network-format';
-import type { RadioReading } from './radio-api';
+import type { RadioReading } from '../equipment/radio-api';
 import {
   RadioFamilies,
   RadioModes,

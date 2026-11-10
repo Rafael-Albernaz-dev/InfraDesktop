@@ -1,5 +1,5 @@
 import { tickFieldReason } from '../equipment/radio-tick-reason';
-import type { RadioCost } from './radio-api';
+import type { RadioCost } from '../equipment/radio-api';
 import { formatMetric, sanitizeToken } from '../equipment/network-format';
 export function radioCostLabel(cost: RadioCost) {
   const reason =

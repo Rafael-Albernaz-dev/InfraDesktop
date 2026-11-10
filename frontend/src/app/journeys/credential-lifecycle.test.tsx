@@ -6,7 +6,7 @@ import {
   within,
 } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
-import { CredentialFormDialog } from '../../features/inventory/credential-form-dialog';
+import { CredentialFormDialog } from '../../features/equipment/credential-form-dialog';
 import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import type { Credential } from '../../features/equipment/equipment-api';
 

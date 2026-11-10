@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import { useAddEnrollment } from './add-enrollment';
 import { useImportState } from './add-import-state';
 import { useAddNavigationGuard } from './add-navigation-guard';
-import { useFieldErrors } from './equipment-draft';
+import { useFieldErrors } from '../access/equipment-draft';
 import {
   fieldMessages,
   validEquipmentAddress,

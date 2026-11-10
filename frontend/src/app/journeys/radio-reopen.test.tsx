@@ -5,13 +5,13 @@ import {
   RadioRoles,
 } from '../../features/equipment/radio-contract';
 import { RadioEquipment } from '../../features/radio/radio';
-import { radioAPI as api } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
 import {
   device,
   response,
   reading,
 } from '../../features/radio/radio-test-fixtures';
-vi.mock('../../features/radio/radio-api', () => ({
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
     start: vi.fn(),

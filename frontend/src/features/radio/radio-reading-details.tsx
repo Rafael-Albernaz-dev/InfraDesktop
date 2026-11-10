@@ -1,7 +1,7 @@
 import { Reading } from './radio-reading';
 import { RadioRoles } from '../equipment/radio-contract';
 import type { RadioEquipmentState } from './radio-equipment-state';
-import type { RadioReading } from './radio-api';
+import type { RadioReading } from '../equipment/radio-api';
 type Ready = RadioEquipmentState & { reading: RadioReading };
 export function RadioReadingDetails({ state }: { state: Ready }) {
   return (

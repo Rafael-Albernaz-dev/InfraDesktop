@@ -1,5 +1,9 @@
 import { RadioFamilies, RadioRoles } from '../equipment/radio-contract';
-import type { RadioReading, RadioResult, RadioView } from './radio-api';
+import type {
+  RadioReading,
+  RadioResult,
+  RadioView,
+} from '../equipment/radio-api';
 import type { Device } from '../equipment/equipment-api';
 
 export const fixtureAPID = 'synthetic-ap';

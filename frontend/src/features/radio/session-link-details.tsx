@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
-import type { RadioReading } from '../radio/radio-api';
-import type { RadioLinkState } from '../radio/radio-link-state';
+import type { RadioReading } from '../equipment/radio-api';
+import type { RadioLinkState } from './radio-link-state';
 
 export function useSessionLinkDetails(state: RadioLinkState, enabled: boolean) {
   const ap = state.link?.ap_id || '',

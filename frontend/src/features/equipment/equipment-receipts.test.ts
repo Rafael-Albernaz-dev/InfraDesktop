@@ -4,7 +4,7 @@ import {
   pendingStarts,
   pendingEnrollments,
   pendingPPPoE,
-} from './equipment-receipts';
+} from '../access/equipment-receipts';
 
 it('Q01 retains every uncertain ID in the same authority, invalidates only accepted switches/logout', () => {
   acceptEquipmentAuthority('receipts-company', 'activation-one');

@@ -12,7 +12,7 @@ import {
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RadioEquipment } from '../../features/radio/radio';
-import { radioAPI as api } from '../../features/radio/radio-api';
+import { radioAPI as api } from '../../features/equipment/radio-api';
 import type { Device } from '../../features/equipment/equipment-api';
 import { equipmentAPI } from '../../features/equipment/equipment-api';
 import {
@@ -21,7 +21,7 @@ import {
   link,
   reading,
 } from '../../features/radio/radio-test-fixtures';
-vi.mock('../../features/radio/radio-api', () => ({
+vi.mock('../../features/equipment/radio-api', () => ({
   radioAPI: {
     current: vi.fn(),
     start: vi.fn(),

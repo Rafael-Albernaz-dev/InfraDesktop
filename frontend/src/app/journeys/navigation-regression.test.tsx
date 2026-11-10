@@ -16,7 +16,7 @@ import {
 import type { Device } from '../../features/equipment/equipment-api';
 import { createNavigationHistory } from '../navigation-history';
 import { useRef } from 'react';
-import { Equipment } from '../../features/equipment/equipment';
+import { Equipment } from '../pages/equipment';
 import { Button } from '../../shared/ui/Button';
 import {
   reading,

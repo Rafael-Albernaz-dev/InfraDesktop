@@ -8,7 +8,7 @@ import {
   within,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { PPPoE } from '../../features/pppoe/pppoe';
+import { PPPoE } from '../pages/pppoe-with-link';
 import type { Device } from '../../features/equipment/equipment-api';
 const device = {
   id: 'synthetic-concentrator',

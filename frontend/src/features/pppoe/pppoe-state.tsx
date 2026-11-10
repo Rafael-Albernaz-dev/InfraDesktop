@@ -2,7 +2,7 @@ import { useLatestRef } from '../../shared/hooks/use-latest-ref';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type { Device } from '../equipment/equipment-api';
 import { equipmentMessage } from '../equipment/equipment-api';
-import { pendingPPPoE as pending } from '../equipment/equipment-receipts';
+import { pendingPPPoE as pending } from '../access/equipment-receipts';
 import { useEquipmentSnapshot } from '../equipment/equipment-snapshot';
 import {
   createOpenPairHandler,

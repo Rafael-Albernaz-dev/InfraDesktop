@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../../features/equipment/equipment';
+import { Equipment } from '../pages/equipment';
 import { RadioEquipment } from '../../features/radio/radio';
 import { RadioClientRow } from '../../features/radio/radio-client-row';
 import {
@@ -13,7 +13,7 @@ import {
 } from '../../features/radio/radio-test-fixtures';
 import { shouldRefreshOnOpen } from '../../features/equipment/use-refresh-on-open';
 import type { Device } from '../../features/equipment/equipment-api';
-import type { RadioClient } from '../../features/radio/radio-api';
+import type { RadioClient } from '../../features/equipment/radio-api';
 
 const at = (seconds: number) =>
   new Date(Date.now() - seconds * 1000).toISOString();

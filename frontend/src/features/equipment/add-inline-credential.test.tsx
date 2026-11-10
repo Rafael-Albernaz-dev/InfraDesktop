@@ -8,7 +8,7 @@ import {
 import { expect, it, vi } from 'vitest';
 import { AddEquipment } from './add-equipment';
 import { equipmentAPI } from './equipment-api';
-import { pendingEnrollments } from './equipment-receipts';
+import { pendingEnrollments } from '../access/equipment-receipts';
 import type { useEquipmentState } from './equipment-state';
 import type { EquipmentResult } from './equipment-api';
 

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../../features/equipment/equipment';
+import { Equipment } from '../pages/equipment';
 import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import type { EquipmentResult } from '../../features/equipment/equipment-api';
 vi.mock('../../platform/wails/presentation', () => ({

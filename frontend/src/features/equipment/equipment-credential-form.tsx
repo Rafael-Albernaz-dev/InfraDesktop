@@ -9,10 +9,10 @@ import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { CredentialFormFields } from './equipment-credential-fields';
 import { id } from './equipment-reading-format';
 import { RadioRoles } from './radio-contract';
-import { SharedCredentialConfirm } from '../inventory/shared-credential-confirm';
+import { SharedCredentialConfirm } from './shared-credential-confirm';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { Select } from '../../shared/ui/Select';
-import { useCredentialDraft } from '../inventory/use-credential-draft';
+import { useCredentialDraft } from './use-credential-draft';
 const DEFAULT_CREDENTIAL_ROLES = [
   RadioRoles.ap,
   RadioRoles.cpe,

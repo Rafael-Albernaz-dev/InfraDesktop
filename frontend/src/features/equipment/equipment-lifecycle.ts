@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { acceptEquipmentAuthority } from './equipment-receipts';
+import { acceptEquipmentAuthority } from '../access/equipment-receipts';
 import type { UseEquipmentStateProps } from './equipment-state';
 import type { useEquipmentStore } from './equipment-store';
 function useEquipmentAuthorityRefs(profile: string, activation: string) {

@@ -8,7 +8,7 @@ import {
   within,
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { Equipment } from '../../features/equipment/equipment';
+import { Equipment } from '../pages/equipment';
 import { RadioEquipment } from '../../features/radio/radio';
 import {
   RadioCodes,

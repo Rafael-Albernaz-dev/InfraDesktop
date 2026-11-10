@@ -1,17 +1,20 @@
-import { EquipmentBanners, EquipmentDialogs } from './equipment-surfaces';
+import {
+  EquipmentBanners,
+  EquipmentDialogs,
+} from '../../features/equipment/equipment-surfaces';
 import { useContext, useEffect, useLayoutEffect, useRef } from 'react';
 import { DetailTitle } from '../../shared/ui/DetailTitle';
 import { Button } from '../../shared/ui/Button';
-import { equipmentAPI as api } from './equipment-api';
+import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import { EquipmentDetailPane } from './equipment-detail';
-import { EquipmentInventoryPane } from './equipment-inventory';
-import { useEquipmentState } from './equipment-state';
-import { EquipmentCredentials } from './equipment-credentials';
-import { RadioRoles } from './radio-contract';
-import { AddEquipment } from './add-equipment';
+import { EquipmentInventoryPane } from '../../features/inventory/equipment-inventory';
+import { useEquipmentState } from '../../features/equipment/equipment-state';
+import { EquipmentCredentials } from '../../features/equipment/equipment-credentials';
+import { RadioRoles } from '../../features/equipment/radio-contract';
+import { AddEquipment } from '../../features/equipment/add-equipment';
 import { useState } from 'react';
-import { SessionRoute } from '../pppoe/session-navigation';
-import type { SessionRouteTarget } from '../pppoe/session-navigation';
+import { SessionRoute } from '../../features/equipment/session-navigation';
+import type { SessionRouteTarget } from '../../features/equipment/session-navigation';
 
 function EquipmentCapabilityBody({
   setSurface,

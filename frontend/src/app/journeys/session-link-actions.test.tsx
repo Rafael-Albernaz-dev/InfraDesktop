@@ -8,7 +8,7 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { PPPoESessionDetail } from '../../features/pppoe/pppoe-session-screen';
+import { PPPoESessionDetail } from '../pages/pppoe-with-link';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import { link } from '../../features/radio/radio-test-fixtures';
 import {

@@ -8,30 +8,31 @@ import {
 import {
   EquipmentAccessDetails,
   EquipmentSecondaryActions,
-} from './equipment-access';
-import type { Device } from './equipment-api';
-import { EquipmentChain } from './equipment-chain';
+} from '../../features/equipment/equipment-access';
+import type { Device } from '../../features/equipment/equipment-api';
+import { EquipmentChain } from '../../features/equipment/equipment-chain';
 import { EquipmentInsights } from './equipment-insights';
-import { EquipmentReading } from './equipment-reading';
-import { EquipmentQueryFailure } from './equipment-reading-status';
-import { driverOwners } from './equipment-role-options';
+import { EquipmentReading } from '../../features/equipment/equipment-reading';
+import { EquipmentQueryFailure } from '../../features/equipment/equipment-reading-status';
+import { driverOwners } from '../../features/equipment/equipment-role-options';
 import { EquipmentSheetHeader } from './equipment-sheet-header';
-import type { useEquipmentState } from './equipment-state';
+import type { useEquipmentState } from '../../features/equipment/equipment-state';
 import { useSummaryRefresh } from './equipment-summary-refresh';
 import {
   equipmentQueryRunning,
   equipmentReadBlocked,
 } from './equipment-query-policy';
 import { SummaryTab } from './equipment-summary-tab';
-import { PPPoE } from '../pppoe/pppoe';
-import { DeviceMonitoring, PPPoEReadPanel } from '../pppoe/pppoe-diagnostics';
-import { RadioEquipment } from '../radio/radio';
-import { RadioRoles } from './radio-contract';
-import { SessionRoute } from '../pppoe/session-navigation';
+import { PPPoE } from './pppoe-with-link';
+import { DeviceMonitoring } from '../../features/pppoe/device-monitoring';
+import { PPPoEReadPanel } from '../../features/pppoe/pppoe-diagnostics';
+import { RadioEquipment } from '../../features/radio/radio';
+import { RadioRoles } from '../../features/equipment/radio-contract';
+import { SessionRoute } from '../../features/equipment/session-navigation';
 import { DataBlock } from '../../shared/ui/DataBlock';
 import { HeaderActionHost } from '../../shared/ui/HeaderAction';
 import { Tabs } from '../../shared/ui/Tabs';
-import type { RefreshOpening } from './use-refresh-on-open';
+import type { RefreshOpening } from '../../features/equipment/use-refresh-on-open';
 
 export type Props = ReturnType<typeof useEquipmentState> & {
   selected: Device;

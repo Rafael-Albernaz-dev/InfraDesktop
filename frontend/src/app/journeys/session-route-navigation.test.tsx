@@ -27,8 +27,8 @@ import {
   RadioTransports,
 } from '../../features/equipment/radio-contract';
 import { link as syntheticLink } from '../../features/radio/radio-test-fixtures';
-import { PPPoE } from '../../features/pppoe/pppoe';
-import { SessionRoute } from '../../features/pppoe/session-navigation';
+import { PPPoE } from '../pages/pppoe-with-link';
+import { SessionRoute } from '../../features/equipment/session-navigation';
 import { useState } from 'react';
 
 vi.mock('../../platform/wails/presentation', async (original) => ({

@@ -1,6 +1,6 @@
 import { Select } from '../../shared/ui/Select';
 import type { Credential, Device, DeviceInput } from './equipment-api';
-import type { useFieldErrors } from './equipment-draft';
+import type { useFieldErrors } from '../access/equipment-draft';
 export function ExistingCredentialSelect(props: {
   draft: DeviceInput;
   change: (values: Partial<DeviceInput>) => void;

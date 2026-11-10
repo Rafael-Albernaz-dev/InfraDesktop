@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { reconcileEnrollment, saveEnrollment } from './add-enrollment-actions';
 import type { EquipmentPerformFn } from './equipment-dialogs';
 import { id } from './equipment-reading-format';
-import { pendingEnrollments } from './equipment-receipts';
+import { pendingEnrollments } from '../access/equipment-receipts';
 import type { ImportRow } from '../../platform/wails/presentation';
 
 export type EnrollmentProps = {

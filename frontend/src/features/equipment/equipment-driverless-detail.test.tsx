@@ -1,7 +1,10 @@
 import { render, screen, within } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { EquipmentSheetHeader } from './equipment-sheet-header';
-import { EquipmentDetailPane, type Props } from './equipment-detail';
+import { EquipmentSheetHeader } from '../../app/pages/equipment-sheet-header';
+import {
+  EquipmentDetailPane,
+  type Props,
+} from '../../app/pages/equipment-detail';
 import type { Device } from './equipment-api';
 
 function detail(block: string) {

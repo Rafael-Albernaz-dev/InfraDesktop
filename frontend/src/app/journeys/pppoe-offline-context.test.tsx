@@ -6,7 +6,7 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { PPPoE } from '../../features/pppoe/pppoe';
+import { PPPoE } from '../pages/pppoe-with-link';
 import {
   deviceMonitoringAPI as monitoringAPI,
   pppoeAPI as api,

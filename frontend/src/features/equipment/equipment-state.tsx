@@ -14,11 +14,11 @@ import {
 import { useEquipmentNavigator } from './equipment-navigator';
 import { retireOlderPendingRevisions } from './equipment-pending-revisions';
 import { id } from './equipment-reading-format';
-import { pendingStarts } from './equipment-receipts';
+import { pendingStarts } from '../access/equipment-receipts';
 import { driverOwners } from './equipment-role-options';
 import { useEquipmentStore } from './equipment-store';
 import { fieldForEquipmentCode } from './equipment-validation';
-import type { LinkedSessionTarget } from '../pppoe/linked-session-navigation';
+import type { LinkedSessionTarget } from './session-navigation';
 import { RadioRoles } from './radio-contract';
 
 export type EquipmentPerformFn = (

@@ -1,4 +1,4 @@
-import { formatPPUptime } from './pppoe-format';
+import { formatPPUptime } from '../equipment/pppoe-format';
 import type { PPPoESessionDetailProps } from './pppoe-session-props';
 import { Button } from '../../shared/ui/Button';
 export function SessionHeader(p: PPPoESessionDetailProps) {
