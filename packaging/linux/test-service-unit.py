@@ -9,7 +9,7 @@ import unittest
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 UNIT = HERE / 'infradesktopd@.service'
-PACKAGE = ROOT / 'scripts/package.py'
+PACKAGE = ROOT / 'scripts/build/package.py'
 
 HARDENING = {
     'User': '%i',

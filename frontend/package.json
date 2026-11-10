@@ -16,7 +16,7 @@
     "test": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "postinstall": "node ../scripts/isolate-node-modules.mjs"
+    "postinstall": "node ../scripts/build/isolate-node-modules.mjs"
   },
   "dependencies": {
     "react": "19.3.1",

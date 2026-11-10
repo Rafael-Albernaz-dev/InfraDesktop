@@ -1,5 +1,5 @@
-import { qualityConfigs } from './eslint-quality.mjs';
-import radioDomain from './eslint-radio-domain.mjs';
+import { qualityConfigs } from './quality/eslint-quality.mjs';
+import radioDomain from './quality/eslint-radio-domain.mjs';
 import js from '@eslint/js';
 import ts from 'typescript-eslint';
 import hooks from 'eslint-plugin-react-hooks';

@@ -9,17 +9,17 @@ export GOFLAGS := -mod=readonly
 .PHONY: daemon-build tools-check bindings assets gofmt-check architecture-check check test-integration build package test-desktop run test-visual test-scroll icon-check test-dev
 
 tools-check:
-	bash scripts/tools-check.sh
+	bash scripts/build/tools-check.sh
 bindings:
-	bash scripts/bindings.sh
+	bash scripts/build/bindings.sh
 assets: bindings
 	npm --prefix frontend run build
 gofmt-check:
-	@test -z "$$(gofmt -l main.go internal cmd scripts/*.go)" || (gofmt -l main.go internal cmd scripts/*.go; exit 1)
+	@test -z "$$(gofmt -l main.go internal cmd quality)" || (gofmt -l main.go internal cmd quality; exit 1)
 architecture-check: assets
-	go run ./scripts/architecture.go
-	node --test scripts/architecture-frontend.test.mjs
-	node scripts/architecture-frontend.mjs
+	go run ./quality/architecture/architecture.go
+	node --test quality/architecture/architecture-frontend.test.mjs
+	node quality/architecture/architecture-frontend.mjs
 check: tools-check assets gofmt-check architecture-check test-visual-integrity test-baseline-tooling
 	go vet -tags webkit2_41 ./...
 	go test -tags webkit2_41 ./...
@@ -32,7 +32,7 @@ check: tools-check assets gofmt-check architecture-check test-visual-integrity t
 	npm --prefix frontend run test -- --run
 test-integration: daemon-build
 	go test -count=1 -v -tags webkit2_41 ./internal/adapters/ipc -run TestIntegration
-	python3 scripts/test-process.py
+	python3 scripts/desktop/test-process.py
 daemon-build: assets
 	mkdir -p build/bin
 	go build -trimpath -tags webkit2_41 -o build/bin/infradesktopd ./cmd/infradesktopd
@@ -40,81 +40,71 @@ daemon-build: assets
 build: tools-check daemon-build
 	wails build -tags webkit2_41 -s -skipbindings -m -nosyncgomod -trimpath -o infradesktop
 package: build
-	python3 scripts/package.py
+	python3 scripts/build/package.py
 
 test-desktop:
-	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/test-desktop.py
-	python3 scripts/test-window-fit.py
+	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/desktop/test-desktop.py
+	python3 scripts/desktop/test-window-fit.py
 
 run: build
-	python3 scripts/run-dev.py
+	python3 scripts/dev/run-dev.py
 
 test-visual-integrity:
-	node --test scripts/visual-checks.test.mjs scripts/visual-actions.test.mjs
-	python3 scripts/test-visual-integrity.py
-	python3 scripts/test-native-visual-metadata.py
+	node --test scripts/visual/visual-checks.test.mjs scripts/visual/visual-actions.test.mjs
+	python3 scripts/visual/test-visual-integrity.py
+	python3 scripts/desktop/test-native-visual-metadata.py
 
 test-visual: test-layout
 
 test-scroll:
-	node scripts/test-scroll.mjs
+	node scripts/visual/test-scroll.mjs
 
 icon-check:
-	python3 scripts/generate-infradesktop-icon.py --check
+	python3 scripts/build/generate-infradesktop-icon.py --check
 
 test-dev:
-	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/test-dev.py
+	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/dev/test-dev.py
 
 # Separate uninstalled daemon: explicit test key provider cannot be a fallback in
 # the production daemon produced by `build` and packaged by `package`.
 part1-harness:
 	mkdir -p build/bin
 	go build -trimpath -tags webkit2_41 -ldflags '-X infradesktop/internal/composition.devVaultEnabled=true' -o build/bin/infradesktopd-part1-test ./cmd/infradesktopd
-	go build -trimpath -o build/bin/part1-ssh-fixture ./scripts/part1-fixture
+	go build -trimpath -o build/bin/part1-ssh-fixture ./scripts/desktop/part1-fixture
 
 test-part1-desktop: build part1-harness
-	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/test-part1-desktop.py
+	xvfb-run -a -s "-screen 0 2000x1700x24 -nolisten tcp" python3 scripts/desktop/test-part1-desktop.py
 
 test-part1-visual:
-	node scripts/test-part1-visual.mjs
+	node scripts/visual/test-part1-visual.mjs
 
 test-vault-helper:
-	python3 scripts/test-vault-provision.py
+	python3 scripts/desktop/test-vault-provision.py
 
 test-part1-production: build
-	python3 scripts/test-part1-production.py
+	python3 scripts/desktop/test-part1-production.py
 
 test-vault-read-race:
-	python3 scripts/test-vault-read-race.py
+	python3 scripts/desktop/test-vault-read-race.py
 
 test-baseline-tooling:
-	python3 scripts/test-baseline-tooling.py
+	python3 scripts/visual/test-baseline-tooling.py
 
 test-equipment-smoke:
-	node scripts/test-part1-visual.mjs --smoke
+	node scripts/visual/test-part1-visual.mjs --smoke
 
 .PHONY: quality ci
 ci: tools-check assets quality check test-integration package test-vault-helper test-part1-production test-vault-read-race
 
-quality: gofmt-check
+quality:
 	@test -d frontend/dist || (echo "rode make assets"; exit 1)
-	go vet -tags webkit2_41 ./...
-	staticcheck -tags webkit2_41 ./...
-	npm --prefix frontend run format:check
-	python3 scripts/test-version.py
-	go test ./scripts/qualityrules ./scripts/qualitydup -count=1
-	cd frontend && node --test eslint-quality.check.mjs eslint-config.check.mjs eslint-hook-alias.check.mjs eslint-quality-report.check.mjs
-	go run ./scripts/quality.go
-	cd frontend && ./node_modules/.bin/eslint . --max-warnings 0 --no-inline-config
-	node --test scripts/layout-verdict.test.mjs
-	node --test scripts/layout-guard.test.mjs
-	node scripts/layout-guard.mjs
+	bash quality/run.sh
 
 .PHONY: test-layout
 test-layout:
-	node scripts/test-layout.mjs
+	node scripts/visual/test-layout.mjs
 
 .PHONY: quality-report
 quality-report:
-	go run ./scripts/quality.go -report
-	cd frontend && node eslint-quality-report.mjs
+	go run ./quality/go/quality.go -report
+	cd frontend && node quality/eslint-quality-report.mjs

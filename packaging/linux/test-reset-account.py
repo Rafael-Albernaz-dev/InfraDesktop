@@ -116,7 +116,7 @@ class ResetHelperTests(unittest.TestCase):
         self.assertIsNotNone(action)
         self.assertEqual([node.text for node in action.find('defaults')], ['auth_admin'] * 3)
         self.assertEqual(action.find('annotate').text, '/usr/lib/infradesktop/reset-account')
-        package = (HELPER.parents[2] / 'scripts/package.py').read_text()
+        package = (HELPER.parents[2] / 'scripts/build/package.py').read_text()
         self.assertIn("'reset-account', 'usr/lib/infradesktop/reset-account'", package)
         self.assertIn('usr/share/polkit-1/actions/org.infradesktop.reset-account.policy', package)
 
