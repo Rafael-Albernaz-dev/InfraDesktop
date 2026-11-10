@@ -1,0 +1,15 @@
+#!/bin/sh
+# Commits do InfraDesktop são só do dono do repositório: sem coautoria de agente (Claude, Codex, Gemini...).
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+owner_email=$(git log --reverse --format=%ae | head -n 1)  # dono = autor do primeiro commit
+if grep -qiE '^[[:space:]]*co-authored-by:' "$1"; then
+  echo "commit-msg: remova a linha Co-Authored-By. Commits aqui são só do dono do repositório." >&2
+  exit 1
+fi
+author_email=$(git var GIT_AUTHOR_IDENT | sed -n 's/.*<\(.*\)>.*/\1/p')
+committer_email=$(git var GIT_COMMITTER_IDENT | sed -n 's/.*<\(.*\)>.*/\1/p')
+if [ "$author_email" != "$owner_email" ] || [ "$committer_email" != "$owner_email" ]; then
+  echo "commit-msg: autor/committer deve ser $owner_email (atual: $author_email / $committer_email)." >&2
+  exit 1
+fi
