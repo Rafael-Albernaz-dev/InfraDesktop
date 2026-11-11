@@ -66,7 +66,7 @@ func dial(t *testing.T, r *running) *net.UnixConn {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { c.Close() })
-	_ = c.SetDeadline(time.Now().Add(5 * time.Second))
+	_ = c.SetDeadline(time.Now().Add(Budget + 2*time.Second)) // outlives the server budget
 	return c
 }
 func raw(t *testing.T, r *running, b []byte) Response {
