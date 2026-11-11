@@ -51,7 +51,10 @@ jobs:
       - uses: ./.github/actions/prepare
         with:
           full: 'false'
-      - run: make check-race-shard RACE_PKGS=${{ matrix.shard.pkg }} RACE_RUN="$(scripts/ci/race-shard.sh ${{ matrix.shard.pkg }} ${{ matrix.shard.args }})"
+      - run: |
+          # a bare assignment so a failing shard script stops the job (bash -e)
+          run_regex=$(scripts/ci/race-shard.sh ${{ matrix.shard.pkg }} ${{ matrix.shard.args }})
+          make check-race-shard RACE_PKGS=${{ matrix.shard.pkg }} RACE_RUN="$run_regex"
   package:
     name: package (integration, package, vault, part1 production)
     runs-on: ubuntu-24.04
