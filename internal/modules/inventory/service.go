@@ -42,6 +42,8 @@ type Service struct {
 	WG       sync.WaitGroup
 	Epoch    string
 	Origin   time.Time
+	// PersistRetry overrides how long a finished result retries its write (tests only).
+	PersistRetry PersistRetryLimits
 }
 
 func New(auth Authorizer, store Store, vault Vault, remote Remote, ids IDs, now func() time.Time) *Service {

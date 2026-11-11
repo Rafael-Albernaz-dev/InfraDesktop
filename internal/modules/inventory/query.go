@@ -271,24 +271,25 @@ func contextCancelCode(ctx context.Context) Code {
 func (s *Service) persistAndFinishQuery(
 	ctx context.Context, j *RunningJob, result *Observation, fingerprint string, c Code,
 ) {
-	// 1 s to persist the result; stretched only under the race detector (foundation.RaceScale).
-	persistCtx, cancelPersist := context.WithTimeout(context.Background(), time.Second*foundation.RaceScale)
-	defer cancelPersist()
-	outcome := c
-	persisted := s.Authorized(persistCtx, j.Command, func(uint64) Code {
-		s.Mu.Lock()
-		defer s.Mu.Unlock()
-		if ctx.Err() != nil || j.View.State == "CANCELLED" {
-			outcome = contextCancelCode(ctx)
-			result = nil
-		}
-		code := s.Store.UpdateEquipment(persistCtx, j.Command.Scope.Profile, func(st *State) Code {
-			return s.applyQueryUpdate(st, j, result, fingerprint, &outcome)
+	// Each write try has 1 s (stretched only under -race); a slow disk retries it.
+	var outcome Code
+	persisted := s.PersistWithRetry(time.Second*foundation.RaceScale, func(persistCtx context.Context) Code {
+		outcome = c
+		return s.Authorized(persistCtx, j.Command, func(uint64) Code {
+			s.Mu.Lock()
+			defer s.Mu.Unlock()
+			if ctx.Err() != nil || j.View.State == "CANCELLED" {
+				outcome = contextCancelCode(ctx)
+				result = nil
+			}
+			code := s.Store.UpdateEquipment(persistCtx, j.Command.Scope.Profile, func(st *State) Code {
+				return s.applyQueryUpdate(st, j, result, fingerprint, &outcome)
+			})
+			if code == OK {
+				s.finishQueryJobLocked(j, result, fingerprint, outcome)
+			}
+			return code
 		})
-		if code == OK {
-			s.finishQueryJobLocked(j, result, fingerprint, outcome)
-		}
-		return code
 	})
 	if persisted == OK {
 		return

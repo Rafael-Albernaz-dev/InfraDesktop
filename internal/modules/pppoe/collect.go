@@ -262,10 +262,11 @@ func (s *Service) stampObservationProvenance(
 func (s *Service) persistPPCollect(
 	ctx context.Context, j *RunningJob, o *PPObservation, a *PPAttempt,
 ) {
-	persistCtx, cancel := context.WithTimeout(context.Background(), PPPersistenceBudget)
-	defer cancel()
-	persisted := s.inv.Authorized(persistCtx, j.Command, func(uint64) Code {
-		return s.commitPPCollection(persistCtx, ctx, j, o, a)
+	// Each write try has PPPersistenceBudget; a slow disk retries it.
+	persisted := s.inv.PersistWithRetry(PPPersistenceBudget, func(persistCtx context.Context) Code {
+		return s.inv.Authorized(persistCtx, j.Command, func(uint64) Code {
+			return s.commitPPCollection(persistCtx, ctx, j, o, a)
+		})
 	})
 	s.inv.Mu.Lock()
 	defer s.inv.Mu.Unlock()

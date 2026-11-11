@@ -237,10 +237,11 @@ func applyFailedPDQuality(attempt *PPAttempt, c Code) {
 func (s *Service) persistPDCollect(
 	ctx context.Context, j *RunningJob, o *PDDiagnostic, attempt *PPAttempt,
 ) {
-	persist, cancel := context.WithTimeout(context.Background(), PPPersistenceBudget)
-	defer cancel()
-	persisted := s.inv.Authorized(persist, j.Command, func(uint64) Code {
-		return s.commitPDDiagnostic(persist, ctx, j, o, attempt)
+	// Each write try has PPPersistenceBudget; a slow disk retries it.
+	persisted := s.inv.PersistWithRetry(PPPersistenceBudget, func(persist context.Context) Code {
+		return s.inv.Authorized(persist, j.Command, func(uint64) Code {
+			return s.commitPDDiagnostic(persist, ctx, j, o, attempt)
+		})
 	})
 	s.inv.Mu.Lock()
 	defer s.inv.Mu.Unlock()
