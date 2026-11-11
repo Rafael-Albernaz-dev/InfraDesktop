@@ -87,7 +87,7 @@ func TestRadioLiveContractRevisionAndTiming(t *testing.T) {
 }
 
 func TestRadioCPULimitContract(t *testing.T) {
-	raw, e := os.ReadFile("schema-v1.json")
+	raw, e := os.ReadFile("testdata/schema-v1.json")
 	if e != nil {
 		t.Fatal(e)
 	}

@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	_ "embed"
 	"errors"
 	"fmt"
 	"golang.org/x/sys/unix"
@@ -13,42 +12,6 @@ import (
 	"path/filepath"
 	"syscall"
 )
-
-//go:embed company_schema.sql
-var companySchema string
-
-//go:embed company_002_brand.sql
-var companyBrandSchema string
-
-//go:embed company_003_equipment.sql
-var companyEquipmentSchema string
-
-//go:embed company_004_operational.sql
-var companyOperationalSchema string
-
-//go:embed company_005_pppoe.sql
-var companyPPPoESchema string
-
-//go:embed company_006_pppoe_diagnostics.sql
-var companyPPDiagnosticSchema string
-
-//go:embed company_007_sessions_offline.sql
-var companySessionsOfflineSchema string
-
-//go:embed company_008_session_context.sql
-var companySessionContextSchema string
-
-//go:embed company_009_device_monitoring.sql
-var companyDeviceMonitoringSchema string
-
-//go:embed company_010_equipment_insights.sql
-var companyEquipmentInsightsSchema string
-
-//go:embed company_011_context_peaks.sql
-var companyContextPeaksSchema string
-
-//go:embed company_012_radio.sql
-var companyRadioSchema string
 
 func migrateGlobal(tx *sql.Tx) error {
 	rows, e := tx.Query("SELECT version,checksum FROM schema_migrations ORDER BY version")

@@ -10,7 +10,7 @@ import (
 )
 
 func TestProductSchemaSnapshot(t *testing.T) {
-	b, e := os.ReadFile("schema-v1.json")
+	b, e := os.ReadFile("testdata/schema-v1.json")
 	if e != nil {
 		t.Fatal(e)
 	}

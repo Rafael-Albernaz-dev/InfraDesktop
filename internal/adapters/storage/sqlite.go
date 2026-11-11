@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-//go:embed migrations/*.sql
+//go:embed migrations/*.sql migrations/company/*.sql
 var migrations embed.FS
 
 type Store struct {

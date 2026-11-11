@@ -1,17 +1,1 @@
-[
-  "internal/adapters/ipc/schema-v1.json",
-  "internal/adapters/storage/company_002_brand.sql",
-  "internal/adapters/storage/company_003_equipment.sql",
-  "internal/adapters/storage/company_004_operational.sql",
-  "internal/adapters/storage/company_005_pppoe.sql",
-  "internal/adapters/storage/company_006_pppoe_diagnostics.sql",
-  "internal/adapters/storage/company_007_sessions_offline.sql",
-  "internal/adapters/storage/company_008_session_context.sql",
-  "internal/adapters/storage/company_009_device_monitoring.sql",
-  "internal/adapters/storage/company_010_equipment_insights.sql",
-  "internal/adapters/storage/company_011_context_peaks.sql",
-  "internal/adapters/storage/company_012_radio.sql",
-  "internal/adapters/storage/company_013_radio_journey.sql",
-  "internal/adapters/storage/company_014_inventory_block.sql",
-  "internal/adapters/storage/company_schema.sql"
-]
+[]

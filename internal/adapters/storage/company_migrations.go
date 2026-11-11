@@ -2,14 +2,36 @@ package storage
 
 import (
 	"database/sql"
-	_ "embed"
+	"fmt"
 )
 
-//go:embed company_013_radio_journey.sql
-var companyRadioJourneySchema string
+// Company migrations, in version order. Their bytes are checksummed into
+// schema_migrations, so the files never change once released.
+var (
+	companySchema                  = companyMigration("001_schema.sql")
+	companyBrandSchema             = companyMigration("002_brand.sql")
+	companyEquipmentSchema         = companyMigration("003_equipment.sql")
+	companyOperationalSchema       = companyMigration("004_operational.sql")
+	companyPPPoESchema             = companyMigration("005_pppoe.sql")
+	companyPPDiagnosticSchema      = companyMigration("006_pppoe_diagnostics.sql")
+	companySessionsOfflineSchema   = companyMigration("007_sessions_offline.sql")
+	companySessionContextSchema    = companyMigration("008_session_context.sql")
+	companyDeviceMonitoringSchema  = companyMigration("009_device_monitoring.sql")
+	companyEquipmentInsightsSchema = companyMigration("010_equipment_insights.sql")
+	companyContextPeaksSchema      = companyMigration("011_context_peaks.sql")
+	companyRadioSchema             = companyMigration("012_radio.sql")
+	companyRadioJourneySchema      = companyMigration("013_radio_journey.sql")
+	companyInventoryBlockSchema    = companyMigration("014_inventory_block.sql")
+)
 
-//go:embed company_014_inventory_block.sql
-var companyInventoryBlockSchema string
+// companyMigration reads one company migration from the single migrations embed.
+func companyMigration(name string) string {
+	b, err := migrations.ReadFile("migrations/company/" + name)
+	if err != nil {
+		panic(fmt.Sprintf("company migration %s missing from embed: %v", name, err))
+	}
+	return string(b)
+}
 
 func companySchemas() []string {
 	return []string{companySchema, companyBrandSchema, companyEquipmentSchema, companyOperationalSchema,
