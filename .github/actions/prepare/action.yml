@@ -17,9 +17,10 @@ runs:
         node-version: '24.16.0'
         cache: npm
         cache-dependency-path: frontend/package-lock.json
-    # The runner's Azure mirror sometimes stops answering (11/11/2026: 20 s per index,
-    # job killed at 30 min). Short timeouts, then the official mirror once. The runner
-    # resolves the Ubuntu archive through the mirror list in /etc/apt/apt-mirrors.txt.
+    # 11/11/2026: plain-http Ubuntu mirrors stopped answering from the runner (20 s per
+    # index, job killed at 30 min) while https worked. Short timeouts, then once on a list
+    # of https mirrors. The runner resolves the archive through /etc/apt/apt-mirrors.txt;
+    # apt moves to the next line when a mirror fails.
     - name: Native headers (bounded, with mirror fallback)
       shell: bash
       env:
@@ -31,9 +32,11 @@ runs:
           timeout 300 sudo apt-get "${apt_opts[@]}" install -y --no-install-recommends $PACKAGES
         }
         if ! install; then
-          echo "::warning::runner apt mirror failed; retrying on archive.ubuntu.com"
-          echo 'http://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
-          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
+          echo "::warning::runner apt mirror failed; retrying on https mirrors"
+          printf '%s\n' https://mirrors.edge.kernel.org/ubuntu/ https://mirrors.ocf.berkeley.edu/ubuntu/ \
+            https://mirror.math.princeton.edu/pub/ubuntu/ | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          # security.ubuntu.com is listed directly in the sources; route it through the same list
+          sudo sed -i -E 's#https?://(azure\.archive|archive|security)\.ubuntu\.com/ubuntu/?#mirror+file:/etc/apt/apt-mirrors.txt#g' \
             /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true
           install
         fi
