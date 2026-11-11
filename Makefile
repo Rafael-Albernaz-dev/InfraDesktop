@@ -6,7 +6,7 @@ export GOSUMDB := off
 export GOFLAGS := -mod=readonly
 
 .PHONY: part1-harness test-part1-desktop test-part1-visual test-vault-helper test-part1-production test-vault-read-race test-baseline-tooling test-equipment-smoke
-.PHONY: daemon-build tools-check bindings assets gofmt-check architecture-check check test-integration build package test-desktop run test-visual test-scroll icon-check test-dev
+.PHONY: daemon-build tools-check bindings assets gofmt-check architecture-check check check-front check-go check-race check-race-shard ci-package test-integration build package test-desktop run test-visual test-scroll icon-check test-dev
 
 tools-check:
 	bash scripts/build/tools-check.sh
@@ -20,16 +20,28 @@ architecture-check: assets
 	go run ./quality/architecture/architecture.go
 	node --test quality/architecture/architecture-frontend.test.mjs
 	node quality/architecture/architecture-frontend.mjs
-check: tools-check assets gofmt-check architecture-check test-visual-integrity test-baseline-tooling
-	go vet -tags webkit2_41 ./...
-	go test -tags webkit2_41 ./...
-	# orçamento de tempo é medido no go test normal; sob -race só se procura corrida
-	go test -race -tags webkit2_41 -skip '^(TestIPCListsAndBulkUpdatesFiveHundredDevices|TestImportIPCPreviewAndConfirmFiveHundred|TestImportPersistsFiveHundredWithinBudget|TestL06T2BasePublicationReclaimsMaterialSeriesWithinBudget)$$' ./...
+# check = check-front + check-go + check-race. O CI roda as três partes em jobs
+# paralelos (e check-race em fatias, ver scripts/ci/race-shard.sh); localmente,
+# `make check` continua rodando tudo.
+check: check-front check-go check-race
+check-front: tools-check assets gofmt-check architecture-check test-visual-integrity test-baseline-tooling
 	staticcheck -tags webkit2_41 ./...
 	npm --prefix frontend run format:check
 	npm --prefix frontend run lint
 	# assets already runs build = tsc --noEmit + Vite; no source mutates below it.
 	npm --prefix frontend run test -- --run
+check-go: tools-check assets
+	go vet -tags webkit2_41 ./...
+	go test -tags webkit2_41 ./...
+# orçamento de tempo é medido no go test normal; sob -race só se procura corrida
+RACE_SKIP := ^(TestIPCListsAndBulkUpdatesFiveHundredDevices|TestImportIPCPreviewAndConfirmFiveHundred|TestImportPersistsFiveHundredWithinBudget|TestL06T2BasePublicationReclaimsMaterialSeriesWithinBudget)$$
+RACE_PKGS ?= ./...
+RACE_RUN ?=
+check-race: assets
+	go test -race -tags webkit2_41 -skip '$(RACE_SKIP)' $(if $(RACE_RUN),-run '$(RACE_RUN)') $(RACE_PKGS)
+# fatia de -race sem frontend nem Wails: só pacotes que não embutem frontend/dist
+check-race-shard:
+	go test -race -tags webkit2_41 -skip '$(RACE_SKIP)' $(if $(RACE_RUN),-run '$(RACE_RUN)') $(RACE_PKGS)
 test-integration: daemon-build
 	go test -count=1 -v -tags webkit2_41 ./internal/adapters/ipc -run TestIntegration
 	python3 scripts/desktop/test-process.py
@@ -94,7 +106,9 @@ test-equipment-smoke:
 	node scripts/visual/test-part1-visual.mjs --smoke
 
 .PHONY: quality ci
-ci: tools-check assets quality check test-integration package test-vault-helper test-part1-production test-vault-read-race
+ci: tools-check assets quality check ci-package
+# parte de empacotamento e processo do ci, rodada em job próprio no CI
+ci-package: tools-check test-integration package test-vault-helper test-part1-production test-vault-read-race
 
 quality:
 	@test -d frontend/dist || (echo "rode make assets"; exit 1)
