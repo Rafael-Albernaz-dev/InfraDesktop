@@ -3,7 +3,7 @@ package ipc
 import (
 	"context"
 	"github.com/google/uuid"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/deviceparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -14,16 +14,17 @@ import (
 	"time"
 )
 
-func TestL06T2OperationalScopeThroughIPC(t *testing.T) {
+func TestOperationalScopeThroughIPC(t *testing.T) {
 	for _, family := range []string{"v6", "v7"} {
 		t.Run(family, func(t *testing.T) {
 			j := newPPJourney(t, sshfixture.Config{Family: family, PPRows: 1, RealTime: true, Command: func(cmd string) (string, bool) {
-				if cmd == routerssh.DeviceAuthFailuresCommand {
+				if cmd == deviceparse.DeviceAuthFailuresCommand {
 					version := "7.14.3"
 					if family == "v6" {
 						version = "6.49.18"
 					}
-					return "A\t1\t" + version + "\t2d1h1s\nF\tauth-only-canary\t01:00:00\nF\tauth-only-canary\t01:00:01\nG\tauth\t1\nZ\t2\tcomplete\t2d1h1s\n", true
+					return "A\t1\t" + version + "\t2d1h1s\nF\tauth-only-canary\t01:00:00\nF\tauth-only-canary\t01:00:01\n" +
+						"G\tauth\t1\nZ\t2\tcomplete\t2d1h1s\n", true
 				}
 				return "", false
 			}})
@@ -33,80 +34,16 @@ func TestL06T2OperationalScopeThroughIPC(t *testing.T) {
 			}
 			input := equipment.PPInput{DeviceID: j.device, Revision: 2, Operation: uuid.NewString(), Scope: "operations"}
 			job := j.call("pppoe.read-start", input, foundation.OK).Data.PPPoE.Job
-			var v *equipment.PPView
-			until := time.Now().Add(5 * time.Second)
-			for time.Now().Before(until) {
-				v = j.call("pppoe.read-status", equipment.PPInput{JobID: job.ID}, foundation.OK).Data.PPPoE
-				if v.Job.State != "RUNNING" {
-					break
-				}
-				time.Sleep(time.Millisecond)
-			}
-			if v.Job.State != "SUCCEEDED" || v.Read == nil || len(v.Read.Rows) == 0 || v.Read.Rows[0].Health == nil || v.Read.Rows[0].Health.CPU == nil || *v.Read.Rows[0].Health.CPU != 10 || v.Read.Availability["auth"] != "partial" {
-				t.Fatal("operational result missing or unknown made zero", v.Job, v.Read)
-			}
-			if v.Read.Rows[0].Health.FastTrack == nil || *v.Read.Rows[0].Health.FastTrack != 1 || v.Read.Availability["ports"] != "complete" {
-				t.Fatal("T3 FastTrack/ports did not cross real IPC", v.Read)
-			}
-			insights := j.call("pppoe.monitor-current", equipment.PPInput{DeviceID: j.device, Scope: "equipment"}, foundation.OK).Data.PPPoE
-			var port bool
-			for _, r := range insights.Read.Rows {
-				if r.Kind == "port" && r.Port != nil && r.Port.SpeedBPS != nil && *r.Port.SpeedBPS == 100000000 {
-					port = true
-				}
-			}
-			if !port {
-				t.Fatal("saved port did not cross IPC", insights.Read)
-			}
-			auth := false
-			for _, r := range v.Read.Rows {
-				if r.Kind == "auth_failure" {
-					auth = true
-					if r.Login != "auth-only-canary" || r.Used == nil || *r.Used != 2 {
-						t.Fatal("auth projection", r)
-					}
-				}
-			}
-			if !auth {
-				t.Fatal("ranked auth result missing")
-			}
-			calls := j.peer.Commands.Load()
-			j.call("pppoe.read-page", equipment.PPInput{JobID: job.ID}, foundation.OK)
-			local := j.call("pppoe.monitor-current", equipment.PPInput{DeviceID: j.device, Scope: "series"}, foundation.OK).Data.PPPoE
-			if len(local.Read.Rows) != 1 || local.Read.Rows[0].Point.Health == nil || local.Read.Rows[0].Point.Online != nil {
-				t.Fatal("health-only point fabricated session count", local)
-			}
-			j.call("pppoe.monitor-current", equipment.PPInput{DeviceID: j.device, Scope: "versions"}, foundation.OK)
-			if j.peer.Commands.Load() != calls {
-				t.Fatal("status/page/local history started SSH")
-			}
-			invalid := input
-			invalid.Operation = uuid.NewString()
-			invalid.RowIDs = []string{uuid.NewString()}
-			j.call("pppoe.read-start", invalid, foundation.Invalid)
-			invalid = equipment.PPInput{DeviceID: j.device, Scope: "shell"}
-			j.call("pppoe.monitor-current", invalid, foundation.Invalid)
+			v := waitOperationalScope(t, j, job.ID)
+			assertOperationalHealth(t, v)
+			assertOperationalSavedPort(t, j)
+			assertOperationalAuthProjection(t, v)
+			assertOperationalLocalQueries(t, j, job, input)
 			after, c := j.store.ReadEquipment(context.Background(), j.client.profile)
 			if c != equipment.OK || len(before.Operations) != len(after.Operations) {
 				t.Fatal("monitoring consumed permanent receipt")
 			}
-			if e := filepath.WalkDir(filepath.Join(j.root, "state"), func(path string, d os.DirEntry, e error) error {
-				if e != nil {
-					return e
-				}
-				if !d.IsDir() {
-					body, e := os.ReadFile(path)
-					if e != nil {
-						return e
-					}
-					if strings.Contains(string(body), "auth-only-canary") {
-						t.Error("auth identity persisted instead of minimal series")
-					}
-				}
-				return nil
-			}); e != nil {
-				t.Fatal(e)
-			}
+			assertNoOperationalAuthOnDisk(t, j.root)
 		})
 	}
 }
@@ -119,8 +56,10 @@ func TestL06T2CursorRejectsChangedSeries(t *testing.T) {
 	}
 	publish := func(at time.Time) {
 		t.Helper()
-		result := &equipment.PPReadResult{Scope: "operations", Ended: equipment.PPTime(at), Rows: []equipment.PPReadRow{{Kind: "resource", Health: &equipment.DeviceHealth{Version: "7.14.3"}}}}
-		if c := j.store.SaveDeviceMonitoring(context.Background(), j.client.profile, target.Device, target.Credential.Metadata.Revision, result); c != equipment.OK {
+		result := &equipment.PPReadResult{Scope: "operations", Ended: equipment.PPTime(at),
+			Rows: []equipment.PPReadRow{{Kind: "resource", Health: &equipment.DeviceHealth{Version: "7.14.3"}}}}
+		if c := j.store.SaveDeviceMonitoring(context.Background(), j.client.profile, target.Device,
+			target.Credential.Metadata.Revision, result); c != equipment.OK {
 			t.Fatal(c)
 		}
 	}
@@ -136,4 +75,98 @@ func TestL06T2CursorRejectsChangedSeries(t *testing.T) {
 	publish(now.Add(time.Minute))
 	input.Cursor = first.Next
 	j.call("pppoe.monitor-current", input, foundation.Code(equipment.CursorInvalid))
+}
+
+func waitOperationalScope(t *testing.T, j *ppJourney, jobID string) *equipment.PPView {
+	var v *equipment.PPView
+	until := time.Now().Add(5 * time.Second)
+	for time.Now().Before(until) {
+		v = j.call("pppoe.read-status", equipment.PPInput{JobID: jobID}, foundation.OK).Data.PPPoE
+		if v.Job.State != "RUNNING" {
+			break
+		}
+		time.Sleep(time.Millisecond)
+	}
+	return v
+}
+
+func assertOperationalHealth(t *testing.T, v *equipment.PPView) {
+	if v.Job.State != "SUCCEEDED" || v.Read == nil || len(v.Read.Rows) == 0 || v.Read.Rows[0].Health == nil ||
+		v.Read.Rows[0].Health.CPU == nil || *v.Read.Rows[0].Health.CPU != 10 || v.Read.Availability["auth"] != "partial" {
+		t.Fatal("operational result missing or unknown made zero", v.Job, v.Read)
+	}
+	if v.Read.Rows[0].Health.FastTrack == nil || *v.Read.Rows[0].Health.FastTrack != 1 || v.Read.Availability["ports"] != "complete" {
+		t.Fatal("T3 FastTrack/ports did not cross real IPC", v.Read)
+	}
+
+}
+
+func assertOperationalSavedPort(t *testing.T, j *ppJourney) {
+	insights := j.call("pppoe.monitor-current", equipment.PPInput{DeviceID: j.device, Scope: "equipment"}, foundation.OK).Data.PPPoE
+	var port bool
+	for _, r := range insights.Read.Rows {
+		if r.Kind == "port" && r.Port != nil && r.Port.SpeedBPS != nil && *r.Port.SpeedBPS == 100000000 {
+			port = true
+		}
+	}
+	if !port {
+		t.Fatal("saved port did not cross IPC", insights.Read)
+	}
+
+}
+
+func assertOperationalAuthProjection(t *testing.T, v *equipment.PPView) {
+	auth := false
+	for _, r := range v.Read.Rows {
+		if r.Kind == "auth_failure" {
+			auth = true
+			if r.Login != "auth-only-canary" || r.Used == nil || *r.Used != 2 {
+				t.Fatal("auth projection", r)
+			}
+		}
+	}
+	if !auth {
+		t.Fatal("ranked auth result missing")
+	}
+
+}
+
+func assertOperationalLocalQueries(t *testing.T, j *ppJourney, job *equipment.Job, input equipment.PPInput) {
+	calls := j.peer.Commands.Load()
+	j.call("pppoe.read-page", equipment.PPInput{JobID: job.ID}, foundation.OK)
+	local := j.call("pppoe.monitor-current", equipment.PPInput{DeviceID: j.device, Scope: "series"}, foundation.OK).Data.PPPoE
+	if len(local.Read.Rows) != 1 || local.Read.Rows[0].Point.Health == nil || local.Read.Rows[0].Point.Online != nil {
+		t.Fatal("health-only point fabricated session count", local)
+	}
+	j.call("pppoe.monitor-current", equipment.PPInput{DeviceID: j.device, Scope: "versions"}, foundation.OK)
+	if j.peer.Commands.Load() != calls {
+		t.Fatal("status/page/local history started SSH")
+	}
+	invalid := input
+	invalid.Operation = uuid.NewString()
+	invalid.RowIDs = []string{uuid.NewString()}
+	j.call("pppoe.read-start", invalid, foundation.Invalid)
+	invalid = equipment.PPInput{DeviceID: j.device, Scope: "shell"}
+	j.call("pppoe.monitor-current", invalid, foundation.Invalid)
+
+}
+
+func assertNoOperationalAuthOnDisk(t *testing.T, root string) {
+	if e := filepath.WalkDir(filepath.Join(root, "state"), func(path string, d os.DirEntry, e error) error {
+		if e != nil {
+			return e
+		}
+		if !d.IsDir() {
+			body, e := os.ReadFile(path)
+			if e != nil {
+				return e
+			}
+			if strings.Contains(string(body), "auth-only-canary") {
+				t.Error("auth identity persisted instead of minimal series")
+			}
+		}
+		return nil
+	}); e != nil {
+		t.Fatal(e)
+	}
 }

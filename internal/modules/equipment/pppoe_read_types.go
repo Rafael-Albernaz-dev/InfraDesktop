@@ -205,10 +205,17 @@ type PPReadTarget struct {
 	Prepared    time.Time
 }
 
+type PPReadRequest struct {
+	Device              Device
+	User, Secret, Scope string
+	Target              *PPReadTarget
+	Publish             func(*PPReadResult) Code
+	Check               func() Code
+}
+
 type PPReadRemote interface {
 	ReadPP(
-		context.Context, Device, string, string, string, *PPReadTarget,
-		func(*PPReadResult) Code, func() Code,
+		context.Context, PPReadRequest,
 	) (*PPReadResult, Code)
 }
 

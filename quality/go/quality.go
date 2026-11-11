@@ -174,15 +174,15 @@ func validateText(path string, spans []span) []string { return qualityrules.Text
 
 // Behavior renames retain the entry metrics of their original file.
 var renamedRadioTestOrigins = map[string]string{
-	"internal/adapters/routerssh/radio_standalone_identity_test.go": "internal/adapters/routerssh/radio_avulso_peer_test.go",
-	"internal/adapters/routerssh/radio_station_parser_test.go":      "internal/adapters/routerssh/radio_avulso_test.go",
-	"internal/adapters/routerssh/radio_reopen_handshake_test.go":    "internal/adapters/routerssh/radio_j_test.go",
-	"internal/adapters/routerssh/radio_partial_failure_test.go":     "internal/adapters/routerssh/radio_partial_j_test.go",
-	"internal/modules/equipment/radio_standalone_service_test.go":   "internal/modules/equipment/radio_avulso_test.go",
-	"internal/modules/equipment/radio_cpu_gate_test.go":             "internal/modules/equipment/radio_cpu90_test.go",
-	"internal/modules/equipment/radio_measurement_gate_test.go":     "internal/modules/equipment/radio_live2_test.go",
-	"internal/modules/equipment/radio_provenance_test.go":           "internal/modules/equipment/radio_piloto_test.go",
-	"internal/adapters/ipc/radio_standalone_test.go":                "internal/adapters/ipc/radio_avulso_test.go",
-	"internal/adapters/ipc/radio_unsupported_family_test.go":        "internal/adapters/ipc/radio_piloto_test.go",
-	"internal/adapters/storage/equipment_radio_credentials_test.go": "internal/adapters/storage/equipment_j_test.go",
+	"internal/adapters/routerssh/radio_standalone_identity_test.go":        "internal/adapters/routerssh/radio_avulso_peer_test.go",
+	"internal/adapters/routerssh/radioparse/radio_station_parser_test.go":  "internal/adapters/routerssh/radio_avulso_test.go",
+	"internal/adapters/routerssh/radio_reopen_handshake_test.go":           "internal/adapters/routerssh/radio_j_test.go",
+	"internal/adapters/routerssh/radioparse/radio_partial_failure_test.go": "internal/adapters/routerssh/radio_partial_j_test.go",
+	"internal/modules/equipment/radio_standalone_service_test.go":          "internal/modules/equipment/radio_avulso_test.go",
+	"internal/modules/equipment/radio_cpu_gate_test.go":                    "internal/modules/equipment/radio_cpu90_test.go",
+	"internal/modules/equipment/radio_measurement_gate_test.go":            "internal/modules/equipment/radio_live2_test.go",
+	"internal/modules/equipment/radio_provenance_test.go":                  "internal/modules/equipment/radio_piloto_test.go",
+	"internal/adapters/ipc/radio_standalone_test.go":                       "internal/adapters/ipc/radio_avulso_test.go",
+	"internal/adapters/ipc/radio_unsupported_family_test.go":               "internal/adapters/ipc/radio_piloto_test.go",
+	"internal/adapters/storage/equipment_radio_credentials_test.go":        "internal/adapters/storage/equipment_j_test.go",
 }

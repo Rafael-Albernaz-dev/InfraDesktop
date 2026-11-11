@@ -39,9 +39,10 @@ func (renewalVault) Open(string, string, string, uint64, []byte, []byte) (string
 type renewalRemote struct{ equipment.Remote }
 
 func (renewalRemote) ReadPP(
-	_ context.Context, _ equipment.Device, _, _, scope string, _ *equipment.PPReadTarget,
-	publish func(*equipment.PPReadResult) equipment.Code, _ func() equipment.Code,
+	_ context.Context, req equipment.PPReadRequest,
 ) (*equipment.PPReadResult, equipment.Code) {
+	scope, publish := req.Scope, req.Publish
+	req.Secret = ""
 	result := &equipment.PPReadResult{Scope: scope, Rows: []equipment.PPReadRow{}, PayloadBytes: 100, MetadataBytes: 100}
 	if code := publish(result); code != equipment.OK {
 		return nil, code

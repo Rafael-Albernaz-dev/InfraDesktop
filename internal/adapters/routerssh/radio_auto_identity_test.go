@@ -3,6 +3,7 @@ package routerssh_test
 import (
 	"context"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
 	"os"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestUnknownCPEAutoDoesNotInferWOMFromGenericIW(t *testing.T) {
-	payload, err := os.ReadFile("testdata/l07_wom_iw_real.txt")
+	payload, err := os.ReadFile("radioparse/testdata/l07_wom_iw_real.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,10 +61,10 @@ func autoIdentityReplay(t *testing.T, family equipment.RadioFamily, identity, ra
 			}
 			return "L07-DRIVER-ABSENT\n", true
 		}
-		if command == routerssh.RadioWOMIdentificationCommand {
+		if command == radioparse.RadioWOMIdentificationCommand {
 			return identity, true
 		}
-		if command == routerssh.RadioWOMCommand && family == equipment.RadioIntelbrasWOM {
+		if command == radioparse.RadioWOMCommand && family == equipment.RadioIntelbrasWOM {
 			return radio, true
 		}
 		t.Errorf("unexpected command %s", command)
@@ -82,11 +83,11 @@ func TestRadioAutoUsesPositiveFamilyIdentity(t *testing.T) {
 		{"WOM", "radio_wom_managed_real.txt", "Intelbras", equipment.RadioIntelbrasWOM, 3},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			identity, err := os.ReadFile("testdata/radio_wom_library_identity.txt")
+			identity, err := os.ReadFile("radioparse/testdata/radio_wom_library_identity.txt")
 			if err != nil {
 				t.Fatal(err)
 			}
-			radio, err := os.ReadFile("testdata/" + test.radio)
+			radio, err := os.ReadFile("radioparse/testdata/" + test.radio)
 			if err != nil {
 				t.Fatal(err)
 			}

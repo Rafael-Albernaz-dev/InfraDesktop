@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/pppoeparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
 	"strings"
@@ -38,9 +39,9 @@ func TestPPDiagnosticCatalogAndRadiusThroughPinnedSSH(t *testing.T) {
 		t.Run(family, func(t *testing.T) {
 			peer, err := sshfixture.Start(sshfixture.Config{Command: func(command string) (string, bool) {
 				switch command {
-				case routerssh.PDCatalogCommand:
+				case pppoeparse.PDCatalogCommand:
 					return catalogBody(version), true
-				case routerssh.PDRadiusCommand:
+				case pppoeparse.PDRadiusCommand:
 					return radiusBody(version), true
 				}
 				return "", false
@@ -51,21 +52,15 @@ func TestPPDiagnosticCatalogAndRadiusThroughPinnedSSH(t *testing.T) {
 			defer peer.Close()
 			d := equipment.Device{Address: "127.0.0.1", Port: peer.Port(), Fingerprint: peer.Fingerprint()}
 			for _, scope := range []string{equipment.PDCatalog, equipment.PDRadius} {
-				o, c := (routerssh.Adapter{}).CollectPPDiagnostic(context.Background(), d, "reader", sshfixture.Password, scope, nil, func() equipment.Code { return equipment.OK })
-				if c != equipment.OK || o == nil || o.Quality.Status != "complete" {
-					t.Fatal(scope, o, c)
-				}
-				if scope == equipment.PDCatalog {
-					equipment.ResolvePDRelations(o.Rows)
-					if len(o.Rows) != 7 || o.Rows[4].Relation != "resolved" || o.Rows[5].ParentID == "" || o.Rows[6].AcceptUntagged != nil {
-						t.Fatal(o.Rows)
-					}
-				}
-				if scope == equipment.PDRadius {
-					if len(o.Rows) != 2 || o.Rows[1].Counters == nil || o.Rows[1].Counters.Rejects != "1" || !o.Rows[1].Counters.LastRTT.Known {
-						t.Fatal(o.Rows)
-					}
-				}
+				o, c := (routerssh.Adapter{}).CollectPPDiagnostic(context.Background(), equipment.PDDiagnosticRequest{
+					Device: d,
+					User:   "reader",
+					Secret: sshfixture.Password,
+					Scope:  scope,
+					Ping:   nil,
+					Check:  func() equipment.Code { return equipment.OK },
+				})
+				assertDiagnosticScope(t, scope, o, c)
 			}
 			if peer.Auth.Load() != 2 || peer.Commands.Load() != 2 {
 				t.Fatal("scope refresh amplified", peer.Auth.Load(), peer.Commands.Load())
@@ -75,8 +70,9 @@ func TestPPDiagnosticCatalogAndRadiusThroughPinnedSSH(t *testing.T) {
 }
 
 func TestPPDiagnosticCommandsNeverRequestSensitiveOrWholeObjects(t *testing.T) {
-	for _, command := range []string{routerssh.PDCatalogCommand, routerssh.PDRadiusCommand} {
-		for _, forbidden := range []string{" secret", " password", "/log", "reset-counters", "print detail", ":put $stats", " get $i]", "/ppp secret", "sensitive", "debug"} {
+	for _, command := range []string{pppoeparse.PDCatalogCommand, pppoeparse.PDRadiusCommand} {
+		for _, forbidden := range []string{" secret", " password", "/log", "reset-counters", "print detail", ":put $stats",
+			" get $i]", "/ppp secret", "sensitive", "debug"} {
 			if strings.Contains(command, forbidden) {
 				t.Fatalf("forbidden projection %q", forbidden)
 			}
@@ -85,12 +81,12 @@ func TestPPDiagnosticCommandsNeverRequestSensitiveOrWholeObjects(t *testing.T) {
 			t.Fatal("missing pre-collection limits")
 		}
 	}
-	if !strings.Contains(routerssh.PDRadiusCommand, "once as-value") || !strings.Contains(routerssh.PDRadiusCommand, `($stats->"rejects")`) {
+	if !strings.Contains(pppoeparse.PDRadiusCommand, "once as-value") || !strings.Contains(pppoeparse.PDRadiusCommand, `($stats->"rejects")`) {
 		t.Fatal("missing narrow monitor projection")
 	}
 	// An unexpected field/canary from a malformed peer is rejected, never retained.
 	bad := strings.Replace(radiusBody("7.26"), "Z\t2", "secret\tPRIVATE-CANARY\nZ\t2", 1)
-	o, c := routerssh.ParsePPDiagnostic(equipment.PDRadius, bad)
+	o, c := pppoeparse.ParsePPDiagnostic(equipment.PDRadius, bad)
 	encoded, _ := json.Marshal(o)
 	if c != equipment.OK || o.Quality.Status != "partial" || len(o.Rows) != 0 || strings.Contains(string(encoded), "PRIVATE-CANARY") {
 		t.Fatal("unexpected raw field leaked", o, c)
@@ -102,86 +98,48 @@ func pingTarget(family string) *equipment.PPPingTarget {
 	if family == "v6" {
 		version = "6.49.19"
 	}
-	o, _ := routerssh.ParsePPPoE(pingFresh(version, "2d1h1s", "1h1s", "198.51.100.1", "1"))
-	return &equipment.PPPingTarget{Observation: *o, Row: o.Rows[0], Age: equipment.PPInterval{Known: true, Min: 0, Max: int64(100 * time.Millisecond)}, Prepared: time.Now()}
+	o, _ := pppoeparse.ParsePPPoE(pingFresh(version, "2d1h1s", "1h1s", "198.51.100.1", "1"))
+	return &equipment.PPPingTarget{Observation: *o, Row: o.Rows[0], Age: equipment.PPInterval{Known: true, Min: 0,
+		Max: int64(100 * time.Millisecond)}, Prepared: time.Now()}
 }
 func pingFresh(version, up, session, address, sid string) string {
-	return "H\t1\t1\t" + version + "\t" + up + "\nR\t*1\t" + sid + "\treader\t" + address + "\tcaller\t" + session + "\nZ\t1\tcomplete\t" + up + "\n"
+	return "H\t1\t1\t" + version + "\t" + up + "\nR\t*1\t" + sid + "\treader\t" + address + "\tcaller\t" + session +
+		"\nZ\t1\tcomplete\t" + up + "\n"
 }
 func pingReplies(address string) string {
 	// Derived synthetic3-probe peer response, not an independent firmware capture.
-	return "SEQ HOST SIZE TTL TIME STATUS\n0 " + address + " 64 64 1ms45us\n1 " + address + " 64 64 1ms89us\n2 " + address + " 64 64 1ms163us\nsent=3 received=3 packet-loss=0% min-rtt=1ms45us avg-rtt=1ms99us max-rtt=1ms163us\n"
+	return "SEQ HOST SIZE TTL TIME STATUS\n0 " + address + " 64 64 1ms45us\n1 " + address + " 64 64 1ms89us\n2 " +
+		address + " 64 64 1ms163us\nsent=3 received=3 packet-loss=0% min-rtt=1ms45us" +
+		" avg-rtt=1ms99us max-rtt=1ms163us\n"
 }
 
 func TestPPDiagnosticPingContextAndIdentityBeforeAnyProbe(t *testing.T) {
 	for _, family := range []string{"v6", "v7"} {
-		for _, scenario := range []string{"valid", "custom-vrf", "unknown-menu", "address-reused", "session-reused", "duplicate-address", "other-ppp-service-conflict", "reboot", "unknown-uptime", "revoked-before-probe", "permission"} {
+		for _, scenario := range []string{"valid", "custom-vrf", "unknown-menu", "address-reused", "session-reused",
+			"duplicate-address", "other-ppp-service-conflict", "reboot", "unknown-uptime", "revoked-before-probe", "permission"} {
 			t.Run(family+"/"+scenario, func(t *testing.T) {
 				target := pingTarget(family)
-				expected, ok := routerssh.BuildPDPingCommand(target)
-				if !ok {
-					t.Fatal("valid target refused")
-				}
-				if family == "v7" && !strings.Contains(expected, "vrf=main") || family == "v6" && !strings.Contains(expected, "routing-table=main") {
-					t.Fatal("wrong family template")
-				}
-				// On ROS6, /tool ping abbreviates ping-speed, which rejects
-				// count. Its ICMP tool is /ping. Keep ROS7's proven path too.
-				pingCommand := "/tool ping address="
-				if family == "v6" {
-					pingCommand = "/ping address="
-				}
-				if !strings.Contains(expected, "else={"+pingCommand+"198.51.100.1 count=3 interval=200ms size=64 ttl=64 ") {
-					t.Fatal("wrong ICMP command: v6 must use /ping, not the ping-speed abbreviation")
-				}
-				if !strings.Contains(expected, "[/ppp active print count-only where address=198.51.100.1]!=1") || strings.Contains(expected, "count-only where service=pppoe and address=") {
-					t.Fatal("address uniqueness restricted to only PPPoE")
-				}
+				pingCommand := assertPingIdentityTemplate(t, family, target)
 				var probes atomic.Int32
 				var revoked atomic.Bool
-				peer, err := sshfixture.Start(sshfixture.Config{Command: func(command string) (string, bool) {
-					switch command {
-					case routerssh.PDPingContextV6, routerssh.PDPingContextV7:
-						if scenario == "custom-vrf" {
-							return "C\t" + family + "\t1\t0\t0\n", true
-						}
-						if scenario == "unknown-menu" {
-							return "failure: bad command name vrf\n", true
-						}
-						if scenario == "permission" {
-							return "failure: not enough permissions\n", true
-						}
-						if scenario == "revoked-before-probe" {
-							revoked.Store(true)
-						}
-						return "C\t" + family + "\t0\t0\t0\n", true
-					case routerssh.PPPoECommand:
-						t.Error("ping reread global PPP table")
-						return "", false
-					default:
-						if strings.Contains(command, pingCommand) {
-							if !strings.Contains(command, "get *1 name") || !strings.Contains(command, "$ru>") || !strings.Contains(command, "$su>") || !strings.Contains(command, "disabled!=yes and invalid!=yes") {
-								t.Error("final identity/context guard missing")
-							}
-							if scenario != "valid" {
-								return "E\tsession\n", true
-							}
-							probes.Add(3)
-							return pingReplies("198.51.100.1"), true
-						}
-					}
-					return "", false
-				}})
+				peer, err := sshfixture.Start(sshfixture.Config{Command: pingIdentityFixture(t, family, scenario, pingCommand, &probes, &revoked)})
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer peer.Close()
 				d := equipment.Device{Address: "127.0.0.1", Port: peer.Port(), Fingerprint: peer.Fingerprint()}
-				result, c := (routerssh.Adapter{}).CollectPPDiagnostic(context.Background(), d, "reader", sshfixture.Password, equipment.PDPing, target, func() equipment.Code {
-					if revoked.Load() {
-						return equipment.Changed
-					}
-					return equipment.OK
+				result, c := (routerssh.Adapter{}).CollectPPDiagnostic(context.Background(), equipment.PDDiagnosticRequest{
+					Device: d,
+					User:   "reader",
+					Secret: sshfixture.Password,
+					Scope:  equipment.PDPing,
+					Ping:   target,
+					Check: func() equipment.Code {
+						if revoked.Load() {
+							return equipment.Changed
+						}
+						return equipment.OK
+					},
 				})
 				if scenario == "valid" {
 					if c != equipment.OK || result == nil || result.Rows[0].Ping.Received != 3 || probes.Load() != 3 {
@@ -198,76 +156,36 @@ func TestPPDiagnosticPingContextAndIdentityBeforeAnyProbe(t *testing.T) {
 func TestPPDiagnosticPingParserIndependentExampleAndFailures(t *testing.T) {
 	// Independent published RouterOS7.26 example, https://manual.mikrotik.com/docs/diagnostics-monitoring-and-troubleshooting/ping/
 	// Only numeric response structure is transcribed; this test does not exercise RouterOS syntax.
-	body := "SEQ HOST SIZE TTL TIME STATUS\n0 1.1.1.1 56 60 1ms45us\n1 1.1.1.1 56 60 1ms89us\n2 1.1.1.1 56 60 1ms163us\nsent=3 received=3 packet-loss=0% min-rtt=1ms45us avg-rtt=1ms99us max-rtt=1ms163us\n"
-	o, c := routerssh.ParsePDPing(body, 3, "1.1.1.1")
+	body := "SEQ HOST SIZE TTL TIME STATUS\n0 1.1.1.1 56 60 1ms45us\n1 1.1.1.1 " +
+		"56 60 1ms89us\n2 1.1.1.1 56 60 1ms163us\nsent=3 received=3 packet-" +
+		"loss=0% min-rtt=1ms45us avg-rtt=1ms99us max-rtt=1ms163us\n"
+	o, c := pppoeparse.ParsePDPing(body, 3, "1.1.1.1")
 	if c != equipment.OK || o.Min == nil || *o.Min != 1045000 || o.Received != 3 {
 		t.Fatal(o, c)
 	}
 	wrapped := strings.Replace(body, " avg-rtt=", "\r\n    avg-rtt=", 1)
-	o, c = routerssh.ParsePDPing("0\r\n0\r\n0\r\n1\r\n"+wrapped, 3, "1.1.1.1")
+	o, c = pppoeparse.ParsePDPing("0\r\n0\r\n0\r\n1\r\n"+wrapped, 3, "1.1.1.1")
 	if c != equipment.OK || o.Min == nil || *o.Min != 1045000 || o.Received != 3 {
 		t.Fatal("wrapped finite summary rejected", o, c)
 	}
 	for _, extra := range []string{"received=3", "unknown=0", "max-rtt=", "0 1.1.1.1 56 60 1ms"} {
-		if _, c := routerssh.ParsePDPing(wrapped+extra+"\n", 3, "1.1.1.1"); c == equipment.OK {
+		if _, c := pppoeparse.ParsePDPing(wrapped+extra+"\n", 3, "1.1.1.1"); c == equipment.OK {
 			t.Fatal("invalid summary continuation accepted", extra)
 		}
 	}
-	timeouts := "SEQ HOST SIZE TTL TIME STATUS\n0 198.51.100.1 timeout\n1 198.51.100.1 timeout\n2 198.51.100.1 timeout\nsent=3 received=0 packet-loss=100%\n"
-	o, c = routerssh.ParsePDPing(timeouts, 3, "198.51.100.1")
-	if c != equipment.OK || o.Received != 0 || o.Min != nil || o.Loss != 100 {
-		t.Fatal("no reply fabricated RTT/offline", o, c)
-	}
-	// ROS6.49.18 reply supplied from the authorized pilot; only the IP is
-	// replaced. Its integer loss is rounded down, not a malformed result.
-	v6 := "SEQ HOST SIZE TTL TIME STATUS\n0 198.51.100.1 64 64 1ms\n1 198.51.100.1 timeout\n2 198.51.100.1 64 64 1ms\nsent=3 received=2 packet-loss=33% min-rtt=1ms avg-rtt=1ms max-rtt=1ms\n"
-	o, c = routerssh.ParsePDPing(v6, 3, "198.51.100.1")
-	if c != equipment.OK || o.Sent != 3 || o.Received != 2 || o.Loss < 33 || o.Loss > 34 || o.Min == nil || *o.Min != int64(time.Millisecond) || len(o.Probes) != 3 || o.Probes[1].Status != "timeout" || o.Probes[1].RTT != nil {
-		t.Fatal("valid v6 partial loss rejected or timeout fabricated RTT", o, c)
-	}
-	for _, bad := range []string{strings.Replace(body, "received=3", "received=2", 1), strings.Replace(body, "packet-loss=0%", "packet-loss=99%", 1), strings.Replace(body, "1 1.1.1.1", "0 1.1.1.1", 1), strings.Split(body, "sent=")[0], body + "extra\n", strings.Replace(body, "1ms45us", "+1ms", 1)} {
-		if _, c := routerssh.ParsePDPing(bad, 3, "1.1.1.1"); c == equipment.OK {
-			t.Fatal("malformed run accepted", bad)
-		}
-	}
-	for _, value := range []string{"1ms1ms", "1us1ms", "+1ms", "-0s", "1ms+1us", "999999999999999999s", "1.0000000001s"} {
-		if routerssh.ParsePDRTTInterval(value).Known {
-			t.Fatal("unsafe RTT", value)
-		}
-	}
-	for _, value := range []string{"0ms", "1ms45us", "1.5ms", "00:00:00.001", "1ns"} {
-		if !routerssh.ParsePDRTTInterval(value).Known {
-			t.Fatal("valid RTT", value)
-		}
-	}
+	assertPingLossExamples(t)
+	assertMalformedPingAndRTT(t, body)
 }
 
 func TestPPDiagnosticPingDeadlineCancelAndByteBudget(t *testing.T) {
 	for _, scenario := range []string{"deadline", "cancel", "bytes"} {
 		t.Run(scenario, func(t *testing.T) {
 			target := pingTarget("v7")
-			_, _ = routerssh.BuildPDPingCommand(target)
+			_, _ = pppoeparse.BuildPDPingCommand(target)
 			entered, release := make(chan struct{}), make(chan struct{})
 			released := false
 			var attempts atomic.Int32
-			peer, err := sshfixture.Start(sshfixture.Config{Command: func(value string) (string, bool) {
-				switch value {
-				case routerssh.PDPingContextV7:
-					return "C\tv7\t0\t0\t0\n", true
-				case routerssh.PPPoECommand:
-					return pingFresh("7.26", "2d1h1s", "1h1s", "198.51.100.1", "1"), true
-				}
-				if strings.Contains(value, "/tool ping address=") {
-					attempts.Add(1)
-					close(entered)
-					if scenario == "bytes" {
-						return strings.Repeat("x", 8193), true
-					}
-					<-release
-					return pingReplies("198.51.100.1"), true
-				}
-				return "", false
-			}})
+			peer, err := sshfixture.Start(sshfixture.Config{Command: pingBudgetFixture(scenario, &attempts, entered, release)})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -281,7 +199,12 @@ func TestPPDiagnosticPingDeadlineCancelAndByteBudget(t *testing.T) {
 			defer cancel()
 			completed := make(chan equipment.Code, 1)
 			go func() {
-				_, code := (routerssh.Adapter{}).CollectPPDiagnostic(ctx, equipment.Device{Address: "127.0.0.1", Port: peer.Port(), Fingerprint: peer.Fingerprint()}, "reader", sshfixture.Password, equipment.PDPing, target, func() equipment.Code { return equipment.OK })
+				_, code := (routerssh.Adapter{}).CollectPPDiagnostic(ctx, equipment.PDDiagnosticRequest{
+					Device: equipment.Device{Address: "127.0.0.1", Port: peer.Port(),
+						Fingerprint: peer.Fingerprint()},
+					User: "reader", Secret: sshfixture.Password,
+					Scope: equipment.PDPing, Ping: target, Check: func() equipment.Code { return equipment.OK },
+				})
 				completed <- code
 			}()
 			select {
@@ -299,19 +222,7 @@ func TestPPDiagnosticPingDeadlineCancelAndByteBudget(t *testing.T) {
 			case <-time.After(equipment.PDPingBudget + time.Second):
 				t.Fatal("finite ping did not finish/close its SSH resources")
 			}
-			if scenario == "bytes" {
-				if code != equipment.Limit {
-					t.Fatal("8KiB sublimit not enforced", code)
-				}
-			} else if code != "DEADLINE_EXCEEDED" {
-				t.Fatal("deadline/cancel did not abort SSH run", scenario, code)
-			}
-			if scenario == "deadline" && time.Since(started) < equipment.PDPingBudget-100*time.Millisecond {
-				t.Fatal("deadline returned before actual5s subdeadline")
-			}
-			if attempts.Load() != 1 {
-				t.Fatal("uncertain ping was retried", attempts.Load())
-			}
+			assertPingBudgetResult(t, scenario, code, started, &attempts)
 			close(release)
 			released = true
 		})
@@ -320,8 +231,167 @@ func TestPPDiagnosticPingDeadlineCancelAndByteBudget(t *testing.T) {
 	for _, identity := range []string{`1";:error "injected`, "token$other", "token\nline"} {
 		target := pingTarget("v7")
 		target.Row.SessionID = identity
-		if _, ok := routerssh.BuildPDPingCommand(target); ok {
+		if _, ok := pppoeparse.BuildPDPingCommand(target); ok {
 			t.Fatal("unsafe session token interpolated")
 		}
+	}
+}
+
+func assertDiagnosticScope(t *testing.T, scope string, o *equipment.PDDiagnostic, c equipment.Code) {
+	if c != equipment.OK || o == nil || o.Quality.Status != "complete" {
+		t.Fatal(scope, o, c)
+	}
+	if scope == equipment.PDCatalog {
+		equipment.ResolvePDRelations(o.Rows)
+		if len(o.Rows) != 7 || o.Rows[4].Relation != "resolved" || o.Rows[5].ParentID == "" || o.Rows[6].AcceptUntagged != nil {
+			t.Fatal(o.Rows)
+		}
+	}
+	if scope == equipment.PDRadius {
+		if len(o.Rows) != 2 || o.Rows[1].Counters == nil || o.Rows[1].Counters.Rejects != "1" || !o.Rows[1].Counters.LastRTT.Known {
+			t.Fatal(o.Rows)
+		}
+	}
+}
+
+func assertPingIdentityTemplate(t *testing.T, family string, target *equipment.PPPingTarget) string {
+	expected, ok := pppoeparse.BuildPDPingCommand(target)
+	if !ok {
+		t.Fatal("valid target refused")
+	}
+	if family == "v7" && !strings.Contains(expected, "vrf=main") || family == "v6" && !strings.Contains(expected, "routing-table=main") {
+		t.Fatal("wrong family template")
+	}
+	// On ROS6, /tool ping abbreviates ping-speed, which rejects
+	// count. Its ICMP tool is /ping. Keep ROS7's proven path too.
+	pingCommand := "/tool ping address="
+	if family == "v6" {
+		pingCommand = "/ping address="
+	}
+	if !strings.Contains(expected, "else={"+pingCommand+"198.51.100.1 count=3 interval=200ms size=64 ttl=64 ") {
+		t.Fatal("wrong ICMP command: v6 must use /ping, not the ping-speed abbreviation")
+	}
+	if !strings.Contains(expected, "[/ppp active print count-only where address=198.51.100.1]!=1") ||
+		strings.Contains(expected, "count-only where service=pppoe and address=") {
+		t.Fatal("address uniqueness restricted to only PPPoE")
+	}
+	return pingCommand
+}
+
+func pingIdentityFixture(t *testing.T, family, scenario, pingCommand string, probes *atomic.Int32,
+	revoked *atomic.Bool) func(string) (string, bool) {
+	return func(command string) (string, bool) {
+
+		switch command {
+		case pppoeparse.PDPingContextV6, pppoeparse.PDPingContextV7:
+			if scenario == "custom-vrf" {
+				return "C\t" + family + "\t1\t0\t0\n", true
+			}
+			if scenario == "unknown-menu" {
+				return "failure: bad command name vrf\n", true
+			}
+			if scenario == "permission" {
+				return "failure: not enough permissions\n", true
+			}
+			if scenario == "revoked-before-probe" {
+				revoked.Store(true)
+			}
+			return "C\t" + family + "\t0\t0\t0\n", true
+		case pppoeparse.PPPoECommand:
+			t.Error("ping reread global PPP table")
+			return "", false
+		default:
+			if strings.Contains(command, pingCommand) {
+				if !strings.Contains(command, "get *1 name") || !strings.Contains(command, "$ru>") || !strings.Contains(command,
+					"$su>") || !strings.Contains(command, "disabled!=yes and invalid!=yes") {
+					t.Error("final identity/context guard missing")
+				}
+				if scenario != "valid" {
+					return "E\tsession\n", true
+				}
+				probes.Add(3)
+				return pingReplies("198.51.100.1"), true
+			}
+		}
+		return "", false
+	}
+}
+
+func assertPingLossExamples(t *testing.T) {
+	timeouts := "SEQ HOST SIZE TTL TIME STATUS\n0 198.51.100.1 timeout\n1 198.51.10" +
+		"0.1 timeout\n2 198.51.100.1 timeout\nsent=3 received=0 packet-loss" +
+		"=100%\n"
+	o, c := pppoeparse.ParsePDPing(timeouts, 3, "198.51.100.1")
+	if c != equipment.OK || o.Received != 0 || o.Min != nil || o.Loss != 100 {
+		t.Fatal("no reply fabricated RTT/offline", o, c)
+	}
+	// ROS6.49.18 reply supplied from the authorized pilot; only the IP is
+	// replaced. Its integer loss is rounded down, not a malformed result.
+	v6 := "SEQ HOST SIZE TTL TIME STATUS\n0 198.51.100.1 64 64 1ms\n1 198.51." +
+		"100.1 timeout\n2 198.51.100.1 64 64 1ms\nsent=3 received=2 packet-" +
+		"loss=33% min-rtt=1ms avg-rtt=1ms max-rtt=1ms\n"
+	o, c = pppoeparse.ParsePDPing(v6, 3, "198.51.100.1")
+	if c != equipment.OK || o.Sent != 3 || o.Received != 2 || o.Loss < 33 || o.Loss > 34 || o.Min == nil ||
+		*o.Min != int64(time.Millisecond) || len(o.Probes) != 3 || o.Probes[1].Status != "timeout" || o.Probes[1].RTT != nil {
+		t.Fatal("valid v6 partial loss rejected or timeout fabricated RTT", o, c)
+	}
+
+}
+
+func assertMalformedPingAndRTT(t *testing.T, body string) {
+	for _, bad := range []string{strings.Replace(body, "received=3", "received=2", 1), strings.Replace(body,
+		"packet-loss=0%", "packet-loss=99%", 1), strings.Replace(body, "1 1.1.1.1", "0 1.1.1.1", 1), strings.Split(body,
+		"sent=")[0], body + "extra\n", strings.Replace(body, "1ms45us", "+1ms", 1)} {
+		if _, c := pppoeparse.ParsePDPing(bad, 3, "1.1.1.1"); c == equipment.OK {
+			t.Fatal("malformed run accepted", bad)
+		}
+	}
+	for _, value := range []string{"1ms1ms", "1us1ms", "+1ms", "-0s", "1ms+1us", "999999999999999999s", "1.0000000001s"} {
+		if pppoeparse.ParsePDRTTInterval(value).Known {
+			t.Fatal("unsafe RTT", value)
+		}
+	}
+	for _, value := range []string{"0ms", "1ms45us", "1.5ms", "00:00:00.001", "1ns"} {
+		if !pppoeparse.ParsePDRTTInterval(value).Known {
+			t.Fatal("valid RTT", value)
+		}
+	}
+}
+
+func pingBudgetFixture(scenario string, attempts *atomic.Int32, entered, release chan struct{}) func(string) (string, bool) {
+	return func(value string) (string, bool) {
+
+		switch value {
+		case pppoeparse.PDPingContextV7:
+			return "C\tv7\t0\t0\t0\n", true
+		case pppoeparse.PPPoECommand:
+			return pingFresh("7.26", "2d1h1s", "1h1s", "198.51.100.1", "1"), true
+		}
+		if strings.Contains(value, "/tool ping address=") {
+			attempts.Add(1)
+			close(entered)
+			if scenario == "bytes" {
+				return strings.Repeat("x", 8193), true
+			}
+			<-release
+			return pingReplies("198.51.100.1"), true
+		}
+		return "", false
+	}
+}
+
+func assertPingBudgetResult(t *testing.T, scenario string, code equipment.Code, started time.Time, attempts *atomic.Int32) {
+	if scenario == "bytes" {
+		if code != equipment.Limit {
+			t.Fatal("8KiB sublimit not enforced", code)
+		}
+	} else if code != equipment.RadioCodeDeadlineExceeded {
+		t.Fatal("deadline/cancel did not abort SSH run", scenario, code)
+	}
+	if scenario == "deadline" && time.Since(started) < equipment.PDPingBudget-100*time.Millisecond {
+		t.Fatal("deadline returned before actual5s subdeadline")
+	}
+	if attempts.Load() != 1 {
+		t.Fatal("uncertain ping was retried", attempts.Load())
 	}
 }

@@ -15,9 +15,10 @@ import (
 
 type blockBandwidthRemote struct{ equipment.Remote }
 
-func (blockBandwidthRemote) ReadPP(_ context.Context, _ equipment.Device, _, _, scope string,
-	target *equipment.PPReadTarget, _ func(*equipment.PPReadResult) equipment.Code, _ func() equipment.Code,
+func (blockBandwidthRemote) ReadPP(_ context.Context, req equipment.PPReadRequest,
 ) (*equipment.PPReadResult, equipment.Code) {
+	scope, target := req.Scope, req.Target
+	req.Secret = ""
 	return &equipment.PPReadResult{Scope: scope, PayloadBytes: 100, MetadataBytes: 50, MaxRowBytes: 50,
 		Rows: []equipment.PPReadRow{{RowID: target.Rows[0].ID, Download: &equipment.PPRate{Min: 2000, Max: 2000}}}}, equipment.OK
 }

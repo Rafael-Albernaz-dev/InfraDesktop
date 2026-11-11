@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -54,10 +55,10 @@ func TestStandaloneTOFURealAntesDaSenha(t *testing.T) {
 		st, _ := store.ReadEquipment(context.Background(), "synthetic")
 		persisted.Store(st.Devices[0].Fingerprint == peer.Fingerprint())
 	}, Command: func(cmd string) (string, bool) {
-		if cmd == routerssh.RadioIdentificationCommand {
+		if cmd == radioparse.RadioIdentificationCommand {
 			return standaloneIdentity(raw), true
 		}
-		if cmd == routerssh.RadioStationCommand {
+		if cmd == radioparse.RadioStationCommand {
 			return raw, true
 		}
 		return "", false

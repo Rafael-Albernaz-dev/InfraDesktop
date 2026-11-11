@@ -62,7 +62,7 @@ func persistentRadioFamilyPeer(t *testing.T, family equipment.RadioFamily) (*ssh
 	if family == equipment.RadioIntelbrasWOM {
 		file, role = "l07_wom_iw_real.txt", equipment.RoleCPE
 	}
-	rich, e := os.ReadFile("testdata/" + file)
+	rich, e := os.ReadFile("radioparse/testdata/" + file)
 	if e != nil {
 		t.Fatal(e)
 	}

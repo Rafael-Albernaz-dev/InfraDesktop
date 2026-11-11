@@ -1,7 +1,7 @@
 package ipc
 
 import (
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"os"
 	"strings"
 	"testing"
@@ -11,14 +11,14 @@ import (
 // identification and AP fallback; it is not a new physical AP collection.
 func radioAPIdentificationFixture(t *testing.T, command string) (string, bool) {
 	t.Helper()
-	if command == routerssh.RadioIdentificationCommand {
+	if command == radioparse.RadioIdentificationCommand {
 		return "L07-ID-RESOURCE\nplatform: MikroTik\nversion: 6.49.10 (long-term)\n" +
 			"L07-ID-PACKAGES\n 0 wireless 6.49.10\nL07-ID-BOARD\nmodel: LHG HP5\nL07-ID-DONE\n", true
 	}
-	if command != routerssh.RadioStationCommand {
+	if command != radioparse.RadioStationCommand {
 		return "", false
 	}
-	b, err := os.ReadFile("../routerssh/testdata/l07_avulso_station_v6.txt")
+	b, err := os.ReadFile("../routerssh/radioparse/testdata/l07_avulso_station_v6.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

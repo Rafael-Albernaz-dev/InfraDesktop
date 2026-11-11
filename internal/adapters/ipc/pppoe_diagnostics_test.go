@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/pppoeparse"
 	"infradesktop/internal/adapters/vault"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
@@ -135,7 +136,7 @@ func TestPPDiagnosticStrictInputAndContextBeforeNetwork(t *testing.T) {
 func TestPPDiagnosticRadiusMonitorFailurePreservesGoodDataAndDate(t *testing.T) {
 	var denied atomic.Bool
 	j := newPPJourney(t, sshfixture.Config{Command: func(command string) (string, bool) {
-		if command == routerssh.PDRadiusCommand {
+		if command == pppoeparse.PDRadiusCommand {
 			if denied.Load() {
 				return "failure: not enough permissions\n", true
 			}
@@ -168,7 +169,7 @@ func TestPPDiagnosticSharedAdmissionCancellationAndRevocation(t *testing.T) {
 				}
 			}()
 			j := newPPJourney(t, sshfixture.Config{Command: func(command string) (string, bool) {
-				if command == routerssh.PDCatalogCommand {
+				if command == pppoeparse.PDCatalogCommand {
 					close(entered)
 					<-release
 					return sshfixture.CatalogTranscript("7.26"), true
@@ -342,7 +343,7 @@ func logCatalogWorkload(t *testing.T, j *ppJourney, n int, current *equipment.PD
 
 func catalogWorkloadCommand(count *atomic.Int32) func(string) (string, bool) {
 	return func(command string) (string, bool) {
-		if command != routerssh.PDCatalogCommand {
+		if command != pppoeparse.PDCatalogCommand {
 			return "", false
 		}
 		n := int(count.Load())

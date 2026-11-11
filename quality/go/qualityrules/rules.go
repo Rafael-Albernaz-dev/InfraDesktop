@@ -104,7 +104,7 @@ func protocolToken(path string, literal *ast.BasicLit, parent ast.Node, stack []
 			}
 		}
 	}
-	if path != "internal/adapters/routerssh/radio_standalone_parser.go" || value != "ap" {
+	if path != "internal/adapters/routerssh/radioparse/radio_standalone_parser.go" || value != "ap" {
 		return false
 	}
 	index, ok := parent.(*ast.IndexExpr)

@@ -3,7 +3,7 @@ package routerssh_test
 import (
 	"encoding/json"
 	"fmt"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/pppoeparse"
 	"infradesktop/internal/modules/equipment"
 	"strings"
 	"testing"
@@ -15,7 +15,7 @@ func radiusWithServices(services string) string {
 
 func TestPPDiagnosticRadiusServiceSets(t *testing.T) {
 	for _, services := range []string{"", "ppp;hotspot"} {
-		o, c := routerssh.ParsePPDiagnostic(equipment.PDRadius, radiusWithServices(services))
+		o, c := pppoeparse.ParsePPDiagnostic(equipment.PDRadius, radiusWithServices(services))
 		if c != equipment.OK || o.Quality.Status != "complete" || len(o.Rows) != 2 ||
 			o.Rows[1].Services != strings.ReplaceAll(services, ";", ",") {
 			t.Fatal("valid empty/explicit service set rejected", services, o, c)
@@ -27,7 +27,7 @@ func TestPPDiagnosticRadiusServiceSets(t *testing.T) {
 // (see TestPPPoERadiusUnknownRTTAndService); the raw value is never exposed as known.
 func TestPPDiagnosticRadiusUnknownServiceKeepsBatch(t *testing.T) {
 	for _, services := range []string{"unknown-canary", "ppp,unknown", "ppp,", "+ppp"} {
-		o, c := routerssh.ParsePPDiagnostic(equipment.PDRadius, radiusWithServices(services))
+		o, c := pppoeparse.ParsePPDiagnostic(equipment.PDRadius, radiusWithServices(services))
 		if c != equipment.OK || o.Quality.Status != "complete" || len(o.Rows) != 2 {
 			t.Fatal("unknown radius service aborted the batch", services, o, c)
 		}
@@ -46,7 +46,7 @@ func TestPPDiagnosticCatalogFailuresAreNotRows(t *testing.T) {
 		{"D\t1\tcatalog\t7.26\t2d1h1s\t2049\nZ\t0\trows\t2d1h1s\n", "limited"},
 		{strings.Replace(catalogBody("7.26"), "100-115,120,122", "100-1", 1), "partial"},
 	} {
-		o, c := routerssh.ParsePPDiagnostic(equipment.PDCatalog, tc.body)
+		o, c := pppoeparse.ParsePPDiagnostic(equipment.PDCatalog, tc.body)
 		if c != equipment.OK || o.Quality.Status != tc.status || len(o.Rows) != 0 {
 			t.Fatal(o, c)
 		}
@@ -61,7 +61,7 @@ func TestPPDiagnosticRanges(t *testing.T) {
 		{"120,100-115;114-119", "100-120", true}, {"?", "?", true}, {"", "", true}, {"0", "", false},
 		{"4095", "", false}, {"1,+2", "", false}, {"1-2-3", "", false}, {"2-1", "", false}, {"1,", "", false},
 	} {
-		got, ok := routerssh.ParsePDRange(tc.value)
+		got, ok := pppoeparse.ParsePDRange(tc.value)
 		if ok != tc.valid || ok && got != tc.want {
 			t.Fatal(tc, got, ok)
 		}
@@ -75,7 +75,7 @@ func TestPPDiagnosticDynamicCatalogUsesFullRowLimit(t *testing.T) {
 		fmt.Fprintf(&body, "I\t*%x\tdynamic-%d\tpppoe-in\ttrue\tfalse\ttrue\n", i+1, i)
 	}
 	fmt.Fprintf(&body, "Z\t%d\tcomplete\t2d1h1s\n", equipment.PPMaxRows)
-	o, c := routerssh.ParsePPDiagnostic(equipment.PDCatalog, body.String())
+	o, c := pppoeparse.ParsePPDiagnostic(equipment.PDCatalog, body.String())
 	if c != equipment.OK || o.Quality.Status != "complete" || len(o.Rows) != equipment.PPMaxRows {
 		t.Fatal("dynamic catalog incorrectly limited to128", c, o.Quality)
 	}

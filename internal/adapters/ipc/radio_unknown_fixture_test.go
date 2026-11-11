@@ -3,7 +3,7 @@ package ipc
 import (
 	"context"
 	"github.com/google/uuid"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -37,7 +37,7 @@ func unknownRadioSourceJourney(t *testing.T) (*ppJourney, string, equipment.PPRo
 func unknownRadioIdentityPeer(t *testing.T) *sshfixture.Server {
 	t.Helper()
 	peer, err := sshfixture.Start(sshfixture.Config{ServerVersion: "SSH-2.0-unrecognized", Command: func(cmd string) (string, bool) {
-		if (!strings.Contains(cmd, "mca-status") && cmd != routerssh.RadioWOMIdentificationCommand) || strings.Contains(cmd, "iw dev") {
+		if (!strings.Contains(cmd, "mca-status") && cmd != radioparse.RadioWOMIdentificationCommand) || strings.Contains(cmd, "iw dev") {
 			t.Error("outro driver usado")
 		}
 		return "L07-DRIVER-ABSENT\n", true

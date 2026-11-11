@@ -3,6 +3,7 @@ package routerssh_test
 import (
 	"context"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
 	"sync/atomic"
@@ -18,7 +19,7 @@ func assertRealLHGBridgeFallback(t *testing.T, role equipment.Role) {
 	t.Helper()
 	station := recoveryGolden(t, "radio_routeros_lhg_identity_bridge.txt")
 	rich := recoveryGolden(t, "radio_routeros_lhg_bridge_nv2.txt")
-	commands := []string{routerssh.RadioIdentificationCommand, routerssh.RadioStationCommand, routerssh.RadioAPCommand}
+	commands := []string{radioparse.RadioIdentificationCommand, radioparse.RadioStationCommand, radioparse.RadioAPCommand}
 	replies := []string{standaloneIdentity(station), station, rich}
 	var calls atomic.Int32
 	peer, err := sshfixture.Start(sshfixture.Config{ServerVersion: "SSH-2.0-ROSSSH", Command: func(command string) (string, bool) {

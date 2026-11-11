@@ -2,14 +2,14 @@ package routerssh_test
 
 import (
 	"context"
+	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
+	e "infradesktop/internal/modules/equipment"
+	"infradesktop/internal/testsupport/sshfixture"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"infradesktop/internal/adapters/routerssh"
-	e "infradesktop/internal/modules/equipment"
-	"infradesktop/internal/testsupport/sshfixture"
 )
 
 func tickIdentity() (*e.RadioReading, *e.RadioLink) {
@@ -27,7 +27,7 @@ func TestRadioTickDegradesOnlyInvalidMetric(t *testing.T) {
 			initial, link := tickIdentity()
 			wire := strings.Replace(projectedRadioTickWire, "L07-TICK-DONE",
 				"  "+tc.field+"\n  rx-rate=\"0Mbps\"\n  rx-ccq=\"0%\"\nL07-TICK-DONE", 1)
-			r, code := routerssh.ParseRadioAPTick(wire, initial, link)
+			r, code := radioparse.ParseRadioAPTick(wire, initial, link)
 			if code != e.OK || r == nil || len(r.CPU) != 1 || r.CPU[0] != 40 || len(r.Clients) != 1 {
 				t.Fatalf("valid CPU/peer lost: %s %+v", code, r)
 			}
@@ -42,14 +42,14 @@ func TestRadioTickRejectsMissingCPUAndOpenFrame(t *testing.T) {
 		{strings.Replace(projectedRadioTickWire, "L07-TICK-DONE", "", 1), "tick-frame"},
 	} {
 		initial, link := tickIdentity()
-		r, c := routerssh.ParseRadioAPTick(tc.wire, initial, link)
+		r, c := radioparse.ParseRadioAPTick(tc.wire, initial, link)
 		if c != e.Partial || r == nil || len(r.CPU) != 0 || r.Failure == nil || r.Failure.Reason != tc.reason {
 			t.Fatalf("%s: %s %+v", tc.reason, c, r)
 		}
 	}
 	initial, link := tickIdentity()
 	badPeer := strings.Replace(projectedRadioTickWire, link.MAC, "02:00:00:00:00:99", 1)
-	if _, c := routerssh.ParseRadioAPTick(badPeer, initial, link); c != e.RadioCodeLinkUnconfirmed {
+	if _, c := radioparse.ParseRadioAPTick(badPeer, initial, link); c != e.RadioCodeLinkUnconfirmed {
 		t.Fatal(c)
 	}
 }

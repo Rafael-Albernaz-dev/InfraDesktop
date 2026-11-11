@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/pppoeparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -35,7 +36,7 @@ func assertOmissionExport(t *testing.T, j *ppJourney, obsID string, commands int
 
 func TestPPPoEContextOmissionAcrossIPCAndExport(t *testing.T) {
 	j := newPPJourney(t, sshfixture.Config{PPRows: 2, Command: func(command string) (string, bool) {
-		return strings.Repeat("x", routerssh.MaxOutput+1), command == routerssh.PPContextCommand
+		return strings.Repeat("x", routerssh.MaxOutput+1), command == pppoeparse.PPContextCommand
 	}})
 	o := j.collect(uuid.NewString())
 	if o == nil || !o.ContextOmitted || o.Count != 2 || o.Quality.Status != "complete" {

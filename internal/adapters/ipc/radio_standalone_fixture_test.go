@@ -3,7 +3,7 @@ package ipc
 import (
 	"context"
 	"github.com/google/uuid"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -15,7 +15,7 @@ import (
 
 func standaloneStationJourney(t *testing.T) *ppJourney {
 	t.Helper()
-	raw, err := os.ReadFile("../routerssh/testdata/l07_avulso_station_v6.txt")
+	raw, err := os.ReadFile("../routerssh/radioparse/testdata/l07_avulso_station_v6.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,9 +27,9 @@ func standaloneStationJourney(t *testing.T) *ppJourney {
 	identity := head + "L07-ID-DONE\n"
 	j := newPPJourney(t, sshfixture.Config{ServerVersion: "SSH-2.0-ROSSSH", Command: func(cmd string) (string, bool) {
 		switch cmd {
-		case routerssh.RadioIdentificationCommand:
+		case radioparse.RadioIdentificationCommand:
 			return identity, true
-		case routerssh.RadioStationCommand:
+		case radioparse.RadioStationCommand:
 			return station, true
 		}
 		t.Error("comando inesperado")

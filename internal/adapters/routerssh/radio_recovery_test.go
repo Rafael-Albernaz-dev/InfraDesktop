@@ -3,7 +3,7 @@ package routerssh_test
 import (
 	"context"
 	"github.com/google/uuid"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/access"
 	e "infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -148,7 +148,7 @@ func recoveryCancel(t *testing.T, s *e.Service, q e.Command, id string) {
 }
 func recoveryGolden(t *testing.T, name string) string {
 	t.Helper()
-	b, err := os.ReadFile("testdata/" + name)
+	b, err := os.ReadFile("radioparse/testdata/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +165,7 @@ func TestRadioTickRecoveryPeer(t *testing.T) {
 	}
 }
 func TestRadioRealXWGolden(t *testing.T) {
-	r, c := routerssh.ParseRadioAirOS(recoveryGolden(t, "l07_airos_xw_6_3_6.txt"))
+	r, c := radioparse.ParseRadioAirOS(recoveryGolden(t, "l07_airos_xw_6_3_6.txt"))
 	if c != e.OK ||
 		r.Family != e.RadioAirOSV6 ||
 		r.Model != "NanoStation loco M5" ||

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"infradesktop/internal/adapters/routerssh/deviceparse"
 	"infradesktop/internal/modules/equipment"
 	"net"
 	"strconv"
@@ -142,63 +143,10 @@ func runQuerySession(
 	return text, equipment.OK
 }
 
-func extractSummaryResourceFields(resource string) (map[string]string, bool) {
-	fields := map[string]string{}
-	rs := lines(resource)
-	if len(rs) != 7 || rs[6] != "done" {
-		return nil, false
-	}
-	for _, line := range rs[:6] {
-		k, v, ok := strings.Cut(line, "=")
-		if !ok || fields[k] != "" || !clean(v, 128) {
-			return nil, false
-		}
-		fields[k] = v
-	}
-	for _, k := range []string{"version", "board", "uptime", "cpu", "free", "total"} {
-		if fields[k] == "" {
-			return nil, false
-		}
-	}
-	return fields, true
-}
-
-func populateSummaryObservation(
-	o *equipment.Observation, fields map[string]string,
-) (*equipment.Observation, equipment.Code) {
-	o.Version = fields["version"]
-	if strings.HasPrefix(o.Version, "6.") {
-		o.Family = equipment.RouterFamilyV6
-	} else if strings.HasPrefix(o.Version, "7.") {
-		o.Family = equipment.RouterFamilyV7
-	} else {
-		return nil, equipment.RadioCodeUnsupported
-	}
-	if len(o.Version) < 3 || o.Version[2] < '0' || o.Version[2] > '9' {
-		return nil, equipment.Partial
-	}
-	o.Board = fields["board"]
-	o.Uptime = fields["uptime"]
-	var e error
-	o.CPU, e = strconv.Atoi(fields["cpu"])
-	if e != nil || o.CPU < 0 || o.CPU > 100 {
-		return nil, equipment.Partial
-	}
-	o.FreeMemory, e = strconv.ParseUint(fields["free"], 10, 64)
-	if e != nil {
-		return nil, equipment.Partial
-	}
-	o.TotalMemory, e = strconv.ParseUint(fields["total"], 10, 64)
-	if e != nil || o.TotalMemory == 0 || o.FreeMemory > o.TotalMemory {
-		return nil, equipment.Partial
-	}
-	return o, equipment.OK
-}
-
 func readQuerySummary(
 	d equipment.Device, run func(string) (string, equipment.Code),
 ) (*equipment.Observation, equipment.Code) {
-	identity, c := run(IdentityCommand)
+	identity, c := run(deviceparse.IdentityCommand)
 	if c != equipment.OK {
 		return nil, c
 	}
@@ -206,11 +154,11 @@ func readQuerySummary(
 		return nil, equipment.Partial
 	}
 	identity = strings.TrimPrefix(identity, "identity=")
-	resource, c := run(ResourceCommand)
+	resource, c := run(deviceparse.ResourceCommand)
 	if c != equipment.OK {
 		return nil, c
 	}
-	o, c := parseSummary(identity, resource)
+	o, c := deviceparse.ParseSummary(identity, resource)
 	if c != equipment.OK {
 		return nil, c
 	}
@@ -231,9 +179,9 @@ func readQueryInterfaces(
 		deadline = end
 	}
 	_ = conn.SetDeadline(deadline)
-	interfaces, code := run(InterfacesCommand)
+	interfaces, code := run(deviceparse.InterfacesCommand)
 	if code == equipment.OK {
-		code = parseInterfaces(o, interfaces)
+		code = deviceparse.ParseInterfaces(o, interfaces)
 	}
 	if code != equipment.OK {
 		o.Interfaces = nil

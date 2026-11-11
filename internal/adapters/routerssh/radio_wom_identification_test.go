@@ -3,6 +3,7 @@ package routerssh_test
 import (
 	"context"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
 	"os"
@@ -35,11 +36,11 @@ func TestStandaloneWOMObservedLibraryAndRadioIdentifyFamily(t *testing.T) {
 
 func observedWOMPeer(t *testing.T) *sshfixture.Server {
 	t.Helper()
-	identity, err := os.ReadFile("testdata/radio_wom_library_identity.txt")
+	identity, err := os.ReadFile("radioparse/testdata/radio_wom_library_identity.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	radio, err := os.ReadFile("testdata/radio_wom_managed_real.txt")
+	radio, err := os.ReadFile("radioparse/testdata/radio_wom_managed_real.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +54,7 @@ func observedWOMPeer(t *testing.T) *sshfixture.Server {
 			}
 			return string(identity), true
 		}
-		if command == routerssh.RadioWOMCommand {
+		if command == radioparse.RadioWOMCommand {
 			return string(radio), true
 		}
 		t.Errorf("unexpected command %s", command)

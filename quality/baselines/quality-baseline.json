@@ -5260,7 +5260,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/device_insights.go": {
+  "internal/adapters/routerssh/deviceparse/device_insights.go": {
     "Lines": 133,
     "LongLines": 5,
     "MaxFunction": 64,
@@ -5296,7 +5296,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/device_insights_test.go": {
+  "internal/adapters/routerssh/deviceparse/device_insights_test.go": {
     "Lines": 71,
     "LongLines": 1,
     "MaxFunction": 42,
@@ -5318,7 +5318,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/device_monitoring.go": {
+  "internal/adapters/routerssh/deviceparse/device_monitoring.go": {
     "Lines": 302,
     "LongLines": 12,
     "MaxFunction": 106,
@@ -5403,7 +5403,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/device_monitoring_parse.go": {
+  "internal/adapters/routerssh/deviceparse/device_monitoring_parse.go": {
     "Lines": 349,
     "LongLines": 0,
     "MaxFunction": 38,
@@ -5530,7 +5530,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/device_monitoring_test.go": {
+  "internal/adapters/routerssh/deviceparse/device_monitoring_test.go": {
     "Lines": 244,
     "LongLines": 8,
     "MaxFunction": 69,
@@ -5723,7 +5723,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/parse_operational_test.go": {
+  "internal/adapters/routerssh/deviceparse/parse_operational_test.go": {
     "Lines": 33,
     "LongLines": 2,
     "MaxFunction": 23,
@@ -5823,7 +5823,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_context.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_context.go": {
     "Lines": 170,
     "LongLines": 8,
     "MaxFunction": 116,
@@ -6141,7 +6141,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_diagnostics.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_diagnostics.go": {
     "Lines": 402,
     "LongLines": 15,
     "MaxFunction": 127,
@@ -6395,7 +6395,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_health.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_health.go": {
     "Lines": 314,
     "LongLines": 7,
     "MaxFunction": 124,
@@ -6466,7 +6466,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_log.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_log.go": {
     "Lines": 200,
     "LongLines": 6,
     "MaxFunction": 78,
@@ -6516,7 +6516,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_membership_radius_test.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_membership_radius_test.go": {
     "Lines": 40,
     "LongLines": 0,
     "MaxFunction": 17,
@@ -6538,7 +6538,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_parse.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_parse.go": {
     "Lines": 402,
     "LongLines": 0,
     "MaxFunction": 38,
@@ -6679,7 +6679,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_ping.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_ping.go": {
     "Lines": 141,
     "LongLines": 11,
     "MaxFunction": 46,
@@ -6736,7 +6736,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_ping_parse.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_ping_parse.go": {
     "Lines": 328,
     "LongLines": 0,
     "MaxFunction": 32,
@@ -6849,7 +6849,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_read.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_read.go": {
     "Lines": 217,
     "LongLines": 0,
     "MaxFunction": 41,
@@ -7033,7 +7033,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_secret.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_secret.go": {
     "Lines": 160,
     "LongLines": 6,
     "MaxFunction": 70,
@@ -7090,7 +7090,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/pppoe_secret_test.go": {
+  "internal/adapters/routerssh/pppoeparse/pppoe_secret_test.go": {
     "Lines": 91,
     "LongLines": 8,
     "MaxFunction": 41,
@@ -7253,7 +7253,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio.go": {
+  "internal/adapters/routerssh/radioparse/radio.go": {
     "Lines": 151,
     "LongLines": 0,
     "MaxFunction": 36,
@@ -7347,7 +7347,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_airos_parser.go": {
+  "internal/adapters/routerssh/radioparse/radio_airos_parser.go": {
     "Lines": 144,
     "LongLines": 0,
     "MaxFunction": 39,
@@ -7397,7 +7397,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_ap_parser.go": {
+  "internal/adapters/routerssh/radioparse/radio_ap_parser.go": {
     "Lines": 203,
     "LongLines": 0,
     "MaxFunction": 34,
@@ -7532,7 +7532,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_bridge_parser_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_bridge_parser_test.go": {
     "Lines": 35,
     "LongLines": 0,
     "MaxFunction": 27,
@@ -7619,7 +7619,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_counters.go": {
+  "internal/adapters/routerssh/radioparse/radio_counters.go": {
     "Lines": 51,
     "LongLines": 0,
     "MaxFunction": 18,
@@ -7655,7 +7655,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_cpe_counter_parser_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_cpe_counter_parser_test.go": {
     "Lines": 37,
     "LongLines": 0,
     "MaxFunction": 28,
@@ -7670,7 +7670,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_golden_assertions_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_golden_assertions_test.go": {
     "Lines": 147,
     "LongLines": 0,
     "MaxFunction": 21,
@@ -7806,7 +7806,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_index.go": {
+  "internal/adapters/routerssh/radioparse/radio_index.go": {
     "Lines": 69,
     "LongLines": 0,
     "MaxFunction": 30,
@@ -7828,7 +7828,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_index_assertions_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_index_assertions_test.go": {
     "Lines": 38,
     "LongLines": 0,
     "MaxFunction": 19,
@@ -7850,7 +7850,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_index_metrics.go": {
+  "internal/adapters/routerssh/radioparse/radio_index_metrics.go": {
     "Lines": 26,
     "LongLines": 0,
     "MaxFunction": 19,
@@ -7865,7 +7865,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_index_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_index_test.go": {
     "Lines": 17,
     "LongLines": 0,
     "MaxFunction": 10,
@@ -7909,7 +7909,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_markers.go": {
+  "internal/adapters/routerssh/radioparse/radio_markers.go": {
     "Lines": 33,
     "LongLines": 0,
     "MaxFunction": 23,
@@ -7960,7 +7960,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_partial_failure_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_partial_failure_test.go": {
     "Lines": 62,
     "LongLines": 0,
     "MaxFunction": 52,
@@ -8853,7 +8853,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_standalone_parser.go": {
+  "internal/adapters/routerssh/radioparse/radio_standalone_parser.go": {
     "Lines": 258,
     "LongLines": 0,
     "MaxFunction": 36,
@@ -8988,7 +8988,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_station_parser_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_station_parser_test.go": {
     "Lines": 37,
     "LongLines": 0,
     "MaxFunction": 29,
@@ -9003,7 +9003,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_test.go": {
     "Lines": 50,
     "LongLines": 0,
     "MaxFunction": 32,
@@ -9117,7 +9117,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_wom_counters.go": {
+  "internal/adapters/routerssh/radioparse/radio_wom_counters.go": {
     "Lines": 22,
     "LongLines": 0,
     "MaxFunction": 14,
@@ -9197,7 +9197,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_wom_identity_parser_test.go": {
+  "internal/adapters/routerssh/radioparse/radio_wom_identity_parser_test.go": {
     "Lines": 34,
     "LongLines": 0,
     "MaxFunction": 26,
@@ -9219,7 +9219,7 @@
       }
     ]
   },
-  "internal/adapters/routerssh/radio_wom_parser.go": {
+  "internal/adapters/routerssh/radioparse/radio_wom_parser.go": {
     "Lines": 99,
     "LongLines": 0,
     "MaxFunction": 36,

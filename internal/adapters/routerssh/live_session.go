@@ -3,19 +3,15 @@ package routerssh
 import (
 	"context"
 	"errors"
+	"golang.org/x/crypto/ssh"
+	"infradesktop/internal/adapters/routerssh/deviceparse"
+	"infradesktop/internal/modules/equipment"
+	"infradesktop/internal/modules/pulse"
 	"net"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/crypto/ssh"
-	"infradesktop/internal/modules/equipment"
-	"infradesktop/internal/modules/pulse"
 )
-
-const liveCommandPrefix = `:put ("L\t1\t".[/system resource get uptime]."\t".[/system resource get cpu-load]."\t".`
-const liveConcentratorCommand = liveCommandPrefix + `[:len [/ppp active find where service=pppoe]])`
-const liveAPCommand = liveCommandPrefix + `[:len [/interface wireless registration-table find]])`
 
 type liveSession struct {
 	client *ssh.Client
@@ -86,11 +82,11 @@ func liveConnectFault(err error, mismatch bool) pulse.ReadFault {
 }
 func (s *liveSession) Close() { s.client.Close() }
 func (s *liveSession) Read(ctx context.Context, t pulse.ReadTarget) (pulse.Reading, pulse.ReadFault) {
-	command := liveConcentratorCommand
+	command := deviceparse.LiveConcentratorScript
 	switch t.Role {
 	case equipment.RoleConcentrator:
 	case equipment.RoleAP:
-		command = liveAPCommand
+		command = deviceparse.LiveAPScript
 	default:
 		return pulse.Reading{}, pulse.ReadLost
 	}
@@ -121,19 +117,5 @@ func (s *liveSession) Read(ctx context.Context, t pulse.ReadTarget) (pulse.Readi
 	if err := s.conn.SetDeadline(time.Time{}); err != nil {
 		return pulse.Reading{}, pulse.ReadLost
 	}
-	return parseLiveReading(stdout.buf.String())
-}
-func parseLiveReading(output string) (pulse.Reading, pulse.ReadFault) {
-	fields := strings.Split(strings.TrimRight(output, "\r\n"), "\t")
-	if len(fields) != 5 || fields[0] != "L" || fields[1] != "1" {
-		return pulse.Reading{}, pulse.ReadLost
-	}
-	uptime := ParsePPDuration(fields[2])
-	cpu, errCPU := strconv.Atoi(fields[3])
-	clients, errClients := strconv.Atoi(fields[4])
-	if !uptime.Known || !ppDecimal(fields[3]) || !ppDecimal(fields[4]) ||
-		errCPU != nil || errClients != nil || cpu < 0 || cpu > 100 || clients < 0 {
-		return pulse.Reading{}, pulse.ReadLost
-	}
-	return pulse.Reading{CPU: cpu, Clients: clients, Uptime: time.Duration(uptime.Min)}, pulse.ReadOK
+	return deviceparse.ParseLiveReading(stdout.buf.String())
 }

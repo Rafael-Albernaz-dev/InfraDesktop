@@ -357,9 +357,12 @@ func (s *Service) runPPRead(ctx context.Context, j *RunningJob) {
 	if c == OK {
 		pubFn := func(v *PPReadResult) Code { return s.publishPPRead(ctx, j, v) }
 		chkFn := func() Code { _, _, code := s.inv.Check(ctx, j, false); return code }
-		result, c = s.inv.Remote.(PPReadRemote).ReadPP(
-			ctx, j.Device, user, secret, j.PPInput.Scope, j.ReadTarget, pubFn, chkFn,
-		)
+		req := PPReadRequest{
+			Device: j.Device, User: user, Secret: secret, Scope: j.PPInput.Scope,
+			Target: j.ReadTarget, Publish: pubFn, Check: chkFn,
+		}
+		result, c = s.inv.Remote.(PPReadRemote).ReadPP(ctx, req)
+		req.Secret = ""
 	}
 	secret = ""
 	if c == OK && result == nil {

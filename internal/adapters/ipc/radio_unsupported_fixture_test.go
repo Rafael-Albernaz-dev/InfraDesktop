@@ -51,7 +51,7 @@ func unsupportedRadioSource(t *testing.T) (*ppJourney, string, string) {
 }
 func readUnsupportedRadioGolden(t *testing.T, name string) string {
 	t.Helper()
-	b, err := os.ReadFile(filepath.Join("..", "routerssh", "testdata", name))
+	b, err := os.ReadFile(filepath.Join("..", "routerssh", "radioparse", "testdata", name))
 	if err != nil {
 		t.Fatal(err)
 	}

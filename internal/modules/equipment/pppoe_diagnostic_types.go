@@ -96,9 +96,16 @@ type PPPingTarget struct {
 	Prepared    time.Time
 }
 
+type PDDiagnosticRequest struct {
+	Device              Device
+	User, Secret, Scope string
+	Ping                *PPPingTarget
+	Check               func() Code
+}
+
 type PDDiagnosticRemote interface {
 	CollectPPDiagnostic(
-		context.Context, Device, string, string, string, *PPPingTarget, func() Code,
+		context.Context, PDDiagnosticRequest,
 	) (*PDDiagnostic, Code)
 }
 

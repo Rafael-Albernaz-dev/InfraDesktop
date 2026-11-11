@@ -3,6 +3,7 @@ package routerssh
 import (
 	"crypto/sha256"
 	"fmt"
+	"infradesktop/internal/adapters/routerssh/deviceparse"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,9 +11,9 @@ import (
 
 // Candidates only: not called by the application. Human outputs on both pilot
 // firmwares are required before either reading enters a runtime collector.
-const t3FastTrackCandidate = DeviceFastTrackCommand
+const t3FastTrackCandidate = deviceparse.DeviceFastTrackCommand
 
-const t3PortsCandidate = DevicePortsCommand
+const t3PortsCandidate = deviceparse.DevicePortsCommand
 
 func TestL06T3DiagnosticSyntax(t *testing.T) {
 	for name, body := range map[string]string{"fasttrack-readonly": t3FastTrackCandidate, "ports-readonly": t3PortsCandidate} {

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/deviceparse"
+	"infradesktop/internal/adapters/routerssh/pppoeparse"
 	"net"
 	"strconv"
 	"sync"
@@ -226,17 +228,17 @@ func (s *Server) output(command string) (string, bool) {
 		return result, true
 	}
 	switch command {
-	case routerssh.PPPoECommand:
+	case pppoeparse.PPPoECommand:
 		if s.config.PPPoE != nil {
 			return s.config.PPPoE(), true
 		}
 		return s.ppOutput(), true
-	case routerssh.IdentityCommand:
+	case deviceparse.IdentityCommand:
 		if s.config.Identity != "" {
 			return "identity=" + s.config.Identity + "\r\n", true
 		}
 		return "identity=Fixture router\r\n", true
-	case routerssh.ResourceCommand:
+	case deviceparse.ResourceCommand:
 		version := "7.26 (stable)"
 		if s.config.Family == "v6" {
 			version = "6.49.19 (long-term)"
@@ -249,7 +251,7 @@ func (s *Server) output(command string) (string, bool) {
 			out = out[:len(out)-6]
 		}
 		return out, true
-	case routerssh.InterfacesCommand:
+	case deviceparse.InterfacesCommand:
 		mode := s.config.Mode
 		if s.config.InterfaceMode != nil {
 			mode = s.config.InterfaceMode()

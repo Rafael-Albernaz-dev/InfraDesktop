@@ -13,7 +13,7 @@ import (
 // Replaces the old extra-SSH observer coverage test: CPU is now read by the
 // tick; the only continuous observer is local ICMP on the existing AP session.
 func TestRadioPersistentICMPReportsActualWindow(t *testing.T) {
-	raw, e := os.ReadFile("testdata/l07_ap_v6_real.txt")
+	raw, e := os.ReadFile("radioparse/testdata/l07_ap_v6_real.txt")
 	if e != nil {
 		t.Fatal(e)
 	}

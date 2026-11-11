@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -71,10 +72,10 @@ func standaloneSelectedStationPeer(t *testing.T, mode string) *sshfixture.Server
 	t.Helper()
 	raw := recoveryGolden(t, "l07_avulso_station_v6.txt")
 	peer, e1 := sshfixture.Start(sshfixture.Config{Mode: mode, ServerVersion: "SSH-2.0-ROSSSH", Command: func(cmd string) (string, bool) {
-		if cmd == routerssh.RadioIdentificationCommand {
+		if cmd == radioparse.RadioIdentificationCommand {
 			return standaloneIdentity(raw), true
 		}
-		if cmd == routerssh.RadioStationCommand {
+		if cmd == radioparse.RadioStationCommand {
 			return raw, true
 		}
 		t.Errorf("comando inesperado")

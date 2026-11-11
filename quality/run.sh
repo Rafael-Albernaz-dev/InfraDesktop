@@ -36,6 +36,7 @@ step GO-STATIC   "staticcheck"                                staticcheck -tags 
 step FE-FORMAT   "frontend formatado (Prettier)"              npm --prefix frontend run format:check
 step VERSION     "versão única (VERSION)"                     python3 quality/checks/test-version.py
 step GATES-TEST  "testes dos próprios gates Go"               go test ./quality/go/qualityrules ./quality/go/qualitydup -count=1
+step BE-LAYOUT   "estrutura do backend e testes do guard"     bash -c 'node quality/architecture/backend-layout.mjs && node --test quality/architecture/backend-layout.test.mjs'
 step FE-RULES    "testes das regras ESLint próprias"          bash -c 'cd frontend && node --test quality/*.check.mjs'
 step QG2-QG7     "tamanho, tipos, nomes, legado, duplicação"  go run ./quality/go/quality.go
 step FE-LINT     "ESLint com catraca e kit (QG2–QG4, QG9)"    bash -c 'cd frontend && ./node_modules/.bin/eslint . --max-warnings 0 --no-inline-config'

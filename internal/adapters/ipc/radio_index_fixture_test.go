@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -75,7 +75,7 @@ func radioIndexIPCSource(t *testing.T) (*ppJourney, *equipment.PPObservation, eq
 func (s *radioIndexIPCFixture) command(n int, cmd string) (string, bool) {
 	executing, maxExecuting, calls := &s.executing, &s.maxExecuting, &s.calls
 
-	if cmd != routerssh.RadioIndexCommand {
+	if cmd != radioparse.RadioIndexCommand {
 		return "unexpected command", true
 	}
 	active := executing.Add(1)

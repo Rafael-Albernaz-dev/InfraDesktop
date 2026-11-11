@@ -3,6 +3,7 @@ package routerssh_test
 import (
 	"context"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
 	"os"
@@ -10,14 +11,14 @@ import (
 )
 
 func TestKnownRouterOSStationUsesStationParser(t *testing.T) {
-	raw, err := os.ReadFile("testdata/l07_avulso_station_v6.txt")
+	raw, err := os.ReadFile("radioparse/testdata/l07_avulso_station_v6.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, role := range []equipment.Role{equipment.RoleCPE, equipment.RolePTP} {
 		t.Run(string(role), func(t *testing.T) {
 			peer, err := sshfixture.Start(sshfixture.Config{Command: func(command string) (string, bool) {
-				if command != routerssh.RadioStationCommand {
+				if command != radioparse.RadioStationCommand {
 					t.Errorf("unexpected command %s", command)
 					return "", false
 				}

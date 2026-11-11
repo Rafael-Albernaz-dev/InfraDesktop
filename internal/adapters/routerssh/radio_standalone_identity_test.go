@@ -3,6 +3,7 @@ package routerssh_test
 import (
 	"context"
 	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/access"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -21,15 +22,15 @@ func standaloneIdentity(raw string) string {
 }
 
 func TestStandaloneStationSSHComPin(t *testing.T) {
-	b, e := os.ReadFile("testdata/l07_avulso_station_v6.txt")
+	b, e := os.ReadFile("radioparse/testdata/l07_avulso_station_v6.txt")
 	if e != nil {
 		t.Fatal(e)
 	}
 	peer, e := sshfixture.Start(sshfixture.Config{ServerVersion: "SSH-2.0-ROSSSH", Command: func(cmd string) (string, bool) {
-		if cmd == routerssh.RadioIdentificationCommand {
+		if cmd == radioparse.RadioIdentificationCommand {
 			return standaloneIdentity(string(b)), true
 		}
-		if cmd != routerssh.RadioStationCommand {
+		if cmd != radioparse.RadioStationCommand {
 			t.Errorf("comando inesperado")
 			return "", false
 		}
@@ -65,7 +66,7 @@ func TestStandaloneStationSSHComPin(t *testing.T) {
 
 func TestStandaloneFamiliaDesconhecidaNaoUsaWOM(t *testing.T) {
 	peer, e := sshfixture.Start(sshfixture.Config{ServerVersion: "SSH-2.0-unrecognized", Command: func(cmd string) (string, bool) {
-		if (!strings.Contains(cmd, "mca-status") && cmd != routerssh.RadioWOMIdentificationCommand) || strings.Contains(cmd, "iw dev") {
+		if (!strings.Contains(cmd, "mca-status") && cmd != radioparse.RadioWOMIdentificationCommand) || strings.Contains(cmd, "iw dev") {
 			t.Error("outro driver foi consultado")
 		}
 		return "L07-DRIVER-ABSENT\n", true
@@ -88,13 +89,13 @@ func TestStandaloneFamiliaDesconhecidaNaoUsaWOM(t *testing.T) {
 }
 
 func TestStandaloneRouterOSSemDriverPreservaIdentidade(t *testing.T) {
-	b, e := os.ReadFile("testdata/l07_avulso_station_v6.txt")
+	b, e := os.ReadFile("radioparse/testdata/l07_avulso_station_v6.txt")
 	if e != nil {
 		t.Fatal(e)
 	}
 	output := strings.ReplaceAll(string(b), "6.49.18 (long-term)", "7.12.1")
 	peer, e := sshfixture.Start(sshfixture.Config{ServerVersion: "SSH-2.0-ROSSSH", Command: func(cmd string) (string, bool) {
-		if cmd != routerssh.RadioIdentificationCommand {
+		if cmd != radioparse.RadioIdentificationCommand {
 			t.Error("driver wireless acessado antes de identificar v7")
 			return "bad command name", false
 		}
@@ -127,11 +128,11 @@ func TestStandaloneAPPreservaIdentidadeModoProtocolo(t *testing.T) {
 	rich := strings.ReplaceAll(recoveryGolden(t, "l07_ap_v6_real.txt"), "6.49.10 (long-term)", "6.49.18 (long-term)")
 	peer, e := sshfixture.Start(sshfixture.Config{ServerVersion: "SSH-2.0-ROSSSH", Command: func(cmd string) (string, bool) {
 		switch cmd {
-		case routerssh.RadioIdentificationCommand:
+		case radioparse.RadioIdentificationCommand:
 			return standaloneIdentity(station), true
-		case routerssh.RadioStationCommand:
+		case radioparse.RadioStationCommand:
 			return station, true
-		case routerssh.RadioAPCommand:
+		case radioparse.RadioAPCommand:
 			return rich, true
 		}
 		t.Errorf("comando indevido")

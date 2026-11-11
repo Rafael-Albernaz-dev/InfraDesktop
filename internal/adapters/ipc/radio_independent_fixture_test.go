@@ -3,7 +3,7 @@ package ipc
 import (
 	"context"
 	"github.com/google/uuid"
-	"infradesktop/internal/adapters/routerssh"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
@@ -68,7 +68,7 @@ func radioIndependentSource(t *testing.T) (*ppJourney, *equipment.PPObservation,
 func readRadioIPCFixture(t *testing.T, name string) string {
 
 	t.Helper()
-	b, e := os.ReadFile(filepath.Join("..", "routerssh", "testdata", name))
+	b, e := os.ReadFile(filepath.Join("..", "routerssh", "radioparse", "testdata", name))
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -81,7 +81,7 @@ func (s *radioIndependentFixture) startAP(apGolden string) *sshfixture.Server {
 		if text, ok := radioAPIdentificationFixture(t, cmd); ok {
 			return text, true
 		}
-		if cmd != routerssh.RadioAPCommand {
+		if cmd != radioparse.RadioAPCommand {
 			return "", false
 		}
 		if apFail.Load() {
@@ -105,10 +105,10 @@ func (s *radioIndependentFixture) startCPE(womGolden string) *sshfixture.Server 
 		if strings.Contains(cmd, "mca-status") {
 			return "L07-DRIVER-ABSENT\n", true
 		}
-		if cmd == routerssh.RadioWOMIdentificationCommand {
+		if cmd == radioparse.RadioWOMIdentificationCommand {
 			return read("radio_wom_library_identity.txt"), true
 		}
-		if cmd != routerssh.RadioWOMCommand {
+		if cmd != radioparse.RadioWOMCommand {
 			return "", false
 		}
 		if holdCPE.Load() {

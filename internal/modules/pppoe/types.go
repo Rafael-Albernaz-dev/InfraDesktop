@@ -22,6 +22,7 @@ type (
 	Job                   = equipment.Job
 	PDDiagnostic          = equipment.PDDiagnostic
 	PDDiagnosticRemote    = equipment.PDDiagnosticRemote
+	PDDiagnosticRequest   = equipment.PDDiagnosticRequest
 	PDDiagnosticStore     = equipment.PDDiagnosticStore
 	PDPingProbe           = equipment.PDPingProbe
 	PDPingResult          = equipment.PDPingResult
@@ -42,6 +43,7 @@ type (
 	PPRate                = equipment.PPRate
 	PPReadCost            = equipment.PPReadCost
 	PPReadRemote          = equipment.PPReadRemote
+	PPReadRequest         = equipment.PPReadRequest
 	PPReadResult          = equipment.PPReadResult
 	PPReadRow             = equipment.PPReadRow
 	PPReadTarget          = equipment.PPReadTarget

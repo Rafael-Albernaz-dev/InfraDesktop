@@ -1,6 +1,7 @@
 package routerssh
 
 import (
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"strings"
 )
@@ -18,33 +19,34 @@ func (r *radioSession) identifyStandalone() (*equipment.RadioReading, equipment.
 }
 
 func (r *radioSession) identifyRouterOS() (*equipment.RadioReading, equipment.Code) {
-	identityText, _, c := r.run(RadioIdentificationCommand)
+	// ignored: identification uses stdout; execution code already includes stderr diagnostics
+	identityText, _, c := r.run(radioparse.RadioIdentificationCommand)
 	if c != equipment.OK {
 		return &equipment.RadioReading{Failure: r.failure}, c
 	}
-	identity, supported, c := parseRadioIdentification(identityText)
+	identity, supported, c := radioparse.ParseRadioIdentification(identityText)
 	if c != equipment.OK {
 		return nil, c
 	}
 	if !supported {
 		return identity, equipment.RadioCodeUnsupported
 	}
-	text, seconds, c := r.run(RadioStationCommand)
+	text, seconds, c := r.run(radioparse.RadioStationCommand)
 	if c != equipment.OK {
 		return &equipment.RadioReading{CommandSeconds: seconds, Failure: r.failure}, c
 	}
-	reading, c := ParseRadioStationV6(text)
-	if c == equipment.RadioCodeUnsupported && radioStandaloneAPMode(text) {
+	reading, c := radioparse.ParseRadioStationV6(text)
+	if c == equipment.RadioCodeUnsupported && radioparse.RadioStandaloneAPMode(text) {
 		reading, text, seconds, c = r.readStandaloneAP(identity, text)
 	}
 	if c != equipment.OK {
 		if c == equipment.RadioCodeUnsupported && reading == nil {
-			reading = radioStandaloneUnsupported(text)
+			reading = radioparse.RadioStandaloneUnsupported(text)
 		}
 		return reading, c
 	}
 	if reading.Version != identity.Version || reading.Model != identity.Model {
-		return radioPartial("identity-changed", len(text))
+		return radioparse.PartialReading("identity-changed", len(text))
 	}
 	reading.CommandSeconds = seconds
 	reading.Legacy = append([]string{}, r.legacy...)
@@ -62,9 +64,9 @@ func (r *radioSession) identifyAirOS() (*equipment.RadioReading, bool, equipment
 	if !strings.Contains(text, "firmwareVersion=") {
 		return nil, false, equipment.OK
 	}
-	identity, valid := identifyAirOS(text)
+	identity, valid := radioparse.IdentifyAirOS(text)
 	if !valid {
-		partial, code := radioPartial("identification", len(text))
+		partial, code := radioparse.PartialReading("identification", len(text))
 		return partial, true, code
 	}
 	if (!strings.HasPrefix(identity.Version,
@@ -79,7 +81,7 @@ func (r *radioSession) identifyAirOS() (*equipment.RadioReading, bool, equipment
 		identity.DriverReason = "Modo airOS sem driver comprovado"
 		return identity, true, equipment.RadioCodeUnsupported
 	}
-	reading, c := ParseRadioAirOS(text)
+	reading, c := radioparse.ParseRadioAirOS(text)
 	if reading != nil {
 		reading.CommandSeconds = seconds
 		reading.Manufacturer = "Ubiquiti"
@@ -98,19 +100,53 @@ func (r *radioSession) identifyAirOS() (*equipment.RadioReading, bool, equipment
 func (r *radioSession) readStandaloneAP(identity *equipment.RadioReading, stationText string) (
 	*equipment.RadioReading, string, float64, equipment.Code,
 ) {
-	wireless := radioStandaloneWireless(stationText)
-	text, seconds, c := r.run(RadioAPCommand)
+	wireless := radioparse.RadioStandaloneWireless(stationText)
+	text, seconds, c := r.run(radioparse.RadioAPCommand)
 	if c != equipment.OK {
 		return &equipment.RadioReading{CommandSeconds: seconds, Failure: r.failure}, text, seconds, c
 	}
-	reading, c := ParseRadioAP(text)
+	reading, c := radioparse.ParseRadioAP(text)
 	if c == equipment.OK && reading != nil {
 		if reading.Version != identity.Version {
-			partial, code := radioPartial("identity-changed", len(text))
+			partial, code := radioparse.PartialReading("identity-changed", len(text))
 			return partial, text, seconds, code
 		}
 		reading.Manufacturer, reading.Model = identity.Manufacturer, identity.Model
 		reading.Mode, reading.WirelessProtocol = wireless["mode"], wireless["wireless-protocol"]
 	}
 	return reading, text, seconds, c
+}
+
+func (r *radioSession) identifyWOM() (*equipment.RadioReading, equipment.Code) {
+	identity, seconds, code := r.run(radioparse.RadioWOMIdentificationCommand)
+	if code != equipment.OK {
+		return &equipment.RadioReading{CommandSeconds: seconds, Failure: r.failure}, code
+	}
+	if !radioparse.IdentifiedWOMLibrary(identity) {
+		return unknownStandaloneRadio(), equipment.RadioCodeUnsupported
+	}
+	text, seconds, code := r.run(radioparse.RadioWOMCommand)
+	if code != equipment.OK {
+		return &equipment.RadioReading{CommandSeconds: seconds, Failure: r.failure}, code
+	}
+	reading, code := radioparse.ParseRadioWOM(text)
+	if reading != nil {
+		reading.Manufacturer = "Intelbras"
+		reading.CommandSeconds = seconds
+		reading.Legacy = append([]string{}, r.legacy...)
+		reading.Negotiated = append([]string{}, r.negotiated...)
+		if strings.Contains("\n"+text, "\n\t\ttype managed\n") {
+			reading.Mode = "managed"
+		}
+	}
+	if code == equipment.OK {
+		r.initial = reading
+	}
+	return reading, code
+}
+
+func unknownStandaloneRadio() *equipment.RadioReading {
+	return &equipment.RadioReading{Family: equipment.RadioUnsupported,
+		DriverReason: "Fabricante e família não identificados", Perspective: "CPE",
+		Metrics: []equipment.RadioMetric{}, Interfaces: []equipment.RadioInterface{}, Clients: []equipment.RadioClient{}}
 }

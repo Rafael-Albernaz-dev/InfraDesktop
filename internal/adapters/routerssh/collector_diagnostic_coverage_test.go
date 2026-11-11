@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,31 +43,34 @@ func TestL06V7EveryExportedCollectorHasDiagnostic(t *testing.T) {
 
 func radioDiagnosticCommands() map[string]string {
 	return map[string]string{
-		"RadioAPCommand": RadioAPCommand, "RadioAPTickCommand": RadioAPTickCommand("02:00:00:00:00:01"),
-		"RadioIndexCommand": RadioIndexCommand, "RadioIdentificationCommand": RadioIdentificationCommand,
-		"RadioStationCommand": RadioStationCommand, "RadioAirOSCommand": RadioAirOSCommand,
-		"RadioWOMCommand": RadioWOMCommand, "RadioWOMTickCommand": RadioWOMTickCommand,
-		"RadioWOMIdentificationCommand": RadioWOMIdentificationCommand,
+		"RadioAPCommand": radioparse.RadioAPCommand, "RadioAPTickCommand": radioparse.RadioAPTickCommand("02:00:00:00:00:01"),
+		"RadioIndexCommand": radioparse.RadioIndexCommand, "RadioIdentificationCommand": radioparse.RadioIdentificationCommand,
+		"RadioStationCommand": radioparse.RadioStationCommand, "RadioAirOSCommand": radioparse.RadioAirOSCommand,
+		"RadioWOMCommand": radioparse.RadioWOMCommand, "RadioWOMTickCommand": radioparse.RadioWOMTickCommand,
+		"RadioWOMIdentificationCommand": radioparse.RadioWOMIdentificationCommand,
 	}
 }
 
 // exportedCollectorNames lists exported *Command identifiers of production files.
 func exportedCollectorNames(t *testing.T) []string {
 	t.Helper()
-	files, e := filepath.Glob("*.go")
-	if e != nil {
-		t.Fatal(e)
-	}
 	var names []string
-	for _, path := range files {
-		if strings.HasSuffix(path, "_test.go") {
-			continue
+	err := filepath.WalkDir(".", func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-		f, e := parser.ParseFile(token.NewFileSet(), path, nil, 0)
-		if e != nil {
-			t.Fatal(e)
+		if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		f, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
 		}
 		names = append(names, collectorNamesIn(f)...)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 	return names
 }

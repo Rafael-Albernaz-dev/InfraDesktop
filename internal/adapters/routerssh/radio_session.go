@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"golang.org/x/crypto/ssh"
+	"infradesktop/internal/adapters/routerssh/internal/routeros"
+	"infradesktop/internal/adapters/routerssh/radioparse"
 	"infradesktop/internal/modules/equipment"
 	"net"
 	"os"
@@ -246,7 +248,7 @@ func (r *radioSession) run(command string) (string, float64, equipment.Code) {
 		r.Close()
 		return "", seconds, equipment.Limit
 	}
-	if collectorSyntaxDiagnostic(out.buf.String()) || collectorSyntaxDiagnostic(errout.buf.String()) {
+	if routeros.CollectorSyntaxDiagnostic(out.buf.String()) || routeros.CollectorSyntaxDiagnostic(errout.buf.String()) {
 		r.Close()
 		return "", seconds, equipment.CollectorDefect
 	}
@@ -273,18 +275,18 @@ func (r *radioSession) Initial() (*equipment.RadioReading, equipment.Code) {
 	if r.initial != nil {
 		return nil, equipment.Invalid
 	}
-	command, parse := RadioAPCommand, ParseRadioAP
+	command, parse := radioparse.RadioAPCommand, radioparse.ParseRadioAP
 	if r.family == equipment.RadioStandalone || r.family == equipment.RadioAuto {
 		return r.identifyStandalone()
 	}
 	if r.family == equipment.RadioRouterOSWirelessV6 && r.link == nil && (r.d.Role == equipment.RoleCPE || r.d.Role == equipment.RolePTP) {
-		command, parse = RadioStationCommand, ParseRadioStationV6
+		command, parse = radioparse.RadioStationCommand, radioparse.ParseRadioStationV6
 	}
 	if r.family == equipment.RadioAirOSV6 {
-		command, parse = RadioAirOSCommand, ParseRadioAirOS
+		command, parse = radioparse.RadioAirOSCommand, radioparse.ParseRadioAirOS
 	}
 	if r.family == equipment.RadioIntelbrasWOM {
-		command, parse = RadioWOMCommand, ParseRadioWOM
+		command, parse = radioparse.RadioWOMCommand, radioparse.ParseRadioWOM
 	}
 	text, seconds, c := r.run(command)
 	if c != equipment.OK {
@@ -302,38 +304,6 @@ func (r *radioSession) Initial() (*equipment.RadioReading, equipment.Code) {
 	return reading, equipment.OK
 }
 
-// Project only the selected registration's used fields. Escape device data as
-// quoted values; no name or interface supplied by the UI becomes RouterOS code.
-const radioTickEscape = (":local esc do={:local v [:tostr $1]; :local out \"\"; :if ([:len $v]>256) do={" +
-	":error \"field-limit\"}; :if ([:len $v]=0) do={:return \"\"}; :for n from=0 to" +
-	"=([:len $v]-1) do={:local c [:pick $v $n ($n+1)]; :if (($c=\"\\\\\")||($c=\"\\" +
-	"\"\")) do={:set c (\"\\\\\".$c)}; :if ($c=\"\\n\") do={:set c \"\\\\n\"}; :if " +
-	"($c=\"\\r\") do={:set c \"\\\\r\"}; :if ($c=\"\\t\") do={:set c \"\\\\t\"}; :s" +
-	"et out ($out.$c)}; :return $out}; ")
-
-func RadioAPTickCommand(mac string) string {
-	mac, ok := equipment.RadioMAC(mac)
-	if !ok {
-		return ""
-	}
-	return radioTickEscape + (":put \"L07-TICK\"; :put (\"cpu=\" . [/system resource get cpu-load]); :local i" +
-		"ds [/interface wireless registration-table find where mac-address=") +
-		mac + ("]; :if ([:len $ids]=1) do={:local iface [/interface wireless registration-tabl" +
-		"e get $ids interface]; :put (\"bssid=\" . [/interface wireless get [/interface" +
-		" wireless find where name=$iface] mac-address])} else={:put \"bssid=unconfirme" +
-		"d\"}; :put \"L07-CLIENTS\"; :local rows [/interface wireless registration-tabl" +
-		"e print stats as-value where mac-address=") +
-		mac + ("]; :if ([:len $rows]=1) do={:foreach r in=$rows do={:put \" 0 row=1\"; :foreac" +
-		"h k in={\"interface\";\"mac-address\";\"uptime\";\"last-activity\";\"signal-st" +
-		"rength\";\"signal-strength-ch0\";\"signal-strength-ch1\";\"signal-to-noise\";" +
-		"\"tx-signal-strength\";\"tx-ccq\";\"rx-ccq\";\"tx-rate\";\"rx-rate\";\"bytes\"" +
-		";\"packets\";\"frames\";\"hw-frames\"} do={:local v ($r->$k); :if ([:typeof $v" +
-		"]!=\"nil\") do={:put (\"  \".$k.\"=\\\"\".[$esc $v].\"\\\"\")}}}}; :put \"L07-" +
-		"TICK-DONE\"")
-}
-
-const RadioWOMTickCommand = RadioWOMCommand
-
 func (r *radioSession) Tick() (*equipment.RadioReading, equipment.Code) {
 	if r.family == equipment.RadioRouterOSWirelessV6 && r.link == nil {
 		return nil, equipment.Invalid
@@ -341,12 +311,12 @@ func (r *radioSession) Tick() (*equipment.RadioReading, equipment.Code) {
 	if r.initial == nil {
 		r.initial = &equipment.RadioReading{Family: r.family, Perspective: "AP"}
 	}
-	command := RadioAirOSCommand
+	command := radioparse.RadioAirOSCommand
 	if r.family == equipment.RadioRouterOSWirelessV6 {
-		command = RadioAPTickCommand(r.link.MAC)
+		command = radioparse.RadioAPTickCommand(r.link.MAC)
 	}
 	if r.family == equipment.RadioIntelbrasWOM {
-		command = RadioWOMTickCommand
+		command = radioparse.RadioWOMTickCommand
 	}
 	text, seconds, c := r.run(command)
 	if c != equipment.OK {
@@ -355,11 +325,11 @@ func (r *radioSession) Tick() (*equipment.RadioReading, equipment.Code) {
 	var reading *equipment.RadioReading
 	switch r.family {
 	case equipment.RadioRouterOSWirelessV6:
-		reading, c = ParseRadioAPTick(text, r.initial, r.link)
+		reading, c = radioparse.ParseRadioAPTick(text, r.initial, r.link)
 	case equipment.RadioAirOSV6:
-		reading, c = ParseRadioAirOS(text)
+		reading, c = radioparse.ParseRadioAirOS(text)
 	case equipment.RadioIntelbrasWOM:
-		reading, c = ParseRadioWOM(text)
+		reading, c = radioparse.ParseRadioWOM(text)
 	}
 	if c != equipment.OK {
 		if reading == nil {
@@ -376,4 +346,53 @@ func (r *radioSession) Tick() (*equipment.RadioReading, equipment.Code) {
 		reading.WirelessMAC = r.initial.WirelessMAC
 	}
 	return reading, equipment.OK
+}
+
+func (Adapter) ReadRadio(ctx context.Context,
+	d equipment.Device,
+	user,
+	secret string,
+	family equipment.RadioFamily,
+	check func() equipment.Code) (*equipment.RadioReading,
+	equipment.Code) {
+	session, c := (Adapter{}).OpenRadioSession(ctx, d, user, secret, family, nil, check)
+	secret = ""
+	if c != equipment.OK {
+		return nil, c
+	}
+	defer session.Close()
+	r, c := session.Initial()
+	if c != equipment.OK {
+		return r, c
+	}
+	if d.Role == equipment.RoleAP {
+		load, probe := session.Probe()
+		if probe == equipment.OK && len(load.PingRTT) > 0 {
+			r.PingRTT = &load.PingRTT[len(load.PingRTT)-1]
+		}
+	}
+	return r, c
+}
+
+func (Adapter) ReadRadioIndex(ctx context.Context,
+	d equipment.Device,
+	user,
+	secret string,
+	check func() equipment.Code) ([]equipment.RadioIndexEntry,
+	equipment.Code) {
+	if d.Role != equipment.RoleAP {
+		return nil, equipment.Invalid
+	}
+	session, c := openRadioSession(ctx, d, user, secret, equipment.RadioRouterOSWirelessV6, nil, check, false)
+	secret = ""
+	if c != equipment.OK {
+		return nil, c
+	}
+	defer session.Close()
+	// ignored: index parser uses stdout; execution code already includes stderr diagnostics
+	text, _, c := session.run(radioparse.RadioIndexCommand)
+	if c != equipment.OK {
+		return nil, c
+	}
+	return radioparse.ParseRadioIndex(text)
 }

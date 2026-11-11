@@ -135,9 +135,11 @@ func (s *Service) executePDCollect(ctx context.Context, j *RunningJob) (*PDDiagn
 	var o *PDDiagnostic
 	if c == OK {
 		chkFn := func() Code { _, _, code := s.inv.Check(ctx, j, false); return code }
-		o, c = s.inv.Remote.(PDDiagnosticRemote).CollectPPDiagnostic(
-			ctx, j.Device, user, secret, j.PPInput.Scope, j.Ping, chkFn,
-		)
+		req := PDDiagnosticRequest{
+			Device: j.Device, User: user, Secret: secret, Scope: j.PPInput.Scope, Ping: j.Ping, Check: chkFn,
+		}
+		o, c = s.inv.Remote.(PDDiagnosticRemote).CollectPPDiagnostic(ctx, req)
+		req.Secret = ""
 	}
 	secret = ""
 	attempt := PPAttempt{

@@ -66,7 +66,7 @@ func TestRadioPersistentCancellationClosesInflight(t *testing.T) {
 }
 
 func TestRadioPersistentPinAndExpiration(t *testing.T) {
-	raw, e := os.ReadFile("testdata/l07_airos_xm_real.txt")
+	raw, e := os.ReadFile("radioparse/testdata/l07_airos_xm_real.txt")
 	if e != nil {
 		t.Fatal(e)
 	}

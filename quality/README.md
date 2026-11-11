@@ -10,10 +10,10 @@ Tudo o que barra código ruim no InfraDesktop mora aqui. As únicas exceções s
 | Pasta | Conteúdo |
 |---|---|
 | `go/` | `quality.go` (medição e regras Go); `qualityrules/` (catraca, baseline, limites, renomeação pelo Git); `qualitymetrics/` (medidor); `qualitydup/` (duplicação e sua base) |
-| `architecture/` | Guard Go (`architecture.go`) e guard do frontend (`architecture-frontend.mjs`, com testes) |
+| `architecture/` | Guards de arquitetura Go e frontend e de estrutura do backend |
 | `layout/` | Veredito e guard das telas (`layout-verdict.mjs`, `layout-guard.mjs`, com testes) |
 | `checks/` | Verificações avulsas: versão única e domínio de rádio no frontend |
-| `baselines/` | Base Go (`quality-baseline.json`) e exceções de camada do frontend (`frontend-layer-exceptions.json`) |
+| `baselines/` | Base Go (`quality-baseline.json`) e exceções de camada do frontend e de estrutura do backend |
 | `../frontend/quality/` | Regras ESLint próprias, seus testes e a catraca do frontend |
 
 ## Catálogo
@@ -26,6 +26,7 @@ Tudo o que barra código ruim no InfraDesktop mora aqui. As únicas exceções s
 | FE-FORMAT | Frontend formatado | Prettier limpo | `make quality` | `npx prettier --write <arquivo>` |
 | VERSION | Uma única fonte de versão | `VERSION` igual em pacote, Wails e npm | `make quality` | mudar só `VERSION` |
 | GATES-TEST | Os próprios gates Go funcionam | testes verdes | `make quality` | corrigir o gate, não o teste |
+| BE-LAYOUT | Arquivos rastreados em `internal/` fora de `testdata/` e `migrations/` | Apenas `.go` e os caminhos congelados em `baselines/backend-layout-exceptions.json` | `make quality`, com testes do guard | mover o arquivo para o diretório adequado e retirar exceções obsoletas |
 | FE-RULES | As regras ESLint próprias funcionam | testes verdes | `make quality` | idem |
 | QG1 | Arquitetura: domínio sem banco, SSH, Wails ou rede; frontend em camadas iguais às dos módulos Go (`access` < `equipment` < `inventory`/`monitoring` < `pppoe` < `radio`); só `app/` importa `app/`; `shared/` folha; bindings só em `platform/wails/` | zero violação; exceções em `baselines/frontend-layer-exceptions.json`, que só diminui | `make check` (`architecture-check`) | mover o arquivo para a camada certa, ou compor em `app/pages/` |
 | QG2 | Tamanho | função ≤ 60 linhas; arquivo Go ≤ 500, `.tsx` ≤ 600, frontend ≤ 500; linha ≤ 140 | `make quality` (QG2-QG7, FE-LINT) | dividir por regra do domínio ou da tela, nunca em pedaços sem nome |

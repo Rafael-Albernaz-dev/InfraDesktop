@@ -2,6 +2,7 @@ package routerssh
 
 import (
 	"context"
+	"infradesktop/internal/adapters/routerssh/pppoeparse"
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/pppoe"
 	"log"
@@ -9,21 +10,21 @@ import (
 )
 
 func (Adapter) ReadPP(
-	ctx context.Context, d equipment.Device, user, secret, scope string,
-	target *equipment.PPReadTarget,
-	publish func(*equipment.PPReadResult) equipment.Code,
-	check func() equipment.Code,
+	ctx context.Context, req equipment.PPReadRequest,
 ) (returned *equipment.PPReadResult, code equipment.Code) {
+	d, user, secret, scope := req.Device, req.User, req.Secret, req.Scope
+	target, publish, check := req.Target, req.Publish, req.Check
+	req.Secret = ""
 	defer func() {
 		returned = normalizePPReadFailure(returned, code)
 	}()
-	if handled, res, c := dispatchDirectReadScope(ctx, d, user, secret, scope, target, check); handled {
+	if handled, res, c := dispatchDirectReadScope(ctx, ppReadOptions{d, user, secret, scope, target}, check); handled {
 		return res, c
 	}
 	if !isBandSampledScope(scope) || target == nil {
 		return nil, equipment.Invalid
 	}
-	return runBandSampledRead(ctx, d, user, secret, scope, target, publish, check)
+	return runBandSampledRead(ctx, ppReadOptions{d, user, secret, scope, target}, publish, check)
 }
 
 func normalizePPReadFailure(
@@ -44,9 +45,10 @@ func normalizePPReadFailure(
 }
 
 func dispatchDirectReadScope(
-	ctx context.Context, d equipment.Device, user, secret, scope string,
-	target *equipment.PPReadTarget, check func() equipment.Code,
+	ctx context.Context, options ppReadOptions, check func() equipment.Code,
 ) (bool, *equipment.PPReadResult, equipment.Code) {
+	d, user, secret, scope, target := options.device, options.user, options.secret, options.scope, options.target
+	options.secret = ""
 	switch scope {
 	case "operations":
 		res, c := readDeviceOperational(ctx, d, user, secret, check)
@@ -81,12 +83,19 @@ type ppBandSampler struct {
 	target          *equipment.PPReadTarget
 }
 
+type ppReadOptions struct {
+	device              equipment.Device
+	user, secret, scope string
+	target              *equipment.PPReadTarget
+}
+
 func runBandSampledRead(
-	ctx context.Context, d equipment.Device, user, secret, scope string,
-	target *equipment.PPReadTarget,
+	ctx context.Context, options ppReadOptions,
 	publish func(*equipment.PPReadResult) equipment.Code,
 	check func() equipment.Code,
 ) (*equipment.PPReadResult, equipment.Code) {
+	d, user, secret, scope, target := options.device, options.user, options.secret, options.scope, options.target
+	options.secret = ""
 	origin := time.Now()
 	connection, c := openPPConnection(ctx, d, user, secret, check, pppoe.PPReadBudget(scope))
 	secret = ""
@@ -94,7 +103,7 @@ func runBandSampledRead(
 		return nil, c
 	}
 	defer connection.close()
-	command, ok := BuildPPBandCommand(target.Rows)
+	command, ok := pppoeparse.BuildPPBandCommand(target.Rows)
 	if !ok {
 		return nil, equipment.Invalid
 	}
@@ -117,7 +126,7 @@ func (s *ppBandSampler) sample() ([]equipment.PPTunnel, equipment.Code) {
 	if c != equipment.OK {
 		return nil, c
 	}
-	rows, version, c := ParsePPBand(text)
+	rows, version, c := pppoeparse.ParsePPBand(text)
 	if c != equipment.OK {
 		return nil, c
 	}
