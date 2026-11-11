@@ -31,7 +31,7 @@ import {
 import { RadioFamilies, RadioRoles } from './radio-contract';
 const absent = 'Não informado nesta leitura';
 
-describe('L06T3 units and exact audit values', () => {
+describe('units and exact audit values', () => {
   it.each([
     [1023, '1.023 B'],
     [1024, '1,0 KB'],
@@ -94,7 +94,7 @@ describe('L06T3 units and exact audit values', () => {
   });
 });
 
-it('L07 formats observed wireless last-activity milliseconds through the common duration formatter', () => {
+it('formats observed wireless last-activity milliseconds through the common duration formatter', () => {
   expect(formatRouterDuration('90ms')).toBe('90 ms');
   expect(formatRouterDuration('3s50ms')).toBe('3 s');
   expect(formatRouterDuration('1d22h27m58s')).toBe('1 d 22 h');

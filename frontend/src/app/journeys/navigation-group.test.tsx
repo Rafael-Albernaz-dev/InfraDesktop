@@ -9,17 +9,16 @@ import {
 import { RadioTransports } from '../../features/equipment/radio-contract';
 import type { Device } from '../../features/equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('../../platform/wails/presentation')
-  >()),
-  access: Object.fromEntries(
-    'status,selectCompany,getBrand'.split(',').map((key) => [key, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(([name]) => !['access', 'equipmentAPI'].includes(name)),
+    ),
   ),
-  equipmentAPI: Object.fromEntries(
-    'list,credentials,get'.split(',').map((key) => [key, vi.fn()]),
-  ),
-}));
+);
 const account: Result = {
   code: 'OK',
   request_id: 'synthetic',

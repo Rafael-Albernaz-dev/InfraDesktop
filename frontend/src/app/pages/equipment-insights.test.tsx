@@ -16,16 +16,9 @@ import type {
   PPResult,
   PPReadRow,
 } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 it('saved equipment has one remote action, FastTrack, negotiated ports, exact history and scoped context', async () => {
   const uptime = { known: false, min: 0, max: 0 },
     at = '2026-10-28T17:00:00Z';

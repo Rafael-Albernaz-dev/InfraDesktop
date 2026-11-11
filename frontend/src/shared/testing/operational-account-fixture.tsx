@@ -1,4 +1,4 @@
-import type { Result } from '../platform/wails/presentation';
+import type { Result } from '../../platform/wails/presentation';
 
 export function operationalAccount(): Result {
   return {

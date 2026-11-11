@@ -23,33 +23,9 @@ import type {
   PPResult,
 } from '../../platform/wails/presentation';
 import { deferred } from '../../shared/testing/deferred';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    current: vi.fn(),
-    list: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -292,7 +268,7 @@ it('a minute can disclose both a gap and an observed drop', async () => {
   await screen.findByText('Lacuna de continuidade · Queda brusca observada');
   view.unmount();
 });
-it('L06T: automatic traffic starts once with visible IDs; stop preserves graph and exit cancels retained job', async () => {
+it('automatic traffic starts once with visible IDs; stop preserves graph and exit cancels retained job', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
       total: 1,
@@ -374,7 +350,7 @@ it('L06T: automatic traffic starts once with visible IDs; stop preserves graph a
     ),
   );
 });
-it('L06T: uncertain start is cancelled on context change and BUSY permits explicit retry after its automatic limit', async () => {
+it('uncertain start is cancelled on context change and BUSY permits explicit retry after its automatic limit', async () => {
   vi.useFakeTimers();
   const late = deferred<PPResult>();
   vi.mocked(readAPI.start)
@@ -437,7 +413,7 @@ it('L06T: uncertain start is cancelled on context change and BUSY permits explic
     vi.useRealTimers();
   }
 });
-it('L06T: stop has no deadline or silent renewal after sixty seconds', async () => {
+it('stop has no deadline or silent renewal after sixty seconds', async () => {
   vi.useFakeTimers();
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
   vi.mocked(readAPI.start).mockResolvedValue(

@@ -1,4 +1,4 @@
-import { operationalAccount } from './operational-account-fixture';
+import { operationalAccount } from '../shared/testing/operational-account-fixture';
 import { findDevicePrimary, openDeviceSheet } from './test-navigation';
 import {
   fireEvent,
@@ -19,27 +19,9 @@ import type {
   Device,
   EquipmentResult,
 } from '../features/equipment/equipment-api';
-vi.mock('../platform/wails/presentation', () => ({
-  access: { status: vi.fn(), getBrand: vi.fn(), selectCompany: vi.fn() },
-  pppoeAPI: {
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-  equipmentAPI: {
-    list: vi.fn(),
-    credentials: vi.fn(),
-    get: vi.fn(),
-    inspect: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    save: vi.fn(),
-    confirm: vi.fn(),
-    cancel: vi.fn(),
-    resetTrust: vi.fn(),
-  },
-}));
+vi.mock('../platform/wails/presentation', async () =>
+  (await import('../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'router',
   role: 'concentrator',
@@ -106,7 +88,7 @@ beforeEach(() => {
   vi.mocked(api.credentials).mockResolvedValue(result());
 });
 
-it('L06C-UX: equipment summary and interfaces are separate, with a visible PPPoE path', async () => {
+it('equipment summary and interfaces are separate, with a visible PPPoE path', async () => {
   const concentrator = {
     ...device,
     role: 'concentrator',

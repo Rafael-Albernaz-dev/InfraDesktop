@@ -10,9 +10,9 @@ import { CredentialFormDialog } from '../../features/equipment/credential-form-d
 import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import type { Credential } from '../../features/equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', () => ({
-  equipmentAPI: { putCredential: vi.fn(), deleteCredential: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const base: Credential = {
   id: 'fixture',
   alias: 'sem-uso',

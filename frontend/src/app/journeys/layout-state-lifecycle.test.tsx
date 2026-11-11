@@ -13,7 +13,7 @@ import {
   device as radioDevice,
   reading,
   response,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 import { RadioCodes } from '../../features/equipment/radio-contract';
 import type { Device } from '../../features/equipment/equipment-api';
 

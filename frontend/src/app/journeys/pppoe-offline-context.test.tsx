@@ -16,41 +16,9 @@ import {
 import type { PPResult, PPRow } from '../../platform/wails/presentation';
 
 import type { Device } from '../../features/equipment/equipment-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    current: vi.fn(),
-    list: vi.fn(),
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    detail: vi.fn(),
-    save: vi.fn(),
-    remove: vi.fn(),
-    compare: vi.fn(),
-    export: vi.fn(),
-    exportOperational: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -107,7 +75,7 @@ function showPP() {
     />,
   );
 }
-it('L06D-S1: stable context shows negotiated IPv6 and unavailable fields without invented zero', async () => {
+it('stable context shows negotiated IPv6 and unavailable fields without invented zero', async () => {
   const detail = {
     ...rows[0],
     context: {
@@ -154,53 +122,46 @@ it.each([
   ['none', 'Nenhum secret local para este login'],
   ['unavailable', 'Não lido ou falha na leitura do secret local'],
   ['', 'Não lido ou falha na leitura do secret local'],
-])(
-  'L06D ajuste2: %s never presents an unverified local profile',
-  async (state, label) => {
-    vi.mocked(api.detail).mockResolvedValue(
-      result({
-        rows: [
-          {
-            ...rows[0],
-            context: {
-              association: 'associated',
-              secret_state: state,
-              profile: 'disabled-default-canary',
-              upload_limit: '5000000',
-              download_limit: '10000000',
-            },
+])('%s never presents an unverified local profile', async (state, label) => {
+  vi.mocked(api.detail).mockResolvedValue(
+    result({
+      rows: [
+        {
+          ...rows[0],
+          context: {
+            association: 'associated',
+            secret_state: state,
+            profile: 'disabled-default-canary',
+            upload_limit: '5000000',
+            download_limit: '10000000',
           },
-        ],
-        total: 1,
-      }),
-    );
-    showPP();
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
-    );
-    fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
-    fireEvent.click(screen.getByText(/Mais informações/));
-    expect(await screen.findByText(label)).toBeInTheDocument();
-    expect(
-      screen.queryByText('disabled-default-canary'),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Perfil do secret ativo'),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Limite de plano (fila dinâmica) — download / upload'),
-    ).toBeInTheDocument();
-    expect(
-      screen
-        .getAllByText('10 Mbps / 5 Mbps')
-        .find((element) => element.closest('.kv')),
-    ).toBeVisible();
-    expect(
-      screen.getAllByRole('button', { name: 'Ver evidência do secret' }),
-    ).toHaveLength(1);
-  },
-);
-it('L06D-H-D10: a concentrator with no stored observation can request fresh top', async () => {
+        },
+      ],
+      total: 1,
+    }),
+  );
+  showPP();
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
+  );
+  fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
+  fireEvent.click(screen.getByText(/Mais informações/));
+  expect(await screen.findByText(label)).toBeInTheDocument();
+  expect(screen.queryByText('disabled-default-canary')).not.toBeInTheDocument();
+  expect(screen.queryByText('Perfil do secret ativo')).not.toBeInTheDocument();
+  expect(
+    screen.getByText('Limite de plano (fila dinâmica) — download / upload'),
+  ).toBeInTheDocument();
+  expect(
+    screen
+      .getAllByText('10 Mbps / 5 Mbps')
+      .find((element) => element.closest('.kv')),
+  ).toBeVisible();
+  expect(
+    screen.getAllByRole('button', { name: 'Ver evidência do secret' }),
+  ).toHaveLength(1);
+});
+it('a concentrator with no stored observation can request fresh top', async () => {
   vi.mocked(api.current).mockResolvedValue(result({ total: 0 }));
   showPP();
   await screen.findByText(/Nenhuma leitura de sessões disponível/);
@@ -214,7 +175,7 @@ it('L06D-H-D10: a concentrator with no stored observation can request fresh top'
     screen.queryByRole('button', { name: 'Salvar referência desta leitura' }),
   ).not.toBeInTheDocument();
 });
-it('L06D-S7: operational CSV uses the exact observation and returns focus after native cancellation', async () => {
+it('operational CSV uses the exact observation and returns focus after native cancellation', async () => {
   vi.mocked(api.exportOperational).mockResolvedValue('EXPORT_CANCELLED');
   render(
     <PPPoE
@@ -248,7 +209,7 @@ it('L06D-S7: operational CSV uses the exact observation and returns focus after 
   ).not.toBeInTheDocument();
   expect(api.export).not.toHaveBeenCalled();
 });
-it('L06T3: FastTrack marks every displayed plan limit without a router action', async () => {
+it('FastTrack marks every displayed plan limit without a router action', async () => {
   vi.mocked(monitoringAPI.current).mockResolvedValue(
     result({
       total: 1,
@@ -308,7 +269,7 @@ it('L06T3: FastTrack marks every displayed plan limit without a router action', 
     screen.queryByRole('button', { name: /desativar FastTrack/i }),
   ).not.toBeInTheDocument();
 });
-it('L06T3: VLAN peak uses raw counts, a configurable drop threshold and optional plan column', async () => {
+it('VLAN peak uses raw counts, a configurable drop threshold and optional plan column', async () => {
   vi.mocked(api.groups).mockResolvedValue(
     result({
       total: 1,

@@ -4,9 +4,9 @@ import { useSummaryRefresh } from '../pages/equipment-summary-refresh';
 import type { Props } from '../pages/equipment-detail';
 import { pppoeAPI } from '../../platform/wails/presentation';
 import type { PPResult } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  pppoeAPI: { current: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 function Probe({ p }: { p: Props }) {
   useSummaryRefresh(p, 'Resumo', false);
   return <div />;

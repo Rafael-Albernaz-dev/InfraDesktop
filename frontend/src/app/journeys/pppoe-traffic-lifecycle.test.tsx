@@ -20,33 +20,9 @@ import type {
   PDRow,
   PPResult,
 } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    current: vi.fn(),
-    list: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -121,7 +97,7 @@ it.each([
     'Não foi possível concluir esta leitura. Tente novamente.',
   ],
 ])(
-  'L06V7: terminal %s exposes only the structural technical reason',
+  'terminal %s exposes only the structural technical reason',
   async (code, reason, message) => {
     vi.mocked(readAPI.start).mockResolvedValue(
       response({ total: 0, job: { id: 'op', state: 'RUNNING', code: 'OK' } }),
@@ -149,7 +125,7 @@ it.each([
     expect(screen.queryByText('Resultado operacional')).not.toBeInTheDocument();
   },
 );
-it('L06V7: real zero auth count is explicit and never inferred from an empty page', async () => {
+it('real zero auth count is explicit and never inferred from an empty page', async () => {
   const result = {
     scope: 'operations',
     started_at: '',
@@ -204,7 +180,7 @@ it('L06V7: real zero auth count is explicit and never inferred from an empty pag
     ),
   ).toBeVisible();
 });
-it('L06V7: empty page without an auth counter does not claim zero', async () => {
+it('empty page without an auth counter does not claim zero', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({ total: 0, job: { id: 'op', state: 'RUNNING', code: 'OK' } }),
   );
@@ -242,7 +218,7 @@ it('L06V7: empty page without an auth counter does not claim zero', async () => 
     ),
   ).not.toBeInTheDocument();
 });
-it('L06T3: absent dynamic interfaces are separate and never presented as running', async () => {
+it('absent dynamic interfaces are separate and never presented as running', async () => {
   vi.mocked(api.current).mockResolvedValue(
     response({ diagnostic: meta('catalog'), total: 2 }),
   );
@@ -288,7 +264,7 @@ it('L06T3: absent dynamic interfaces are separate and never presented as running
     expect.stringContaining('Em execução: Sim'),
   );
 });
-it('L06T3: cross concentrator data stays local and distant readings stay non comparable', async () => {
+it('cross concentrator data stays local and distant readings stay non comparable', async () => {
   vi.mocked(monitoringAPI.current).mockImplementation(
     async (_p, _a, _d, scope) =>
       response({
@@ -321,7 +297,7 @@ it('L06T3: cross concentrator data stays local and distant readings stay non com
   ).toBeInTheDocument();
   expect(readAPI.start).not.toHaveBeenCalled();
 });
-it('L06T3: ping shows jitter, previous10 baseline and the3 probe sample with exact titles', async () => {
+it('ping shows jitter, previous10 baseline and the3 probe sample with exact titles', async () => {
   vi.mocked(api.current).mockResolvedValue(
     response({
       diagnostic: {

@@ -1,6 +1,6 @@
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { AppOverlays } from './app-session';
+import { AppOverlays } from '../src/app/app-session';
 
 export function prepareSecurityVisual(scene: string, doc: Document) {
   if (scene !== 'seguranca-erro' && scene !== 'seguranca-codigo') return;

@@ -5,13 +5,13 @@ import {
   visualCredentials,
 } from './layout-credential';
 export { credentialSceneReady };
-import { sessionLinkFixture } from '../src/features/pppoe/session-link-fixture';
-import { importFixtureOperations } from '../src/features/inventory/inventory-import-layout-fixture';
+import { sessionLinkFixture } from './session-link-fixture';
+import { importFixtureOperations } from './inventory-import-layout-fixture';
 import {
   prepareBase5Devices,
   createBase5List,
   prepareBase5Scene,
-} from '../src/app/inventory-layout-fixture';
+} from './inventory-layout-fixture';
 import { radioFixtureOperations } from './layout-radio-operations';
 import savedReadings from './layout-readings.json';
 import {

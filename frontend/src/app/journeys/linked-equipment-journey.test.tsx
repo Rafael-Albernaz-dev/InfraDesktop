@@ -14,7 +14,7 @@ import {
   device,
   reading,
   link,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 const now = new Date(Date.now() - 12_000).toISOString();
 function fixtures() {
   const cpe = {

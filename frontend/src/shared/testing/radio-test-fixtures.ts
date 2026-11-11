@@ -1,10 +1,13 @@
-import { RadioFamilies, RadioRoles } from '../equipment/radio-contract';
+import {
+  RadioFamilies,
+  RadioRoles,
+} from '../../features/equipment/radio-contract';
 import type {
   RadioReading,
   RadioResult,
   RadioView,
-} from '../equipment/radio-api';
-import type { Device } from '../equipment/equipment-api';
+} from '../../features/equipment/radio-api';
+import type { Device } from '../../features/equipment/equipment-api';
 
 export const fixtureAPID = 'synthetic-ap';
 export const fixtureCPEID = 'synthetic-cpe';

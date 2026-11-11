@@ -13,25 +13,9 @@ import {
   equipmentAPI,
   type Result,
 } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  equipmentAPI: { list: vi.fn() },
-  access: {
-    status: vi.fn(),
-    register: vi.fn(),
-    login: vi.fn(),
-    recover: vi.fn(),
-    logout: vi.fn(),
-    createCompany: vi.fn(),
-    selectCompany: vi.fn(),
-    setTheme: vi.fn(),
-    renewRecovery: vi.fn(),
-    copyRecovery: vi.fn(),
-    ackRecovery: vi.fn(),
-    getBrand: vi.fn(),
-    saveBrand: vi.fn(),
-    saveRecovery: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const snapshot = (authenticated = false): Result => ({
   code: 'OK',
   request_id: 'audit',

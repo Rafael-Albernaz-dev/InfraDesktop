@@ -22,25 +22,22 @@ import {
   reading,
   link,
   device as radioDevice,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 import {
   RadioRoles,
   RadioTransports,
 } from '../../features/equipment/radio-contract';
 
-vi.mock('../../platform/wails/presentation', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('../../platform/wails/presentation')
-  >()),
-  access: Object.fromEntries(
-    'status,login,selectCompany,getBrand,logout'
-      .split(',')
-      .map((k) => [k, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(([name]) => !['access', 'equipmentAPI'].includes(name)),
+    ),
   ),
-  equipmentAPI: Object.fromEntries(
-    'list,credentials,get,inspect'.split(',').map((k) => [k, vi.fn()]),
-  ),
-}));
+);
 const account: Result = {
   code: 'OK',
   request_id: 'test',

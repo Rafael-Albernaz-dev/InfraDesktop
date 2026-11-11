@@ -416,3 +416,85 @@ test("CSS side-effect imports obey app and feature-layer boundaries", () => {
   });
   assert.equal(good.status, 0, good.output);
 });
+
+for (const [label, badFiles, goodFiles, diagnostic] of [
+  [
+    "production test-support imports",
+    {
+      "view.ts": "import './shared/testing/helper';",
+      "shared/testing/helper.ts": "export const value = 1;",
+    },
+    {
+      "view.test.ts": "import './shared/testing/helper';",
+      "shared/testing/helper.ts": "export const value = 1;",
+    },
+    /production imports test support/,
+  ],
+  [
+    "presentation mock factory",
+    {
+      "view.test.ts":
+        "vi.mock('./platform/wails/presentation', () => ({access: {}}));",
+    },
+    {
+      "view.test.ts":
+        "vi.mock('./platform/wails/presentation', async () => (await import('./shared/testing/presentation-mock')).presentationMock());",
+      "shared/testing/presentation-mock.ts":
+        "export const presentationMock = () => ({});",
+    },
+    /presentation mock must use shared factory/,
+  ],
+  [
+    "test filename behavior",
+    { "bf04.test.ts": "" },
+    { "account-feedback.test.ts": "" },
+    /test filename must name behavior/,
+  ],
+  [
+    "test title behavior",
+    { "view.test.ts": "it('L06D: reads sessions', () => {});" },
+    { "view.test.ts": "it('reads sessions', () => {});" },
+    /test title must name behavior/,
+  ],
+]) {
+  test(`rejects ${label}`, () => {
+    const result = runGuard(badFiles);
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, diagnostic);
+    assert.doesNotMatch(
+      result.output,
+      /unparseable source|local module missing/,
+    );
+  });
+  test(`accepts ${label}`, () => {
+    const result = runGuard(goodFiles);
+    assert.equal(result.status, 0, result.output);
+  });
+}
+
+test("test support guard resolves relative imports inside shared", () => {
+  const helper = { "shared/testing/helper.ts": "export const value = 1;" };
+  const bad = runGuard({
+    ...helper,
+    "shared/view.ts": "import './testing/helper';",
+  });
+  assert.equal(bad.status, 1, bad.output);
+  assert.match(bad.output, /production imports test support/);
+  const good = runGuard({
+    ...helper,
+    "shared/view.test.ts": "import './testing/helper';",
+  });
+  assert.equal(good.status, 0, good.output);
+});
+
+test("parameterized test titles describe behavior", () => {
+  const bad = runGuard({
+    "view.test.ts": "it.each([1])('L06D: reads sessions', () => {});",
+  });
+  assert.equal(bad.status, 1, bad.output);
+  assert.match(bad.output, /test title must name behavior/);
+  const good = runGuard({
+    "view.test.ts": "it.each([1])('reads sessions', () => {});",
+  });
+  assert.equal(good.status, 0, good.output);
+});

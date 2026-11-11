@@ -3,10 +3,9 @@ import { expect, it, vi } from 'vitest';
 import { useSessionLinkDetails } from '../../features/radio/session-link-details';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import type { RadioLinkState } from '../../features/radio/radio-link-state';
-vi.mock('../../platform/wails/presentation', () => ({
-  equipmentAPI: { get: vi.fn() },
-  radioAPI: { current: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const state = {
   profile: 'company',
   activation: 'active',

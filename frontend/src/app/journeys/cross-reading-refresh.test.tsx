@@ -10,7 +10,7 @@ import {
 import {
   device as radioDevice,
   reading,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 import { shouldRefreshOnOpen } from '../../features/equipment/use-refresh-on-open';
 import type { Device } from '../../features/equipment/equipment-api';
 import type { RadioClient } from '../../features/equipment/radio-api';

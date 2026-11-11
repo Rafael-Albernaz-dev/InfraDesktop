@@ -9,20 +9,9 @@ import {
 import { vi, it, expect, beforeEach, afterEach } from 'vitest';
 import App from '../../app/App';
 import { access, type Result } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  access: {
-    status: vi.fn(),
-    renewRecovery: vi.fn(),
-    copyRecovery: vi.fn(),
-    ackRecovery: vi.fn(),
-    getBrand: vi.fn(),
-    saveBrand: vi.fn(),
-    saveRecovery: vi.fn(),
-    setTheme: vi.fn(),
-    selectCompany: vi.fn(),
-    logout: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const state: Result = {
   code: 'OK',
   request_id: 'security',

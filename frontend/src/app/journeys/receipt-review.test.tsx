@@ -9,21 +9,9 @@ import {
   pendingPPPoE,
 } from '../../features/access/equipment-receipts';
 import type { Device } from '../../features/equipment/equipment-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  equipmentAPI: {
-    list: vi.fn(),
-    get: vi.fn(),
-    credentials: vi.fn(),
-    start: vi.fn(),
-    inspect: vi.fn(),
-  },
-  pppoeAPI: {
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Receipt router',

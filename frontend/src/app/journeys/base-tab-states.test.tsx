@@ -14,12 +14,12 @@ import {
   device,
   reading,
   response,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 import { DeviceMonitoring } from '../../features/pppoe/device-monitoring';
-vi.mock('../../features/equipment/radio-api', () => ({
-  radioAPI: { current: vi.fn(), cancelOperation: vi.fn() },
-}));
-it('PTP apresenta só o próprio lado A e declara lado B como L07-DRV', async () => {
+vi.mock('../../features/equipment/radio-api', async () =>
+  (await import('../../shared/testing/radio-api-mock')).radioAPIMock({}),
+);
+it('PTP apresenta só o próprio lado A e declara lado B indisponível', async () => {
   vi.mocked(api.current).mockResolvedValue(
     response({
       reading: {

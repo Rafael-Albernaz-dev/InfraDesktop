@@ -4,9 +4,9 @@ import { Equipment } from '../../app/pages/equipment';
 import { equipmentAPI as api } from '../equipment/equipment-api';
 import type { Device, EquipmentResult } from '../equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', () => ({
-  equipmentAPI: { list: vi.fn(), credentials: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = (id: string, name: string, credential: string, active = true) =>
   ({
     id,

@@ -12,10 +12,11 @@ const accessMock = vi.hoisted(() => {
     'setTheme,renewRecovery,copyRecovery,ackRecovery,getBrand,saveBrand,saveRecovery';
   return Object.fromEntries(s.split(',').map((m) => [m, vi.fn()]));
 });
-vi.mock('../platform/wails/presentation', () => ({
-  equipmentAPI: { list: vi.fn() },
-  access: accessMock,
-}));
+vi.mock('../platform/wails/presentation', async () =>
+  (await import('../shared/testing/presentation-mock')).presentationMock({
+    access: accessMock,
+  }),
+);
 const snapshot = (authenticated = false): Result => ({
   code: 'OK',
   request_id: 'test',
@@ -78,7 +79,7 @@ async function enterCredentials() {
     });
 }
 const emptyHeading = 'Visão geral';
-describe('BF01 real-use presentation', () => {
+describe('real-use presentation', () => {
   it('shows service status and prevents login while disconnected without synthetic controls', async () => {
     statusMock('SERVICE_UNAVAILABLE');
     render(<App />);

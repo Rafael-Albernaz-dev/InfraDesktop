@@ -5,15 +5,16 @@ import { SessionRoute } from '../../features/equipment/session-navigation';
 import { pppoeAPI } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  pppoeAPI: Object.fromEntries(
-    'current,references,list,detail,groups,start,status,cancel'
-      .split(',')
-      .map((key) => [key, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(([name]) => !['pppoeAPI', 'deviceMonitoringAPI'].includes(name)),
+    ),
   ),
-  deviceMonitoringAPI: { current: vi.fn() },
-}));
+);
 const response = (data: object = {}) => ({
   code: 'OK',
   profile_id: 'company',

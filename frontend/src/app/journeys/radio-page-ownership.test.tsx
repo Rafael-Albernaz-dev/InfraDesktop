@@ -11,28 +11,15 @@ import {
   device,
   reading,
   response,
-} from '../../features/radio/radio-test-fixtures';
-vi.mock('../../features/equipment/radio-api', () => ({
-  radioAPI: {
-    current: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    confirmFamily: vi.fn(),
-    link: vi.fn(),
-    confirmLink: vi.fn(),
-  },
-}));
-vi.mock('../../features/equipment/equipment-api', () => ({
-  equipmentMessage: (code: string) => code,
-  equipmentAPI: {
-    list: vi.fn(),
-    get: vi.fn(),
-    credentials: vi.fn(),
-    save: vi.fn(),
-  },
-}));
+} from '../../shared/testing/radio-test-fixtures';
+vi.mock('../../features/equipment/radio-api', async () =>
+  (await import('../../shared/testing/radio-api-mock')).radioAPIMock({}),
+);
+vi.mock('../../features/equipment/equipment-api', async () =>
+  (await import('../../shared/testing/equipment-api-mock')).equipmentAPIMock({
+    equipmentMessage: (code: string) => code,
+  }),
+);
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(api.cancel).mockResolvedValue(response());

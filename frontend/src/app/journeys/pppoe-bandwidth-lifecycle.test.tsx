@@ -27,33 +27,9 @@ import type {
   PPResult,
 } from '../../platform/wails/presentation';
 import { deferred } from '../../shared/testing/deferred';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    current: vi.fn(),
-    list: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -115,7 +91,7 @@ beforeEach(() => {
     response({ references: [], total: 0 }),
   );
 });
-it('L06C: lost ping response after worker exit never re-probes on reconcile', async () => {
+it('lost ping response after worker exit never re-probes on reconcile', async () => {
   vi.mocked(api.current).mockResolvedValue(response());
   vi.mocked(api.ping).mockRejectedValueOnce(new Error('lost'));
   render(
@@ -139,7 +115,7 @@ it('L06C: lost ping response after worker exit never re-probes on reconcile', as
   );
   expect(api.ping).toHaveBeenCalledTimes(1);
 });
-it('L06C: catalog type filter resets paging and queries the stored full reading', async () => {
+it('catalog type filter resets paging and queries the stored full reading', async () => {
   panel();
   await screen.findByRole('cell', { name: 'Serviço de teste' });
   fireEvent.change(screen.getByLabelText('Filtrar por tipo'), {
@@ -153,7 +129,7 @@ it('L06C: catalog type filter resets paging and queries the stored full reading'
   );
   expect(api.catalog).not.toHaveBeenCalled();
 });
-it('L06D-S2: one bandwidth action, explicit direction, unknown rate and legitimate zero', async () => {
+it('one bandwidth action, explicit direction, unknown rate and legitimate zero', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
       total: 0,
@@ -207,7 +183,7 @@ it('L06D-S2: one bandwidth action, explicit direction, unknown rate and legitima
   ).toHaveTextContent('Não informado nesta leitura');
   expect(readAPI.start).toHaveBeenCalledTimes(1);
 });
-it('L06D-S2: leaving before start response cancels the late job', async () => {
+it('leaving before start response cancels the late job', async () => {
   const start = deferred<PPResult>();
   vi.mocked(readAPI.start).mockReturnValue(start.promise);
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
@@ -239,7 +215,7 @@ it('L06D-S2: leaving before start response cancels the late job', async () => {
   );
   expect(readAPI.status).not.toHaveBeenCalled();
 });
-it('L06D-H-D05: revision change discards pending start and restores the action', async () => {
+it('revision change discards pending start and restores the action', async () => {
   const start = deferred<PPResult>();
   vi.mocked(readAPI.start).mockReturnValue(start.promise);
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
@@ -280,7 +256,7 @@ it('L06D-H-D05: revision change discards pending start and restores the action',
   );
   expect(readAPI.status).not.toHaveBeenCalled();
 });
-it('L06D-S3: live is explicit, calculated uptime is labelled and exit cancels it', async () => {
+it('live is explicit, calculated uptime is labelled and exit cancels it', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
       total: 0,
@@ -343,7 +319,7 @@ it('L06D-S3: live is explicit, calculated uptime is labelled and exit cancels it
     ),
   );
 });
-it('L06D-S3: exit during uncertain start sends the exact operation cancellation', async () => {
+it('exit during uncertain start sends the exact operation cancellation', async () => {
   const start = deferred<PPResult>();
   vi.mocked(readAPI.start).mockReturnValue(start.promise);
   vi.mocked(readAPI.cancelOperation).mockResolvedValue(response());
@@ -384,7 +360,7 @@ it('L06D-S3: exit during uncertain start sends the exact operation cancellation'
     ),
   );
 });
-it('L06D-H-D08: uncertain live cannot reuse its operation for bandwidth', async () => {
+it('uncertain live cannot reuse its operation for bandwidth', async () => {
   vi.mocked(readAPI.start).mockRejectedValue(
     new Error('synthetic lost start response'),
   );
@@ -403,7 +379,7 @@ it('L06D-H-D08: uncertain live cannot reuse its operation for bandwidth', async 
   expect(readAPI.start).toHaveBeenCalledTimes(1);
   view.unmount();
 });
-it('L06D-H-D09: lost live status never extrapolates forever beyond60s', async () => {
+it('lost live status never extrapolates forever beyond60s', async () => {
   vi.useFakeTimers();
   vi.mocked(readAPI.start).mockResolvedValue(
     response({

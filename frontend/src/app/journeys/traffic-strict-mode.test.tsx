@@ -4,16 +4,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { usePPReadState } from '../../features/pppoe/pppoe-read-state';
 import { pppoeReadAPI } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  pppoeReadAPI: {
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    stop: vi.fn(),
-    page: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const result = (data: object = {}) => ({
   code: 'OK',
   profile_id: 'company',

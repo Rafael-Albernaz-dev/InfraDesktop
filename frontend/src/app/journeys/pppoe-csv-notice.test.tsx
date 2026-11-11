@@ -10,41 +10,9 @@ import {
 import type { Device } from '../../features/equipment/equipment-api';
 import type { PPResult } from '../../platform/wails/presentation';
 
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    current: vi.fn(),
-    list: vi.fn(),
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    detail: vi.fn(),
-    save: vi.fn(),
-    remove: vi.fn(),
-    compare: vi.fn(),
-    export: vi.fn(),
-    exportOperational: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const response = (data: PPResult['data'] = { total: 0 }): PPResult => ({
   code: 'OK',
   profile_id: 'company',

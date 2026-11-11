@@ -6,10 +6,9 @@ import {
   pppoeAPI,
 } from '../../platform/wails/presentation';
 import type { Device } from './equipment-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeAPI: { current: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = { id: 'synthetic', revision: 1 } as Device;
 it('reabre projeção local após erro e não converte ausência de reinícios em zero', async () => {
   vi.mocked(pppoeAPI.current)

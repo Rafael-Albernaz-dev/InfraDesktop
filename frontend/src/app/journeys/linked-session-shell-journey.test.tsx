@@ -23,40 +23,29 @@ import {
 import {
   link as syntheticLink,
   reading as syntheticReading,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  access: Object.fromEntries(
-    'status,login,selectCompany,getBrand,logout'
-      .split(',')
-      .map((k) => [k, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(
+        ([name]) =>
+          ![
+            'access',
+            'equipmentAPI',
+            'pppoeAPI',
+            'pppoeReadAPI',
+            'pppoeDiagnosticAPI',
+            'radioAPI',
+            'deviceMonitoringAPI',
+          ].includes(name),
+      ),
+    ),
   ),
-  equipmentAPI: Object.fromEntries(
-    'list,credentials,get,inspect'.split(',').map((k) => [k, vi.fn()]),
-  ),
-  pppoeAPI: Object.fromEntries(
-    'groups,current,references,list,start,status,cancel,detail,save,remove,compare,export,exportOperational'
-      .split(',')
-      .map((k) => [k, vi.fn()]),
-  ),
-  pppoeReadAPI: Object.fromEntries(
-    'stop,start,status,cancel,cancelOperation,page'
-      .split(',')
-      .map((k) => [k, vi.fn()]),
-  ),
-  pppoeDiagnosticAPI: Object.fromEntries(
-    'current,list,catalog,radius,ping,status,cancel'
-      .split(',')
-      .map((k) => [k, vi.fn()]),
-  ),
-  radioAPI: Object.fromEntries(
-    'link,current,profiles,apIndex,confirmLink,indexPage'
-      .split(',')
-      .map((k) => [k, vi.fn()]),
-  ),
-  deviceMonitoringAPI: { current: vi.fn() },
-}));
+);
 const device = {
   id: 'ccr-fixture',
   name: 'CCR fixture',

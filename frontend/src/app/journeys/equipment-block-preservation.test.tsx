@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { equipmentAPI } from '../../features/equipment/equipment-api';
 import { createRecoverySave } from '../../features/radio/radio-credential-state';
-import { device } from '../../features/radio/radio-test-fixtures';
+import { device } from '../../shared/testing/radio-test-fixtures';
 
 it('preserves the block when changing the saved radio credential', async () => {
   const target = { ...device, block: 'Torre Norte', credential_id: 'old' };

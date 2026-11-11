@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 import { Reading } from './radio-reading';
-import { reading } from './radio-test-fixtures';
+import { reading } from '../../shared/testing/radio-test-fixtures';
 it('tick OK com métrica inválida mantém o dado e apresenta o motivo legível com código só nos detalhes', () => {
   const view = render(
     <Reading

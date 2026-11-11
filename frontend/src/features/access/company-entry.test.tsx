@@ -7,12 +7,9 @@ import {
   type Result,
 } from '../../platform/wails/presentation';
 
-vi.mock('../../platform/wails/presentation', () => ({
-  access: Object.fromEntries(
-    'status,login,selectCompany,getBrand'.split(',').map((k) => [k, vi.fn()]),
-  ),
-  equipmentAPI: { list: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const remembered: Result = {
   code: 'OK',
   request_id: 'test',

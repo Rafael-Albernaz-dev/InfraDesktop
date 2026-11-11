@@ -2,9 +2,9 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { useImportState } from './add-import-state';
 import { inventoryImportAPI } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  inventoryImportAPI: { choose: vi.fn(), review: vi.fn(), confirm: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const scope = { profile_id: 'company', activation_id: 'active' };
 beforeEach(() => vi.resetAllMocks());
 it('explains an import that contains headers but no data rows', async () => {

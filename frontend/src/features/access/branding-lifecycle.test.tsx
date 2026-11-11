@@ -16,20 +16,9 @@ import {
 } from './access-session';
 import { access, type Result } from '../../platform/wails/presentation';
 import { BrandDraftHarness as Appearance } from '../../app/test-brand-draft';
-vi.mock('../../platform/wails/presentation', () => ({
-  access: {
-    status: vi.fn(),
-    getBrand: vi.fn(),
-    saveBrand: vi.fn(),
-    renewRecovery: vi.fn(),
-    ackRecovery: vi.fn(),
-    setTheme: vi.fn(),
-    copyRecovery: vi.fn(),
-    saveRecovery: vi.fn(),
-    selectCompany: vi.fn(),
-    logout: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const state: Result = {
   code: 'OK',
   request_id: 'test',

@@ -3,10 +3,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { useDetailDeviceSyncEffects } from './equipment-effects';
 import { equipmentAPI as api } from './equipment-api';
 import type { Device, Job, EquipmentResult } from './equipment-api';
-vi.mock('./equipment-api', () => ({
-  equipmentAPI: { get: vi.fn() },
-  equipmentMessage: (code: string) => code,
-}));
+vi.mock('./equipment-api', async () =>
+  (await import('../../shared/testing/equipment-api-mock')).equipmentAPIMock({
+    equipmentMessage: (code: string) => code,
+  }),
+);
 function fixture() {
   return {
     profile: 'company',

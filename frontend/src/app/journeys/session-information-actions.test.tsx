@@ -17,20 +17,19 @@ import {
 import type { Device } from '../../features/equipment/equipment-api';
 import type { PPObservation } from '../../platform/wails/pppoe-types';
 
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  pppoeDiagnosticAPI: Object.fromEntries(
-    'current,list,ping,status,cancel'.split(',').map((key) => [key, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(
+        ([name]) =>
+          !['pppoeDiagnosticAPI', 'pppoeReadAPI', 'radioAPI'].includes(name),
+      ),
+    ),
   ),
-  pppoeReadAPI: Object.fromEntries(
-    'start,status,cancel,cancelOperation,stop,page'
-      .split(',')
-      .map((key) => [key, vi.fn()]),
-  ),
-  radioAPI: Object.fromEntries(
-    'link,current'.split(',').map((key) => [key, vi.fn()]),
-  ),
-}));
+);
 const response = (data: object = {}) => ({
   code: 'OK',
   profile_id: 'company',

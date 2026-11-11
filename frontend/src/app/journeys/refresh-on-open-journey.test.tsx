@@ -17,7 +17,7 @@ import {
 import {
   device as radioDevice,
   reading,
-} from '../../features/radio/radio-test-fixtures';
+} from '../../shared/testing/radio-test-fixtures';
 import type { Device } from '../../features/equipment/equipment-api';
 const at = (seconds: number) =>
   new Date(Date.now() - seconds * 1000).toISOString();

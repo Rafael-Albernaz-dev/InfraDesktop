@@ -124,16 +124,10 @@
   "src/features/equipment/equipment-surfaces.tsx": {
     "complexity": 19
   },
-  "src/app/pages/equipment.test.tsx": {
-    "max-lines": 1933
-  },
   "src/app/pages/equipment.tsx": {
     "max-lines-per-function": 92,
     "no-nested-ternary": 1,
     "complexity": 18
-  },
-  "src/app/focal.test.tsx": {
-    "max-lines": 539
   },
   "src/features/inventory/inventory-bindings.tsx": {
     "max-params": 6
@@ -143,13 +137,6 @@
   },
   "src/app/journeys/inventory-controls.test.tsx": {
     "max-params": 6
-  },
-  "src/features/inventory/inventory-import-layout-fixture.tsx": {
-    "max-lines-per-function": 126
-  },
-  "src/app/inventory-layout-fixture.tsx": {
-    "max-params": 8,
-    "no-nested-ternary": 2
   },
   "src/features/inventory/inventory-preferences.tsx": {
     "max-lines-per-function": 78
@@ -305,5 +292,15 @@
     "max-lines-per-function": 172,
     "no-nested-ternary": 14,
     "complexity": 24
+  },
+  "src/app/account-operation-lifecycle.test.tsx": {
+    "max-lines": 539
+  },
+  "visual/inventory-import-layout-fixture.tsx": {
+    "max-lines-per-function": 126
+  },
+  "visual/inventory-layout-fixture.tsx": {
+    "max-params": 8,
+    "no-nested-ternary": 2
   }
 }

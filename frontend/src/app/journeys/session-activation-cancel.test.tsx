@@ -6,18 +6,25 @@ import { PPPoESessionDetail } from '../../features/pppoe/pppoe-session-screen';
 import { pppoeReadAPI, radioAPI } from '../../platform/wails/presentation';
 import type { PPObservation } from '../../platform/wails/pppoe-types';
 import type { Device } from '../../features/equipment/equipment-api';
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  pppoeReadAPI: Object.fromEntries(
-    'start,status,cancel,cancelOperation,stop,page'
-      .split(',')
-      .map((key) => [key, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(
+        ([name]) =>
+          ![
+            'pppoeReadAPI',
+            'pppoeDiagnosticAPI',
+            'deviceMonitoringAPI',
+            'pppoeAPI',
+            'radioAPI',
+          ].includes(name),
+      ),
+    ),
   ),
-  pppoeDiagnosticAPI: {},
-  deviceMonitoringAPI: {},
-  pppoeAPI: {},
-  radioAPI: { link: vi.fn() },
-}));
+);
 const device = {
   id: 'router-fixture',
   name: 'Sintético',

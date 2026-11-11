@@ -17,41 +17,9 @@ import {
 import type { PPResult, PPRow } from '../../platform/wails/presentation';
 
 import type { Device } from '../../features/equipment/equipment-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    current: vi.fn(),
-    list: vi.fn(),
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    detail: vi.fn(),
-    save: vi.fn(),
-    remove: vi.fn(),
-    compare: vi.fn(),
-    export: vi.fn(),
-    exportOperational: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -452,7 +420,7 @@ it('exposes the completed result count as an accessible status', async () => {
     screen.getByRole('status', { name: '2 resultados' }),
   ).toHaveAccessibleName('2 resultados');
 });
-it('L06C: fields, offline reason and previous page use stored data', async () => {
+it('fields, offline reason and previous page use stored data', async () => {
   const clock = vi
     .spyOn(Date, 'now')
     .mockReturnValue(Date.parse('2026-10-26T12:02:30Z'));
@@ -506,7 +474,7 @@ it('L06C: fields, offline reason and previous page use stored data', async () =>
   ).not.toBeInTheDocument();
   expect(diagnosticAPI.ping).not.toHaveBeenCalled();
 });
-it('L06C: comparison identifies each side without UUID labels', async () => {
+it('comparison identifies each side without UUID labels', async () => {
   vi.mocked(api.references).mockResolvedValue(
     result({
       references: [

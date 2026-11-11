@@ -56,13 +56,6 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/app/bf04.test.tsx": {
-    "Lines": 269,
-    "LongLines": 0,
-    "MaxFunction": 0,
-    "MaxComplexity": 0,
-    "Functions": null
-  },
   "frontend/src/app/desktop-controls.tsx": {
     "Lines": 42,
     "LongLines": 0,
@@ -238,23 +231,9 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/app/pages/equipment.test.tsx": {
-    "Lines": 1957,
-    "LongLines": 0,
-    "MaxFunction": 0,
-    "MaxComplexity": 0,
-    "Functions": null
-  },
   "frontend/src/app/pages/equipment.tsx": {
     "Lines": 205,
     "LongLines": 0,
-    "MaxFunction": 0,
-    "MaxComplexity": 0,
-    "Functions": null
-  },
-  "frontend/src/app/focal.test.tsx": {
-    "Lines": 584,
-    "LongLines": 1,
     "MaxFunction": 0,
     "MaxComplexity": 0,
     "Functions": null
@@ -548,13 +527,6 @@
   },
   "frontend/src/features/radio/radio-reading.tsx": {
     "Lines": 401,
-    "LongLines": 0,
-    "MaxFunction": 0,
-    "MaxComplexity": 0,
-    "Functions": null
-  },
-  "frontend/src/features/radio/radio-test-fixtures.ts": {
-    "Lines": 72,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,
@@ -20101,13 +20073,6 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/app/security-layout-fixture.tsx": {
-    "Lines": 50,
-    "LongLines": 0,
-    "MaxFunction": 0,
-    "MaxComplexity": 0,
-    "Functions": null
-  },
   "frontend/src/features/access/security-password.test.tsx": {
     "Lines": 28,
     "LongLines": 0,
@@ -20565,13 +20530,6 @@
     "MaxComplexity": 0,
     "Functions": null
   },
-  "frontend/src/features/equipment/equipment-test-fixture.ts": {
-    "Lines": 22,
-    "LongLines": 0,
-    "MaxFunction": 0,
-    "MaxComplexity": 0,
-    "Functions": null
-  },
   "frontend/src/features/pppoe/pppoe-read-status-retry.ts": {
     "Lines": 16,
     "LongLines": 0,
@@ -20602,6 +20560,48 @@
   },
   "frontend/src/app/journeys/refresh-on-open-journey.test.tsx": {
     "Lines": 264,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/app/account-operation-lifecycle.test.tsx": {
+    "Lines": 584,
+    "LongLines": 1,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/visual/security-layout-fixture.tsx": {
+    "Lines": 50,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/shared/testing/radio-test-fixtures.ts": {
+    "Lines": 72,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/shared/testing/equipment-test-fixture.ts": {
+    "Lines": 22,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/app/account-security-feedback.test.tsx": {
+    "Lines": 269,
+    "LongLines": 0,
+    "MaxFunction": 0,
+    "MaxComplexity": 0,
+    "Functions": null
+  },
+  "frontend/src/app/pages/equipment.test.tsx": {
+    "Lines": 159,
     "LongLines": 0,
     "MaxFunction": 0,
     "MaxComplexity": 0,

@@ -10,18 +10,18 @@ import { Equipment } from '../../app/pages/equipment';
 import { equipmentAPI } from '../equipment/equipment-api';
 import type { Device } from '../equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  access: {
-    status: vi.fn(async () => ({ code: 'OK', columns: [] })),
-    setColumns: vi.fn(),
-  },
-  equipmentAPI: Object.fromEntries(
-    'list,credentials,bulk,get,save,active,putCredential,setDefault,inspect,confirm,start,status,cancel,enrollmentStatus'
-      .split(',')
-      .map((key) => [key, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {
+      access: { status: vi.fn(async () => ({ code: 'OK', columns: [] })) },
+    },
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(([name]) => !['access', 'equipmentAPI'].includes(name)),
+    ),
   ),
-}));
+);
 const devices = Array.from({ length: 500 }, (_, i) => ({
   id: `fixture-${i}`,
   name: `Sintetico ${String(i).padStart(3, '0')}`,

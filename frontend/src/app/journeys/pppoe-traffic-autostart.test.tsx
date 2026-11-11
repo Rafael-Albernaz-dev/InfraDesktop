@@ -4,19 +4,9 @@ import { PPPoEReadPanel } from '../../features/pppoe/pppoe-diagnostics';
 import { pppoeReadAPI } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', () => ({
-  pppoeReadAPI: {
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    stop: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {},
-  deviceMonitoringAPI: {},
-  pppoeAPI: {},
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'router',
   name: 'Sintético',

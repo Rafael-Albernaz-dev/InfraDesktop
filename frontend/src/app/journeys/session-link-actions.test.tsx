@@ -10,7 +10,7 @@ import {
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PPPoESessionDetail } from '../pages/pppoe-with-link';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
-import { link } from '../../features/radio/radio-test-fixtures';
+import { link } from '../../shared/testing/radio-test-fixtures';
 import {
   RadioModes,
   RadioRoles,
@@ -18,17 +18,16 @@ import {
 import type { Device } from '../../features/equipment/equipment-api';
 import type { PPObservation } from '../../platform/wails/pppoe-types';
 
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  equipmentAPI: Object.fromEntries(
-    'get,list'.split(',').map((key) => [key, vi.fn()]),
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {},
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(([name]) => !['equipmentAPI', 'radioAPI'].includes(name)),
+    ),
   ),
-  radioAPI: Object.fromEntries(
-    'link,current,confirmLink,start,status,cancel,cancelOperation,indexPage'
-      .split(',')
-      .map((key) => [key, vi.fn()]),
-  ),
-}));
+);
 const response = (data: object = {}) => ({
   code: 'OK',
   profile_id: 'company',

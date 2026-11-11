@@ -4,10 +4,9 @@ import { SessionCPE } from '../../features/pppoe/session-cpe';
 import { equipmentAPI, radioAPI } from '../../platform/wails/presentation';
 import type { Device } from '../../features/equipment/equipment-api';
 import type { RadioResult } from '../../features/equipment/radio-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  radioAPI: { link: vi.fn() },
-  equipmentAPI: { get: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 it('mostra nome pelo vínculo local e descarta resposta de uma linha anterior sem abrir equipamento', async () => {
   const result = (data = {}): RadioResult => ({
     code: 'OK',

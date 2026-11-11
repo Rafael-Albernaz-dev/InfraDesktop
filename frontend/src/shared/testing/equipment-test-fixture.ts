@@ -1,5 +1,8 @@
-import { RadioTransports } from './radio-contract';
-import type { Device, EquipmentResult } from './equipment-api';
+import { RadioTransports } from '../../features/equipment/radio-contract';
+import type {
+  Device,
+  EquipmentResult,
+} from '../../features/equipment/equipment-api';
 export const device = {
   id: 'device-X',
   role: 'concentrator',

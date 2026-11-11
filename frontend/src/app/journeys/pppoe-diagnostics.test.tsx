@@ -24,33 +24,9 @@ import type {
   PPResult,
 } from '../../platform/wails/presentation';
 import { deferred } from '../../shared/testing/deferred';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    current: vi.fn(),
-    list: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -254,7 +230,7 @@ it('a late catalog response cannot populate a newer RADIUS surface', async () =>
     screen.queryByRole('cell', { name: 'Serviço de teste' }),
   ).not.toBeInTheDocument();
 });
-it('L07 R2: a completed collection waits for new metadata before paging; the retired reading cannot report replacement', async () => {
+it('a completed collection waits for new metadata before paging; the retired reading cannot report replacement', async () => {
   panel();
   await screen.findByRole('cell', { name: 'Serviço de teste' });
   const nextCurrent = deferred<PPResult>();

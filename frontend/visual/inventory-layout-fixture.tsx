@@ -1,5 +1,5 @@
-import type { Device } from '../features/equipment/equipment-api';
-import { RadioTransports } from '../features/equipment/radio-contract';
+import type { Device } from '../src/features/equipment/equipment-api';
+import { RadioTransports } from '../src/features/equipment/radio-contract';
 import { prepareSecurityVisual } from './security-layout-fixture';
 
 export function prepareBase5Devices(

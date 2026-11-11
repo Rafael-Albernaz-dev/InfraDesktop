@@ -10,10 +10,11 @@ const mocked = vi.hoisted(() =>
       .map((name) => [name, vi.fn()]),
   ),
 );
-vi.mock('../../platform/wails/presentation', () => ({
-  access: mocked,
-  equipmentAPI: { list: vi.fn() },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({
+    access: mocked,
+  }),
+);
 const response = (code = 'OK', recovery = '') => ({
   code,
   recovery,

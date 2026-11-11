@@ -94,8 +94,18 @@ function inspect(name, code) {
     true,
     name.endsWith("tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
   );
+  const isTest = /\.test\.[^/]+$/.test(filename);
+  const isTestSupport = filename.startsWith(
+    path.join(sourceRoot, "shared/testing") + path.sep,
+  );
+  const forbiddenName =
+    /\b(L0[0-9][A-Z0-9]*|BF0[0-9]|T[0-9]+|focal|piloto|live2|cpu90|avulso)\b/i;
   const problems = source.parseDiagnostics.map(() => "unparseable source");
+  if (isTest && forbiddenName.test(path.basename(filename)))
+    problems.push("test filename must name behavior");
   function check(spec, sideEffect = false) {
+    if (!isTest && !isTestSupport && spec.includes("shared/testing/"))
+      problems.push("production imports test support");
     if (spec.includes("wailsjs")) {
       if (
         path.dirname(filename) !== wailsAdapter ||
@@ -118,6 +128,13 @@ function inspect(name, code) {
       return;
     }
     const resolved = path.resolve(path.dirname(filename), spec);
+    const testingRoot = path.join(sourceRoot, "shared/testing");
+    if (
+      !isTest &&
+      !isTestSupport &&
+      (resolved === testingRoot || resolved.startsWith(testingRoot + path.sep))
+    )
+      problems.push("production imports test support");
     if (!insideSource(resolved) || /[?#\0]/.test(spec)) {
       problems.push(
         "local import outside inspected source tree or unsupported loader",
@@ -125,7 +142,11 @@ function inspect(name, code) {
       return;
     }
     const sharedRoot = path.join(sourceRoot, "shared") + path.sep;
-    if (filename.startsWith(sharedRoot) && !resolved.startsWith(sharedRoot))
+    if (
+      filename.startsWith(sharedRoot) &&
+      !filename.startsWith(path.join(sharedRoot, "testing") + path.sep) &&
+      !resolved.startsWith(sharedRoot)
+    )
       problems.push("shared dependency outside shared");
     const ext = path.extname(resolved);
     if (ext === ".css") {
@@ -151,6 +172,49 @@ function inspect(name, code) {
     else checkLayers(filename, target, problems);
   }
   function visit(n) {
+    if (ts.isCallExpression(n)) {
+      const callee = n.expression.getText(source);
+      if (
+        isTest &&
+        /^(it|test|describe)(\.(only|skip|each))?(\([\s\S]*\))?$/.test(
+          callee,
+        ) &&
+        n.arguments[0] &&
+        ts.isStringLiteralLike(n.arguments[0]) &&
+        forbiddenName.test(n.arguments[0].text)
+      )
+        problems.push("test title must name behavior");
+      if (
+        callee === "vi.mock" &&
+        n.arguments[0] &&
+        ts.isStringLiteral(n.arguments[0]) &&
+        /platform\/wails\/presentation$/.test(n.arguments[0].text)
+      ) {
+        const factory = n.arguments[1];
+        let sharedFactory = false;
+        let factoryCall = false;
+        function scan(node) {
+          if (
+            ts.isCallExpression(node) &&
+            node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+            node.arguments[0] &&
+            ts.isStringLiteral(node.arguments[0]) &&
+            /shared\/testing\/presentation-mock$/.test(node.arguments[0].text)
+          )
+            sharedFactory = true;
+          if (
+            ts.isCallExpression(node) &&
+            ts.isPropertyAccessExpression(node.expression) &&
+            node.expression.name.text === "presentationMock"
+          )
+            factoryCall = true;
+          ts.forEachChild(node, scan);
+        }
+        if (factory) scan(factory);
+        if (!sharedFactory || !factoryCall)
+          problems.push("presentation mock must use shared factory");
+      }
+    }
     if (
       ts.isImportTypeNode(n) &&
       ts.isLiteralTypeNode(n.argument) &&

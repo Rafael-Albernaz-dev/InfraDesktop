@@ -3,10 +3,11 @@ import { expect, it, vi } from 'vitest';
 import { equipmentAPI } from './equipment-api';
 import { useEquipmentNavigator } from './equipment-navigator';
 import type { Device, EquipmentResult } from './equipment-api';
-vi.mock('./equipment-api', () => ({
-  equipmentAPI: { get: vi.fn() },
-  equipmentMessage: (code: string) => code,
-}));
+vi.mock('./equipment-api', async () =>
+  (await import('../../shared/testing/equipment-api-mock')).equipmentAPIMock({
+    equipmentMessage: (code: string) => code,
+  }),
+);
 it('resposta de navegação não atravessa ativação nem substitui uma escolha mais recente', async () => {
   let resolve!: (r: EquipmentResult) => void;
   vi.mocked(equipmentAPI.get).mockImplementation(

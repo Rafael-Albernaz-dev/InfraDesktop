@@ -3,24 +3,9 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { Equipment } from '../pages/equipment';
 import { equipmentAPI as api } from '../../features/equipment/equipment-api';
 import type { EquipmentResult } from '../../features/equipment/equipment-api';
-vi.mock('../../platform/wails/presentation', () => ({
-  equipmentAPI: Object.fromEntries(
-    [
-      'list',
-      'credentials',
-      'save',
-      'enrollmentStatus',
-      'putCredential',
-      'get',
-      'active',
-      'inspect',
-      'confirm',
-      'start',
-      'status',
-      'cancel',
-    ].map((k) => [k, vi.fn()]),
-  ),
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const result = (code = 'OK'): EquipmentResult => ({
   code,
   profile_id: 'modal',

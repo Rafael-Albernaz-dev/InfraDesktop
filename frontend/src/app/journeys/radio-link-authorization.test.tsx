@@ -3,29 +3,16 @@ import { expect, it, vi } from 'vitest';
 import { RadioLinkPanel } from '../../features/radio/radio';
 import { radioAPI as api } from '../../features/equipment/radio-api';
 import type { RadioResult } from '../../features/equipment/radio-api';
-import { device, response } from '../../features/radio/radio-test-fixtures';
+import { device, response } from '../../shared/testing/radio-test-fixtures';
 import { equipmentAPI } from '../../features/equipment/equipment-api';
-vi.mock('../../features/equipment/radio-api', () => ({
-  radioAPI: {
-    link: vi.fn(),
-    current: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    confirmLink: vi.fn(),
-    confirmFamily: vi.fn(),
-  },
-}));
-vi.mock('../../features/equipment/equipment-api', () => ({
-  equipmentMessage: (code: string) => code,
-  equipmentAPI: {
-    list: vi.fn(),
-    get: vi.fn(),
-    credentials: vi.fn(),
-    save: vi.fn(),
-  },
-}));
+vi.mock('../../features/equipment/radio-api', async () =>
+  (await import('../../shared/testing/radio-api-mock')).radioAPIMock({}),
+);
+vi.mock('../../features/equipment/equipment-api', async () =>
+  (await import('../../shared/testing/equipment-api-mock')).equipmentAPIMock({
+    equipmentMessage: (code: string) => code,
+  }),
+);
 it('does not begin an index when the view becomes blocked while its saved link is loading', async () => {
   let resolve!: (r: RadioResult) => void;
   vi.mocked(api.link).mockReturnValue(

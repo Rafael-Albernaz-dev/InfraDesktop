@@ -15,39 +15,17 @@ import type {
 import { RadioRoles } from '../../features/equipment/radio-contract';
 
 const prefs = vi.hoisted(() => ({ saved: [] as string[] }));
-vi.mock('../../platform/wails/presentation', () => ({
-  access: {
-    status: vi.fn(async () => ({ code: 'OK', columns: prefs.saved })),
-    setColumns: vi.fn(async (columns: string[]) => {
-      prefs.saved = columns;
-      return { code: 'OK', columns };
-    }),
-  },
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  equipmentAPI: {
-    list: vi.fn(),
-    get: vi.fn(),
-    save: vi.fn(),
-    active: vi.fn(),
-    credentials: vi.fn(),
-    putCredential: vi.fn(),
-    setDefault: vi.fn(),
-    inspect: vi.fn(),
-    confirm: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    bulk: vi.fn(),
-    enrollmentStatus: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({
+    access: {
+      status: vi.fn(async () => ({ code: 'OK', columns: prefs.saved })),
+      setColumns: vi.fn(async (columns: string[]) => {
+        prefs.saved = columns;
+        return { code: 'OK', columns };
+      }),
+    },
+  }),
+);
 
 const rows = [
   {

@@ -4,18 +4,18 @@ import { Equipment } from '../../app/pages/equipment';
 import { equipmentAPI } from '../equipment/equipment-api';
 import type { Device, EquipmentResult } from '../equipment/equipment-api';
 
-vi.mock('../../platform/wails/presentation', async (original) => ({
-  ...(await original<typeof import('../../platform/wails/presentation')>()),
-  access: {
-    status: vi.fn(async () => ({ code: 'OK', columns: [] })),
-    setColumns: vi.fn(),
-  },
-  equipmentAPI: {
-    list: vi.fn(),
-    credentials: vi.fn(),
-    get: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async (importOriginal) =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock(
+    {
+      access: { status: vi.fn(async () => ({ code: 'OK', columns: [] })) },
+    },
+    Object.fromEntries(
+      Object.entries(
+        await importOriginal<Record<string, Record<string, unknown>>>(),
+      ).filter(([name]) => !['access', 'equipmentAPI'].includes(name)),
+    ),
+  ),
+);
 const device = {
   id: 'd',
   name: 'Synthetic pulse',

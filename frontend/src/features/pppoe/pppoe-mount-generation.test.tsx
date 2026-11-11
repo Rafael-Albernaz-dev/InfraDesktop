@@ -9,7 +9,11 @@ const calls = vi.hoisted(() => ({
   cancel: vi.fn(),
   cancelOperation: vi.fn(),
 }));
-vi.mock('../../platform/wails/presentation', () => ({ pppoeReadAPI: calls }));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({
+    pppoeReadAPI: calls,
+  }),
+);
 
 function EarlyStart() {
   const { start, result, pending } = usePPReadState({

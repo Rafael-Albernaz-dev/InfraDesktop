@@ -21,33 +21,9 @@ import type {
   PDRow,
   PPResult,
 } from '../../platform/wails/presentation';
-vi.mock('../../platform/wails/presentation', () => ({
-  deviceMonitoringAPI: { current: vi.fn() },
-  pppoeReadAPI: {
-    stop: vi.fn(),
-    start: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-    cancelOperation: vi.fn(),
-    page: vi.fn(),
-  },
-  pppoeDiagnosticAPI: {
-    catalog: vi.fn(),
-    radius: vi.fn(),
-    ping: vi.fn(),
-    current: vi.fn(),
-    list: vi.fn(),
-    status: vi.fn(),
-    cancel: vi.fn(),
-  },
-  pppoeAPI: {
-    groups: vi.fn(),
-    current: vi.fn(),
-    references: vi.fn(),
-    list: vi.fn(),
-    start: vi.fn(),
-  },
-}));
+vi.mock('../../platform/wails/presentation', async () =>
+  (await import('../../shared/testing/presentation-mock')).presentationMock({}),
+);
 const device = {
   id: 'device',
   name: 'Concentrador sintético',
@@ -99,7 +75,7 @@ beforeEach(() => {
     response({ references: [], total: 0 }),
   );
 });
-it('L06D-S4: top is deliberate across all tunnels and its page never starts another read', async () => {
+it('top is deliberate across all tunnels and its page never starts another read', async () => {
   const meta = {
     scope: 'top',
     started_at: '2026-10-27T00:00:00Z',
@@ -192,7 +168,7 @@ it('L06D-S4: top is deliberate across all tunnels and its page never starts anot
     'next-page',
   );
 });
-it('L06D-S4: complete empty top has an honest empty state and no reset control', async () => {
+it('complete empty top has an honest empty state and no reset control', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
       total: 0,
@@ -230,7 +206,7 @@ it('L06D-S4: complete empty top has an honest empty state and no reset control',
     screen.queryByRole('button', { name: 'Início do consumo' }),
   ).not.toBeInTheDocument();
 });
-it('L06D-S5: selected log has projected categories and no irrelevant bandwidth controls offline', async () => {
+it('selected log has projected categories and no irrelevant bandwidth controls offline', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
       total: 0,
@@ -298,7 +274,7 @@ it('L06D-S5: selected log has projected categories and no irrelevant bandwidth c
     device.revision,
   );
 });
-it('L06D ajuste2: selected secret is ephemeral, explicit about unavailable fields and cleared on context change', async () => {
+it('selected secret is ephemeral, explicit about unavailable fields and cleared on context change', async () => {
   vi.mocked(readAPI.cancel).mockResolvedValue(response());
   vi.mocked(readAPI.start).mockResolvedValue(
     response({
@@ -383,7 +359,7 @@ it('L06D ajuste2: selected secret is ephemeral, explicit about unavailable field
     screen.queryByRole('region', { name: 'Evidência efêmera do secret' }),
   ).not.toBeInTheDocument();
 });
-it('L06D-S6: pools keep unknown separate from zero and interfaces have their own directions', async () => {
+it('pools keep unknown separate from zero and interfaces have their own directions', async () => {
   vi.mocked(readAPI.start).mockResolvedValue(
     response({ total: 0, job: { id: 'health', state: 'RUNNING', code: 'OK' } }),
   );
