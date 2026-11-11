@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestL06T3SavedPortsRestartReplayAndReopen(t *testing.T) {
+func TestSavedPortsRestartReplayAndReopen(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	ctx := context.Background()
 	at := time.Now().UTC().Add(-time.Minute)
@@ -82,7 +82,7 @@ func dropLaterMonitoringFixtureSchema(t *testing.T, j *journey) {
 		t.Fatal(e)
 	}
 }
-func TestL06T3MigrationTenAtomicPreservesAppliedNine(t *testing.T) {
+func TestMigrationTenAtomicPreservesAppliedNine(t *testing.T) {
 	j, _ := ppStoreSetup(t)
 	dropRadioFixtureSchema(t, j)
 	var before, after string
@@ -110,7 +110,7 @@ func TestL06T3MigrationTenAtomicPreservesAppliedNine(t *testing.T) {
 		t.Fatal("applied001..009 changed", e)
 	}
 }
-func TestL06T3CatalogAbsenceSavedAndReopened(t *testing.T) {
+func TestCatalogAbsenceSavedAndReopened(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	ctx := context.Background()
 	at := time.Now().UTC().Add(-time.Minute)

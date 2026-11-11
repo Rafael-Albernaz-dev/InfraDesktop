@@ -15,6 +15,7 @@ import (
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
+	"infradesktop/internal/testsupport/testwait"
 	"os"
 	"path/filepath"
 	"strings"
@@ -274,7 +275,7 @@ func TestPPPoEJobSlotsAndInterruptedCurrent(t *testing.T) {
 		t.Fatal("read reconciled by network")
 	}
 }
-func TestL06CReadReplayOnlyWhileActive(t *testing.T) {
+func TestReadReplayOnlyWhileActive(t *testing.T) {
 	hold := make(chan struct{})
 	released := false
 	j := newPPJourney(t, sshfixture.Config{Hold: hold, PPRows: 1})
@@ -294,7 +295,7 @@ func TestL06CReadReplayOnlyWhileActive(t *testing.T) {
 	j.call("pppoe.diagnostic-start", other, foundation.Code(equipment.Revision))
 	close(hold)
 	released = true
-	deadline := time.Now().Add(3 * time.Second)
+	deadline := testwait.Limit(t)
 	for {
 		job := j.call("pppoe.collect-status", equipment.PPInput{JobID: first.ID}, foundation.OK).Data.PPPoE.Job
 		if job.State != "RUNNING" {
@@ -336,7 +337,7 @@ func (a *l06cPublicationAuthorization) WithAuthorization(ctx context.Context, ui
 	}
 	return c
 }
-func TestL06CRevokedBeforePublication(t *testing.T) {
+func TestRevokedBeforePublication(t *testing.T) {
 	hold := make(chan struct{})
 	released := false
 	j := newPPJourney(t, sshfixture.Config{Hold: hold, PPRows: 1})

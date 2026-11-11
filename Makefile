@@ -118,6 +118,11 @@ quality:
 test-layout:
 	node scripts/visual/test-layout.mjs
 
+.PHONY: quality-tighten
+# reescreve quality/baselines/quality-baseline.json com a dívida que ainda existe
+quality-tighten:
+	go run ./quality/go/quality.go -tighten
+
 .PHONY: quality-report
 quality-report:
 	go run ./quality/go/quality.go -report

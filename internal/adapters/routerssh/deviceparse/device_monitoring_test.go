@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestL06T2OperationalAndAuthFooterUsesCapturedUptime(t *testing.T) {
+func TestOperationalAndAuthFooterUsesCapturedUptime(t *testing.T) {
 	// The reboot guard must compare against the start captured by this command,
 	// rather than an undefined variable from another projection's prefix.
 	start := regexp.MustCompile(`:local ([A-Za-z][A-Za-z0-9]*) \[/system resource get uptime\]; :put \("[OA]`)
@@ -129,7 +129,7 @@ func knownV6HealthSyntaxDefect(script string) bool {
 	return invalid.Match(bytes)
 }
 
-func TestL06T2GeneratedCollectorsAvoidKnownV6ParseDefects(t *testing.T) {
+func TestGeneratedCollectorsAvoidKnownV6ParseDefects(t *testing.T) {
 	// Include the other generated collectors in the same compatibility audit;
 	// item/property reads in interface/queue/etc. are legitimate v6 syntax.
 	band, ok := pppoeparse.BuildPPBandCommand([]equipment.PPRow{{Login: "synthetic"}})
@@ -248,7 +248,7 @@ func TestL06T2RealV6OperationalGolden(t *testing.T) {
 	}
 }
 
-func TestL06T2V7KnownTemperatureAndOptionalStatusPreserved(t *testing.T) {
+func TestV7KnownTemperatureAndOptionalStatusPreserved(t *testing.T) {
 	body := strings.Replace(opFixture("7.14.3"), "R\ttemperature\t?", "R\ttemperature\t=42.5", 1)
 	body = strings.Replace(body, "=true\t?", "=true\t=synchronized", 1)
 	h, _, code := ParseDeviceOperational(body, time.Now(), time.Now())
@@ -257,7 +257,7 @@ func TestL06T2V7KnownTemperatureAndOptionalStatusPreserved(t *testing.T) {
 	}
 }
 
-func TestL06V7AuthRecognizedCount(t *testing.T) {
+func TestAuthRecognizedCount(t *testing.T) {
 	for _, body := range []string{"", "F\tlab-user\t01:00:00\nF\tlab-user\t01:00:01\n"} {
 		count := 0
 		if body != "" {

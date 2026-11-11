@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestL06V7CollectorSyntaxGuard(t *testing.T) {
+func TestCollectorSyntaxGuard(t *testing.T) {
 	for name, script := range map[string]string{
 		"operations": deviceparse.DeviceOperationalCommand,
 		"auth":       deviceparse.DeviceAuthFailuresCommand,

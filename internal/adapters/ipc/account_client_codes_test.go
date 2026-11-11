@@ -12,7 +12,7 @@ import (
 )
 
 // Exercise the same AccountClient -> transport -> framed Unix reply as bindings.
-func TestFocalAccountClientEquipmentCodes(t *testing.T) {
+func TestAccountClientEquipmentCodes(t *testing.T) {
 	b, e := os.ReadFile("testdata/schema-v1.json")
 	if e != nil {
 		t.Fatal(e)

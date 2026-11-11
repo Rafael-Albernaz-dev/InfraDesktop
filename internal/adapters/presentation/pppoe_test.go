@@ -266,7 +266,7 @@ func TestPPPoEReviewExportInitialAndFinalInputs(t *testing.T) {
 	})
 }
 
-func TestL06DCSVFormulaNeutralization(t *testing.T) {
+func TestCSVFormulaNeutralization(t *testing.T) {
 	for _, value := range []string{"=1+1", " +SUM(A1:A2)", "-1", "@SUM(1)", "\tformula", "\rformula", "\nformula"} {
 		if cell := ppCSVCell(value); !strings.HasPrefix(cell, "'") || cell[1:] != value {
 			t.Fatal("active formula/control cell", value)

@@ -4,7 +4,7 @@ import "testing"
 
 const firstEightChecksums = "SELECT group_concat(checksum,'|') FROM schema_migrations WHERE version<=8 ORDER BY version"
 
-func TestL06T2MigrationNineAtomicAndFirstEightUnchanged(t *testing.T) {
+func TestMigrationNineAtomicAndFirstEightUnchanged(t *testing.T) {
 	j, _ := ppStoreSetup(t)
 	original := companyDeviceMonitoringSchema
 	defer func() { companyDeviceMonitoringSchema = original }()

@@ -8,27 +8,31 @@ import (
 	"strings"
 )
 
-// BaselineGrowth checks the numeric ceilings used by the quality gate.
-func BaselineGrowth(current, previous qualitymetrics.Report) []string {
+// BaselineGrowth checks the numeric ceilings used by the quality gate: debt never grows.
+// A key may leave only when its file is gone or measures without debt.
+func BaselineGrowth(current, previous, measured qualitymetrics.Report) []string {
 	var failures []string
 	for path, before := range previous {
 		after, exists := current[path]
 		if !exists {
-			// ignored: Only existence is relevant to key removal.
-			if _, err := os.Stat(path); !os.IsNotExist(err) {
-				failures = append(failures, fmt.Sprintf("baseline %s: existing file key removed", path))
+			if m, present := measured[path]; present && HasDebt(path, m) {
+				failures = append(failures, fmt.Sprintf("baseline %s: key removed while the file still has debt", path))
 			}
 			continue
 		}
-		if after.Lines > before.Lines && after.Lines > FileLimit(path) || after.LongLines > before.LongLines ||
-			after.MaxFunction > before.MaxFunction || after.MaxComplexity > before.MaxComplexity {
+		if grew(after.Lines, before.Lines, FileLimit(path)) || after.LongLines > before.LongLines ||
+			grew(after.MaxFunction, before.MaxFunction, FunctionLimit) ||
+			grew(after.MaxComplexity, before.MaxComplexity, ComplexityLimit) {
 			failures = append(failures, fmt.Sprintf("baseline %s: ceiling increased", path))
 		}
 	}
 	return failures
 }
 
-func BaselineRatchet() []string {
+// grew is growth beyond both the old ceiling and the limit; growth below the limit is not debt.
+func grew(after, before, limit int) bool { return after > before && after > limit }
+
+func BaselineRatchet(measured qualitymetrics.Report) []string {
 	raw, err := os.ReadFile("quality/baselines/quality-baseline.json")
 	if err != nil {
 		return []string{err.Error()}
@@ -48,7 +52,7 @@ func BaselineRatchet() []string {
 	if err != nil {
 		return []string{err.Error()}
 	}
-	return BaselineGrowth(current, previous)
+	return append(BaselineGrowth(current, previous, measured), BaselineLean(measured, current)...)
 }
 
 // FileLimit is shared by the baseline ratchet and changed-file validation.

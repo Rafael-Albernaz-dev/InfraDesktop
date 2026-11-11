@@ -7,6 +7,7 @@ import (
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
+	"infradesktop/internal/testsupport/testwait"
 	"os"
 	"path/filepath"
 	"strings"
@@ -185,7 +186,7 @@ func (s *radioIndependentFixture) finish(in equipment.RadioInput) *equipment.Rad
 	t.Helper()
 	v := call("radio.start", in, foundation.OK)
 	id := v.Job.ID
-	until := time.Now().Add(5 * time.Second)
+	until := testwait.Limit(t)
 	for time.Now().Before(until) {
 		v = call("radio.status", equipment.RadioInput{JobID: id}, foundation.OK)
 		if v.Job.State != "RUNNING" {

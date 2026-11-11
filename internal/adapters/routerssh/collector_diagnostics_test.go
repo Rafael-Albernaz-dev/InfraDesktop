@@ -39,7 +39,7 @@ func diagnosticCommands(t *testing.T) map[string]string {
 	return out
 }
 
-func TestL06V7SyntaxDiagnosticsAreStructural(t *testing.T) {
+func TestSyntaxDiagnosticsAreStructural(t *testing.T) {
 	for _, s := range []string{"syntax error (line 1 column 1304)\r\n", "expected end of command (line 1 column 1471)",
 		"bad command name health (line 1 column 1)"} {
 		if !routeros.CollectorSyntaxDiagnostic(s) {

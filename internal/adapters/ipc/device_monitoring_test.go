@@ -48,7 +48,7 @@ func TestOperationalScopeThroughIPC(t *testing.T) {
 	}
 }
 
-func TestL06T2CursorRejectsChangedSeries(t *testing.T) {
+func TestCursorRejectsChangedSeries(t *testing.T) {
 	j := newPPJourney(t, sshfixture.Config{Family: "v7", PPRows: 1, RealTime: true})
 	target, c := j.store.ReadPPTarget(context.Background(), j.client.profile, j.device, false)
 	if c != equipment.OK {

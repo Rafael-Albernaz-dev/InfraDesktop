@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func TestL06V7CollectorFailureThroughRealClient(t *testing.T) {
+func TestCollectorFailureThroughRealClient(t *testing.T) {
 	for _, tc := range []struct{ name, scope, output, code, reason string }{
 		{"operations syntax", "operations", "syntax error (line 1 column 1304)\r\n", "COLLECTOR_DEFECT", "O:syntax"},
 		{"auth syntax", "auth", "expected end of command (line 1 column 1470)\r\n", "COLLECTOR_DEFECT", "A:syntax"},

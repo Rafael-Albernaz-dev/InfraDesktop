@@ -4,18 +4,10 @@ import (
 	"infradesktop/quality/go/qualitymetrics"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"strings"
 	"testing"
 )
 
-func TestTypeScriptBaselineOnlyBlocksHistoricalSource(t *testing.T) {
-	if !ExistingTSWithoutBaseline(true, false) {
-		t.Fatal("historical source accepted")
-	}
-	if ExistingTSWithoutBaseline(false, false) {
-		t.Fatal("new source rejected")
-	}
-}
 func TestRatchetCannotAddOrRaiseCeilings(t *testing.T) {
 	old := map[string]map[string]int{"a.ts": {"complexity": 18}}
 	for _, current := range []map[string]map[string]int{
@@ -48,49 +40,72 @@ func TestLegacyExceptionKeysAreReadFromHeadSource(t *testing.T) {
 	}
 }
 
-func TestBaselineExistingCeilingsOnlyDecrease(t *testing.T) {
-	old := qualitymetrics.Report{"a": {Lines: 10, LongLines: 2, MaxFunction: 6, MaxComplexity: 3}}
+func TestBaselineDebtNeverGrows(t *testing.T) {
+	old := qualitymetrics.Report{"a.go": {Lines: 600, LongLines: 2, MaxFunction: 70, MaxComplexity: 20}}
 	for _, after := range []qualitymetrics.Metric{
-		{Lines: 501}, {LongLines: 3}, {MaxFunction: 7}, {MaxComplexity: 4},
+		{Lines: 601}, {LongLines: 3}, {MaxFunction: 71}, {MaxComplexity: 21},
 	} {
-		if len(BaselineGrowth(qualitymetrics.Report{"a": after}, old)) == 0 {
-			t.Fatal("increased ceiling accepted", after)
+		if len(BaselineGrowth(qualitymetrics.Report{"a.go": after}, old, nil)) == 0 {
+			t.Fatal("grown debt accepted", after)
 		}
 	}
-	for _, current := range []qualitymetrics.Report{
-		old, {"a": {Lines: 9}, "new": {Lines: 999}}, {},
-	} {
-		if len(BaselineGrowth(current, old)) != 0 {
+	for _, current := range []qualitymetrics.Report{old, {"a.go": {Lines: 9}, "new.go": {Lines: 999}}} {
+		if len(BaselineGrowth(current, old, nil)) != 0 {
 			t.Fatal("unchanged, reduced or new key refused")
 		}
 	}
 }
 
-func TestBaselineMissingKeyRequiresDeletedFile(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "exists.go")
-	if err := os.WriteFile(path, []byte("package fixture"), 0600); err != nil {
-		t.Fatal(err)
-	}
-	old := qualitymetrics.Report{path: {Lines: 10}}
-	if len(BaselineGrowth(qualitymetrics.Report{}, old)) == 0 {
-		t.Fatal("existing file key removed")
-	}
-	if err := os.Remove(path); err != nil {
-		t.Fatal(err)
-	}
-	if len(BaselineGrowth(qualitymetrics.Report{}, old)) != 0 {
-		t.Fatal("deleted file blocked")
+func TestBaselineGrowthBelowTheLimitIsNotDebt(t *testing.T) {
+	old := qualitymetrics.Report{"a.go": {Lines: 600, MaxFunction: 6, MaxComplexity: 3}}
+	after := qualitymetrics.Report{"a.go": {Lines: 600, MaxFunction: FunctionLimit, MaxComplexity: ComplexityLimit}}
+	if len(BaselineGrowth(after, old, nil)) != 0 {
+		t.Fatal("growth within the function and complexity limits blocked")
 	}
 }
+
+func TestBaselineKeyLeavesOnlyWithoutDebt(t *testing.T) {
+	old := qualitymetrics.Report{"a.go": {Lines: 600}}
+	if len(BaselineGrowth(qualitymetrics.Report{}, old, qualitymetrics.Report{"a.go": {Lines: 600}})) == 0 {
+		t.Fatal("key of a file still in debt removed")
+	}
+	for _, measured := range []qualitymetrics.Report{{"a.go": {Lines: 100}}, {}} {
+		if len(BaselineGrowth(qualitymetrics.Report{}, old, measured)) != 0 {
+			t.Fatal("key of a clean or deleted file kept by force")
+		}
+	}
+}
+
+func TestBaselineLeanLocksTheGain(t *testing.T) {
+	measured := qualitymetrics.Report{"debt.go": {Lines: 550, MaxFunction: 70}, "clean.go": {Lines: 40}}
+	for name, baseline := range map[string]qualitymetrics.Report{
+		"clean key":      {"debt.go": {Lines: 550, MaxFunction: 70}, "clean.go": {Lines: 40}},
+		"gone key":       {"debt.go": {Lines: 550, MaxFunction: 70}, "gone.go": {Lines: 900}},
+		"lines above":    {"debt.go": {Lines: 560, MaxFunction: 70}},
+		"function above": {"debt.go": {Lines: 550, MaxFunction: 80}},
+	} {
+		if len(BaselineLean(measured, baseline)) == 0 {
+			t.Fatal(name, "accepted")
+		}
+	}
+	if got := BaselineLean(measured, Tightened(measured, qualitymetrics.Report{"debt.go": {}, "clean.go": {}})); len(got) != 0 {
+		t.Fatal("tightened baseline rejected", got)
+	}
+	if tight := Tightened(measured, qualitymetrics.Report{"clean.go": {}}); len(tight) != 0 {
+		t.Fatal("tighten added or kept a clean key", tight)
+	}
+}
+
 func TestBaselineLinesMayGrowBelowFileLimit(t *testing.T) {
 	old := qualitymetrics.Report{"a.go": {Lines: 10}}
-	if len(BaselineGrowth(qualitymetrics.Report{"a.go": {Lines: 20}}, old)) != 0 {
+	if len(BaselineGrowth(qualitymetrics.Report{"a.go": {Lines: 20}}, old, nil)) != 0 {
 		t.Fatal("within-limit growth blocked")
 	}
 }
 
 func stagedRenameFixture(t *testing.T) {
 	t.Helper()
+	isolateFromOuterRepository(t)
 	t.Chdir(t.TempDir())
 	for _, dir := range []string{"frontend/src/app", "frontend/quality", "quality/baselines", "quality/go"} {
 		if err := os.MkdirAll(dir, 0700); err != nil {
@@ -112,6 +127,26 @@ func stagedRenameFixture(t *testing.T) {
 		"-c", "commit.gpgsign=false", "commit", "-qm", "baseline")
 	runGateGit(t, "mv", "frontend/src/old file.ts", "frontend/src/app/new file.ts")
 }
+
+// isolateFromOuterRepository drops the GIT_* variables a hook exports (GIT_DIR,
+// GIT_INDEX_FILE…). Inside a worktree's pre-commit they are absolute, and the fixture's
+// git init/add/commit would otherwise write into the real repository being committed.
+func isolateFromOuterRepository(t *testing.T) {
+	t.Helper()
+	for _, entry := range os.Environ() {
+		name, value, _ := strings.Cut(entry, "=")
+		if !strings.HasPrefix(name, "GIT_") {
+			continue
+		}
+		if err := os.Unsetenv(name); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			// ignored: restoring the outer hook environment is best effort after the test.
+			_ = os.Setenv(name, value)
+		})
+	}
+}
 func runGateGit(t *testing.T, args ...string) {
 	t.Helper()
 	if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
@@ -124,6 +159,10 @@ func writeGateFixture(t *testing.T, name, content string) {
 		t.Fatal(err)
 	}
 }
+
+// renamedMeasured is the measured debt of the staged-rename fixture: two long lines.
+var renamedMeasured = qualitymetrics.Report{"frontend/src/app/new file.ts": {Lines: 10, LongLines: 2}}
+
 func TestRenamedRatchetKeyKeepsHeadCeiling(t *testing.T) {
 	stagedRenameFixture(t)
 	writeGateFixture(t, "frontend/quality/quality-ratchet.json", `{"src/app/new file.ts":{"complexity":18}}`)
@@ -131,7 +170,7 @@ func TestRenamedRatchetKeyKeepsHeadCeiling(t *testing.T) {
 		t.Fatal(got)
 	}
 	writeGateFixture(t, "quality/baselines/quality-baseline.json", `{"frontend/src/app/new file.ts":{"lines":10,"LongLines":2}}`)
-	if got := BaselineRatchet(); len(got) != 0 {
+	if got := BaselineRatchet(renamedMeasured); len(got) != 0 {
 		t.Fatal(got)
 	}
 }
@@ -142,7 +181,7 @@ func TestRenamedRatchetKeyStillRejectsGrowth(t *testing.T) {
 		t.Fatal("renamed ceiling grew")
 	}
 	writeGateFixture(t, "quality/baselines/quality-baseline.json", `{"frontend/src/app/new file.ts":{"lines":10,"LongLines":3}}`)
-	if got := BaselineRatchet(); len(got) == 0 {
+	if got := BaselineRatchet(renamedMeasured); len(got) == 0 {
 		t.Fatal("renamed baseline ceiling grew")
 	}
 }

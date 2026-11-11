@@ -17,7 +17,12 @@ const ProductRevision = 24
 const ProductVersion = "0.7.0"
 const MaxFrame = 65536
 const MaxBrandFrame = 2863104
-const Budget = 3 * time.Second
+
+// Budget is the per-request IPC deadline the product promises: 3 s.
+// Under the race detector (never shipped) code runs several times slower, so the
+// deadline scales by foundation.RaceScale; timing is proven by the normal `go test`,
+// and -race only looks for races (see the Makefile check-race target).
+const Budget = 3 * time.Second * foundation.RaceScale
 
 var errProtocol = errors.New("invalid frame")
 

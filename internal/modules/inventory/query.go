@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"infradesktop/internal/modules/access"
+	"infradesktop/internal/modules/foundation"
 	"strings"
 	"time"
 )
@@ -270,7 +271,8 @@ func contextCancelCode(ctx context.Context) Code {
 func (s *Service) persistAndFinishQuery(
 	ctx context.Context, j *RunningJob, result *Observation, fingerprint string, c Code,
 ) {
-	persistCtx, cancelPersist := context.WithTimeout(context.Background(), time.Second)
+	// 1 s to persist the result; stretched only under the race detector (foundation.RaceScale).
+	persistCtx, cancelPersist := context.WithTimeout(context.Background(), time.Second*foundation.RaceScale)
 	defer cancelPersist()
 	outcome := c
 	persisted := s.Authorized(persistCtx, j.Command, func(uint64) Code {

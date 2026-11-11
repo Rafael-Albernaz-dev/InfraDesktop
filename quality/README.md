@@ -4,6 +4,7 @@ Tudo o que barra código ruim no InfraDesktop mora aqui. As únicas exceções s
 
 - **Uma entrada:** `make quality` roda `quality/run.sh`, que executa todas as verificações e termina com uma tabela de id, status e tempo. O hook de pre-commit e o CI chamam o mesmo alvo.
 - **Catraca:** dívida antiga fica congelada nas bases de `quality/baselines/` e em `frontend/quality/quality-ratchet.json`. Ela pode diminuir, nunca crescer. Código tocado sai dentro da regra.
+- **Base Go enxuta e travada no ganho:** `quality-baseline.json` só tem chave de arquivo com dívida (acima de um limite do QG2/QG3). Chave sem dívida, de arquivo apagado ou com teto acima do medido reprova; `make quality-tighten` reescreve a base com a dívida que ainda existe, sem nunca acrescentar chave. Abaixo do limite, crescer não é dívida.
 
 ## Pastas
 
@@ -32,7 +33,7 @@ Tudo o que barra código ruim no InfraDesktop mora aqui. As únicas exceções s
 | QG2 | Tamanho | função ≤ 60 linhas; arquivo Go ≤ 500, `.tsx` ≤ 600, frontend ≤ 500; linha ≤ 140 | `make quality` (QG2-QG7, FE-LINT) | dividir por regra do domínio ou da tela, nunca em pedaços sem nome |
 | QG3 | Complexidade | ≤ 15 por função tocada | idem | extrair a regra com nome; mapa no lugar de ternário aninhado |
 | QG4 | Literal de domínio (papel, família, modo, código) fora do pacote dono | proibido | QG2-QG7 (Go), FE-LINT (`radio-domain`) | usar a constante do dono |
-| QG5 | Nome de teste por comportamento, nunca por slice (`L07`, `BF04`, `Piloto`…) | proibido | QG2-QG7 | renomear pelo que o teste prova |
+| QG5 | Nome de teste Go por comportamento, nunca por slice (`L0x…`, `BF0x`, `Focal`, `Piloto`, `Avulso`, `Live2`, `CPU90`) | proibido em teste tocado; os 14 antigos acima do limite drenam quando tocados | QG2-QG7 | renomear pelo que o teste prova |
 | G6 | Exceção legada (`legacyRatchetOnly` em `go/quality.go`) | não cresce | QG2-QG7 | tirar o arquivo da exceção quando ele entra na regra |
 | G7 | Duplicação Go | janelas ≤ teto em `go/qualitydup/baseline.json` | QG2-QG7 | extrair helper nomeado no pacote dono |
 | Catraca | Métrica de arquivo com dívida antiga | nunca piora; chave segue renomeação do Git | QG2-QG7 (Go), FE-LINT (frontend) | trazer o arquivo para dentro da regra |

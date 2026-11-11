@@ -77,7 +77,7 @@ func TestL06T3ContextPeakSevenDaysZeroUnknownAndQuota(t *testing.T) {
 		t.Fatal("unknown context invented zero/peak", g)
 	}
 }
-func TestL06T3MigrationElevenAtomicPreservesTen(t *testing.T) {
+func TestMigrationElevenAtomicPreservesTen(t *testing.T) {
 	j, _ := ppStoreSetup(t)
 	dropRadioFixtureSchema(t, j)
 	var before, after string
