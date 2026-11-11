@@ -15,7 +15,7 @@ const t3FastTrackCandidate = deviceparse.DeviceFastTrackCommand
 
 const t3PortsCandidate = deviceparse.DevicePortsCommand
 
-func TestL06T3DiagnosticSyntax(t *testing.T) {
+func TestDiagnosticSyntax(t *testing.T) {
 	for name, body := range map[string]string{"fasttrack-readonly": t3FastTrackCandidate, "ports-readonly": t3PortsCandidate} {
 		want := map[string]string{"fasttrack-readonly": "1528f8f5d4635f4401f9d21e80fee2596f68462c8d68ee3048170a6aec41ba96", "ports-readonly": "36b5341984112a15f8c50401f0925486ecb39528ab1fbe48f5a7a4a962526fab"}[name]
 		if fmt.Sprintf("%x", sha256.Sum256([]byte(body+"\n"))) != want {

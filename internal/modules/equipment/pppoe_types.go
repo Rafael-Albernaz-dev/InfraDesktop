@@ -2,11 +2,12 @@ package equipment
 
 import (
 	"context"
+	"infradesktop/internal/modules/foundation"
 	"time"
 )
 
 const (
-	PPPersistenceBudget          = 3 * time.Second
+	PPPersistenceBudget          = 3 * time.Second * foundation.RaceScale // stretched only under -race
 	TrafficRetention             = 5 * time.Minute
 	PPScope                      = "pppoe-active-v1"
 	PPMaxRows                    = 2048

@@ -20,6 +20,7 @@ import (
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
 
+	"infradesktop/internal/testsupport/testwait"
 	"os"
 	"path/filepath"
 	"strings"
@@ -204,7 +205,7 @@ func (s *ppExportJourney) collectDiagnostic(t *testing.T, scope string) *equipme
 	if response.Code != "OK" || response.Data == nil || response.Data.Job == nil {
 		t.Fatal("diagnostic start", response)
 	}
-	until := time.Now().Add(3 * time.Second)
+	until := testwait.Limit(t)
 	for time.Now().Before(until) {
 		status := s.app.PPPoEDiagnosticStatus(s.profile, s.activation, response.Data.Job.ID)
 		if status.Code != "OK" {

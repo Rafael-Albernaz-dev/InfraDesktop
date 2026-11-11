@@ -72,7 +72,7 @@ func TestL06TTrafficThroughIPCStopAndCancel(t *testing.T) {
 		})
 	}
 }
-func TestL06TTrafficSixteenWorstRowsFitRealFrame(t *testing.T) {
+func TestTrafficSixteenWorstRowsFitRealFrame(t *testing.T) {
 	n := 1e20
 	rate := &equipment.PPRate{Min: n, Max: n + 100000}
 	row := equipment.PPReadRow{Kind: "session", RowID: uuid.NewString(), Login: strings.Repeat("x", 256), Download: rate, Upload: rate, Traffic: &equipment.PPTraffic{DownloadBytes: "18446744073709551615", UploadBytes: "18446744073709551615", CoveredNS: 60000000000, CoveredMinNS: 50000000000, Gaps: 13, AverageDownload: rate, AverageUpload: rate, PeakDownload: rate, PeakUpload: rate}}
@@ -96,7 +96,7 @@ func TestL06TTrafficSixteenWorstRowsFitRealFrame(t *testing.T) {
 }
 func lenMustJSON(v any) int { b, _ := json.Marshal(v); return len(b) }
 
-func TestL06TTrafficInterruptedSSHRetainsGap(t *testing.T) {
+func TestTrafficInterruptedSSHRetainsGap(t *testing.T) {
 	var calls atomic.Int32
 	j := newPPJourney(t, sshfixture.Config{Family: "v6", PPRows: 1, RealTime: true, DisconnectCommand: func(cmd string) bool { return strings.Contains(cmd, `:put ("B\t1\t"`) && calls.Add(1) >= 3 }})
 	o := j.collect(uuid.NewString())

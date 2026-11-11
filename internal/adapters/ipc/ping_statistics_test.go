@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestL06T3PingPreviousTenThroughRealIPC(t *testing.T) {
+func TestPingPreviousTenThroughRealIPC(t *testing.T) {
 	j := newPPJourney(t, sshfixture.Config{RealTime: true, PPRows: 1})
 	o := j.collect(uuid.NewString())
 	row := j.call("pppoe.sessions-list", equipment.PPInput{DeviceID: j.device, ObservationID: o.ID}, foundation.OK).Data.PPPoE.Rows[0]

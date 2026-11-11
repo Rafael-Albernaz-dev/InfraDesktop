@@ -14,6 +14,7 @@ import (
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
+	"infradesktop/internal/testsupport/testwait"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -42,7 +43,7 @@ func (j *ppJourney) diagnostic(in equipment.PPInput, want equipment.Code, captur
 	}
 	r := j.call("pppoe.diagnostic-start", in, foundation.OK)
 	id := r.Data.PPPoE.Job.ID
-	deadline := time.Now().Add(3 * time.Second)
+	deadline := testwait.Limit(j.t)
 	for time.Now().Before(deadline) {
 		r = j.call("pppoe.diagnostic-status", equipment.PPInput{JobID: id}, foundation.OK)
 		job := r.Data.PPPoE.Job

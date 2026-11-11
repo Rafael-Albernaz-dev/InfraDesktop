@@ -11,6 +11,7 @@ import (
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
+	"infradesktop/internal/testsupport/testwait"
 	"sync"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func setupEquipment(t *testing.T, j *journey, s *equipment.Service, port int) (e
 
 func awaitJob(t *testing.T, s *equipment.Service, q equipment.Command, id string) equipment.Job {
 	t.Helper()
-	deadline := time.Now().Add(3 * time.Second)
+	deadline := testwait.Limit(t)
 	q.Op = "device.query-status"
 	q.JobID = id
 	for time.Now().Before(deadline) {
@@ -167,7 +168,7 @@ func TestEquipmentInspectNonblockingAndRealTotalDeadline(t *testing.T) {
 	t.Fatal("job exceeded total deadline")
 }
 
-func TestFocalMissingCompanyKeyPreservesInventory(t *testing.T) {
+func TestMissingCompanyKeyPreservesInventory(t *testing.T) {
 	for _, sql := range []string{"DELETE FROM vault_key", "UPDATE vault_key SET envelope=x''"} {
 		t.Run(sql, func(t *testing.T) {
 			j := newJourney(t)

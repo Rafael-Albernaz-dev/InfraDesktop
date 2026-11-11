@@ -135,6 +135,10 @@ func remapHeadKeys[T any](previous map[string]T, prefix string) (map[string]T, e
 	}
 	return result, nil
 }
+
+// StagedRenames lists the renames staged against HEAD as [from, to] pairs.
+func StagedRenames() ([][2]string, error) { return stagedHeadRenames() }
+
 func stagedHeadRenames() ([][2]string, error) {
 	raw, err := gitOutput("diff", "--cached", "-M", "--name-status", "-z", "--diff-filter=R", "HEAD")
 	if err != nil || len(raw) == 0 {

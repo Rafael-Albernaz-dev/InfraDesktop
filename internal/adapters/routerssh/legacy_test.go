@@ -86,7 +86,7 @@ func TestL07LegacyNegotiation(t *testing.T) {
 	}
 }
 
-func TestL07OnlyObservedLegacyAlgorithmsFollowModern(t *testing.T) {
+func TestOnlyObservedLegacyAlgorithmsFollowModern(t *testing.T) {
 	safe, unsafe := ssh.SupportedAlgorithms(), ssh.InsecureAlgorithms()
 	c := config("synthetic")
 	if !reflect.DeepEqual(c.KeyExchanges, append(safe.KeyExchanges, ssh.InsecureKeyExchangeDH14SHA1)) || !reflect.DeepEqual(c.HostKeyAlgorithms, append(safe.HostKeys, ssh.KeyAlgoRSA)) || !reflect.DeepEqual(c.Ciphers, safe.Ciphers) || !reflect.DeepEqual(c.MACs, safe.MACs) {

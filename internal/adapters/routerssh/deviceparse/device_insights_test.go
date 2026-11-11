@@ -32,7 +32,7 @@ func TestRealFastTrackAndPorts(t *testing.T) {
 		assertRealPortNegotiation(t, rows)
 	}
 }
-func TestL06T3PortHalfFullAndCollectorFailure(t *testing.T) {
+func TestPortHalfFullAndCollectorFailure(t *testing.T) {
 	for _, duplex := range []string{"false", "true"} {
 		text := "T3E\t1\t6.49.18\nE\tX\tlink-ok\t100Mbps\t" + duplex + "\t33\nD\t00:00:01\t6\t6\nZ\t1\tcomplete\n"
 		rows, c := ParseDevicePorts(text)

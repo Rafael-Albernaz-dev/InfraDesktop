@@ -151,7 +151,7 @@ func TestL06T2RetentionAndBaseQuotaPriority(t *testing.T) {
 
 // Migration nine atomicity: see migration_nine_test.go.
 
-func TestL06T2HealthSourceAndPackageProjectionPersist(t *testing.T) {
+func TestHealthSourceAndPackageProjectionPersist(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	ctx := context.Background()
 	at := time.Now().UTC().Add(-10 * time.Second)
@@ -223,7 +223,7 @@ func TestL06T2GlobalPackageDivergenceIncludesOtherPage(t *testing.T) {
 	}
 
 }
-func TestL06T2CursorCoversInventoryAndTemporalWindow(t *testing.T) {
+func TestCursorCoversInventoryAndTemporalWindow(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	ctx := context.Background()
 	original := monitoringNow
@@ -253,7 +253,7 @@ func TestL06T2CursorCoversInventoryAndTemporalWindow(t *testing.T) {
 	}
 }
 
-func TestL06T2FlappingOverflowIsNotACompletePrefix(t *testing.T) {
+func TestFlappingOverflowIsNotACompletePrefix(t *testing.T) {
 	j, target := ppStoreSetup(t)
 	ctx := context.Background()
 	tx, e := j.st.unit.Begin()

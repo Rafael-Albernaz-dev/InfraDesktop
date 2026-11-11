@@ -6,6 +6,7 @@ import (
 	"infradesktop/internal/modules/equipment"
 	"infradesktop/internal/modules/foundation"
 	"infradesktop/internal/testsupport/sshfixture"
+	"infradesktop/internal/testsupport/testwait"
 	"os"
 	"path/filepath"
 	"strings"
@@ -131,7 +132,7 @@ func (f *unsupportedIPCScenario) finish(t *testing.T, in equipment.RadioInput) *
 	t.Helper()
 	v := f.call(t, "radio.start", in)
 	id := v.Job.ID
-	until := time.Now().Add(15 * time.Second)
+	until := testwait.Limit(t)
 	for time.Now().Before(until) {
 		v = f.call(t, "radio.status", equipment.RadioInput{JobID: id})
 		if v.Job.State != "RUNNING" {

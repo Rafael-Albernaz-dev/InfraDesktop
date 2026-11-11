@@ -13,7 +13,7 @@ import (
 
 // Every exported collector command must generate a reviewable diagnostic and pass
 // the RouterOS syntax guard, radio commands included.
-func TestL06V7EveryExportedCollectorHasDiagnostic(t *testing.T) {
+func TestEveryExportedCollectorHasDiagnostic(t *testing.T) {
 	commands := diagnosticCommands(t)
 	for name, body := range radioDiagnosticCommands() {
 		commands[name] = body
