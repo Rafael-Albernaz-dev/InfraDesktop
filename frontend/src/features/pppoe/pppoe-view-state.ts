@@ -53,7 +53,6 @@ function usePPPoEListState() {
   const [query, setQuery] = useState(FRESH_QUERY);
   const [cursor, setCursor] = useState('');
   const [next, setNext] = useState('');
-  const [showPlan, setShowPlan] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   return {
     rows,
@@ -68,8 +67,6 @@ function usePPPoEListState() {
     setCursor,
     next,
     setNext,
-    showPlan,
-    setShowPlan,
     history,
     setHistory,
   };

@@ -1,3 +1,4 @@
+import { waitForSessionReady } from '../../shared/testing/session-ready';
 import {
   act,
   fireEvent,
@@ -101,6 +102,7 @@ it('budget-omitted context preserves sessions, explains detail and avoids unknow
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   fireEvent.click(screen.getByText(/Mais informações/));
   await screen.findByText(
@@ -174,6 +176,7 @@ it.each(['success', 'error', 'reject'] as const)(
     });
     trigger.focus();
     fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
     const search = screen.getByLabelText('Buscar sessões');
     search.focus();
     fireEvent.change(search, { target: { value: 'nova intenção' } });
@@ -208,11 +211,12 @@ it('A-H01: returning and changing the filter invalidates a pending detail, while
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
-  await screen.findByRole('region', { name: 'Detalhes da sessão' });
+  await waitForSessionReady();
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.change(screen.getByLabelText('Buscar sessões'), {
     target: { value: 'nova intenção' },
   });
@@ -223,10 +227,9 @@ it('A-H01: returning and changing the filter invalidates a pending detail, while
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
-  expect(
-    await screen.findByRole('region', { name: 'Detalhes da sessão' }),
-  ).toHaveTextContent('row-2');
+  expect(await waitForSessionReady()).toHaveTextContent('row-2');
 });
 it('A-H01: changing comparison reference rejects a late pair before requesting its second leg', async () => {
   const old = deferred<PPResult>();
@@ -322,7 +325,7 @@ it('A-H01: returning to the list and clearing filters keeps focus on search', as
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
-  await screen.findByRole('region', { name: 'Detalhes da sessão' });
+  await waitForSessionReady();
   fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   await act(async () =>
     fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' })),
@@ -342,10 +345,12 @@ it('A-H01: newer detail wins when two queries resolve in reverse order', async (
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  fireEvent.click(screen.getByRole('button', { name: 'Voltar' }));
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
   await act(async () => second.resolve(result({ rows: [rows[1]], total: 1 })));
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   expect(
     screen.getByRole('region', { name: 'Detalhes da sessão' }),
@@ -480,7 +485,7 @@ it('filters and recovers locally, keeps page and detail IDs immutable', async ()
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-2' }),
   );
-  await screen.findByRole('region', { name: 'Detalhes da sessão' });
+  await waitForSessionReady();
   expect(api.detail).toHaveBeenCalledWith(
     'company',
     'active',

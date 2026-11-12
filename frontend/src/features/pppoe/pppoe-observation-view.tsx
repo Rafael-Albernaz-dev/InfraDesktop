@@ -1,7 +1,6 @@
 import type { PPRow } from '../../platform/wails/presentation';
 import type { ReactNode } from 'react';
 
-import { pppoeAPI as api } from '../../platform/wails/presentation';
 import { CSVNotice } from './pppoe-csv-notice';
 import { DeviceMonitoring } from './device-monitoring';
 import { PPPoEDiagnostics } from './pppoe-diagnostics';
@@ -47,28 +46,14 @@ function PPPoESessionsSection(p: {
         deviceId={s.device.id}
         observation={s.current.observation_id}
         openEquipment={p.openEquipment}
-        showPlan={s.showPlan}
         fastTrack={s.fastTrack}
         contextOmitted={s.current.context_omitted}
         onDetail={(row, trigger) => {
           detailTriggerRef.current = trigger;
           p.onFocusOrigin(trigger);
-          void s.runDetail(
-            () =>
-              api.detail(
-                s.profile,
-                s.activation,
-                s.device.id,
-                s.current!.observation_id,
-                row.row_id,
-              ),
-            (r) => {
-              s.setPair(undefined);
-              s.setDetailTab('traffic');
-              s.select(r.data?.rows?.[0]);
-              if (r.data?.rows?.[0]) p.onOpenSession(r.data.rows[0]);
-            },
-          );
+          s.select(undefined);
+          s.setError('');
+          p.onOpenSession(row);
         }}
       />
       {s.pageState === 'ready' && !s.rows.length && (

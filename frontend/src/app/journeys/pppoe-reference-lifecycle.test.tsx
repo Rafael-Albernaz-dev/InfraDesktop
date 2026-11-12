@@ -1,3 +1,4 @@
+import { waitForSessionReady } from '../../shared/testing/session-ready';
 import {
   act,
   fireEvent,
@@ -455,6 +456,7 @@ it('fields, offline reason and previous page use stored data', async () => {
   fireEvent.click(
     screen.getByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   await screen.findByText('Sem leitura: sessão OFFLINE');
   expect(screen.getByText('Caller ID').nextElementSibling).toHaveTextContent(

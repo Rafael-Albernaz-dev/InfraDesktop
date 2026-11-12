@@ -1,3 +1,4 @@
+import { NetworkBadge } from '../features/equipment/network-pulse';
 import { useEffect, useRef, useState } from 'react';
 import { DesktopBreadcrumbs } from './desktop-breadcrumbs';
 import type { DesktopProps, RouteName } from '../features/access/desktop-model';
@@ -36,9 +37,7 @@ export function Sidebar({
   const company = p.companies.find((c) => c.id === p.activeProfile);
   return (
     <nav className="side" aria-label="Menu">
-      <div className="nome">
-        <ProductBrand />
-      </div>
+      <SidebarBrand connected={p.connected} />
       <a
         href="#empresas"
         className="emp"
@@ -168,5 +167,16 @@ export function Topbar({ p, route, detailTitle }: TopbarProps) {
         profileMenu={profileMenu}
       />
     </header>
+  );
+}
+
+function SidebarBrand({ connected }: { connected: boolean }) {
+  return (
+    <>
+      <div className="nome">
+        <ProductBrand />
+      </div>
+      <NetworkBadge connected={connected} />
+    </>
   );
 }

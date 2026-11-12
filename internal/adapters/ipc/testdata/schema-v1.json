@@ -597,7 +597,7 @@
       "privacy": "router-side allowlisted projections; no secret, raw log, whole config, debug or reset; no inferred per-session VLAN or rejection cause",
       "export": "freeze diagnostic IDs/scope/source; sanitize before IPC; shared16386aliases/2MiB; revalidate pages and publication"
     },
-    "session_context": "optional stable context; unique login/caller/IP/uptime association; no rates; migration8 additive index; unavailable never zero; optional enrichment yields to base sessions at SSH/row/observation/company budgets; observation.context_omitted=true marks omission; context-counts returns current marker without asserting groups; CSV contexto column discloses omission; secret_state active/disabled/ambiguous/none/unavailable; profile only for active unique local secret; dynamic queue limit upload/download order; legacy missing state never attributes active profile",
+    "session_context": "optional stable context; unique login/caller/IP/uptime association; no rates; migration8 additive index; unavailable never zero; optional enrichment yields to base sessions at SSH/row/observation/company budgets; observation.context_omitted=true marks omission; context-counts returns current marker without asserting groups; CSV contexto column discloses omission; secret_state active/disabled/ambiguous/none/unavailable; profile for the unique local secret, active or disabled, or the unique active one; profile rate-limit as profile_upload_limit/profile_download_limit; dynamic queue limit upload/download order; legacy missing state never attributes active profile",
     "limited_reads": {
       "scopes": [
         "bandwidth",

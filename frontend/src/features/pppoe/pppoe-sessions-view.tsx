@@ -1,8 +1,8 @@
+import { sessionPlan, planDiffers, appliedSpeed } from './pppoe-plan';
 import type { PPRow } from '../../platform/wails/presentation';
 import {
   exactRate,
   formatDate,
-  formatRate,
   uptimeTitle,
 } from '../equipment/network-format';
 import { FRESH_QUERY } from './pppoe-context-actions';
@@ -95,10 +95,8 @@ export function PPPoEObsActions(p: {
 function SortAndCheckFilters(p: {
   query: PPQuery;
   change: (q: Partial<PPQuery>) => void;
-  showPlan: boolean;
-  setShowPlan: (v: boolean) => void;
 }) {
-  const { query, change, showPlan, setShowPlan } = p;
+  const { query, change } = p;
   return (
     <>
       <label>
@@ -129,28 +127,18 @@ function SortAndCheckFilters(p: {
         />
         Somente duplicados
       </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={showPlan}
-          onChange={(e) => setShowPlan(e.target.checked)}
-        />
-        Mostrar plano/limite
-      </label>
     </>
   );
 }
 export function PPPoESessionFilters(p: {
   query: PPQuery;
   change: (q: Partial<PPQuery>) => void;
-  showPlan: boolean;
-  setShowPlan: (v: boolean) => void;
   setQuery: (q: PPQuery) => void;
   setCursor: (c: string) => void;
   setHistory: (h: string[]) => void;
   searchControlRef: React.RefObject<HTMLInputElement | null>;
 }) {
-  const { query, change, showPlan, setShowPlan, searchControlRef } = p;
+  const { query, change, searchControlRef } = p;
   return (
     <div className="pppoe-filters">
       <label className="sr-only" htmlFor="session-search">
@@ -172,12 +160,7 @@ export function PPPoESessionFilters(p: {
         <option value="ONLINE">ONLINE</option>
         <option value="OFFLINE">OFFLINE</option>
       </Select>
-      <SortAndCheckFilters
-        query={query}
-        change={change}
-        showPlan={showPlan}
-        setShowPlan={setShowPlan}
-      />
+      <SortAndCheckFilters query={query} change={change} />
       {(query.search || query.duplicates_only || query.state) && (
         <Button
           type="submit"
@@ -197,33 +180,29 @@ export function PPPoESessionFilters(p: {
 function SessionPlanCell({
   row,
   fastTrack,
-  showPlan,
 }: {
   row: PPRow;
   fastTrack?: number;
-  showPlan: boolean;
 }) {
   const dl = row.context?.download_limit,
     ul = row.context?.upload_limit;
   return (
     <td title={`${exactRate(dl)} download / ${exactRate(ul)} upload`}>
-      {row.context?.profile || 'Não informado nesta leitura'}
-      {showPlan && (
-        <small className="cell-sub">
-          {dl !== undefined && ul !== undefined
-            ? `${formatRate(dl)} / ${formatRate(ul)}`
-            : 'Não informado nesta leitura'}
-          {fastTrack !== undefined &&
-            fastTrack > 0 &&
-            ' · limite lido, não garantido'}
-        </small>
-      )}
+      {sessionPlan(row.context)}
+      <small
+        className={`cell-sub${planDiffers(row.context) ? ' diverge' : ''}`}
+      >
+        {appliedSpeed(row.context)}
+        {planDiffers(row.context) && ' · diferente do plano'}
+        {fastTrack !== undefined &&
+          fastTrack > 0 &&
+          ' · limite lido, não garantido'}
+      </small>
     </td>
   );
 }
 type SessionsTableProps = {
   rows: PPRow[];
-  showPlan: boolean;
   fastTrack?: number;
   contextOmitted?: boolean;
   profile?: string;
@@ -249,11 +228,7 @@ function PPPoESessionRowItem(
         </Button>
       </td>
       <td>{row.address || 'Não informado nesta leitura'}</td>
-      <SessionPlanCell
-        row={row}
-        fastTrack={p.fastTrack}
-        showPlan={p.showPlan}
-      />
+      <SessionPlanCell row={row} fastTrack={p.fastTrack} />
       <td title={uptimeTitle(row.uptime)}>
         {row.state === 'OFFLINE' ? '—' : formatPPUptime(row.uptime, true)}
       </td>

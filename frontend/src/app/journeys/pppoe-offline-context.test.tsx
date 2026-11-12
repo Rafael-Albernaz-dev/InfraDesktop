@@ -1,3 +1,4 @@
+import { waitForSessionReady } from '../../shared/testing/session-ready';
 import {
   fireEvent,
   render,
@@ -98,6 +99,7 @@ it('stable context shows negotiated IPv6 and unavailable fields without invented
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   fireEvent.click(screen.getByText(/Mais informações/));
   expect(await screen.findByText('Sim')).toBeInTheDocument();
@@ -117,7 +119,6 @@ it('stable context shows negotiated IPv6 and unavailable fields without invented
   ).toEqual(['100', 'service', '2', 'Não informado nesta leitura']);
 });
 it.each([
-  ['disabled', 'Secret local desativado: a autenticação não vem dele'],
   ['ambiguous', 'Vários secrets locais ativos: perfil ambíguo'],
   ['none', 'Nenhum secret local para este login'],
   ['unavailable', 'Não lido ou falha na leitura do secret local'],
@@ -144,13 +145,14 @@ it.each([
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   fireEvent.click(screen.getByText(/Mais informações/));
   expect(await screen.findByText(label)).toBeInTheDocument();
   expect(screen.queryByText('disabled-default-canary')).not.toBeInTheDocument();
   expect(screen.queryByText('Perfil do secret ativo')).not.toBeInTheDocument();
   expect(
-    screen.getByText('Limite de plano (fila dinâmica) — download / upload'),
+    screen.getAllByText('Velocidade aplicada agora')[0],
   ).toBeInTheDocument();
   expect(
     screen
@@ -251,6 +253,7 @@ it('FastTrack marks every displayed plan limit without a router action', async (
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar duplicado row-1' }),
   );
+  await waitForSessionReady();
   fireEvent.click(await screen.findByRole('tab', { name: 'Informações' }));
   expect(
     (await screen.findAllByText('limite lido, não garantido')).find((element) =>
@@ -306,11 +309,13 @@ it('VLAN peak uses raw counts, a configurable drop threshold and optional plan c
     target: { value: '75' },
   });
   expect(screen.queryByText('· Queda local detectada')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByLabelText('Mostrar plano/limite'));
+  expect(
+    screen.queryByLabelText('Mostrar plano/limite'),
+  ).not.toBeInTheDocument();
   expect(
     screen.getByRole('columnheader', { name: 'Plano' }),
   ).toBeInTheDocument();
-  expect(screen.getByText('100 Mbps / 50 Mbps').closest('td')).toHaveAttribute(
+  expect(screen.getByText('100 / 50 Mbps').closest('td')).toHaveAttribute(
     'title',
     '100.000.000 bit/s download / 50.000.000 bit/s upload',
   );

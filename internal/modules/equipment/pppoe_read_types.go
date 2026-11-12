@@ -11,17 +11,19 @@ import (
 )
 
 type PPContext struct {
-	Association     string `json:"association"`
-	Service         string `json:"service,omitempty"`
-	Interface       string `json:"interface,omitempty"`
-	VLAN            *int   `json:"vlan,omitempty"`
-	IPv6            *bool  `json:"ipv6,omitempty"`
-	DelegatedPrefix string `json:"delegated_prefix,omitempty"`
-	PDStatus        string `json:"pd_status,omitempty"`
-	Profile         string `json:"profile,omitempty"`
-	SecretState     string `json:"secret_state,omitempty"`
-	UploadLimit     string `json:"upload_limit,omitempty"`
-	DownloadLimit   string `json:"download_limit,omitempty"`
+	ProfileUploadLimit   string `json:"profile_upload_limit,omitempty"`
+	ProfileDownloadLimit string `json:"profile_download_limit,omitempty"`
+	Association          string `json:"association"`
+	Service              string `json:"service,omitempty"`
+	Interface            string `json:"interface,omitempty"`
+	VLAN                 *int   `json:"vlan,omitempty"`
+	IPv6                 *bool  `json:"ipv6,omitempty"`
+	DelegatedPrefix      string `json:"delegated_prefix,omitempty"`
+	PDStatus             string `json:"pd_status,omitempty"`
+	Profile              string `json:"profile,omitempty"`
+	SecretState          string `json:"secret_state,omitempty"`
+	UploadLimit          string `json:"upload_limit,omitempty"`
+	DownloadLimit        string `json:"download_limit,omitempty"`
 }
 
 type PPTunnel struct {

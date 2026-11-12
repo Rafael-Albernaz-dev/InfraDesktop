@@ -1,3 +1,4 @@
+import { sessionPlan } from './pppoe-plan';
 import type { PPRow } from '../../platform/wails/presentation';
 import { useEffect, useState } from 'react';
 import { readingAge } from '../equipment/equipment-reading-format';
@@ -100,13 +101,9 @@ export function SessionContext({
         {SECRET_STATE_LABELS[c.secret_state || ''] ||
           'Não lido ou falha na leitura do secret local'}
       </dd>
-      {c.secret_state === 'active' && (
-        <>
-          <dt>Perfil do secret ativo</dt>
-          <dd>{c.profile || 'Não informado nesta leitura'}</dd>
-        </>
-      )}
-      <dt>Limite de plano (fila dinâmica) — download / upload</dt>
+      <dt>Plano (cadastro do SGP)</dt>
+      <dd>{sessionPlan(c)}</dd>
+      <dt>Velocidade aplicada agora</dt>
       <dd title={planTitle}>
         {planText}
         {fastTrack !== undefined && fastTrack > 0 && (

@@ -1,3 +1,4 @@
+import { waitForSessionReady } from '../../shared/testing/session-ready';
 import {
   act,
   cleanup,
@@ -182,9 +183,7 @@ it('tela da sessão mede só a linha selecionada e apresenta o resultado', async
   fireEvent.click(
     await screen.findByRole('button', { name: 'Detalhar cliente-1 *1' }),
   );
-  const panel = within(
-    await screen.findByRole('region', { name: 'Detalhes da sessão' }),
-  );
+  const panel = within(await waitForSessionReady());
   fireEvent.click(await panel.findByRole('button', { name: 'Medir banda' }));
   await waitFor(() =>
     expect(

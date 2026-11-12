@@ -26,12 +26,6 @@ export function Summary({
     ['Modelo', r.board],
     ['Versão', r.version],
     ['Uptime', formatRouterDuration(r.uptime)],
-    [
-      'Origem da leitura',
-      r.quality === 'complete'
-        ? 'Resumo completo'
-        : 'Leitura com parte limitada',
-    ],
   ];
   return (
     <div className="grid">

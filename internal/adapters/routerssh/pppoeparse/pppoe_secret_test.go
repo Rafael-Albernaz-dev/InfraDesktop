@@ -13,7 +13,7 @@ func TestSecretStateProjection(t *testing.T) {
 	for _, version := range []string{"6.49.18", "7.14.3"} {
 		for _, state := range []string{"disabled", "active", "ambiguous", "none", "unavailable"} {
 			body := "C\t1\t" + version + "\t2d1h1s\nT\t*A\t<pppoe-synthetic>\tsynthetic\t02:00:00:00:00:01\t198.5" +
-				"1.100.1\t1h1s\tservice\tether1\t?\t?\t?\tdefault\t5M/10M\t\tunavailable\t" + state + "\nZ\t1\tcomplete\t2d1h1s\n"
+				"1.100.1\t1h1s\tservice\tether1\t?\t?\t?\tdefault\t5M/10M\t\tunavailable\t" + state + "\t\nZ\t1\tcomplete\t2d1h1s\n"
 			rows, _, _, code := pppoeparse.ParsePPContext(body)
 			if code != equipment.OK || len(rows) != 1 {
 				t.Fatalf("%s/%s: explicit secret state rejected: %s", version, state, code)
@@ -21,7 +21,7 @@ func TestSecretStateProjection(t *testing.T) {
 			b, _ := json.Marshal(rows[0].Context)
 			var fields map[string]any
 			json.Unmarshal(b, &fields)
-			if fields["secret_state"] != state || (state == "active") != (rows[0].Context.Profile == "default") {
+			if fields["secret_state"] != state || (state == "active" || state == "disabled") != (rows[0].Context.Profile == "default") {
 				t.Fatalf("state/profile attribution %s: %s", state, b)
 			}
 			if rows[0].Context.UploadLimit != "5000000" || rows[0].Context.DownloadLimit != "10000000" {
@@ -41,7 +41,7 @@ func TestSecretScriptFiltersActiveBeforeProfile(t *testing.T) {
 	s := pppoeparse.PPContextCommand
 	if !strings.Contains(s, `name=$ppContextUser and disabled!=yes`) || !strings.Contains(s,
 		`:set ppContextSecretState "disabled"`) || !strings.Contains(s, `:set ppContextSecretState "ambiguous"`) {
-		t.Fatal("disabled secrets still eligible for profile or state not projected")
+		t.Fatal("unique secret selection or state not projected")
 	}
 	for _, forbidden := range []string{"password", "comment", "/ppp secret print"} {
 		if strings.Contains(s, forbidden) {

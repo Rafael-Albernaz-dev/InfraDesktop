@@ -1,3 +1,4 @@
+import { waitForSessionReady } from '../shared/testing/session-ready';
 import {
   fireEvent,
   render,
@@ -327,9 +328,7 @@ it('mantém o percurso de conta, empresa, cadastro, credencial, ficha e sessão 
       name: 'Detalhar cliente-sintetico *1',
     }),
   );
-  const session = within(
-    await screen.findByRole('region', { name: 'Detalhes da sessão' }),
-  );
+  const session = within(await waitForSessionReady());
   await waitFor(() =>
     expect(bindings.StartPPPoERead).toHaveBeenCalledWith(
       'company',

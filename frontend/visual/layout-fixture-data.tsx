@@ -32,8 +32,12 @@ export const sessions = Array.from({ length: 25 }, (_, i) => ({
     vlan: 100,
     service: 'pppoe-0001',
     interface: 'ether1',
-    download_limit: '100000000',
-    upload_limit: '20000000',
+    profile_download_limit: ['100000000', '50000000', '200000000'][i % 3],
+    profile_upload_limit: ['20000000', '10000000', '40000000'][i % 3],
+    download_limit:
+      i === 4 ? '1000000' : ['100000000', '50000000', '200000000'][i % 3],
+    upload_limit:
+      i === 4 ? '1000000' : ['20000000', '10000000', '40000000'][i % 3],
   },
 }));
 export const curve = [

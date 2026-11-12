@@ -1,3 +1,6 @@
+import { DataBlock } from '../../shared/ui/DataBlock';
+import { DataTable } from '../../shared/ui/DataTable';
+import { equipmentMessage } from '../equipment/equipment-api';
 export { RadioIndexCredentialErrors } from './radio-link-credential-errors';
 import { Button } from '../../shared/ui/Button';
 import type { RadioLinkState } from './radio-link-state';
@@ -62,8 +65,58 @@ export function RadioLinkMatchReason({ state }: { state: RadioLinkState }) {
   return (
     <>
       {!link && !editing && !radio.busy && radio.view?.match_reason && (
-        <p role="status">{radio.view.match_reason}</p>
+        <p
+          role="status"
+          className={
+            radio.view.proposal && !state.index?.complete
+              ? 'diverge'
+              : undefined
+          }
+        >
+          {radio.view.match_reason}
+        </p>
       )}
     </>
+  );
+}
+
+export function RadioIndexTable({ state }: { state: RadioLinkState }) {
+  const { index, now, radio, editing } = state;
+  if (!index || editing || radio.busy) return null;
+  const age = Math.max(
+    0,
+    Math.floor((now - Date.parse(index.observed_at)) / 60000),
+  );
+  return (
+    <DataBlock
+      title="Índice de APs"
+      source="local"
+      age={`há ${age} min`}
+      data={{
+        state: 'ready',
+        content: (
+          <DataTable>
+            <thead>
+              <tr>
+                <th>AP</th>
+                <th>Clientes</th>
+                <th>Leitura</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(index.targets).map(([id, code]) => (
+                <tr key={id}>
+                  <td>{index.labels?.[id] || id}</td>
+                  <td>{code === 'OK' ? 'Não informado nesta leitura' : '—'}</td>
+                  <td className={code === 'OK' ? undefined : 'diverge'}>
+                    {code === 'OK' ? `há ${age} min` : equipmentMessage(code)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        ),
+      }}
+    />
   );
 }

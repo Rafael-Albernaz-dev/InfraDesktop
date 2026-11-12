@@ -1,3 +1,4 @@
+import { sessionPlan, planDiffers } from './pppoe-plan';
 import type { PPRow } from '../../platform/wails/presentation';
 import type { Device } from '../equipment/equipment-api';
 import {
@@ -39,10 +40,7 @@ function authRows(p: SessionAuthInfoProps): InformationRows {
         {selected.state === 'OFFLINE' && <OfflineEvidence row={selected} />}
       </details>,
     ],
-    [
-      'Plano',
-      associated && c?.secret_state === 'active' ? c.profile || known : known,
-    ],
+    ['Plano (cadastro do SGP)', associated ? sessionPlan(c) : known],
   ];
 }
 function planRows(p: SessionAuthInfoProps): InformationRows {
@@ -57,8 +55,9 @@ function planRows(p: SessionAuthInfoProps): InformationRows {
       : known;
   return [
     [
-      'Limite de plano',
+      'Velocidade aplicada agora',
       <span
+        className={planDiffers(c) ? 'diverge' : undefined}
         title={
           associated && c
             ? `${exactRate(c.download_limit)} download / ${exactRate(c.upload_limit)} upload`
@@ -66,6 +65,7 @@ function planRows(p: SessionAuthInfoProps): InformationRows {
         }
       >
         {limits}
+        {planDiffers(c) && ' · diferente do plano'}
         {p.fastTrack !== undefined && p.fastTrack > 0 && (
           <small className="cell-sub">limite lido, não garantido</small>
         )}

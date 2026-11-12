@@ -2,6 +2,9 @@ package radio
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -28,15 +31,17 @@ func (s *Service) radioIndexView(q Command, row *PPRow, st State) RadioView {
 		return v
 	}
 	v.Proposal, v.MatchReason = s.radioProposalForEntry(q, row, st, matches[0])
+	if v.Proposal != nil {
+		if warning := radioIndexFailureWarning(index); warning != "" {
+			v.MatchReason = warning
+		}
+	}
 	return v
 }
 func (s *Service) radioIndexReason(index RadioIndex, st State) string {
 	at, err := time.Parse(time.RFC3339Nano, index.At)
 	if err != nil || s.Now().Sub(at) > RadioIndexTTL || s.Now().Before(at) || index.Context != radioIndexContext(st) {
 		return "Índice antigo ou inventário alterado. Atualize antes de confirmar."
-	}
-	if !index.Complete {
-		return "Índice incompleto: há APs sem leitura. Atualize ou use o vínculo manual."
 	}
 	return ""
 }
@@ -91,4 +96,22 @@ func (s *Service) currentRadioProposalFamily(q Command, d *Device) (*RadioReadin
 		return nil, nil, Unavailable
 	}
 	return store.RadioCurrent(context.Background(), q.Scope.Profile, d.ID)
+}
+
+func radioIndexFailureWarning(index RadioIndex) string {
+	failures := []string{}
+	for id, code := range index.Targets {
+		if code != OK {
+			failures = append(failures, index.Labels[id]+", "+string(code))
+		}
+	}
+	if len(failures) == 0 {
+		return ""
+	}
+	sort.Strings(failures)
+	count := len(failures)
+	if count > RadioPageSize {
+		failures = append(failures[:RadioPageSize], "demais APs nas páginas do índice")
+	}
+	return fmt.Sprintf("%d AP não respondeu: %s. A sugestão vem dos APs que responderam", count, strings.Join(failures, "; "))
 }

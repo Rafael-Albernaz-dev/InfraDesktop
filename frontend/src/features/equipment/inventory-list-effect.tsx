@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { NetworkPulse } from './network-pulse-context';
+import { useContext, useEffect } from 'react';
 import type { Device } from './equipment-api';
 import { equipmentAPI as api, equipmentMessage } from './equipment-api';
 import { useLatestRef } from '../../shared/hooks/use-latest-ref';
@@ -45,7 +46,11 @@ function listFilters(p: UseDeviceListEffectProps) {
     model: p.modelFilter,
   };
 }
-async function readList(p: UseDeviceListEffectProps, current: () => boolean) {
+async function readList(
+  p: UseDeviceListEffectProps,
+  current: () => boolean,
+  publish: (pulse: string) => void,
+) {
   try {
     const filters = listFilters(p);
     const args = [
@@ -65,6 +70,7 @@ async function readList(p: UseDeviceListEffectProps, current: () => boolean) {
     const list = r.data.devices || [];
     p.setDevices(list);
     p.setPulseNetwork(r.data.pulse_network || '');
+    publish(r.data.pulse_network || '');
     p.setBlocks(r.data.blocks || []);
     p.setModels(r.data.models || []);
     const total = r.data.total_devices ?? list.length;
@@ -78,6 +84,10 @@ async function readList(p: UseDeviceListEffectProps, current: () => boolean) {
   }
 }
 export function useDeviceListEffect(p: UseDeviceListEffectProps) {
+  const { publish, register } = useContext(NetworkPulse);
+  useEffect(() => {
+    if (p.inventoryNode && p.profile && p.connected) return register();
+  }, [p.inventoryNode, p.profile, p.connected, register]);
   const latest = useLatestRef(p);
   const { generationRef } = p;
   useEffect(() => {
@@ -91,7 +101,7 @@ export function useDeviceListEffect(p: UseDeviceListEffectProps) {
       pending = true;
       const generation = ++generationRef.current;
       const current = () => !stopped && generation === generationRef.current;
-      void readList(p, current).finally(() => {
+      void readList(p, current, publish).finally(() => {
         if (generation === generationRef.current) pending = false;
       });
     };
@@ -112,6 +122,7 @@ export function useDeviceListEffect(p: UseDeviceListEffectProps) {
     };
   }, [
     latest,
+    publish,
     generationRef,
     p.inventoryNode,
     p.profile,

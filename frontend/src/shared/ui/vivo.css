@@ -1,0 +1,108 @@
+.selo-rede {
+  display: inline-block;
+  margin: 0 2px 12px;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.selo-rede.ok {
+  color: var(--ok);
+}
+.selo-rede.sem,
+.selo-rede.parado,
+.diverge {
+  color: var(--erro);
+}
+.cell-sub.diverge {
+  font-weight: 600;
+}
+nav.side a.on {
+  background: var(--acento-suave);
+  color: var(--acento-forte);
+  box-shadow: inset 3px 0 0 var(--acento);
+}
+nav.side a:hover,
+nav.side a:focus {
+  outline: none;
+  background: var(--acento-suave);
+}
+button {
+  transition:
+    background-color 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+button:hover:not(:disabled) {
+  border-color: var(--acento);
+}
+button.primary,
+[data-theme='dark'] button.primary {
+  background: var(--acento);
+  border-color: var(--acento-forte);
+  color: var(--acento-txt);
+}
+button.primary:hover:not(:disabled) {
+  background: var(--acento-forte);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--acento);
+}
+.tabs {
+  border-bottom-color: var(--gbb);
+}
+.tabs button.on {
+  border-color: var(--gbb);
+  box-shadow:
+    inset 0 -2px 0 var(--acento),
+    inset 0 2px 0 var(--acento);
+  color: var(--acento-forte);
+}
+.chips button.on {
+  background: var(--acento);
+  border-color: var(--acento-forte);
+  color: var(--acento-txt);
+}
+.block {
+  border-color: var(--gbb);
+}
+.block .bh {
+  border-left: 3px solid var(--acento);
+}
+tr.click:hover td,
+tr.click:focus td {
+  background: var(--acento-suave);
+}
+header.top .bc a {
+  color: var(--acento-forte);
+}
+.spin::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border: 2px solid var(--acento);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: giro 0.8s linear infinite;
+}
+@keyframes giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin::before {
+    animation: none;
+  }
+  button {
+    transition: none;
+  }
+}

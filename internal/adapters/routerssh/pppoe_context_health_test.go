@@ -80,7 +80,7 @@ func TestPPPoEContextProjectionAndSSH(t *testing.T) {
 			contextBody := "C\t1\t" + version + "\t2d1h1s\n" +
 				"T\t*A\t<pppoe-synthetic>\tsynthetic\t02:00:00:00:00:01\t198.51.100.1\t1h1s\t" +
 				"service\tvlan100\t100\tfe80::1\tfe80::2\tlocal-profile\t5M/10M\t" +
-				"2001:db8:100::/56\tbound\tactive\nZ\t1\tcomplete\t2d1h1s\n"
+				"2001:db8:100::/56\tbound\tactive\t\nZ\t1\tcomplete\t2d1h1s\n"
 			assertContextProjectionFields(t, version, contextBody)
 			assertContextSSHEnrichment(t, version, contextBody)
 		})

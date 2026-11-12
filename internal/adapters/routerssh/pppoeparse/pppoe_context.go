@@ -53,7 +53,7 @@ func buildPPContext() string {
 	fields := []string{
 		`$i`, `$ppContextName`, `$ppContextUser`, `($m->"caller-id")`, `$ppContextIP`, `($m->"uptime")`,
 		`($m->"service")`, `$ppContextOrigin`, `$vid`, `$l6`, `$r6`, `$ppContextProfile`, `$ppContextLimits`,
-		`$ppContextPrefix`, `$pdstate`, `$ppContextSecretState`,
+		`$ppContextPrefix`, `$pdstate`, `$ppContextSecretState`, `$ppContextProfileRate`,
 	}
 	expr := `"T"`
 	for _, field := range fields {
@@ -123,7 +123,7 @@ func (s *ppContextParser) consume(f []string, raw string) equipment.Code {
 	if f[0] == "Z" {
 		return s.footer(f)
 	}
-	if (len(f) != 16 && len(f) != 17) || f[0] != "T" || len(s.out) >= equipment.PPMaxRows {
+	if len(f) != 18 || f[0] != "T" || len(s.out) >= equipment.PPMaxRows {
 		return equipment.Partial
 	}
 	for i := 1; i < len(f); i++ {
@@ -210,7 +210,7 @@ func (s *ppContextParser) context(item *equipment.PPTunnel, f []string) equipmen
 	parseContextIPv6(c, f)
 
 	c.SecretState = "unavailable"
-	if len(f) == 17 {
+	if len(f) == 18 {
 		switch f[16] {
 		case "active", "disabled", "ambiguous", "none", "unavailable":
 			c.SecretState = f[16]
@@ -218,9 +218,7 @@ func (s *ppContextParser) context(item *equipment.PPTunnel, f []string) equipmen
 			return equipment.Partial
 		}
 	}
-	if c.SecretState == "active" {
-		c.Profile = f[12]
-	}
+	parseContextProfile(c, f[12], f[17])
 	if pair := strings.Split(f[13], "/"); len(pair) == 2 {
 		c.UploadLimit = contextRate(pair[0])
 		c.DownloadLimit = contextRate(pair[1])
@@ -251,17 +249,35 @@ func parseContextIPv6(c *equipment.PPContext, f []string) {
 	}
 }
 
-const ppContextSecretProjection = `:local ppContextSecretState "unavailable"; :do {:local ppSecrets` +
-	` [/ppp secret find where name=$ppContextUser]; :local ppActiveSe` +
-	`crets [/ppp secret find where name=$ppContextUser and disabled!=` +
-	`yes]; :set ppContextSecretState "none"; :if ([:len $ppSecrets]>0` +
-	`) do={:set ppContextSecretState "disabled"}; :if ([:len $ppActiv` +
-	`eSecrets]>1) do={:set ppContextSecretState "ambiguous"}; :if ([:` +
-	`len $ppActiveSecrets]=1) do={:local ppActiveSecret [:pick $ppAct` +
-	`iveSecrets 0]; :if ([/ppp secret get $ppActiveSecret disabled]!=` +
-	`true) do={:set ppContextProfile [/ppp secret get $ppActiveSecret` +
-	` profile]; :if ([/ppp secret get $ppActiveSecret disabled]!=true` +
-	`) do={:set ppContextSecretState "active"} else={:set ppContextPr` +
-	`ofile ""; :set ppContextSecretState "unavailable"}}}} on-error={` +
-	`:set ppContextProfile ""; :set ppContextSecretState "unavailable` +
-	`"}; `
+const ppContextSecretProjection = `:local ppContextSecretState "unavailable"; :local ppContextProfileRate ""; ` +
+	`:do {:local ppSecrets [/ppp secret find where name=$ppContextUser]; ` +
+	`:local ppActiveSecrets [/ppp secret find where name=$ppContextUser and disabled!=yes]; ` +
+	`:local ppChosenSecret ""; :set ppContextSecretState "none"; ` +
+	`:if ([:len $ppSecrets]>0) do={:set ppContextSecretState "ambiguous"}; ` +
+	`:if ([:len $ppSecrets]=1) do={:set ppChosenSecret [:pick $ppSecrets 0]}; ` +
+	`:if ([:len $ppActiveSecrets]=1) do={:set ppChosenSecret [:pick $ppActiveSecrets 0]}; ` +
+	`:if ([:len $ppChosenSecret]>0) do={` +
+	`:set ppContextSecretState "disabled"; ` +
+	`:if ([/ppp secret get $ppChosenSecret disabled]!=true) do={:set ppContextSecretState "active"}; ` +
+	`:set ppContextProfile [/ppp secret get $ppChosenSecret profile]; ` +
+	`:do {:local ppProfiles [/ppp profile find where name=$ppContextProfile]; ` +
+	`:if ([:len $ppProfiles]=1) do={` +
+	`:set ppContextProfileRate [:tostr [/ppp profile get [:pick $ppProfiles 0] rate-limit]]}` +
+	`} on-error={:set ppContextProfileRate ""}}` +
+	`} on-error={:set ppContextProfile ""; :set ppContextProfileRate ""; ` +
+	`:set ppContextSecretState "unavailable"}; `
+
+func parseContextProfile(c *equipment.PPContext, profile, rate string) {
+	if c.SecretState != "active" && c.SecretState != "disabled" {
+		return
+	}
+	c.Profile = profile
+	rates := strings.Fields(rate)
+	if len(rates) == 0 {
+		return
+	}
+	if pair := strings.Split(rates[0], "/"); len(pair) == 2 {
+		c.ProfileUploadLimit = contextRate(pair[0])
+		c.ProfileDownloadLimit = contextRate(pair[1])
+	}
+}

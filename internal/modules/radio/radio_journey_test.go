@@ -49,6 +49,23 @@ func TestRadioIndexMatchDecisions(t *testing.T) {
 	}
 }
 
+func TestRadioIndexPartialReadProposesWithNamedFailure(t *testing.T) {
+	s, q, _, base := radioHarness(t, &radioLiveRemote{})
+	st := State{Devices: []Device{base.devices[base.link.AP], base.devices[base.link.CPE]}}
+	s.Store = indexViewStore{base, st}
+	entry := RadioIndexEntry{AP: base.link.AP, MAC: base.link.MAC,
+		Interface: base.link.Interface, BSSID: base.link.BSSID}
+	index := RadioIndex{At: PPTime(s.Now()), Context: radioIndexContext(st),
+		Entries: []RadioIndexEntry{entry}, Targets: map[string]Code{entry.AP: OK, "failed": RadioCodeConnectFailed},
+		Labels: map[string]string{"failed": "AP Norte (192.0.2.10)"}}
+	s.radioIndexes = map[string]RadioIndex{radioIndexKey(q): index}
+	view := s.radioIndexView(q, &PPRow{Caller: entry.MAC}, st)
+	expected := "1 AP não respondeu: AP Norte (192.0.2.10), CONNECT_FAILED. A sugestão vem dos APs que responderam"
+	if view.Proposal == nil || !strings.Contains(view.MatchReason, expected) {
+		t.Fatalf("partial index lost proposal or warning: %+v %s", view.Proposal, view.MatchReason)
+	}
+}
+
 func TestRadioIndexMetadataFitsIPCAndPagesAllTargets(t *testing.T) {
 	index := RadioIndex{Targets: map[string]Code{}, Labels: map[string]string{}}
 	for i := 0; i < MaxDevices; i++ {

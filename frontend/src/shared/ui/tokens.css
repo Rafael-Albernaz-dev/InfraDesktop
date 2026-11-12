@@ -1,3 +1,4 @@
+@import './vivo.css';
 :root {
   color-scheme: light;
   --g00: #000000;
@@ -32,6 +33,11 @@
   --chart-up: #c2570c;
   --chart-alerta: #b91c1c;
   --erro: #b91c1c;
+  --ok: #15803d;
+  --acento: #0e7490;
+  --acento-forte: #0b5f76;
+  --acento-suave: #e0f2f6;
+  --acento-txt: #ffffff;
   --chart-grade: #e6e6e6;
 }
 [data-theme='dark'] {
@@ -68,6 +74,11 @@
   --chart-up: #f59e0b;
   --chart-alerta: #f87171;
   --erro: #f87171;
+  --ok: #4ade80;
+  --acento: #22a3c4;
+  --acento-forte: #4cbad6;
+  --acento-suave: #12343d;
+  --acento-txt: #0b1418;
   --chart-grade: #383838;
 }
 

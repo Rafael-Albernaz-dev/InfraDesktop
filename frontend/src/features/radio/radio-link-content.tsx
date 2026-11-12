@@ -5,6 +5,7 @@ import {
 } from './radio-link-summary';
 import {
   RadioIndexRefresh,
+  RadioIndexTable,
   RadioIndexCredentialErrors,
   RadioIndexPagination,
   RadioLinkMatchReason,
@@ -42,6 +43,7 @@ export function RadioLinkContent({
       )}
       <RadioIndexRefresh state={state} />
       <RadioIndexCredentialErrors state={state} />
+      <RadioIndexTable state={state} />
       <RadioIndexPagination state={state} />
       <RadioLinkMatchReason state={state} />
       <RadioLinkProposal state={state} />

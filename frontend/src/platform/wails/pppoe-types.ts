@@ -17,6 +17,8 @@ export type PPContext = {
   pd_status?: string;
   profile?: string;
   secret_state?: string;
+  profile_upload_limit?: string;
+  profile_download_limit?: string;
   upload_limit?: string;
   download_limit?: string;
 };

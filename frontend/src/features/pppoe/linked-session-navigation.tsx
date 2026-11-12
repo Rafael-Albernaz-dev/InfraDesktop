@@ -19,6 +19,7 @@ export function useOpenLinkedSession(
       );
       return;
     }
+    s.setDetailTab('traffic');
     void s.runDetail(
       () =>
         pppoeAPI.detail(
@@ -30,7 +31,6 @@ export function useOpenLinkedSession(
         ),
       (r) => {
         s.setPair(undefined);
-        s.setDetailTab('traffic');
         const row = r.data?.rows?.[0];
         s.select(row);
         if (row) onOpen?.(row);

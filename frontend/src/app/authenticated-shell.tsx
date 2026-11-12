@@ -1,3 +1,4 @@
+import { NetworkPulseProvider } from '../features/equipment/network-pulse';
 import type { PerformFn } from '../features/access/access-session';
 import {
   createBrandSaver,
@@ -67,6 +68,20 @@ type AuthenticatedShellProps = {
   setRoot: (root: HTMLDivElement | null) => void;
 };
 export function AuthenticatedShell(props: AuthenticatedShellProps) {
+  const { view, connected } = props.session;
+  return (
+    <NetworkPulseProvider
+      key={`${view.profile_id}|${view.activation_id}`}
+      profile={view.profile_id}
+      activation={view.activation_id}
+      connected={connected}
+      doc={props.root?.ownerDocument}
+    >
+      <AuthenticatedContent {...props} />
+    </NetworkPulseProvider>
+  );
+}
+function AuthenticatedContent(props: AuthenticatedShellProps) {
   const { theme, route, setPage, session, inv, brand, operations, perform } =
     props;
   const { view, connected, busy, error, dialog } = session;

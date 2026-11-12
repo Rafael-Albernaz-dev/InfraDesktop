@@ -24,8 +24,14 @@ func TestRadioIndexPublicPageFitsFrame(t *testing.T) {
 		index.Targets[id] = equipment.RadioCodeRemoteAuthFailed
 		index.Labels[id] = strings.Repeat("界", 80) + " (2001:db8:ffff:ffff:ffff:ffff:ffff:ffff)"
 	}
+	names := []string{}
+	for _, label := range index.Labels {
+		names = append(names, label+", CONNECT_FAILED")
+	}
+	warning := "500 AP não respondeu: " + strings.Join(names, "; ") +
+		"; demais APs nas páginas do índice. A sugestão vem dos APs que responderam"
 	raw,
-		err := json.Marshal(equipment.RadioView{Index: &index,
+		err := json.Marshal(equipment.RadioView{Index: &index, MatchReason: warning,
 		Proposal: &equipment.RadioProposal{APName: strings.Repeat("界",
 			80),
 			APAddress: "2001:db8:ffff:ffff:ffff:ffff:ffff:ffff",

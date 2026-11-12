@@ -1,5 +1,11 @@
 import type { PPRow } from '../../platform/wails/presentation';
-import { useContext, useEffect, useRef } from 'react';
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useOpenLinkedSession } from './linked-session-navigation';
 import type { PPPoEProps } from './pppoe';
 import type { PPPoERefs, usePPPoEState } from './pppoe-state';
@@ -77,14 +83,31 @@ function linkedTarget(
   if (!n?.active) return fallback;
   return undefined;
 }
+function useSessionNavigation(): SessionNavigation {
+  const external = useContext(SessionRoute);
+  const [target, setTarget] = useState<SessionRouteTarget>();
+  return (
+    external || {
+      active: !!target,
+      target,
+      open: setTarget,
+      back: () => setTarget(undefined),
+      leave: () => setTarget(undefined),
+    }
+  );
+}
 export function usePPPoESessionNavigation(
   s: State,
   refs: PPPoERefs,
   p: PPPoEProps,
 ) {
-  const navigation = useContext(SessionRoute),
+  const navigation = useSessionNavigation(),
     { device, sessionTarget, onSessionConsumed } = p;
-  const active = navigation ? navigation.active : !!s.selected;
+  const active = navigation.active;
+  const { detailIntentRef } = refs;
+  useLayoutEffect(() => {
+    if (!active) ++detailIntentRef.current;
+  }, [active, detailIntentRef]);
   const rememberFocus = useSessionReturnFocus(
     s.select,
     refs.searchControlRef,

@@ -1,3 +1,4 @@
+import { waitForSessionReady } from '../../shared/testing/session-ready';
 import {
   fireEvent,
   render,
@@ -179,9 +180,7 @@ it.each(['button', 'alt-left', 'backspace', 'mouse'])(
     fireEvent.click(
       await screen.findByRole('button', { name: /Detalhar segundo/ }),
     );
-    const session = await screen.findByRole('region', {
-      name: 'Detalhes da sessão',
-    });
+    const session = await waitForSessionReady();
     expect(
       within(session).getByRole('heading', { name: 'segundo' }),
     ).toBeVisible();
@@ -275,9 +274,7 @@ it('shows an offline session without initiating traffic', async () => {
   );
   await openList();
   fireEvent.click(screen.getByRole('button', { name: /Detalhar primeiro/ }));
-  const session = await screen.findByRole('region', {
-    name: 'Detalhes da sessão',
-  });
+  const session = await waitForSessionReady();
   expect(
     within(session).getByText('Sem leitura: sessão OFFLINE'),
   ).toBeVisible();
@@ -539,4 +536,25 @@ it('runs ping only for the selected session from the information tab', async () 
       1,
     ),
   );
+});
+
+it('opens the loading session immediately from the list and reads the detail only once', async () => {
+  let finish: (result: PPResult) => void = () => {};
+  vi.mocked(pppoeAPI.detail).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await openList();
+  fireEvent.click(screen.getByRole('button', { name: /Detalhar primeiro/ }));
+  expect(screen.getByText('Carregando sessão…')).toHaveClass('spin');
+  const session = screen.getByRole('region', { name: 'Detalhes da sessão' });
+  expect(session.querySelectorAll('.skel')).toHaveLength(6);
+  await waitFor(() => expect(pppoeAPI.detail).toHaveBeenCalledTimes(1));
+  finish(pp({ rows: [rows[0]], total: 1 }));
+  await waitFor(() =>
+    expect(screen.queryByText('Carregando sessão…')).not.toBeInTheDocument(),
+  );
+  expect(screen.getByRole('heading', { name: 'primeiro' })).toBeVisible();
 });
