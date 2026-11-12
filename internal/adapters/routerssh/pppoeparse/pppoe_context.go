@@ -252,11 +252,11 @@ func parseContextIPv6(c *equipment.PPContext, f []string) {
 const ppContextSecretProjection = `:local ppContextSecretState "unavailable"; :local ppContextProfileRate ""; ` +
 	`:do {:local ppSecrets [/ppp secret find where name=$ppContextUser]; ` +
 	`:local ppActiveSecrets [/ppp secret find where name=$ppContextUser and disabled!=yes]; ` +
-	`:local ppChosenSecret ""; :set ppContextSecretState "none"; ` +
+	`:local ppChosenSecret ""; :local ppHasChosen false; :set ppContextSecretState "none"; ` +
 	`:if ([:len $ppSecrets]>0) do={:set ppContextSecretState "ambiguous"}; ` +
-	`:if ([:len $ppSecrets]=1) do={:set ppChosenSecret [:pick $ppSecrets 0]}; ` +
-	`:if ([:len $ppActiveSecrets]=1) do={:set ppChosenSecret [:pick $ppActiveSecrets 0]}; ` +
-	`:if ([:len $ppChosenSecret]>0) do={` +
+	`:if ([:len $ppSecrets]=1) do={:set ppChosenSecret [:pick $ppSecrets 0]; :set ppHasChosen true}; ` +
+	`:if ([:len $ppActiveSecrets]=1) do={:set ppChosenSecret [:pick $ppActiveSecrets 0]; :set ppHasChosen true}; ` +
+	`:if ($ppHasChosen) do={` +
 	`:set ppContextSecretState "disabled"; ` +
 	`:if ([/ppp secret get $ppChosenSecret disabled]!=true) do={:set ppContextSecretState "active"}; ` +
 	`:set ppContextProfile [/ppp secret get $ppChosenSecret profile]; ` +

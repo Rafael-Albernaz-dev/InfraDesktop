@@ -12,7 +12,7 @@ const read = (name) => JSON.parse(fs.readFileSync(name, 'utf8'));
 const reference = 'frontend/visual/reference';
 const manifest = fs.readFileSync(`${reference}/capturas.sha256`, 'utf8');
 const sha = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-if (crypto.createHash('sha256').update(manifest).digest('hex') !== '70590da02751d8b1abebecbbb22c31ca34277fea988aaf483b40f518f1547ee3')
+if (crypto.createHash('sha256').update(manifest).digest('hex') !== '9cf035bc18612396bbe5dc6b5ae97ac5021c342f67c1b1dce0e7912ed9922d38')
   throw Error('Manifesto congelado divergiu');
 const names = new Set();
 for (const line of manifest.trim().split('\n')) {

@@ -39,6 +39,14 @@ func TestSecretStateProjection(t *testing.T) {
 
 func TestSecretScriptFiltersActiveBeforeProfile(t *testing.T) {
 	s := pppoeparse.PPContextCommand
+	for _, required := range []string{`:local ppHasChosen false`, `:if ($ppHasChosen) do={`} {
+		if !strings.Contains(s, required) {
+			t.Fatal("missing explicit chosen-secret flag", required)
+		}
+	}
+	if strings.Contains(s, `[:len $ppChosenSecret]`) || strings.Count(s, `:set ppHasChosen true`) != 2 {
+		t.Fatal("internal RouterOS ID length used as a selection flag or a selection branch lost")
+	}
 	if !strings.Contains(s, `name=$ppContextUser and disabled!=yes`) || !strings.Contains(s,
 		`:set ppContextSecretState "disabled"`) || !strings.Contains(s, `:set ppContextSecretState "ambiguous"`) {
 		t.Fatal("unique secret selection or state not projected")
